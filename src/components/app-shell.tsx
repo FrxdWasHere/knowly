@@ -16,6 +16,7 @@ import {
   PanelLeft,
   Printer,
   Hammer,
+  Target,
 } from "lucide-react";
 import { useKnowly } from "@/store/knowly";
 import { levelFromXp } from "@/lib/gamification";
@@ -33,6 +34,7 @@ const NAV = [
   { to: "/import", label: "Import JSON", icon: Download, exact: false },
   { to: "/format", label: "JSON Format", icon: FileJson, exact: false },
   { to: "/review", label: "Daily Review", icon: Brain, exact: false },
+  { to: "/weak-spots", label: "Weak Spots", icon: Target, exact: false },
   { to: "/quiz", label: "Practice Quiz", icon: BrainCircuit, exact: false },
   { to: "/print", label: "Print Exam", icon: Printer, exact: false },
   { to: "/stats", label: "Statistics", icon: BarChart3, exact: false },
