@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useKnowly } from "@/store/knowly";
+import { Logo } from "@/components/brand/logo";
 
 export const Route = createFileRoute("/")({
   ssr: false,
@@ -56,7 +57,7 @@ function Landing() {
       <header className="relative z-20 border-b border-border bg-background/85 backdrop-blur-xl">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8">
           <Link to="/" className="flex items-center gap-3">
-            <span className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground"><Flame className="size-5" /></span>
+            <Logo className="size-9" />
             <span className="font-display text-xl font-bold">Knowly</span>
           </Link>
           <nav aria-label="Primary navigation" className="hidden items-center gap-7 text-sm text-muted-foreground md:flex">
@@ -170,7 +171,7 @@ function Landing() {
       </main>
 
       <footer className="border-t border-border bg-surface/30">
-        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-8"><div className="flex items-center gap-3"><Flame className="size-4 text-primary" /><span className="font-display font-bold">Knowly</span><span className="text-xs text-muted-foreground">Built by students, for students.</span></div><div className="flex gap-6 text-sm text-muted-foreground"><Link to="/privacy" className="hover:text-foreground">Privacy Policy</Link><Link to="/terms" className="hover:text-foreground">Terms of Service</Link></div></div>
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-8"><div className="flex items-center gap-3"><Logo className="size-5 rounded-md" /><span className="font-display font-bold">Knowly</span><span className="text-xs text-muted-foreground">Built by students, for students.</span></div><div className="flex gap-6 text-sm text-muted-foreground"><Link to="/privacy" className="hover:text-foreground">Privacy Policy</Link><Link to="/terms" className="hover:text-foreground">Terms of Service</Link></div></div>
       </footer>
     </div>
   );
