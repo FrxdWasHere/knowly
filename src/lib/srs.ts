@@ -215,8 +215,9 @@ export function deckSrs(deck: Deck, now = Date.now()): DeckSrs {
 
 export function dueQuestions(deck: Deck, now = Date.now()): Question[] {
   const map = deck.srs ?? {};
+  const paused = suspendedSet(deck);
   return deck.questions
-    .filter((q) => isDue(map[q.id], now))
+    .filter((q) => !paused.has(q.id) && isDue(map[q.id], now))
     .sort((a, b) => (map[a.id]?.due ?? 0) - (map[b.id]?.due ?? 0));
 }
 
