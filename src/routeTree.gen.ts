@@ -25,6 +25,7 @@ import { Route as AuthenticatedGenerateRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedFormatRouteImport } from './routes/_authenticated/format'
 import { Route as AuthenticatedForgeRouteImport } from './routes/_authenticated/forge'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedCramRouteImport } from './routes/_authenticated/cram'
 import { Route as AuthenticatedAchievementsRouteImport } from './routes/_authenticated/achievements'
 import { Route as AuthenticatedDecksIndexRouteImport } from './routes/_authenticated/decks.index'
 import { Route as AuthenticatedStudyDeckIdRouteImport } from './routes/_authenticated/study.$deckId'
@@ -110,6 +111,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCramRoute = AuthenticatedCramRouteImport.update({
+  id: '/cram',
+  path: '/cram',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAchievementsRoute =
   AuthenticatedAchievementsRouteImport.update({
     id: '/achievements',
@@ -145,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/achievements': typeof AuthenticatedAchievementsRoute
+  '/cram': typeof AuthenticatedCramRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/forge': typeof AuthenticatedForgeRoute
   '/format': typeof AuthenticatedFormatRoute
@@ -167,6 +174,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/achievements': typeof AuthenticatedAchievementsRoute
+  '/cram': typeof AuthenticatedCramRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/forge': typeof AuthenticatedForgeRoute
   '/format': typeof AuthenticatedFormatRoute
@@ -191,6 +199,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/_authenticated/achievements': typeof AuthenticatedAchievementsRoute
+  '/_authenticated/cram': typeof AuthenticatedCramRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/forge': typeof AuthenticatedForgeRoute
   '/_authenticated/format': typeof AuthenticatedFormatRoute
@@ -215,6 +224,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/achievements'
+    | '/cram'
     | '/dashboard'
     | '/forge'
     | '/format'
@@ -237,6 +247,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/achievements'
+    | '/cram'
     | '/dashboard'
     | '/forge'
     | '/format'
@@ -260,6 +271,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/_authenticated/achievements'
+    | '/_authenticated/cram'
     | '/_authenticated/dashboard'
     | '/_authenticated/forge'
     | '/_authenticated/format'
@@ -399,6 +411,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cram': {
+      id: '/_authenticated/cram'
+      path: '/cram'
+      fullPath: '/cram'
+      preLoaderRoute: typeof AuthenticatedCramRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/achievements': {
       id: '/_authenticated/achievements'
       path: '/achievements'
@@ -439,6 +458,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAchievementsRoute: typeof AuthenticatedAchievementsRoute
+  AuthenticatedCramRoute: typeof AuthenticatedCramRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedForgeRoute: typeof AuthenticatedForgeRoute
   AuthenticatedFormatRoute: typeof AuthenticatedFormatRoute
@@ -459,6 +479,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAchievementsRoute: AuthenticatedAchievementsRoute,
+  AuthenticatedCramRoute: AuthenticatedCramRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedForgeRoute: AuthenticatedForgeRoute,
   AuthenticatedFormatRoute: AuthenticatedFormatRoute,
