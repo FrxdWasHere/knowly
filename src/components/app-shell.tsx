@@ -45,6 +45,7 @@ const NAV = [
   { to: "/exam", label: "Exam Simulator", icon: GraduationCap, exact: false },
   { to: "/cards", label: "Card Browser", icon: Table2, exact: false },
   { to: "/bookmarks", label: "Bookmarks & Notes", icon: Star, exact: false },
+  { to: "/focus", label: "Focus Timer", icon: Timer, exact: false },
   { to: "/quiz", label: "Practice Quiz", icon: BrainCircuit, exact: false },
   { to: "/print", label: "Print Exam", icon: Printer, exact: false },
   { to: "/stats", label: "Statistics", icon: BarChart3, exact: false },
