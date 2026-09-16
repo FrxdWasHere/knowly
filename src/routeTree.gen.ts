@@ -21,11 +21,15 @@ import { Route as AuthenticatedQuizRouteImport } from './routes/_authenticated/q
 import { Route as AuthenticatedPrintRouteImport } from './routes/_authenticated/print'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedImportRouteImport } from './routes/_authenticated/import'
+import { Route as AuthenticatedGoalsRouteImport } from './routes/_authenticated/goals'
 import { Route as AuthenticatedGenerateRouteImport } from './routes/_authenticated/generate'
 import { Route as AuthenticatedFormatRouteImport } from './routes/_authenticated/format'
 import { Route as AuthenticatedForgeRouteImport } from './routes/_authenticated/forge'
+import { Route as AuthenticatedExamRouteImport } from './routes/_authenticated/exam'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCramRouteImport } from './routes/_authenticated/cram'
+import { Route as AuthenticatedCardsRouteImport } from './routes/_authenticated/cards'
+import { Route as AuthenticatedBookmarksRouteImport } from './routes/_authenticated/bookmarks'
 import { Route as AuthenticatedAchievementsRouteImport } from './routes/_authenticated/achievements'
 import { Route as AuthenticatedDecksIndexRouteImport } from './routes/_authenticated/decks.index'
 import { Route as AuthenticatedStudyDeckIdRouteImport } from './routes/_authenticated/study.$deckId'
@@ -91,6 +95,11 @@ const AuthenticatedImportRoute = AuthenticatedImportRouteImport.update({
   path: '/import',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedGoalsRoute = AuthenticatedGoalsRouteImport.update({
+  id: '/goals',
+  path: '/goals',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedGenerateRoute = AuthenticatedGenerateRouteImport.update({
   id: '/generate',
   path: '/generate',
@@ -106,6 +115,11 @@ const AuthenticatedForgeRoute = AuthenticatedForgeRouteImport.update({
   path: '/forge',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedExamRoute = AuthenticatedExamRouteImport.update({
+  id: '/exam',
+  path: '/exam',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -114,6 +128,16 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
 const AuthenticatedCramRoute = AuthenticatedCramRouteImport.update({
   id: '/cram',
   path: '/cram',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCardsRoute = AuthenticatedCardsRouteImport.update({
+  id: '/cards',
+  path: '/cards',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBookmarksRoute = AuthenticatedBookmarksRouteImport.update({
+  id: '/bookmarks',
+  path: '/bookmarks',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAchievementsRoute =
@@ -151,11 +175,15 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/achievements': typeof AuthenticatedAchievementsRoute
+  '/bookmarks': typeof AuthenticatedBookmarksRoute
+  '/cards': typeof AuthenticatedCardsRoute
   '/cram': typeof AuthenticatedCramRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/exam': typeof AuthenticatedExamRoute
   '/forge': typeof AuthenticatedForgeRoute
   '/format': typeof AuthenticatedFormatRoute
   '/generate': typeof AuthenticatedGenerateRoute
+  '/goals': typeof AuthenticatedGoalsRoute
   '/import': typeof AuthenticatedImportRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/print': typeof AuthenticatedPrintRoute
@@ -174,11 +202,15 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/achievements': typeof AuthenticatedAchievementsRoute
+  '/bookmarks': typeof AuthenticatedBookmarksRoute
+  '/cards': typeof AuthenticatedCardsRoute
   '/cram': typeof AuthenticatedCramRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/exam': typeof AuthenticatedExamRoute
   '/forge': typeof AuthenticatedForgeRoute
   '/format': typeof AuthenticatedFormatRoute
   '/generate': typeof AuthenticatedGenerateRoute
+  '/goals': typeof AuthenticatedGoalsRoute
   '/import': typeof AuthenticatedImportRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/print': typeof AuthenticatedPrintRoute
@@ -199,11 +231,15 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/_authenticated/achievements': typeof AuthenticatedAchievementsRoute
+  '/_authenticated/bookmarks': typeof AuthenticatedBookmarksRoute
+  '/_authenticated/cards': typeof AuthenticatedCardsRoute
   '/_authenticated/cram': typeof AuthenticatedCramRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/exam': typeof AuthenticatedExamRoute
   '/_authenticated/forge': typeof AuthenticatedForgeRoute
   '/_authenticated/format': typeof AuthenticatedFormatRoute
   '/_authenticated/generate': typeof AuthenticatedGenerateRoute
+  '/_authenticated/goals': typeof AuthenticatedGoalsRoute
   '/_authenticated/import': typeof AuthenticatedImportRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/print': typeof AuthenticatedPrintRoute
@@ -224,11 +260,15 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/achievements'
+    | '/bookmarks'
+    | '/cards'
     | '/cram'
     | '/dashboard'
+    | '/exam'
     | '/forge'
     | '/format'
     | '/generate'
+    | '/goals'
     | '/import'
     | '/onboarding'
     | '/print'
@@ -247,11 +287,15 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/achievements'
+    | '/bookmarks'
+    | '/cards'
     | '/cram'
     | '/dashboard'
+    | '/exam'
     | '/forge'
     | '/format'
     | '/generate'
+    | '/goals'
     | '/import'
     | '/onboarding'
     | '/print'
@@ -271,11 +315,15 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/_authenticated/achievements'
+    | '/_authenticated/bookmarks'
+    | '/_authenticated/cards'
     | '/_authenticated/cram'
     | '/_authenticated/dashboard'
+    | '/_authenticated/exam'
     | '/_authenticated/forge'
     | '/_authenticated/format'
     | '/_authenticated/generate'
+    | '/_authenticated/goals'
     | '/_authenticated/import'
     | '/_authenticated/onboarding'
     | '/_authenticated/print'
@@ -383,6 +431,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedImportRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/goals': {
+      id: '/_authenticated/goals'
+      path: '/goals'
+      fullPath: '/goals'
+      preLoaderRoute: typeof AuthenticatedGoalsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/generate': {
       id: '/_authenticated/generate'
       path: '/generate'
@@ -404,6 +459,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedForgeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/exam': {
+      id: '/_authenticated/exam'
+      path: '/exam'
+      fullPath: '/exam'
+      preLoaderRoute: typeof AuthenticatedExamRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -416,6 +478,20 @@ declare module '@tanstack/react-router' {
       path: '/cram'
       fullPath: '/cram'
       preLoaderRoute: typeof AuthenticatedCramRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cards': {
+      id: '/_authenticated/cards'
+      path: '/cards'
+      fullPath: '/cards'
+      preLoaderRoute: typeof AuthenticatedCardsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/bookmarks': {
+      id: '/_authenticated/bookmarks'
+      path: '/bookmarks'
+      fullPath: '/bookmarks'
+      preLoaderRoute: typeof AuthenticatedBookmarksRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/achievements': {
@@ -458,11 +534,15 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAchievementsRoute: typeof AuthenticatedAchievementsRoute
+  AuthenticatedBookmarksRoute: typeof AuthenticatedBookmarksRoute
+  AuthenticatedCardsRoute: typeof AuthenticatedCardsRoute
   AuthenticatedCramRoute: typeof AuthenticatedCramRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedExamRoute: typeof AuthenticatedExamRoute
   AuthenticatedForgeRoute: typeof AuthenticatedForgeRoute
   AuthenticatedFormatRoute: typeof AuthenticatedFormatRoute
   AuthenticatedGenerateRoute: typeof AuthenticatedGenerateRoute
+  AuthenticatedGoalsRoute: typeof AuthenticatedGoalsRoute
   AuthenticatedImportRoute: typeof AuthenticatedImportRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPrintRoute: typeof AuthenticatedPrintRoute
@@ -479,11 +559,15 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAchievementsRoute: AuthenticatedAchievementsRoute,
+  AuthenticatedBookmarksRoute: AuthenticatedBookmarksRoute,
+  AuthenticatedCardsRoute: AuthenticatedCardsRoute,
   AuthenticatedCramRoute: AuthenticatedCramRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedExamRoute: AuthenticatedExamRoute,
   AuthenticatedForgeRoute: AuthenticatedForgeRoute,
   AuthenticatedFormatRoute: AuthenticatedFormatRoute,
   AuthenticatedGenerateRoute: AuthenticatedGenerateRoute,
+  AuthenticatedGoalsRoute: AuthenticatedGoalsRoute,
   AuthenticatedImportRoute: AuthenticatedImportRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPrintRoute: AuthenticatedPrintRoute,

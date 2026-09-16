@@ -42,11 +42,29 @@ import type {
 
 type Phase = "setup" | "running" | "report";
 
-export function QuizEngine() {
+export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
   const { state, updateSettings, recordSession } = useKnowly();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("setup");
-  const [config, setConfig] = useState<QuizConfig>(state.settings.defaultQuizConfig);
+  const [config, setConfig] = useState<QuizConfig>(() =>
+    exam
+      ? {
+          ...state.settings.defaultQuizConfig,
+          deckIds: [],
+          types: [...questionTypes] as QuestionType[],
+          difficulties: ["easy", "medium", "hard"],
+          shuffle: true,
+          perQuestionSeconds: null,
+          totalMinutes: 20,
+          unlimited: false,
+          questionCount: 30,
+          passingScore: 60,
+          xpEnabled: true,
+          instantFeedback: false,
+          bookmarkedOnly: false,
+        }
+      : state.settings.defaultQuizConfig,
+  );
   const [pool, setPool] = useState<Question[]>([]);
   const [result, setResult] = useState<QuizResult | null>(null);
 
@@ -89,6 +107,7 @@ export function QuizEngine() {
     return (
       <QuizReport
         result={result}
+        exam={exam}
         onOverride={(index) => {
           setResult((r) => {
             if (!r) return r;
@@ -130,6 +149,7 @@ export function QuizEngine() {
         config={config}
         widgets={widgets}
         settings={state.settings}
+        exam={exam}
         onQuit={() => setPhase("setup")}
         onFinish={(answers, durationMs, bestCombo, xpEarned) => {
           const answered = answers.filter((a) => !a.skipped).length;
@@ -192,15 +212,19 @@ export function QuizEngine() {
   return (
     <div className="max-w-4xl">
       <PageHeader
-        title="Practice Quiz"
-        description={`${availableQuestions.length} question${availableQuestions.length === 1 ? "" : "s"} match your current filters.`}
+        title={exam ? "Exam Simulator" : "Practice Quiz"}
+        description={
+          exam
+            ? `${availableQuestions.length} question${availableQuestions.length === 1 ? "" : "s"} across your decks. One clock, no feedback until the end, then a graded report.`
+            : `${availableQuestions.length} question${availableQuestions.length === 1 ? "" : "s"} match your current filters.`
+        }
         action={
           <Button
             size="lg"
             disabled={!availableQuestions.length}
             onClick={() => start()}
           >
-            <Play /> Start quiz
+            <Play /> {exam ? "Start exam" : "Start quiz"}
           </Button>
         }
       />
@@ -322,7 +346,9 @@ export function QuizEngine() {
               hint: "Quiz just the questions you starred",
             },
             { key: "xpEnabled", label: "Award XP", hint: "Earn XP and combos" },
-          ].map((row) => (
+          ]
+            .filter((row) => !exam || row.key !== "instantFeedback")
+            .map((row) => (
             <div key={row.key} className="flex items-center justify-between gap-4">
               <div>
                 <Label className="text-sm">{row.label}</Label>
@@ -336,18 +362,20 @@ export function QuizEngine() {
           ))}
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Seconds per question</Label>
-              <Input
-                type="number"
-                min={0}
-                placeholder="off"
-                value={config.perQuestionSeconds ?? ""}
-                onChange={(e) =>
-                  toggle("perQuestionSeconds", e.target.value ? Number(e.target.value) : null)
-                }
-              />
-            </div>
+            {!exam && (
+              <div className="space-y-1.5">
+                <Label className="text-xs">Seconds per question</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="off"
+                  value={config.perQuestionSeconds ?? ""}
+                  onChange={(e) =>
+                    toggle("perQuestionSeconds", e.target.value ? Number(e.target.value) : null)
+                  }
+                />
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label className="text-xs">Total minutes</Label>
               <Input
@@ -376,13 +404,15 @@ export function QuizEngine() {
             />
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => updateSettings({ defaultQuizConfig: config })}
-          >
-            Save as my default
-          </Button>
+          {!exam && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => updateSettings({ defaultQuizConfig: config })}
+            >
+              Save as my default
+            </Button>
+          )}
         </section>
 
         <section className="panel p-6 lg:col-span-2">
@@ -414,6 +444,7 @@ function QuizRun({
   config,
   widgets,
   settings,
+  exam = false,
   onFinish,
   onQuit,
 }: {
@@ -421,6 +452,8 @@ function QuizRun({
   config: QuizConfig;
   widgets: QuizWidgets;
   settings: Settings;
+  /** exam mode: no hints, exam-styled quit prompt */
+  exam?: boolean;
   onFinish: (
     answers: AnswerRecord[],
     durationMs: number,
@@ -604,7 +637,7 @@ function QuizRun({
         </Badge>
         <h1 className="mt-4 text-2xl font-semibold leading-snug">{question.question}</h1>
 
-        {question.hint && settings.showHints && !feedback && (
+        {question.hint && settings.showHints && !exam && !feedback && (
           <p className="mt-3 text-xs text-muted-foreground">Hint: {question.hint}</p>
         )}
 
