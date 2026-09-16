@@ -80,11 +80,11 @@ function ReviewSession() {
     const decks = deckFilter
       ? stateRef.current.decks.filter((d) => d.id === deckFilter)
       : stateRef.current.decks;
-    setQueue(collectDue(decks));
+    setQueue(weakMode ? collectWeak(decks) : collectDue(decks));
     setReady(true);
     started.current = Date.now();
     questionStart.current = Date.now();
-  }, [deckFilter]);
+  }, [deckFilter, weakMode]);
 
   const item = queue[index];
   const total = queue.length;
