@@ -20,6 +20,7 @@ import type { AnswerRecord, QuizResult } from "@/lib/types";
 
 export function QuizReport({
   result,
+  exam = false,
   onOverride,
   onRetry,
   onRetryIncorrect,
@@ -27,6 +28,8 @@ export function QuizReport({
   onBackToSetup,
 }: {
   result: QuizResult;
+  /** exam mode: stricter labels for the mock-exam report */
+  exam?: boolean;
   onOverride: (index: number) => void;
   onRetry: () => void;
   onRetryIncorrect: () => void;
@@ -88,7 +91,7 @@ export function QuizReport({
 
   const copyReport = async () => {
     const lines: string[] = [
-      "DECKLY QUIZ REPORT",
+      exam ? "KNOWLY EXAM REPORT" : "KNOWLY QUIZ REPORT",
       "======================",
       `Decks: ${result.deckTitles.join(" · ") || "Mixed decks"}`,
       `Date: ${new Date(result.createdAt).toLocaleString()}`,
@@ -248,7 +251,7 @@ export function QuizReport({
 
         <div className="mt-8 flex flex-wrap justify-center gap-2">
           <Button onClick={onRetry}>
-            <RotateCcw /> Retake quiz
+            <RotateCcw /> {exam ? "Retake exam" : "Retake quiz"}
           </Button>
           <Button variant="secondary" disabled={!wrong.length} onClick={onRetryIncorrect}>
             <Repeat /> Retry missed ({wrong.length})
