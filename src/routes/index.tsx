@@ -56,7 +56,7 @@ function Landing() {
       <header className="relative z-20 border-b border-border bg-background/85 backdrop-blur-xl">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8">
           <Link to="/" className="flex items-center gap-3">
-            <span className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground"><Flame className="size-5" /></span>
+            <Logo className="size-9" />
             <span className="font-display text-xl font-bold">Knowly</span>
           </Link>
           <nav aria-label="Primary navigation" className="hidden items-center gap-7 text-sm text-muted-foreground md:flex">

@@ -159,9 +159,7 @@ function Onboarding() {
         {/* Rail */}
         <aside className="anim-fade-up hidden w-64 shrink-0 flex-col border-r border-border pr-10 lg:flex">
           <div className="flex items-center gap-3">
-            <div className="grid size-11 place-items-center rounded-lg bg-primary text-primary-foreground shadow-[var(--shadow-forge)]">
-              <Flame className="size-6" />
-            </div>
+            <Logo className="size-11 shadow-[var(--shadow-forge)]" />
             <div>
               <p className="font-display text-lg font-bold">Knowly</p>
               <p className="text-[11px] text-muted-foreground">Setup</p>
@@ -208,9 +206,7 @@ function Onboarding() {
         {/* Card */}
         <main className="flex min-w-0 flex-1 flex-col justify-center">
           <div className="mb-5 flex items-center gap-3 lg:hidden">
-            <div className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground">
-              <Flame className="size-5" />
-            </div>
+            <Logo className="size-9 rounded-xl" />
             <p className="font-display font-bold">Knowly</p>
           </div>
 

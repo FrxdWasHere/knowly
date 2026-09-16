@@ -74,9 +74,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
       >
         <div className="flex items-center gap-3 px-5 py-6">
-          <div className="anim-pop grid size-9 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground transition-transform duration-300 hover:scale-110 hover:rotate-6">
-            <Flame className="size-5" />
-          </div>
+          <Logo className="anim-pop size-9 transition-transform duration-300 hover:scale-110 hover:rotate-6" />
           {!collapsed && (
             <div className="anim-fade-in min-w-0">
               <p className="font-display text-base font-bold leading-none">Knowly</p>
@@ -146,7 +144,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-background/85 px-4 py-3 backdrop-blur md:px-8">
           <div className="flex items-center gap-2 md:hidden">
-            <Flame className="anim-float size-5 text-primary" />
+            <Logo className="anim-float size-6" />
             <span className="font-display font-bold">Knowly</span>
           </div>
           <div className="hidden items-center gap-2 text-xs text-muted-foreground md:flex">
