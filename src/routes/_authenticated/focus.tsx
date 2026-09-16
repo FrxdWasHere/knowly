@@ -207,7 +207,6 @@ function FocusPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        icon={TimerIcon}
         title="Focus Timer"
         description="Offline pomodoro blocks for deep study. Nothing leaves your device."
       />
