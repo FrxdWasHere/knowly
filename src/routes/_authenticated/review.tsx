@@ -191,10 +191,13 @@ function ReviewSession() {
     return (
       <div className="panel mx-auto max-w-xl p-12 text-center">
         <CheckCircle2 className="mx-auto size-10 text-success" />
-        <h1 className="mt-5 font-display text-2xl font-bold">Nothing due right now</h1>
+        <h1 className="mt-5 font-display text-2xl font-bold">
+          {weakMode ? "No weak spots found" : "Nothing due right now"}
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Your spaced repetition schedule is clear. Come back when cards ripen, or study a deck
-          ahead of time.
+          {weakMode
+            ? "Nothing in your library is lapsing or shaky right now. Study more cards and any trouble spots will show up here."
+            : "Your spaced repetition schedule is clear. Come back when cards ripen, or study a deck ahead of time."}
         </p>
         <div className="mt-7 flex justify-center gap-2">
           <Button asChild>
