@@ -53,6 +53,8 @@ export interface Deck {
   notes: Record<string, string>;
   /** spaced repetition schedule, keyed by question id */
   srs?: Record<string, import("./srs").SrsCard>;
+  /** ids of questions paused: excluded from reviews and due counts */
+  suspended?: string[];
 }
 
 export interface AnswerRecord {

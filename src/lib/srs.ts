@@ -153,8 +153,14 @@ export interface DeckSrs {
   retention: number;
 }
 
+/** Questions paused by the learner, excluded from every study surface. */
+export function suspendedSet(deck: Deck): Set<string> {
+  return new Set(deck.suspended ?? []);
+}
+
 export function deckSrs(deck: Deck, now = Date.now()): DeckSrs {
   const map = deck.srs ?? {};
+  const paused = suspendedSet(deck);
   let due = 0;
   let dueReview = 0;
   let fresh = 0;
@@ -165,8 +171,11 @@ export function deckSrs(deck: Deck, now = Date.now()): DeckSrs {
   let seen = 0;
   let lapsed = 0;
   let nextDue: number | null = null;
+  let total = 0;
 
   for (const q of deck.questions) {
+    if (paused.has(q.id)) continue;
+    total += 1;
     const card = map[q.id];
     const stage = cardStage(card);
     if (stage === "new") fresh += 1;
