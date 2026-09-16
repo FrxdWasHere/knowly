@@ -153,8 +153,14 @@ export interface DeckSrs {
   retention: number;
 }
 
+/** Questions paused by the learner, excluded from every study surface. */
+export function suspendedSet(deck: Deck): Set<string> {
+  return new Set(deck.suspended ?? []);
+}
+
 export function deckSrs(deck: Deck, now = Date.now()): DeckSrs {
   const map = deck.srs ?? {};
+  const paused = suspendedSet(deck);
   let due = 0;
   let dueReview = 0;
   let fresh = 0;
@@ -165,8 +171,11 @@ export function deckSrs(deck: Deck, now = Date.now()): DeckSrs {
   let seen = 0;
   let lapsed = 0;
   let nextDue: number | null = null;
+  let total = 0;
 
   for (const q of deck.questions) {
+    if (paused.has(q.id)) continue;
+    total += 1;
     const card = map[q.id];
     const stage = cardStage(card);
     if (stage === "new") fresh += 1;
@@ -188,7 +197,6 @@ export function deckSrs(deck: Deck, now = Date.now()): DeckSrs {
     }
   }
 
-  const total = deck.questions.length;
   const scheduled = young + mature;
   return {
     total,
@@ -207,8 +215,9 @@ export function deckSrs(deck: Deck, now = Date.now()): DeckSrs {
 
 export function dueQuestions(deck: Deck, now = Date.now()): Question[] {
   const map = deck.srs ?? {};
+  const paused = suspendedSet(deck);
   return deck.questions
-    .filter((q) => isDue(map[q.id], now))
+    .filter((q) => !paused.has(q.id) && isDue(map[q.id], now))
     .sort((a, b) => (map[a.id]?.due ?? 0) - (map[b.id]?.due ?? 0));
 }
 
@@ -225,7 +234,9 @@ export function collectDue(decks: Deck[], now = Date.now()): DueItem[] {
   const items: DueItem[] = [];
   for (const deck of decks) {
     const map = deck.srs ?? {};
+    const paused = suspendedSet(deck);
     for (const q of deck.questions) {
+      if (paused.has(q.id)) continue;
       const card = map[q.id];
       if (!isDue(card, now)) continue;
       items.push({
@@ -255,7 +266,9 @@ export function collectWeak(decks: Deck[], limit = 200): DueItem[] {
   const items: DueItem[] = [];
   for (const deck of decks) {
     const map = deck.srs ?? {};
+    const paused = suspendedSet(deck);
     for (const q of deck.questions) {
+      if (paused.has(q.id)) continue;
       const card = map[q.id];
       if (!isWeak(card)) continue;
       items.push({
@@ -270,6 +283,43 @@ export function collectWeak(decks: Deck[], limit = 200): DueItem[] {
   return items
     .sort((a, b) => weakness(b.card as SrsCard) - weakness(a.card as SrsCard))
     .slice(0, limit);
+}
+
+/** Lapse count at which a card is considered a leech. */
+export const LEECH_THRESHOLD = 3;
+
+export interface LeechItem extends DueItem {
+  card: SrsCard;
+  lapses: number;
+  suspended: boolean;
+}
+
+/**
+ * Every card that keeps lapsing, worst first. Suspended cards are included
+ * so they can be un-paused from the same screen.
+ */
+export function collectLeeches(decks: Deck[], threshold = LEECH_THRESHOLD): LeechItem[] {
+  const items: LeechItem[] = [];
+  for (const deck of decks) {
+    const map = deck.srs ?? {};
+    const paused = suspendedSet(deck);
+    for (const q of deck.questions) {
+      const card = map[q.id];
+      if (!card || card.reps === 0) continue;
+      const isPaused = paused.has(q.id);
+      if (card.lapses < threshold && !isPaused) continue;
+      items.push({
+        deckId: deck.id,
+        deckTitle: deck.title,
+        deckColor: deck.color,
+        question: q,
+        card,
+        lapses: card.lapses,
+        suspended: isPaused,
+      });
+    }
+  }
+  return items.sort((a, b) => b.lapses - a.lapses || weakness(b.card) - weakness(a.card));
 }
 
 export interface ForecastDay {

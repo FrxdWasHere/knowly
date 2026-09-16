@@ -22,7 +22,7 @@ Built one at a time, in this order:
 5. [x] Card Browser — searchable/filterable table of every card across all decks.
 6. [x] Bookmarks & Notes — one hub for starred cards and personal notes.
 7. [x] Focus Timer — offline pomodoro tied to study sessions. (verified in browser)
-8. [ ] Leech Manager — cards that keep lapsing: suspend, reset or rewrite.
+8. [x] Leech Manager — cards that keep lapsing: suspend, reset or rewrite. (verified in browser)
 9. [ ] Tag & Concept Explorer — browse the whole library by tag/concept.
 10. [ ] Study Journal — per-session notes log, searchable.
 11. [ ] Command Palette — Cmd/Ctrl-K jump to anything.

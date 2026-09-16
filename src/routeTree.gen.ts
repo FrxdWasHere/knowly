@@ -20,6 +20,7 @@ import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedQuizRouteImport } from './routes/_authenticated/quiz'
 import { Route as AuthenticatedPrintRouteImport } from './routes/_authenticated/print'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedLeechesRouteImport } from './routes/_authenticated/leeches'
 import { Route as AuthenticatedImportRouteImport } from './routes/_authenticated/import'
 import { Route as AuthenticatedGoalsRouteImport } from './routes/_authenticated/goals'
 import { Route as AuthenticatedGenerateRouteImport } from './routes/_authenticated/generate'
@@ -89,6 +90,11 @@ const AuthenticatedPrintRoute = AuthenticatedPrintRouteImport.update({
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLeechesRoute = AuthenticatedLeechesRouteImport.update({
+  id: '/leeches',
+  path: '/leeches',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedImportRoute = AuthenticatedImportRouteImport.update({
@@ -192,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/generate': typeof AuthenticatedGenerateRoute
   '/goals': typeof AuthenticatedGoalsRoute
   '/import': typeof AuthenticatedImportRoute
+  '/leeches': typeof AuthenticatedLeechesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/print': typeof AuthenticatedPrintRoute
   '/quiz': typeof AuthenticatedQuizRoute
@@ -220,6 +227,7 @@ export interface FileRoutesByTo {
   '/generate': typeof AuthenticatedGenerateRoute
   '/goals': typeof AuthenticatedGoalsRoute
   '/import': typeof AuthenticatedImportRoute
+  '/leeches': typeof AuthenticatedLeechesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/print': typeof AuthenticatedPrintRoute
   '/quiz': typeof AuthenticatedQuizRoute
@@ -250,6 +258,7 @@ export interface FileRoutesById {
   '/_authenticated/generate': typeof AuthenticatedGenerateRoute
   '/_authenticated/goals': typeof AuthenticatedGoalsRoute
   '/_authenticated/import': typeof AuthenticatedImportRoute
+  '/_authenticated/leeches': typeof AuthenticatedLeechesRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/print': typeof AuthenticatedPrintRoute
   '/_authenticated/quiz': typeof AuthenticatedQuizRoute
@@ -280,6 +289,7 @@ export interface FileRouteTypes {
     | '/generate'
     | '/goals'
     | '/import'
+    | '/leeches'
     | '/onboarding'
     | '/print'
     | '/quiz'
@@ -308,6 +318,7 @@ export interface FileRouteTypes {
     | '/generate'
     | '/goals'
     | '/import'
+    | '/leeches'
     | '/onboarding'
     | '/print'
     | '/quiz'
@@ -337,6 +348,7 @@ export interface FileRouteTypes {
     | '/_authenticated/generate'
     | '/_authenticated/goals'
     | '/_authenticated/import'
+    | '/_authenticated/leeches'
     | '/_authenticated/onboarding'
     | '/_authenticated/print'
     | '/_authenticated/quiz'
@@ -434,6 +446,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/leeches': {
+      id: '/_authenticated/leeches'
+      path: '/leeches'
+      fullPath: '/leeches'
+      preLoaderRoute: typeof AuthenticatedLeechesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/import': {
@@ -564,6 +583,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGenerateRoute: typeof AuthenticatedGenerateRoute
   AuthenticatedGoalsRoute: typeof AuthenticatedGoalsRoute
   AuthenticatedImportRoute: typeof AuthenticatedImportRoute
+  AuthenticatedLeechesRoute: typeof AuthenticatedLeechesRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPrintRoute: typeof AuthenticatedPrintRoute
   AuthenticatedQuizRoute: typeof AuthenticatedQuizRoute
@@ -590,6 +610,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGenerateRoute: AuthenticatedGenerateRoute,
   AuthenticatedGoalsRoute: AuthenticatedGoalsRoute,
   AuthenticatedImportRoute: AuthenticatedImportRoute,
+  AuthenticatedLeechesRoute: AuthenticatedLeechesRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPrintRoute: AuthenticatedPrintRoute,
   AuthenticatedQuizRoute: AuthenticatedQuizRoute,
