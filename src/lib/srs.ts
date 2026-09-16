@@ -234,7 +234,9 @@ export function collectDue(decks: Deck[], now = Date.now()): DueItem[] {
   const items: DueItem[] = [];
   for (const deck of decks) {
     const map = deck.srs ?? {};
+    const paused = suspendedSet(deck);
     for (const q of deck.questions) {
+      if (paused.has(q.id)) continue;
       const card = map[q.id];
       if (!isDue(card, now)) continue;
       items.push({
