@@ -41,6 +41,7 @@ import { validateDeckJson, type ValidationResult } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 
 import { useKnowly } from "@/store/knowly";
+import { Logo } from "@/components/brand/logo";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({

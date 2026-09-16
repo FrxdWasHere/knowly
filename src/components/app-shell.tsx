@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useWallpaperUrl } from "@/hooks/use-wallpaper-url";
 import type { ReactNode } from "react";
+import { Logo } from "@/components/brand/logo";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },

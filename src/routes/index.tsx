@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useKnowly } from "@/store/knowly";
+import { Logo } from "@/components/brand/logo";
 
 export const Route = createFileRoute("/")({
   ssr: false,
