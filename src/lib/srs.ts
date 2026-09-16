@@ -197,7 +197,6 @@ export function deckSrs(deck: Deck, now = Date.now()): DeckSrs {
     }
   }
 
-  const total = deck.questions.length;
   const scheduled = young + mature;
   return {
     total,
