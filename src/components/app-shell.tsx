@@ -19,6 +19,7 @@ import {
   GraduationCap,
   CalendarCheck,
   Table2,
+  Timer,
   Star,
   Hammer,
   Target,
