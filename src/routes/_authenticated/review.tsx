@@ -10,14 +10,23 @@ import { InteractiveQuestion } from "@/components/questions/interactive-question
 import { displayAnswer, isInteractive } from "@/lib/interactive";
 import { TYPE_LABELS, formatDuration } from "@/lib/answers";
 import { xpForAnswer } from "@/lib/gamification";
-import { collectDue, formatInterval, previewInterval, type DueItem, type SrsGrade } from "@/lib/srs";
+import {
+  collectDue,
+  collectWeak,
+  formatInterval,
+  previewInterval,
+  type DueItem,
+  type SrsGrade,
+} from "@/lib/srs";
 import { useKnowly } from "@/store/knowly";
 import { cn } from "@/lib/utils";
 import type { AnswerRecord } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/review")({
-  validateSearch: (search: Record<string, unknown>): { deck?: string } =>
-    typeof search["deck"] === "string" ? { deck: search["deck"] as string } : {},
+  validateSearch: (search: Record<string, unknown>): { deck?: string; mode?: "weak" } => ({
+    ...(typeof search["deck"] === "string" ? { deck: search["deck"] as string } : {}),
+    ...(search["mode"] === "weak" ? { mode: "weak" as const } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Daily Review — Spaced Repetition | Knowly" },
@@ -41,7 +50,8 @@ export const Route = createFileRoute("/_authenticated/review")({
 });
 
 function ReviewSession() {
-  const { deck: deckFilter } = Route.useSearch();
+  const { deck: deckFilter, mode } = Route.useSearch();
+  const weakMode = mode === "weak";
   const { state, reviewQuestion, recordSession } = useKnowly();
   const navigate = useNavigate();
   const settings = state.settings;
@@ -70,11 +80,11 @@ function ReviewSession() {
     const decks = deckFilter
       ? stateRef.current.decks.filter((d) => d.id === deckFilter)
       : stateRef.current.decks;
-    setQueue(collectDue(decks));
+    setQueue(weakMode ? collectWeak(decks) : collectDue(decks));
     setReady(true);
     started.current = Date.now();
     questionStart.current = Date.now();
-  }, [deckFilter]);
+  }, [deckFilter, weakMode]);
 
   const item = queue[index];
   const total = queue.length;
@@ -181,10 +191,13 @@ function ReviewSession() {
     return (
       <div className="panel mx-auto max-w-xl p-12 text-center">
         <CheckCircle2 className="mx-auto size-10 text-success" />
-        <h1 className="mt-5 font-display text-2xl font-bold">Nothing due right now</h1>
+        <h1 className="mt-5 font-display text-2xl font-bold">
+          {weakMode ? "No weak spots found" : "Nothing due right now"}
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Your spaced repetition schedule is clear. Come back when cards ripen, or study a deck
-          ahead of time.
+          {weakMode
+            ? "Nothing in your library is lapsing or shaky right now. Study more cards and any trouble spots will show up here."
+            : "Your spaced repetition schedule is clear. Come back when cards ripen, or study a deck ahead of time."}
         </p>
         <div className="mt-7 flex justify-center gap-2">
           <Button asChild>
@@ -202,7 +215,9 @@ function ReviewSession() {
     return (
       <div className="panel mx-auto max-w-xl p-10 text-center">
         <Sparkles className="mx-auto size-9 text-primary" />
-        <h1 className="mt-4 font-display text-3xl font-bold">Review complete</h1>
+        <h1 className="mt-4 font-display text-3xl font-bold">
+          {weakMode ? "Drill complete" : "Review complete"}
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {answers.length} card{answers.length === 1 ? "" : "s"} rescheduled
         </p>
@@ -246,7 +261,7 @@ function ReviewSession() {
     <div className="mx-auto max-w-3xl">
       <div className="mb-5 flex items-center justify-between gap-4">
         <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })}>
-          <ArrowLeft /> Daily review
+          <ArrowLeft /> {weakMode ? "Weak spots drill" : "Daily review"}
         </Button>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1.5 text-primary">

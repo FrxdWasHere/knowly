@@ -240,6 +240,38 @@ export function collectDue(decks: Deck[], now = Date.now()): DueItem[] {
   return items.sort((a, b) => (a.card?.due ?? 0) - (b.card?.due ?? 0));
 }
 
+/** How shaky a seen card is: higher = weaker. */
+export function weakness(card: SrsCard): number {
+  return card.lapses * 3 + Math.max(0, 2.5 - card.ease) * 4 - Math.min(card.streak, 5);
+}
+
+export function isWeak(card: SrsCard | undefined): card is SrsCard {
+  if (!card || card.reps === 0) return false;
+  return card.lapses > 0 || card.ease < 2.4 || card.streak === 0;
+}
+
+/** Every shaky card across every deck, weakest first. */
+export function collectWeak(decks: Deck[], limit = 200): DueItem[] {
+  const items: DueItem[] = [];
+  for (const deck of decks) {
+    const map = deck.srs ?? {};
+    for (const q of deck.questions) {
+      const card = map[q.id];
+      if (!isWeak(card)) continue;
+      items.push({
+        deckId: deck.id,
+        deckTitle: deck.title,
+        deckColor: deck.color,
+        question: q,
+        card,
+      });
+    }
+  }
+  return items
+    .sort((a, b) => weakness(b.card as SrsCard) - weakness(a.card as SrsCard))
+    .slice(0, limit);
+}
+
 export interface ForecastDay {
   key: string;
   label: string;
