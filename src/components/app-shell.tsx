@@ -23,6 +23,7 @@ import {
   Star,
   Hammer,
   Target,
+  Bug,
 } from "lucide-react";
 import { useKnowly } from "@/store/knowly";
 import { levelFromXp } from "@/lib/gamification";
@@ -42,6 +43,7 @@ const NAV = [
   { to: "/review", label: "Daily Review", icon: Brain, exact: false },
   { to: "/cram", label: "Cram Mode", icon: Rocket, exact: false },
   { to: "/weak-spots", label: "Weak Spots", icon: Target, exact: false },
+  { to: "/leeches", label: "Leech Manager", icon: Bug, exact: false },
   { to: "/goals", label: "Goals & Streaks", icon: CalendarCheck, exact: false },
   { to: "/exam", label: "Exam Simulator", icon: GraduationCap, exact: false },
   { to: "/cards", label: "Card Browser", icon: Table2, exact: false },
