@@ -10,7 +10,14 @@ import { InteractiveQuestion } from "@/components/questions/interactive-question
 import { displayAnswer, isInteractive } from "@/lib/interactive";
 import { TYPE_LABELS, formatDuration } from "@/lib/answers";
 import { xpForAnswer } from "@/lib/gamification";
-import { collectDue, formatInterval, previewInterval, type DueItem, type SrsGrade } from "@/lib/srs";
+import {
+  collectDue,
+  collectWeak,
+  formatInterval,
+  previewInterval,
+  type DueItem,
+  type SrsGrade,
+} from "@/lib/srs";
 import { useKnowly } from "@/store/knowly";
 import { cn } from "@/lib/utils";
 import type { AnswerRecord } from "@/lib/types";
@@ -43,7 +50,8 @@ export const Route = createFileRoute("/_authenticated/review")({
 });
 
 function ReviewSession() {
-  const { deck: deckFilter } = Route.useSearch();
+  const { deck: deckFilter, mode } = Route.useSearch();
+  const weakMode = mode === "weak";
   const { state, reviewQuestion, recordSession } = useKnowly();
   const navigate = useNavigate();
   const settings = state.settings;
