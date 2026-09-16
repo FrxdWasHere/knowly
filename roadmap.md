@@ -20,7 +20,7 @@ Built one at a time, in this order:
 3. [x] Goals & Streaks — daily goal tracker, calendar, milestones.
 4. [x] Exam Simulator — timed, mixed-deck mock exams with a report.
 5. [x] Card Browser — searchable/filterable table of every card across all decks.
-6. [ ] Bookmarks & Notes — one hub for starred cards and personal notes.
+6. [x] Bookmarks & Notes — one hub for starred cards and personal notes.
 7. [ ] Focus Timer — offline pomodoro tied to study sessions.
 8. [ ] Leech Manager — cards that keep lapsing: suspend, reset or rewrite.
 9. [ ] Tag & Concept Explorer — browse the whole library by tag/concept.
