@@ -16,8 +16,10 @@ import { cn } from "@/lib/utils";
 import type { AnswerRecord } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/review")({
-  validateSearch: (search: Record<string, unknown>): { deck?: string } =>
-    typeof search["deck"] === "string" ? { deck: search["deck"] as string } : {},
+  validateSearch: (search: Record<string, unknown>): { deck?: string; mode?: "weak" } => ({
+    ...(typeof search["deck"] === "string" ? { deck: search["deck"] as string } : {}),
+    ...(search["mode"] === "weak" ? { mode: "weak" as const } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Daily Review — Spaced Repetition | Knowly" },
