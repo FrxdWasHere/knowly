@@ -266,7 +266,9 @@ export function collectWeak(decks: Deck[], limit = 200): DueItem[] {
   const items: DueItem[] = [];
   for (const deck of decks) {
     const map = deck.srs ?? {};
+    const paused = suspendedSet(deck);
     for (const q of deck.questions) {
+      if (paused.has(q.id)) continue;
       const card = map[q.id];
       if (!isWeak(card)) continue;
       items.push({
@@ -281,6 +283,43 @@ export function collectWeak(decks: Deck[], limit = 200): DueItem[] {
   return items
     .sort((a, b) => weakness(b.card as SrsCard) - weakness(a.card as SrsCard))
     .slice(0, limit);
+}
+
+/** Lapse count at which a card is considered a leech. */
+export const LEECH_THRESHOLD = 3;
+
+export interface LeechItem extends DueItem {
+  card: SrsCard;
+  lapses: number;
+  suspended: boolean;
+}
+
+/**
+ * Every card that keeps lapsing, worst first. Suspended cards are included
+ * so they can be un-paused from the same screen.
+ */
+export function collectLeeches(decks: Deck[], threshold = LEECH_THRESHOLD): LeechItem[] {
+  const items: LeechItem[] = [];
+  for (const deck of decks) {
+    const map = deck.srs ?? {};
+    const paused = suspendedSet(deck);
+    for (const q of deck.questions) {
+      const card = map[q.id];
+      if (!card || card.reps === 0) continue;
+      const isPaused = paused.has(q.id);
+      if (card.lapses < threshold && !isPaused) continue;
+      items.push({
+        deckId: deck.id,
+        deckTitle: deck.title,
+        deckColor: deck.color,
+        question: q,
+        card,
+        lapses: card.lapses,
+        suspended: isPaused,
+      });
+    }
+  }
+  return items.sort((a, b) => b.lapses - a.lapses || weakness(b.card) - weakness(a.card));
 }
 
 export interface ForecastDay {
