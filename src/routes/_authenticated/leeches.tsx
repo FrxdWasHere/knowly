@@ -92,7 +92,10 @@ function LeechesPage() {
     if (!deck) return;
     const srs = { ...(deck.srs ?? {}) };
     delete srs[item.question.id];
-    updateDeck(deck.id, { srs });
+    updateDeck(deck.id, {
+      srs,
+      suspended: (deck.suspended ?? []).filter((id) => id !== item.question.id),
+    });
     toast.success("Schedule reset — the card starts fresh");
   }
 
