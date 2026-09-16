@@ -215,7 +215,9 @@ function ReviewSession() {
     return (
       <div className="panel mx-auto max-w-xl p-10 text-center">
         <Sparkles className="mx-auto size-9 text-primary" />
-        <h1 className="mt-4 font-display text-3xl font-bold">Review complete</h1>
+        <h1 className="mt-4 font-display text-3xl font-bold">
+          {weakMode ? "Drill complete" : "Review complete"}
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {answers.length} card{answers.length === 1 ? "" : "s"} rescheduled
         </p>
@@ -259,7 +261,7 @@ function ReviewSession() {
     <div className="mx-auto max-w-3xl">
       <div className="mb-5 flex items-center justify-between gap-4">
         <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })}>
-          <ArrowLeft /> Daily review
+          <ArrowLeft /> {weakMode ? "Weak spots drill" : "Daily review"}
         </Button>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1.5 text-primary">
