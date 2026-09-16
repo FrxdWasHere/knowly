@@ -301,7 +301,7 @@ function FocusPage() {
             <h2 className="text-sm font-semibold">Study during this block</h2>
             <p className="text-xs text-muted-foreground">
               {dueCount > 0
-                ? `${dueCount} card${dueCount === 1 ? "" : "s"} are due right now.`
+                ? `${dueCount} card${dueCount === 1 ? " is" : "s are"} due right now.`
                 : "Nothing is due — drill weak spots or cram instead."}
             </p>
             <div className="grid gap-2">
