@@ -8,3 +8,25 @@
 # Spaced repetition
 - [x] SRS scheduler, Daily Review session, dashboard widget, deck due rings.
 - [x] Verified with sample data: review grading, XP, forecast and due counts all render correctly.
+
+# Branding
+- [x] Use src-tauri/icons artwork as the single app logo everywhere.
+
+# 15 new sidebar features (all fully offline — no network calls, no accounts)
+Built one at a time, in this order:
+
+1. [ ] Weak Spots — drill the cards and concepts you keep getting wrong.
+2. [ ] Cram Mode — rapid-fire pre-exam blitz that ignores the SRS schedule.
+3. [ ] Goals & Streaks — daily goal tracker, calendar, milestones.
+4. [ ] Exam Simulator — timed, mixed-deck mock exams with a report.
+5. [ ] Card Browser — searchable/filterable table of every card across all decks.
+6. [ ] Bookmarks & Notes — one hub for starred cards and personal notes.
+7. [ ] Focus Timer — offline pomodoro tied to study sessions.
+8. [ ] Leech Manager — cards that keep lapsing: suspend, reset or rewrite.
+9. [ ] Tag & Concept Explorer — browse the whole library by tag/concept.
+10. [ ] Study Journal — per-session notes log, searchable.
+11. [ ] Command Palette — Cmd/Ctrl-K jump to anything.
+12. [ ] Snapshots & Backup — local state snapshots with restore.
+13. [ ] Progress Report — printable/exportable summary of a date range.
+14. [ ] Deck Merge & Split — reorganise decks without re-importing.
+15. [ ] Keyboard Shortcuts & Help — in-app reference for every shortcut.
