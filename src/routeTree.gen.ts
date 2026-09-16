@@ -25,6 +25,7 @@ import { Route as AuthenticatedGoalsRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedGenerateRouteImport } from './routes/_authenticated/generate'
 import { Route as AuthenticatedFormatRouteImport } from './routes/_authenticated/format'
 import { Route as AuthenticatedForgeRouteImport } from './routes/_authenticated/forge'
+import { Route as AuthenticatedFocusRouteImport } from './routes/_authenticated/focus'
 import { Route as AuthenticatedExamRouteImport } from './routes/_authenticated/exam'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCramRouteImport } from './routes/_authenticated/cram'
@@ -115,6 +116,11 @@ const AuthenticatedForgeRoute = AuthenticatedForgeRouteImport.update({
   path: '/forge',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFocusRoute = AuthenticatedFocusRouteImport.update({
+  id: '/focus',
+  path: '/focus',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedExamRoute = AuthenticatedExamRouteImport.update({
   id: '/exam',
   path: '/exam',
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/cram': typeof AuthenticatedCramRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/exam': typeof AuthenticatedExamRoute
+  '/focus': typeof AuthenticatedFocusRoute
   '/forge': typeof AuthenticatedForgeRoute
   '/format': typeof AuthenticatedFormatRoute
   '/generate': typeof AuthenticatedGenerateRoute
@@ -207,6 +214,7 @@ export interface FileRoutesByTo {
   '/cram': typeof AuthenticatedCramRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/exam': typeof AuthenticatedExamRoute
+  '/focus': typeof AuthenticatedFocusRoute
   '/forge': typeof AuthenticatedForgeRoute
   '/format': typeof AuthenticatedFormatRoute
   '/generate': typeof AuthenticatedGenerateRoute
@@ -236,6 +244,7 @@ export interface FileRoutesById {
   '/_authenticated/cram': typeof AuthenticatedCramRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/exam': typeof AuthenticatedExamRoute
+  '/_authenticated/focus': typeof AuthenticatedFocusRoute
   '/_authenticated/forge': typeof AuthenticatedForgeRoute
   '/_authenticated/format': typeof AuthenticatedFormatRoute
   '/_authenticated/generate': typeof AuthenticatedGenerateRoute
@@ -265,6 +274,7 @@ export interface FileRouteTypes {
     | '/cram'
     | '/dashboard'
     | '/exam'
+    | '/focus'
     | '/forge'
     | '/format'
     | '/generate'
@@ -292,6 +302,7 @@ export interface FileRouteTypes {
     | '/cram'
     | '/dashboard'
     | '/exam'
+    | '/focus'
     | '/forge'
     | '/format'
     | '/generate'
@@ -320,6 +331,7 @@ export interface FileRouteTypes {
     | '/_authenticated/cram'
     | '/_authenticated/dashboard'
     | '/_authenticated/exam'
+    | '/_authenticated/focus'
     | '/_authenticated/forge'
     | '/_authenticated/format'
     | '/_authenticated/generate'
@@ -459,6 +471,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedForgeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/focus': {
+      id: '/_authenticated/focus'
+      path: '/focus'
+      fullPath: '/focus'
+      preLoaderRoute: typeof AuthenticatedFocusRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/exam': {
       id: '/_authenticated/exam'
       path: '/exam'
@@ -539,6 +558,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCramRoute: typeof AuthenticatedCramRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedExamRoute: typeof AuthenticatedExamRoute
+  AuthenticatedFocusRoute: typeof AuthenticatedFocusRoute
   AuthenticatedForgeRoute: typeof AuthenticatedForgeRoute
   AuthenticatedFormatRoute: typeof AuthenticatedFormatRoute
   AuthenticatedGenerateRoute: typeof AuthenticatedGenerateRoute
@@ -564,6 +584,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCramRoute: AuthenticatedCramRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedExamRoute: AuthenticatedExamRoute,
+  AuthenticatedFocusRoute: AuthenticatedFocusRoute,
   AuthenticatedForgeRoute: AuthenticatedForgeRoute,
   AuthenticatedFormatRoute: AuthenticatedFormatRoute,
   AuthenticatedGenerateRoute: AuthenticatedGenerateRoute,

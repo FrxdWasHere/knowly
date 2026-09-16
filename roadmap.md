@@ -21,7 +21,7 @@ Built one at a time, in this order:
 4. [x] Exam Simulator — timed, mixed-deck mock exams with a report.
 5. [x] Card Browser — searchable/filterable table of every card across all decks.
 6. [x] Bookmarks & Notes — one hub for starred cards and personal notes.
-7. [ ] Focus Timer — offline pomodoro tied to study sessions.
+7. [x] Focus Timer — offline pomodoro tied to study sessions. (verified in browser)
 8. [ ] Leech Manager — cards that keep lapsing: suspend, reset or rewrite.
 9. [ ] Tag & Concept Explorer — browse the whole library by tag/concept.
 10. [ ] Study Journal — per-session notes log, searchable.
