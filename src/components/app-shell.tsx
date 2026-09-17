@@ -184,6 +184,18 @@ export function AppShell({ children }: { children: ReactNode }) {
             Saved in this browser · export JSON to move it
           </div>
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => palette.setOpen(true)}
+              aria-label="Open command palette"
+              className="press inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+            >
+              <Search className="size-3.5" />
+              <span className="hidden sm:inline">Jump to…</span>
+              <kbd className="hidden rounded border border-border px-1.5 py-0.5 text-[10px] sm:inline">
+                Ctrl K
+              </kbd>
+            </button>
             <span className="press inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold transition-colors hover:border-primary/50">
               <Flame className="size-3.5 text-primary" />
               {state.progress.streak} day
