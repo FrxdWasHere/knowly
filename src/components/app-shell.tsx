@@ -103,9 +103,9 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { to: "/settings", label: "Settings", icon: SettingsIcon, exact: false },
     ],
   },
-] as const;
+];
 
-const NAV = NAV_GROUPS.flatMap((g) => g.items);
+const NAV: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { state, updateSettings } = useKnowly();
