@@ -216,14 +216,14 @@ function SnapshotsPage() {
             >
               <div>
                 <p className="font-medium">{fmt(snap.createdAt)}</p>
-                <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                   <Badge variant="secondary" className="text-[11px]">
                     {snap.deckCount} decks
                   </Badge>
                   <Badge variant="secondary" className="text-[11px]">
                     {snap.cardCount} cards
                   </Badge>
-                </p>
+                </div>
               </div>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => download(snap)}>
