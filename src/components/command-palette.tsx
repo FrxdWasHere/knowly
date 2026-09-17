@@ -9,6 +9,7 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
+import { DialogTitle } from "@/components/ui/dialog";
 import { useKnowly } from "@/store/knowly";
 
 export interface PaletteTarget {
@@ -32,12 +33,12 @@ export function CommandPalette({
 
   const go = (to: string) => {
     onOpenChange(false);
-    // @ts-expect-error route paths are validated by the nav config
-    navigate({ to });
+    navigate({ to: to as never });
   };
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
+      <DialogTitle className="sr-only">Command palette</DialogTitle>
       <CommandInput placeholder="Jump to a page, deck or action…" />
       <CommandList>
         <CommandEmpty>Nothing matches that.</CommandEmpty>
