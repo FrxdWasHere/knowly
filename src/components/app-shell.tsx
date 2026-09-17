@@ -41,34 +41,64 @@ import type { ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
 import { CommandPalette, useCommandPalette } from "@/components/command-palette";
 
-const NAV = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/decks", label: "Deck Library", icon: Library, exact: false },
-  { to: "/generate", label: "Prompt Forge", icon: Wand2, exact: false },
-  { to: "/forge", label: "Deck Forge", icon: Hammer, exact: false },
-  { to: "/import", label: "Import JSON", icon: Download, exact: false },
-  { to: "/format", label: "JSON Format", icon: FileJson, exact: false },
-  { to: "/review", label: "Daily Review", icon: Brain, exact: false },
-  { to: "/cram", label: "Cram Mode", icon: Rocket, exact: false },
-  { to: "/weak-spots", label: "Weak Spots", icon: Target, exact: false },
-  { to: "/leeches", label: "Leech Manager", icon: Bug, exact: false },
-  { to: "/tags", label: "Tag Explorer", icon: Hash, exact: false },
-  { to: "/journal", label: "Study Journal", icon: NotebookPen, exact: false },
-  { to: "/goals", label: "Goals & Streaks", icon: CalendarCheck, exact: false },
-  { to: "/exam", label: "Exam Simulator", icon: GraduationCap, exact: false },
-  { to: "/cards", label: "Card Browser", icon: Table2, exact: false },
-  { to: "/bookmarks", label: "Bookmarks & Notes", icon: Star, exact: false },
-  { to: "/focus", label: "Focus Timer", icon: Timer, exact: false },
-  { to: "/quiz", label: "Practice Quiz", icon: BrainCircuit, exact: false },
-  { to: "/print", label: "Print Exam", icon: Printer, exact: false },
-  { to: "/stats", label: "Statistics", icon: BarChart3, exact: false },
-  { to: "/achievements", label: "Achievements", icon: Trophy, exact: false },
-  { to: "/report", label: "Progress Report", icon: FileBarChart, exact: false },
-  { to: "/deck-tools", label: "Merge & Split", icon: Shuffle, exact: false },
-  { to: "/snapshots", label: "Snapshots", icon: Camera, exact: false },
-  { to: "/shortcuts", label: "Shortcuts & Help", icon: Keyboard, exact: false },
-  { to: "/settings", label: "Settings", icon: SettingsIcon, exact: false },
+const NAV_GROUPS = [
+  {
+    label: "Overview",
+    items: [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true }],
+  },
+  {
+    label: "Library",
+    items: [
+      { to: "/decks", label: "Deck Library", icon: Library, exact: false },
+      { to: "/generate", label: "Prompt Forge", icon: Wand2, exact: false },
+      { to: "/forge", label: "Deck Forge", icon: Hammer, exact: false },
+      { to: "/import", label: "Import JSON", icon: Download, exact: false },
+      { to: "/format", label: "JSON Format", icon: FileJson, exact: false },
+      { to: "/deck-tools", label: "Merge & Split", icon: Shuffle, exact: false },
+    ],
+  },
+  {
+    label: "Study",
+    items: [
+      { to: "/review", label: "Daily Review", icon: Brain, exact: false },
+      { to: "/cram", label: "Cram Mode", icon: Rocket, exact: false },
+      { to: "/exam", label: "Exam Simulator", icon: GraduationCap, exact: false },
+      { to: "/quiz", label: "Practice Quiz", icon: BrainCircuit, exact: false },
+      { to: "/print", label: "Print Exam", icon: Printer, exact: false },
+      { to: "/focus", label: "Focus Timer", icon: Timer, exact: false },
+    ],
+  },
+  {
+    label: "Improve",
+    items: [
+      { to: "/weak-spots", label: "Weak Spots", icon: Target, exact: false },
+      { to: "/leeches", label: "Leech Manager", icon: Bug, exact: false },
+      { to: "/cards", label: "Card Browser", icon: Table2, exact: false },
+      { to: "/tags", label: "Tag Explorer", icon: Hash, exact: false },
+      { to: "/bookmarks", label: "Bookmarks & Notes", icon: Star, exact: false },
+    ],
+  },
+  {
+    label: "Progress",
+    items: [
+      { to: "/stats", label: "Statistics", icon: BarChart3, exact: false },
+      { to: "/goals", label: "Goals & Streaks", icon: CalendarCheck, exact: false },
+      { to: "/achievements", label: "Achievements", icon: Trophy, exact: false },
+      { to: "/report", label: "Progress Report", icon: FileBarChart, exact: false },
+      { to: "/journal", label: "Study Journal", icon: NotebookPen, exact: false },
+    ],
+  },
+  {
+    label: "System",
+    items: [
+      { to: "/snapshots", label: "Snapshots", icon: Camera, exact: false },
+      { to: "/shortcuts", label: "Shortcuts & Help", icon: Keyboard, exact: false },
+      { to: "/settings", label: "Settings", icon: SettingsIcon, exact: false },
+    ],
+  },
 ] as const;
+
+const NAV = NAV_GROUPS.flatMap((g) => g.items);
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { state, updateSettings } = useKnowly();
@@ -117,30 +147,43 @@ export function AppShell({ children }: { children: ReactNode }) {
           )}
         </div>
 
-        <nav className="flex-1 space-y-1 px-3">
-          {NAV.map((item) => {
-            const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                title={item.label}
-                className={cn(
-                  "press group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/75 transition-all duration-200 hover:translate-x-0.5 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                  active &&
-                    "bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_2px_0_0_var(--primary)]",
-                )}
-              >
-                <item.icon
-                  className={cn(
-                    "size-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110",
-                    active && "text-primary",
-                  )}
-                />
-                {!collapsed && <span className="truncate">{item.label}</span>}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 overflow-y-auto px-3 pb-2">
+          {NAV_GROUPS.map((group) => (
+            <div key={group.label} className="mt-4 first:mt-1">
+              {collapsed ? (
+                <div aria-hidden className="mx-3 mb-2 border-t border-sidebar-border" />
+              ) : (
+                <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
+                  {group.label}
+                </p>
+              )}
+              {group.items.map((item) => {
+                const active = item.exact
+                  ? pathname === item.to
+                  : pathname.startsWith(item.to);
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    title={item.label}
+                    className={cn(
+                      "press group mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/75 transition-all duration-200 hover:translate-x-0.5 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                      active &&
+                        "bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_2px_0_0_var(--primary)]",
+                    )}
+                  >
+                    <item.icon
+                      className={cn(
+                        "size-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110",
+                        active && "text-primary",
+                      )}
+                    />
+                    {!collapsed && <span className="truncate">{item.label}</span>}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         <div className="space-y-3 border-t border-sidebar-border p-3">
