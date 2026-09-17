@@ -9,6 +9,7 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
+import { DialogTitle } from "@/components/ui/dialog";
 import { useKnowly } from "@/store/knowly";
 
 export interface PaletteTarget {
@@ -37,6 +38,7 @@ export function CommandPalette({
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
+      <DialogTitle className="sr-only">Command palette</DialogTitle>
       <CommandInput placeholder="Jump to a page, deck or action…" />
       <CommandList>
         <CommandEmpty>Nothing matches that.</CommandEmpty>
