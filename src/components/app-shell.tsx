@@ -25,6 +25,7 @@ import {
   Target,
   Bug,
   Hash,
+  NotebookPen,
 } from "lucide-react";
 import { useKnowly } from "@/store/knowly";
 import { levelFromXp } from "@/lib/gamification";

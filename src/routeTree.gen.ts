@@ -22,6 +22,7 @@ import { Route as AuthenticatedQuizRouteImport } from './routes/_authenticated/q
 import { Route as AuthenticatedPrintRouteImport } from './routes/_authenticated/print'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedLeechesRouteImport } from './routes/_authenticated/leeches'
+import { Route as AuthenticatedJournalRouteImport } from './routes/_authenticated/journal'
 import { Route as AuthenticatedImportRouteImport } from './routes/_authenticated/import'
 import { Route as AuthenticatedGoalsRouteImport } from './routes/_authenticated/goals'
 import { Route as AuthenticatedGenerateRouteImport } from './routes/_authenticated/generate'
@@ -101,6 +102,11 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
 const AuthenticatedLeechesRoute = AuthenticatedLeechesRouteImport.update({
   id: '/leeches',
   path: '/leeches',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedJournalRoute = AuthenticatedJournalRouteImport.update({
+  id: '/journal',
+  path: '/journal',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedImportRoute = AuthenticatedImportRouteImport.update({
@@ -204,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/generate': typeof AuthenticatedGenerateRoute
   '/goals': typeof AuthenticatedGoalsRoute
   '/import': typeof AuthenticatedImportRoute
+  '/journal': typeof AuthenticatedJournalRoute
   '/leeches': typeof AuthenticatedLeechesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/print': typeof AuthenticatedPrintRoute
@@ -234,6 +241,7 @@ export interface FileRoutesByTo {
   '/generate': typeof AuthenticatedGenerateRoute
   '/goals': typeof AuthenticatedGoalsRoute
   '/import': typeof AuthenticatedImportRoute
+  '/journal': typeof AuthenticatedJournalRoute
   '/leeches': typeof AuthenticatedLeechesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/print': typeof AuthenticatedPrintRoute
@@ -266,6 +274,7 @@ export interface FileRoutesById {
   '/_authenticated/generate': typeof AuthenticatedGenerateRoute
   '/_authenticated/goals': typeof AuthenticatedGoalsRoute
   '/_authenticated/import': typeof AuthenticatedImportRoute
+  '/_authenticated/journal': typeof AuthenticatedJournalRoute
   '/_authenticated/leeches': typeof AuthenticatedLeechesRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/print': typeof AuthenticatedPrintRoute
@@ -298,6 +307,7 @@ export interface FileRouteTypes {
     | '/generate'
     | '/goals'
     | '/import'
+    | '/journal'
     | '/leeches'
     | '/onboarding'
     | '/print'
@@ -328,6 +338,7 @@ export interface FileRouteTypes {
     | '/generate'
     | '/goals'
     | '/import'
+    | '/journal'
     | '/leeches'
     | '/onboarding'
     | '/print'
@@ -359,6 +370,7 @@ export interface FileRouteTypes {
     | '/_authenticated/generate'
     | '/_authenticated/goals'
     | '/_authenticated/import'
+    | '/_authenticated/journal'
     | '/_authenticated/leeches'
     | '/_authenticated/onboarding'
     | '/_authenticated/print'
@@ -472,6 +484,13 @@ declare module '@tanstack/react-router' {
       path: '/leeches'
       fullPath: '/leeches'
       preLoaderRoute: typeof AuthenticatedLeechesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/journal': {
+      id: '/_authenticated/journal'
+      path: '/journal'
+      fullPath: '/journal'
+      preLoaderRoute: typeof AuthenticatedJournalRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/import': {
@@ -602,6 +621,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGenerateRoute: typeof AuthenticatedGenerateRoute
   AuthenticatedGoalsRoute: typeof AuthenticatedGoalsRoute
   AuthenticatedImportRoute: typeof AuthenticatedImportRoute
+  AuthenticatedJournalRoute: typeof AuthenticatedJournalRoute
   AuthenticatedLeechesRoute: typeof AuthenticatedLeechesRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPrintRoute: typeof AuthenticatedPrintRoute
@@ -630,6 +650,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGenerateRoute: AuthenticatedGenerateRoute,
   AuthenticatedGoalsRoute: AuthenticatedGoalsRoute,
   AuthenticatedImportRoute: AuthenticatedImportRoute,
+  AuthenticatedJournalRoute: AuthenticatedJournalRoute,
   AuthenticatedLeechesRoute: AuthenticatedLeechesRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPrintRoute: AuthenticatedPrintRoute,
