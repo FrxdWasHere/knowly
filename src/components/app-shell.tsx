@@ -26,6 +26,11 @@ import {
   Bug,
   Hash,
   NotebookPen,
+  Search,
+  Camera,
+  FileBarChart,
+  Shuffle,
+  Keyboard,
 } from "lucide-react";
 import { useKnowly } from "@/store/knowly";
 import { levelFromXp } from "@/lib/gamification";
@@ -34,6 +39,7 @@ import { Button } from "@/components/ui/button";
 import { useWallpaperUrl } from "@/hooks/use-wallpaper-url";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
+import { CommandPalette, useCommandPalette } from "@/components/command-palette";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
