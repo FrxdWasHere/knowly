@@ -225,6 +225,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+
+      <CommandPalette
+        open={palette.open}
+        onOpenChange={palette.setOpen}
+        targets={NAV.map((item) => ({ to: item.to, label: item.label }))}
+      />
     </div>
   );
 }
