@@ -15,7 +15,7 @@
 # 15 new sidebar features (all fully offline — no network calls, no accounts)
 Built one at a time, in this order:
 
-1. [ ] Weak Spots — drill the cards and concepts you keep getting wrong.
+1. [x] Weak Spots — drill the cards and concepts you keep getting wrong.
 2. [x] Cram Mode — rapid-fire pre-exam blitz that ignores the SRS schedule.
 3. [x] Goals & Streaks — daily goal tracker, calendar, milestones.
 4. [x] Exam Simulator — timed, mixed-deck mock exams with a report.
@@ -23,7 +23,7 @@ Built one at a time, in this order:
 6. [x] Bookmarks & Notes — one hub for starred cards and personal notes.
 7. [x] Focus Timer — offline pomodoro tied to study sessions. (verified in browser)
 8. [x] Leech Manager — cards that keep lapsing: suspend, reset or rewrite. (verified in browser)
-9. [ ] Tag & Concept Explorer — browse the whole library by tag/concept.
+9. [x] Tag & Concept Explorer — browse the whole library by tag/concept.
 10. [ ] Study Journal — per-session notes log, searchable.
 11. [ ] Command Palette — Cmd/Ctrl-K jump to anything.
 12. [ ] Snapshots & Backup — local state snapshots with restore.
