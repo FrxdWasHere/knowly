@@ -16,9 +16,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWeakSpotsRouteImport } from './routes/_authenticated/weak-spots'
 import { Route as AuthenticatedTagsRouteImport } from './routes/_authenticated/tags'
 import { Route as AuthenticatedStatsRouteImport } from './routes/_authenticated/stats'
+import { Route as AuthenticatedSnapshotsRouteImport } from './routes/_authenticated/snapshots'
 import { Route as AuthenticatedShortcutsRouteImport } from './routes/_authenticated/shortcuts'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
+import { Route as AuthenticatedReportRouteImport } from './routes/_authenticated/report'
 import { Route as AuthenticatedQuizRouteImport } from './routes/_authenticated/quiz'
 import { Route as AuthenticatedPrintRouteImport } from './routes/_authenticated/print'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
@@ -31,6 +33,7 @@ import { Route as AuthenticatedFormatRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedForgeRouteImport } from './routes/_authenticated/forge'
 import { Route as AuthenticatedFocusRouteImport } from './routes/_authenticated/focus'
 import { Route as AuthenticatedExamRouteImport } from './routes/_authenticated/exam'
+import { Route as AuthenticatedDeckToolsRouteImport } from './routes/_authenticated/deck-tools'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCramRouteImport } from './routes/_authenticated/cram'
 import { Route as AuthenticatedCardsRouteImport } from './routes/_authenticated/cards'
@@ -75,6 +78,11 @@ const AuthenticatedStatsRoute = AuthenticatedStatsRouteImport.update({
   path: '/stats',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSnapshotsRoute = AuthenticatedSnapshotsRouteImport.update({
+  id: '/snapshots',
+  path: '/snapshots',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedShortcutsRoute = AuthenticatedShortcutsRouteImport.update({
   id: '/shortcuts',
   path: '/shortcuts',
@@ -88,6 +96,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
 const AuthenticatedReviewRoute = AuthenticatedReviewRouteImport.update({
   id: '/review',
   path: '/review',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedReportRoute = AuthenticatedReportRouteImport.update({
+  id: '/report',
+  path: '/report',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedQuizRoute = AuthenticatedQuizRouteImport.update({
@@ -150,6 +163,11 @@ const AuthenticatedExamRoute = AuthenticatedExamRouteImport.update({
   path: '/exam',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDeckToolsRoute = AuthenticatedDeckToolsRouteImport.update({
+  id: '/deck-tools',
+  path: '/deck-tools',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -209,6 +227,7 @@ export interface FileRoutesByFullPath {
   '/cards': typeof AuthenticatedCardsRoute
   '/cram': typeof AuthenticatedCramRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/deck-tools': typeof AuthenticatedDeckToolsRoute
   '/exam': typeof AuthenticatedExamRoute
   '/focus': typeof AuthenticatedFocusRoute
   '/forge': typeof AuthenticatedForgeRoute
@@ -221,9 +240,11 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/print': typeof AuthenticatedPrintRoute
   '/quiz': typeof AuthenticatedQuizRoute
+  '/report': typeof AuthenticatedReportRoute
   '/review': typeof AuthenticatedReviewRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/shortcuts': typeof AuthenticatedShortcutsRoute
+  '/snapshots': typeof AuthenticatedSnapshotsRoute
   '/stats': typeof AuthenticatedStatsRoute
   '/tags': typeof AuthenticatedTagsRoute
   '/weak-spots': typeof AuthenticatedWeakSpotsRoute
@@ -241,6 +262,7 @@ export interface FileRoutesByTo {
   '/cards': typeof AuthenticatedCardsRoute
   '/cram': typeof AuthenticatedCramRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/deck-tools': typeof AuthenticatedDeckToolsRoute
   '/exam': typeof AuthenticatedExamRoute
   '/focus': typeof AuthenticatedFocusRoute
   '/forge': typeof AuthenticatedForgeRoute
@@ -253,9 +275,11 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/print': typeof AuthenticatedPrintRoute
   '/quiz': typeof AuthenticatedQuizRoute
+  '/report': typeof AuthenticatedReportRoute
   '/review': typeof AuthenticatedReviewRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/shortcuts': typeof AuthenticatedShortcutsRoute
+  '/snapshots': typeof AuthenticatedSnapshotsRoute
   '/stats': typeof AuthenticatedStatsRoute
   '/tags': typeof AuthenticatedTagsRoute
   '/weak-spots': typeof AuthenticatedWeakSpotsRoute
@@ -275,6 +299,7 @@ export interface FileRoutesById {
   '/_authenticated/cards': typeof AuthenticatedCardsRoute
   '/_authenticated/cram': typeof AuthenticatedCramRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/deck-tools': typeof AuthenticatedDeckToolsRoute
   '/_authenticated/exam': typeof AuthenticatedExamRoute
   '/_authenticated/focus': typeof AuthenticatedFocusRoute
   '/_authenticated/forge': typeof AuthenticatedForgeRoute
@@ -287,9 +312,11 @@ export interface FileRoutesById {
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/print': typeof AuthenticatedPrintRoute
   '/_authenticated/quiz': typeof AuthenticatedQuizRoute
+  '/_authenticated/report': typeof AuthenticatedReportRoute
   '/_authenticated/review': typeof AuthenticatedReviewRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/shortcuts': typeof AuthenticatedShortcutsRoute
+  '/_authenticated/snapshots': typeof AuthenticatedSnapshotsRoute
   '/_authenticated/stats': typeof AuthenticatedStatsRoute
   '/_authenticated/tags': typeof AuthenticatedTagsRoute
   '/_authenticated/weak-spots': typeof AuthenticatedWeakSpotsRoute
@@ -309,6 +336,7 @@ export interface FileRouteTypes {
     | '/cards'
     | '/cram'
     | '/dashboard'
+    | '/deck-tools'
     | '/exam'
     | '/focus'
     | '/forge'
@@ -321,9 +349,11 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/print'
     | '/quiz'
+    | '/report'
     | '/review'
     | '/settings'
     | '/shortcuts'
+    | '/snapshots'
     | '/stats'
     | '/tags'
     | '/weak-spots'
@@ -341,6 +371,7 @@ export interface FileRouteTypes {
     | '/cards'
     | '/cram'
     | '/dashboard'
+    | '/deck-tools'
     | '/exam'
     | '/focus'
     | '/forge'
@@ -353,9 +384,11 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/print'
     | '/quiz'
+    | '/report'
     | '/review'
     | '/settings'
     | '/shortcuts'
+    | '/snapshots'
     | '/stats'
     | '/tags'
     | '/weak-spots'
@@ -374,6 +407,7 @@ export interface FileRouteTypes {
     | '/_authenticated/cards'
     | '/_authenticated/cram'
     | '/_authenticated/dashboard'
+    | '/_authenticated/deck-tools'
     | '/_authenticated/exam'
     | '/_authenticated/focus'
     | '/_authenticated/forge'
@@ -386,9 +420,11 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding'
     | '/_authenticated/print'
     | '/_authenticated/quiz'
+    | '/_authenticated/report'
     | '/_authenticated/review'
     | '/_authenticated/settings'
     | '/_authenticated/shortcuts'
+    | '/_authenticated/snapshots'
     | '/_authenticated/stats'
     | '/_authenticated/tags'
     | '/_authenticated/weak-spots'
@@ -456,6 +492,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStatsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/snapshots': {
+      id: '/_authenticated/snapshots'
+      path: '/snapshots'
+      fullPath: '/snapshots'
+      preLoaderRoute: typeof AuthenticatedSnapshotsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/shortcuts': {
       id: '/_authenticated/shortcuts'
       path: '/shortcuts'
@@ -475,6 +518,13 @@ declare module '@tanstack/react-router' {
       path: '/review'
       fullPath: '/review'
       preLoaderRoute: typeof AuthenticatedReviewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/report': {
+      id: '/_authenticated/report'
+      path: '/report'
+      fullPath: '/report'
+      preLoaderRoute: typeof AuthenticatedReportRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/quiz': {
@@ -561,6 +611,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedExamRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/deck-tools': {
+      id: '/_authenticated/deck-tools'
+      path: '/deck-tools'
+      fullPath: '/deck-tools'
+      preLoaderRoute: typeof AuthenticatedDeckToolsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -633,6 +690,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCardsRoute: typeof AuthenticatedCardsRoute
   AuthenticatedCramRoute: typeof AuthenticatedCramRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDeckToolsRoute: typeof AuthenticatedDeckToolsRoute
   AuthenticatedExamRoute: typeof AuthenticatedExamRoute
   AuthenticatedFocusRoute: typeof AuthenticatedFocusRoute
   AuthenticatedForgeRoute: typeof AuthenticatedForgeRoute
@@ -645,9 +703,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPrintRoute: typeof AuthenticatedPrintRoute
   AuthenticatedQuizRoute: typeof AuthenticatedQuizRoute
+  AuthenticatedReportRoute: typeof AuthenticatedReportRoute
   AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedShortcutsRoute: typeof AuthenticatedShortcutsRoute
+  AuthenticatedSnapshotsRoute: typeof AuthenticatedSnapshotsRoute
   AuthenticatedStatsRoute: typeof AuthenticatedStatsRoute
   AuthenticatedTagsRoute: typeof AuthenticatedTagsRoute
   AuthenticatedWeakSpotsRoute: typeof AuthenticatedWeakSpotsRoute
@@ -663,6 +723,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCardsRoute: AuthenticatedCardsRoute,
   AuthenticatedCramRoute: AuthenticatedCramRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDeckToolsRoute: AuthenticatedDeckToolsRoute,
   AuthenticatedExamRoute: AuthenticatedExamRoute,
   AuthenticatedFocusRoute: AuthenticatedFocusRoute,
   AuthenticatedForgeRoute: AuthenticatedForgeRoute,
@@ -675,9 +736,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPrintRoute: AuthenticatedPrintRoute,
   AuthenticatedQuizRoute: AuthenticatedQuizRoute,
+  AuthenticatedReportRoute: AuthenticatedReportRoute,
   AuthenticatedReviewRoute: AuthenticatedReviewRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedShortcutsRoute: AuthenticatedShortcutsRoute,
+  AuthenticatedSnapshotsRoute: AuthenticatedSnapshotsRoute,
   AuthenticatedStatsRoute: AuthenticatedStatsRoute,
   AuthenticatedTagsRoute: AuthenticatedTagsRoute,
   AuthenticatedWeakSpotsRoute: AuthenticatedWeakSpotsRoute,

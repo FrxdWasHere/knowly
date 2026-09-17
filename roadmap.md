@@ -24,9 +24,9 @@ Built one at a time, in this order:
 7. [x] Focus Timer — offline pomodoro tied to study sessions. (verified in browser)
 8. [x] Leech Manager — cards that keep lapsing: suspend, reset or rewrite. (verified in browser)
 9. [x] Tag & Concept Explorer — browse the whole library by tag/concept.
-10. [ ] Study Journal — per-session notes log, searchable.
-11. [ ] Command Palette — Cmd/Ctrl-K jump to anything.
-12. [ ] Snapshots & Backup — local state snapshots with restore.
-13. [ ] Progress Report — printable/exportable summary of a date range.
-14. [ ] Deck Merge & Split — reorganise decks without re-importing.
-15. [ ] Keyboard Shortcuts & Help — in-app reference for every shortcut.
+10. [x] Study Journal — per-session notes log, searchable.
+11. [x] Command Palette — Cmd/Ctrl-K jump to anything.
+12. [x] Snapshots & Backup — local state snapshots with restore.
+13. [x] Progress Report — printable/exportable summary of a date range.
+14. [x] Deck Merge & Split — reorganise decks without re-importing.
+15. [x] Keyboard Shortcuts & Help — in-app reference for every shortcut.
