@@ -15,7 +15,7 @@
 # 15 new sidebar features (all fully offline — no network calls, no accounts)
 Built one at a time, in this order:
 
-1. [ ] Weak Spots — drill the cards and concepts you keep getting wrong.
+1. [x] Weak Spots — drill the cards and concepts you keep getting wrong.
 2. [x] Cram Mode — rapid-fire pre-exam blitz that ignores the SRS schedule.
 3. [x] Goals & Streaks — daily goal tracker, calendar, milestones.
 4. [x] Exam Simulator — timed, mixed-deck mock exams with a report.
