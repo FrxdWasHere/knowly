@@ -125,6 +125,7 @@ export const DEFAULT_STATE: AppState = {
   history: [],
   results: [],
   templates: [],
+  journal: [],
 };
 
 export const GRADE_LEVELS = [
