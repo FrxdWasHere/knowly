@@ -72,6 +72,7 @@ const NAV = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { state, updateSettings } = useKnowly();
+  const palette = useCommandPalette();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const collapsed = state.settings.sidebarCollapsed;
   const { level, pct, intoLevel, needed } = levelFromXp(state.progress.lifetimeXp);
