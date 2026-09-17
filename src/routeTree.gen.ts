@@ -14,6 +14,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWeakSpotsRouteImport } from './routes/_authenticated/weak-spots'
+import { Route as AuthenticatedTagsRouteImport } from './routes/_authenticated/tags'
 import { Route as AuthenticatedStatsRouteImport } from './routes/_authenticated/stats'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
@@ -60,6 +61,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthenticatedWeakSpotsRoute = AuthenticatedWeakSpotsRouteImport.update({
   id: '/weak-spots',
   path: '/weak-spots',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTagsRoute = AuthenticatedTagsRouteImport.update({
+  id: '/tags',
+  path: '/tags',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedStatsRoute = AuthenticatedStatsRouteImport.update({
@@ -205,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/review': typeof AuthenticatedReviewRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/stats': typeof AuthenticatedStatsRoute
+  '/tags': typeof AuthenticatedTagsRoute
   '/weak-spots': typeof AuthenticatedWeakSpotsRoute
   '/arena/$deckId': typeof AuthenticatedArenaDeckIdRoute
   '/decks/$deckId': typeof AuthenticatedDecksDeckIdRoute
@@ -234,6 +241,7 @@ export interface FileRoutesByTo {
   '/review': typeof AuthenticatedReviewRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/stats': typeof AuthenticatedStatsRoute
+  '/tags': typeof AuthenticatedTagsRoute
   '/weak-spots': typeof AuthenticatedWeakSpotsRoute
   '/arena/$deckId': typeof AuthenticatedArenaDeckIdRoute
   '/decks/$deckId': typeof AuthenticatedDecksDeckIdRoute
@@ -265,6 +273,7 @@ export interface FileRoutesById {
   '/_authenticated/review': typeof AuthenticatedReviewRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/stats': typeof AuthenticatedStatsRoute
+  '/_authenticated/tags': typeof AuthenticatedTagsRoute
   '/_authenticated/weak-spots': typeof AuthenticatedWeakSpotsRoute
   '/_authenticated/arena/$deckId': typeof AuthenticatedArenaDeckIdRoute
   '/_authenticated/decks/$deckId': typeof AuthenticatedDecksDeckIdRoute
@@ -296,6 +305,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/settings'
     | '/stats'
+    | '/tags'
     | '/weak-spots'
     | '/arena/$deckId'
     | '/decks/$deckId'
@@ -325,6 +335,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/settings'
     | '/stats'
+    | '/tags'
     | '/weak-spots'
     | '/arena/$deckId'
     | '/decks/$deckId'
@@ -355,6 +366,7 @@ export interface FileRouteTypes {
     | '/_authenticated/review'
     | '/_authenticated/settings'
     | '/_authenticated/stats'
+    | '/_authenticated/tags'
     | '/_authenticated/weak-spots'
     | '/_authenticated/arena/$deckId'
     | '/_authenticated/decks/$deckId'
@@ -404,6 +416,13 @@ declare module '@tanstack/react-router' {
       path: '/weak-spots'
       fullPath: '/weak-spots'
       preLoaderRoute: typeof AuthenticatedWeakSpotsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/tags': {
+      id: '/_authenticated/tags'
+      path: '/tags'
+      fullPath: '/tags'
+      preLoaderRoute: typeof AuthenticatedTagsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/stats': {
@@ -590,6 +609,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedStatsRoute: typeof AuthenticatedStatsRoute
+  AuthenticatedTagsRoute: typeof AuthenticatedTagsRoute
   AuthenticatedWeakSpotsRoute: typeof AuthenticatedWeakSpotsRoute
   AuthenticatedArenaDeckIdRoute: typeof AuthenticatedArenaDeckIdRoute
   AuthenticatedDecksDeckIdRoute: typeof AuthenticatedDecksDeckIdRoute
@@ -617,6 +637,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReviewRoute: AuthenticatedReviewRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedStatsRoute: AuthenticatedStatsRoute,
+  AuthenticatedTagsRoute: AuthenticatedTagsRoute,
   AuthenticatedWeakSpotsRoute: AuthenticatedWeakSpotsRoute,
   AuthenticatedArenaDeckIdRoute: AuthenticatedArenaDeckIdRoute,
   AuthenticatedDecksDeckIdRoute: AuthenticatedDecksDeckIdRoute,
