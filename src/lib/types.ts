@@ -198,6 +198,20 @@ export interface PromptTemplate {
   body: string;
 }
 
+export type JournalMood = "great" | "good" | "okay" | "rough";
+
+export interface JournalEntry {
+  id: string;
+  createdAt: number;
+  updatedAt: number;
+  title: string;
+  body: string;
+  mood: JournalMood;
+  tags: string[];
+  /** optional session this entry reflects on */
+  sessionId?: string;
+}
+
 export interface AppState {
   version: number;
   onboardingComplete: boolean;
@@ -207,4 +221,5 @@ export interface AppState {
   history: SessionSummary[];
   results: QuizResult[];
   templates: PromptTemplate[];
+  journal: JournalEntry[];
 }

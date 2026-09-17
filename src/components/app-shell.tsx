@@ -25,6 +25,12 @@ import {
   Target,
   Bug,
   Hash,
+  NotebookPen,
+  Search,
+  Camera,
+  FileBarChart,
+  Shuffle,
+  Keyboard,
 } from "lucide-react";
 import { useKnowly } from "@/store/knowly";
 import { levelFromXp } from "@/lib/gamification";
@@ -33,6 +39,7 @@ import { Button } from "@/components/ui/button";
 import { useWallpaperUrl } from "@/hooks/use-wallpaper-url";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
+import { CommandPalette, useCommandPalette } from "@/components/command-palette";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -46,6 +53,7 @@ const NAV = [
   { to: "/weak-spots", label: "Weak Spots", icon: Target, exact: false },
   { to: "/leeches", label: "Leech Manager", icon: Bug, exact: false },
   { to: "/tags", label: "Tag Explorer", icon: Hash, exact: false },
+  { to: "/journal", label: "Study Journal", icon: NotebookPen, exact: false },
   { to: "/goals", label: "Goals & Streaks", icon: CalendarCheck, exact: false },
   { to: "/exam", label: "Exam Simulator", icon: GraduationCap, exact: false },
   { to: "/cards", label: "Card Browser", icon: Table2, exact: false },
@@ -55,11 +63,16 @@ const NAV = [
   { to: "/print", label: "Print Exam", icon: Printer, exact: false },
   { to: "/stats", label: "Statistics", icon: BarChart3, exact: false },
   { to: "/achievements", label: "Achievements", icon: Trophy, exact: false },
+  { to: "/report", label: "Progress Report", icon: FileBarChart, exact: false },
+  { to: "/deck-tools", label: "Merge & Split", icon: Shuffle, exact: false },
+  { to: "/snapshots", label: "Snapshots", icon: Camera, exact: false },
+  { to: "/shortcuts", label: "Shortcuts & Help", icon: Keyboard, exact: false },
   { to: "/settings", label: "Settings", icon: SettingsIcon, exact: false },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { state, updateSettings } = useKnowly();
+  const palette = useCommandPalette();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const collapsed = state.settings.sidebarCollapsed;
   const { level, pct, intoLevel, needed } = levelFromXp(state.progress.lifetimeXp);
@@ -171,6 +184,18 @@ export function AppShell({ children }: { children: ReactNode }) {
             Saved in this browser · export JSON to move it
           </div>
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => palette.setOpen(true)}
+              aria-label="Open command palette"
+              className="press inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+            >
+              <Search className="size-3.5" />
+              <span className="hidden sm:inline">Jump to…</span>
+              <kbd className="hidden rounded border border-border px-1.5 py-0.5 text-[10px] sm:inline">
+                Ctrl K
+              </kbd>
+            </button>
             <span className="press inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold transition-colors hover:border-primary/50">
               <Flame className="size-3.5 text-primary" />
               {state.progress.streak} day
@@ -200,6 +225,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+
+      <CommandPalette
+        open={palette.open}
+        onOpenChange={palette.setOpen}
+        targets={NAV.map((item) => ({ to: item.to, label: item.label }))}
+      />
     </div>
   );
 }

@@ -16,12 +16,14 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWeakSpotsRouteImport } from './routes/_authenticated/weak-spots'
 import { Route as AuthenticatedTagsRouteImport } from './routes/_authenticated/tags'
 import { Route as AuthenticatedStatsRouteImport } from './routes/_authenticated/stats'
+import { Route as AuthenticatedShortcutsRouteImport } from './routes/_authenticated/shortcuts'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
 import { Route as AuthenticatedQuizRouteImport } from './routes/_authenticated/quiz'
 import { Route as AuthenticatedPrintRouteImport } from './routes/_authenticated/print'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedLeechesRouteImport } from './routes/_authenticated/leeches'
+import { Route as AuthenticatedJournalRouteImport } from './routes/_authenticated/journal'
 import { Route as AuthenticatedImportRouteImport } from './routes/_authenticated/import'
 import { Route as AuthenticatedGoalsRouteImport } from './routes/_authenticated/goals'
 import { Route as AuthenticatedGenerateRouteImport } from './routes/_authenticated/generate'
@@ -73,6 +75,11 @@ const AuthenticatedStatsRoute = AuthenticatedStatsRouteImport.update({
   path: '/stats',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedShortcutsRoute = AuthenticatedShortcutsRouteImport.update({
+  id: '/shortcuts',
+  path: '/shortcuts',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -101,6 +108,11 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
 const AuthenticatedLeechesRoute = AuthenticatedLeechesRouteImport.update({
   id: '/leeches',
   path: '/leeches',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedJournalRoute = AuthenticatedJournalRouteImport.update({
+  id: '/journal',
+  path: '/journal',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedImportRoute = AuthenticatedImportRouteImport.update({
@@ -204,12 +216,14 @@ export interface FileRoutesByFullPath {
   '/generate': typeof AuthenticatedGenerateRoute
   '/goals': typeof AuthenticatedGoalsRoute
   '/import': typeof AuthenticatedImportRoute
+  '/journal': typeof AuthenticatedJournalRoute
   '/leeches': typeof AuthenticatedLeechesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/print': typeof AuthenticatedPrintRoute
   '/quiz': typeof AuthenticatedQuizRoute
   '/review': typeof AuthenticatedReviewRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/shortcuts': typeof AuthenticatedShortcutsRoute
   '/stats': typeof AuthenticatedStatsRoute
   '/tags': typeof AuthenticatedTagsRoute
   '/weak-spots': typeof AuthenticatedWeakSpotsRoute
@@ -234,12 +248,14 @@ export interface FileRoutesByTo {
   '/generate': typeof AuthenticatedGenerateRoute
   '/goals': typeof AuthenticatedGoalsRoute
   '/import': typeof AuthenticatedImportRoute
+  '/journal': typeof AuthenticatedJournalRoute
   '/leeches': typeof AuthenticatedLeechesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/print': typeof AuthenticatedPrintRoute
   '/quiz': typeof AuthenticatedQuizRoute
   '/review': typeof AuthenticatedReviewRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/shortcuts': typeof AuthenticatedShortcutsRoute
   '/stats': typeof AuthenticatedStatsRoute
   '/tags': typeof AuthenticatedTagsRoute
   '/weak-spots': typeof AuthenticatedWeakSpotsRoute
@@ -266,12 +282,14 @@ export interface FileRoutesById {
   '/_authenticated/generate': typeof AuthenticatedGenerateRoute
   '/_authenticated/goals': typeof AuthenticatedGoalsRoute
   '/_authenticated/import': typeof AuthenticatedImportRoute
+  '/_authenticated/journal': typeof AuthenticatedJournalRoute
   '/_authenticated/leeches': typeof AuthenticatedLeechesRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/print': typeof AuthenticatedPrintRoute
   '/_authenticated/quiz': typeof AuthenticatedQuizRoute
   '/_authenticated/review': typeof AuthenticatedReviewRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/shortcuts': typeof AuthenticatedShortcutsRoute
   '/_authenticated/stats': typeof AuthenticatedStatsRoute
   '/_authenticated/tags': typeof AuthenticatedTagsRoute
   '/_authenticated/weak-spots': typeof AuthenticatedWeakSpotsRoute
@@ -298,12 +316,14 @@ export interface FileRouteTypes {
     | '/generate'
     | '/goals'
     | '/import'
+    | '/journal'
     | '/leeches'
     | '/onboarding'
     | '/print'
     | '/quiz'
     | '/review'
     | '/settings'
+    | '/shortcuts'
     | '/stats'
     | '/tags'
     | '/weak-spots'
@@ -328,12 +348,14 @@ export interface FileRouteTypes {
     | '/generate'
     | '/goals'
     | '/import'
+    | '/journal'
     | '/leeches'
     | '/onboarding'
     | '/print'
     | '/quiz'
     | '/review'
     | '/settings'
+    | '/shortcuts'
     | '/stats'
     | '/tags'
     | '/weak-spots'
@@ -359,12 +381,14 @@ export interface FileRouteTypes {
     | '/_authenticated/generate'
     | '/_authenticated/goals'
     | '/_authenticated/import'
+    | '/_authenticated/journal'
     | '/_authenticated/leeches'
     | '/_authenticated/onboarding'
     | '/_authenticated/print'
     | '/_authenticated/quiz'
     | '/_authenticated/review'
     | '/_authenticated/settings'
+    | '/_authenticated/shortcuts'
     | '/_authenticated/stats'
     | '/_authenticated/tags'
     | '/_authenticated/weak-spots'
@@ -432,6 +456,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStatsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/shortcuts': {
+      id: '/_authenticated/shortcuts'
+      path: '/shortcuts'
+      fullPath: '/shortcuts'
+      preLoaderRoute: typeof AuthenticatedShortcutsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -472,6 +503,13 @@ declare module '@tanstack/react-router' {
       path: '/leeches'
       fullPath: '/leeches'
       preLoaderRoute: typeof AuthenticatedLeechesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/journal': {
+      id: '/_authenticated/journal'
+      path: '/journal'
+      fullPath: '/journal'
+      preLoaderRoute: typeof AuthenticatedJournalRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/import': {
@@ -602,12 +640,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGenerateRoute: typeof AuthenticatedGenerateRoute
   AuthenticatedGoalsRoute: typeof AuthenticatedGoalsRoute
   AuthenticatedImportRoute: typeof AuthenticatedImportRoute
+  AuthenticatedJournalRoute: typeof AuthenticatedJournalRoute
   AuthenticatedLeechesRoute: typeof AuthenticatedLeechesRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPrintRoute: typeof AuthenticatedPrintRoute
   AuthenticatedQuizRoute: typeof AuthenticatedQuizRoute
   AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedShortcutsRoute: typeof AuthenticatedShortcutsRoute
   AuthenticatedStatsRoute: typeof AuthenticatedStatsRoute
   AuthenticatedTagsRoute: typeof AuthenticatedTagsRoute
   AuthenticatedWeakSpotsRoute: typeof AuthenticatedWeakSpotsRoute
@@ -630,12 +670,14 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGenerateRoute: AuthenticatedGenerateRoute,
   AuthenticatedGoalsRoute: AuthenticatedGoalsRoute,
   AuthenticatedImportRoute: AuthenticatedImportRoute,
+  AuthenticatedJournalRoute: AuthenticatedJournalRoute,
   AuthenticatedLeechesRoute: AuthenticatedLeechesRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPrintRoute: AuthenticatedPrintRoute,
   AuthenticatedQuizRoute: AuthenticatedQuizRoute,
   AuthenticatedReviewRoute: AuthenticatedReviewRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedShortcutsRoute: AuthenticatedShortcutsRoute,
   AuthenticatedStatsRoute: AuthenticatedStatsRoute,
   AuthenticatedTagsRoute: AuthenticatedTagsRoute,
   AuthenticatedWeakSpotsRoute: AuthenticatedWeakSpotsRoute,
