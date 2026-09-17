@@ -32,8 +32,7 @@ export function CommandPalette({
 
   const go = (to: string) => {
     onOpenChange(false);
-    // @ts-expect-error route paths are validated by the nav config
-    navigate({ to });
+    navigate({ to: to as never });
   };
 
   return (
