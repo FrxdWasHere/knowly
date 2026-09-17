@@ -63,6 +63,10 @@ const NAV = [
   { to: "/print", label: "Print Exam", icon: Printer, exact: false },
   { to: "/stats", label: "Statistics", icon: BarChart3, exact: false },
   { to: "/achievements", label: "Achievements", icon: Trophy, exact: false },
+  { to: "/report", label: "Progress Report", icon: FileBarChart, exact: false },
+  { to: "/deck-tools", label: "Merge & Split", icon: Shuffle, exact: false },
+  { to: "/snapshots", label: "Snapshots", icon: Camera, exact: false },
+  { to: "/shortcuts", label: "Shortcuts & Help", icon: Keyboard, exact: false },
   { to: "/settings", label: "Settings", icon: SettingsIcon, exact: false },
 ] as const;
 
