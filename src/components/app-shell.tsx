@@ -24,6 +24,7 @@ import {
   Hammer,
   Target,
   Bug,
+  Hash,
 } from "lucide-react";
 import { useKnowly } from "@/store/knowly";
 import { levelFromXp } from "@/lib/gamification";
