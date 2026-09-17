@@ -47,6 +47,7 @@ const NAV = [
   { to: "/weak-spots", label: "Weak Spots", icon: Target, exact: false },
   { to: "/leeches", label: "Leech Manager", icon: Bug, exact: false },
   { to: "/tags", label: "Tag Explorer", icon: Hash, exact: false },
+  { to: "/journal", label: "Study Journal", icon: NotebookPen, exact: false },
   { to: "/goals", label: "Goals & Streaks", icon: CalendarCheck, exact: false },
   { to: "/exam", label: "Exam Simulator", icon: GraduationCap, exact: false },
   { to: "/cards", label: "Card Browser", icon: Table2, exact: false },
