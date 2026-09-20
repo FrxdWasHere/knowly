@@ -224,7 +224,6 @@ function GeneratePage() {
                 id="question-count"
                 type="number"
                 min={5}
-                max={100}
                 step={5}
                 value={count}
                 onChange={(e) => {
@@ -234,11 +233,11 @@ function GeneratePage() {
                     return;
                   }
                   const n = Math.round(parseInt(raw, 10) / 5) * 5;
-                  setCount(Math.max(5, Math.min(100, n)));
+                  setCount(Math.max(5, n));
                 }}
                 className="max-w-[140px]"
               />
-              <p className="text-xs text-muted-foreground">Rounds to the nearest multiple of 5, between 5 and 100.</p>
+              <p className="text-xs text-muted-foreground">Rounds to the nearest multiple of 5. No upper limit.</p>
             </div>
 
             <div className="space-y-2">
