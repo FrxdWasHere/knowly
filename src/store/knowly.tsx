@@ -138,7 +138,8 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
     const s = state.settings;
     const root = document.documentElement;
     const preset = getColorTheme(s.colorTheme);
-    const palette: ThemeColors | undefined = s.colorTheme === "custom" ? s.customTheme : preset?.colors;
+    const palette: ThemeColors | undefined =
+      s.colorTheme === "custom" ? sanitizePalette(s.customTheme) : preset?.colors;
     const mode = palette
       ? (preset?.mode ?? (luminance(palette.background) > 0.5 ? "light" : "dark"))
       : s.theme;
