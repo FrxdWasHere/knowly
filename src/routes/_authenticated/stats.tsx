@@ -95,7 +95,7 @@ function StatsPage() {
         </div>
       </section>
 
-      <section className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((c) => (
           <div key={c.label} className="panel p-5">
             <p className="font-display text-2xl font-bold">{c.value}</p>
@@ -106,7 +106,8 @@ function StatsPage() {
 
       <section className="panel mb-6 p-6">
         <h2 className="text-sm font-semibold">Activity — last 12 weeks</h2>
-        <div className="mt-4 grid grid-flow-col grid-rows-7 gap-1">
+        <div className="mt-4 overflow-x-auto pb-1">
+          <div className="grid min-w-max grid-flow-col grid-rows-7 gap-1">
           {heatmap.map((d) => {
             const intensity = d.count === 0 ? 0 : Math.ceil((d.count / maxCount) * 4);
             return (
@@ -124,10 +125,11 @@ function StatsPage() {
               />
             );
           })}
+          </div>
         </div>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid items-start gap-6 xl:grid-cols-2">
         <section className="panel p-6">
           <h2 className="text-sm font-semibold">Concepts ranked by mastery</h2>
           {concepts.length === 0 ? (

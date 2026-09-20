@@ -12,6 +12,11 @@
 # Branding
 - [x] Use src-tauri/icons artwork as the single app logo everywhere.
 
+# Responsive widget layouts
+- [ ] Reflow widget-heavy views across phone, tablet, landscape, and wide desktop sizes.
+- [ ] Make the Spaced Repetition dashboard widget full-width and use its horizontal space efficiently.
+- [ ] Verify no overflow, overlap, or stranded grid space at representative viewports.
+
 # 15 new sidebar features (all fully offline — no network calls, no accounts)
 Built one at a time, in this order:
 

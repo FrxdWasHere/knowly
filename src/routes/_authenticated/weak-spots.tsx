@@ -80,7 +80,7 @@ function WeakSpotsPage() {
         }
       />
 
-      <section className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((c) => (
           <div key={c.label} className="panel p-5">
             <c.icon className="size-4 text-primary" />
@@ -90,7 +90,7 @@ function WeakSpotsPage() {
         ))}
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+      <div className={cn("grid items-start gap-6", weak.length > 0 && concepts.length > 0 && "xl:grid-cols-[1.25fr_0.75fr]")}>
         <section className="panel p-6">
           <h2 className="text-sm font-semibold">Shakiest cards</h2>
           {weak.length === 0 ? (

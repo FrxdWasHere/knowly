@@ -170,7 +170,7 @@ function DeckLibrary() {
           </Button>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {decks.map((d) => {
             const pct = Math.round((d.masteredIds.length / Math.max(1, d.questions.length)) * 100);
             const srs = deckSrs(d);
