@@ -315,9 +315,21 @@ function SettingsPage() {
           )}
         </Section>
 
+        <Section
+          title="Colour theme"
+          description="Pick a preset palette or build your own from hex codes."
+        >
+          <ThemePicker />
+        </Section>
+
         <Section title="Appearance">
           <div>
-            <Label className="text-xs">Accent</Label>
+            <Label className="text-xs">
+              Accent{" "}
+              {s.colorTheme !== "default" && (
+                <span className="text-muted-foreground">(used by the default theme only)</span>
+              )}
+            </Label>
             <div className="mt-2 flex flex-wrap gap-2">
               {ACCENTS.map((a) => (
                 <button
