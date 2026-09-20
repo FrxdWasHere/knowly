@@ -156,11 +156,13 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
     root.style.setProperty("--font-scale", String(s.fontScale));
     root.style.setProperty("--radius", `${s.radius}rem`);
     root.style.setProperty("--speed", String(s.animationSpeed));
-    const accent = ACCENTS.find((a) => a.id === s.accent) ?? ACCENTS[0];
-    root.style.setProperty("--primary", accent.value);
-    root.style.setProperty("--primary-glow", accent.glow);
-    root.style.setProperty("--ring", accent.value);
-    root.style.setProperty("--sidebar-primary", accent.value);
+    if (!palette) {
+      const accent = ACCENTS.find((a) => a.id === s.accent) ?? ACCENTS[0];
+      root.style.setProperty("--primary", accent.value);
+      root.style.setProperty("--primary-glow", accent.glow);
+      root.style.setProperty("--ring", accent.value);
+      root.style.setProperty("--sidebar-primary", accent.value);
+    }
   }, [state.settings, hydrated]);
 
   const flushAchievements = useCallback((progress: Progress, decks: Deck[]) => {
