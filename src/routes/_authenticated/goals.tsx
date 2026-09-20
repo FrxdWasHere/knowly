@@ -154,7 +154,7 @@ function GoalsPage() {
       />
 
       {/* Hero: today's ring + streak numbers */}
-      <section className="mb-6 grid gap-4 lg:grid-cols-[auto_1fr]">
+      <section className="mb-6 grid gap-4 xl:grid-cols-[minmax(320px,0.8fr)_minmax(0,1.2fr)]">
         <div className="panel flex items-center gap-6 p-6">
           <div className="relative size-32 shrink-0">
             <svg viewBox="0 0 128 128" className="size-full -rotate-90">
@@ -247,7 +247,7 @@ function GoalsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:grid-rows-2">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-rows-2">
           <div className="panel p-5">
             <Flame className="size-4 text-primary" />
             <p className="mt-3 font-display text-2xl font-bold">{progress.streak}</p>
@@ -270,7 +270,7 @@ function GoalsPage() {
             <p className="mt-3 font-display text-2xl font-bold">{stats.avgActive}</p>
             <p className="mt-1 text-xs text-muted-foreground">Avg / active day</p>
           </div>
-          <div className="panel col-span-2 p-5 lg:col-span-4">
+          <div className="panel col-span-2 p-5 md:col-span-4">
             <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
               <span>
                 Last 7 days: <strong className="text-foreground">{stats.last7Total}</strong> questions

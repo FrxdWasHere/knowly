@@ -194,30 +194,30 @@ function Dashboard() {
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-flow-row-dense gap-4 md:grid-cols-2 xl:grid-cols-12">
         {show("srs") && decks.length > 0 && (
           <Widget
             id="srs"
             title="Spaced repetition"
             icon={Brain}
             onHide={hide}
-            className="lg:col-span-2"
+            className="md:col-span-2 xl:col-span-12"
           >
             <SrsDashboardWidget decks={decks} />
           </Widget>
         )}
 
         {show("continue") && recentDeck && (
-          <Widget id="continue" title="Continue studying" icon={Play} onHide={hide} className="lg:col-span-2">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
+          <Widget id="continue" title="Continue studying" icon={Play} onHide={hide} className="md:col-span-2 xl:col-span-8">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+              <div className="min-w-0">
                 <p className="font-display text-xl font-bold">{recentDeck.title}</p>
                 <p className="text-xs text-muted-foreground">
                   {recentDeck.masteredIds.length}/{recentDeck.questions.length} mastered ·{" "}
                   {recentDeck.subject}
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex shrink-0 gap-2">
                 <Button asChild>
                   <Link to="/study/$deckId" params={{ deckId: recentDeck.id }}>
                     Study
@@ -242,7 +242,7 @@ function Dashboard() {
         )}
 
         {show("goal") && (
-          <Widget id="goal" title="Today's goal" icon={Target} onHide={hide}>
+          <Widget id="goal" title="Today's goal" icon={Target} onHide={hide} className="xl:col-span-4">
             <p className="font-display text-3xl font-bold">
               {todayCount}
               <span className="text-base text-muted-foreground"> / {settings.dailyGoal}</span>
@@ -261,7 +261,7 @@ function Dashboard() {
         )}
 
         {show("subjects") && subjectRows.length > 0 && (
-          <Widget id="subjects" title="Your subjects" icon={BookOpen} onHide={hide} className="lg:col-span-2">
+          <Widget id="subjects" title="Your subjects" icon={BookOpen} onHide={hide} className="md:col-span-2 xl:col-span-8">
             <div className="grid gap-3 sm:grid-cols-2">
               {subjectRows.map((s) => (
                 <Link
@@ -292,7 +292,7 @@ function Dashboard() {
 
 
         {show("level") && (
-          <Widget id="level" title="Level & XP" icon={Zap} onHide={hide}>
+          <Widget id="level" title="Level & XP" icon={Zap} onHide={hide} className="xl:col-span-4">
             <div className="flex items-baseline gap-2">
               <span className="ocean-text font-display text-3xl font-bold">Lv {level}</span>
               <span className="text-xs text-muted-foreground">
@@ -311,7 +311,7 @@ function Dashboard() {
         )}
 
         {show("streak") && (
-          <Widget id="streak" title="Study streak" icon={Flame} onHide={hide}>
+          <Widget id="streak" title="Study streak" icon={Flame} onHide={hide} className="xl:col-span-4">
             <p className="font-display text-3xl font-bold">{progress.streak} days</p>
             <p className="mt-2 text-xs text-muted-foreground">
               Longest {progress.longestStreak} · {formatDuration(progress.studyTimeMs)} studied
@@ -320,7 +320,7 @@ function Dashboard() {
         )}
 
         {show("due") && (
-          <Widget id="due" title="Cards due" icon={Clock} onHide={hide}>
+          <Widget id="due" title="Cards due" icon={Clock} onHide={hide} className="xl:col-span-4">
             <p className="font-display text-3xl font-bold">{dueNow}</p>
             <p className="mt-2 text-xs text-muted-foreground">
               due now · {unmastered} still unmastered · {accuracy}% lifetime accuracy
@@ -334,7 +334,7 @@ function Dashboard() {
         )}
 
         {show("activity") && (
-          <Widget id="activity" title="Recent activity" icon={BarChart3} onHide={hide} className="lg:col-span-2">
+          <Widget id="activity" title="Recent activity" icon={BarChart3} onHide={hide} className="md:col-span-2 xl:col-span-8">
             {history.length ? (
               <ul className="space-y-2">
                 {history.slice(0, 5).map((h) => (
@@ -359,7 +359,7 @@ function Dashboard() {
         )}
 
         {show("weak") && (
-          <Widget id="weak" title="Weak topics" icon={TrendingDown} onHide={hide}>
+          <Widget id="weak" title="Weak topics" icon={TrendingDown} onHide={hide} className="xl:col-span-4">
             {weak.length ? (
               <ul className="space-y-2 text-sm">
                 {weak.map((w) => (
@@ -378,7 +378,7 @@ function Dashboard() {
         )}
 
         {show("decks") && (
-          <Widget id="decks" title="Recent decks" icon={Library} onHide={hide} className="lg:col-span-2">
+          <Widget id="decks" title="Recent decks" icon={Library} onHide={hide} className="md:col-span-2 xl:col-span-8">
             <div className="grid gap-3 sm:grid-cols-2">
               {[...decks]
                 .sort((a, b) => (b.lastStudiedAt ?? b.createdAt) - (a.lastStudiedAt ?? a.createdAt))
@@ -405,7 +405,7 @@ function Dashboard() {
         )}
 
         {show("achievements") && (
-          <Widget id="achievements" title="Achievements" icon={Trophy} onHide={hide}>
+          <Widget id="achievements" title="Achievements" icon={Trophy} onHide={hide} className="xl:col-span-4">
             <p className="font-display text-3xl font-bold">
               {unlocked.length}
               <span className="text-base text-muted-foreground"> / {ACHIEVEMENTS.length}</span>
@@ -417,7 +417,7 @@ function Dashboard() {
         )}
 
         {show("stats") && (
-          <Widget id="stats" title="Lifetime stats" icon={BarChart3} onHide={hide}>
+          <Widget id="stats" title="Lifetime stats" icon={BarChart3} onHide={hide} className="md:col-span-2 xl:col-span-4">
             <dl className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <dt className="text-xs text-muted-foreground">Answered</dt>

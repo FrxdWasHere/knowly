@@ -114,7 +114,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const collapsed = state.settings.sidebarCollapsed;
   const { level, pct, intoLevel, needed } = levelFromXp(state.progress.lifetimeXp);
   const density = state.settings.density;
-  const pad = density === "compact" ? "p-4" : density === "spacious" ? "p-5 md:p-10 lg:p-12" : "p-6 md:p-8";
+  const pad = density === "compact" ? "p-4" : density === "spacious" ? "p-5 md:p-8" : "p-5 md:p-8";
   const wallpaper = useWallpaperUrl(state.settings.wallpaper);
 
   return (
@@ -295,8 +295,8 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="anim-fade-up mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-7">
-      <div>
+    <div className="anim-fade-up mb-8 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4 border-b border-border pb-7">
+      <div className="min-w-0">
         <h1 className="font-display text-3xl font-semibold sm:text-4xl">{title}</h1>
         {description && <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">{description}</p>}
       </div>

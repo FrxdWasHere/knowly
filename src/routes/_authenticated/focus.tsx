@@ -211,7 +211,7 @@ function FocusPage() {
         description="Offline pomodoro blocks for deep study. Nothing leaves your device."
       />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]">
         <section className="flex flex-col items-center justify-center gap-6 rounded-xl border border-border/60 bg-card/60 p-8">
           <Badge variant={phase === "focus" ? "default" : "secondary"} className="gap-1.5">
             {phase === "focus" ? <TimerIcon className="size-3.5" /> : <Coffee className="size-3.5" />}

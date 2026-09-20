@@ -50,8 +50,9 @@ export function SrsDashboardWidget({ decks }: { decks: Deck[] }) {
   ].filter((s) => s.count > 0);
 
   return (
-    <div>
-      <div className="flex flex-wrap items-center gap-5">
+    <div className="space-y-6">
+      <div className="grid items-center gap-6 xl:grid-cols-[minmax(260px,0.8fr)_minmax(420px,1.2fr)]">
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-5">
         <SrsRing
           value={due.length ? Math.min(100, (due.length / Math.max(1, totals.total)) * 100) : 100}
           size={86}
@@ -72,7 +73,7 @@ export function SrsDashboardWidget({ decks }: { decks: Deck[] }) {
           </span>
         </SrsRing>
 
-        <div className="min-w-40 flex-1">
+        <div className="min-w-0">
           <p className="font-display text-lg font-bold leading-tight">
             {due.length
               ? `${due.length} card${due.length === 1 ? "" : "s"} ready for recall`
@@ -91,39 +92,47 @@ export function SrsDashboardWidget({ decks }: { decks: Deck[] }) {
             </Link>
           </Button>
         </div>
-      </div>
+        </div>
 
-      {/* 7 day forecast */}
-      <div className="mt-6">
-        <p className="text-[11px] font-medium text-muted-foreground">Next 7 days</p>
-        <div className="mt-2 flex items-end gap-1.5">
-          {days.map((d) => (
-            <div key={d.key} className="flex flex-1 flex-col items-center gap-1">
-              <span className="text-[9px] text-muted-foreground">{d.count || ""}</span>
-              <div
-                className={cn(
-                  "w-full rounded-t-md transition-all duration-500",
-                  d.isToday ? "bg-primary" : "bg-primary/35",
-                )}
-                style={{ height: `${Math.max(3, (d.count / peak) * 56)}px` }}
-                title={`${d.count} card${d.count === 1 ? "" : "s"} on ${d.key}`}
-              />
-              <span
-                className={cn(
-                  "text-[10px]",
-                  d.isToday ? "font-semibold text-foreground" : "text-muted-foreground",
-                )}
-              >
-                {d.label}
-              </span>
-            </div>
-          ))}
+        {/* 7 day forecast */}
+        <div className="min-w-0 border-t border-border pt-5 xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0">
+          <p className="text-[11px] font-medium text-muted-foreground">Next 7 days</p>
+          <div className="mt-2 grid grid-cols-7 items-end gap-1.5">
+            {days.map((d) => (
+              <div key={d.key} className="flex min-w-0 flex-col items-center gap-1">
+                <span className="text-[9px] text-muted-foreground">{d.count || ""}</span>
+                <div
+                  className={cn(
+                    "w-full min-w-3 rounded-t-md transition-all duration-500",
+                    d.isToday ? "bg-primary" : "bg-primary/35",
+                  )}
+                  style={{ height: `${Math.max(3, (d.count / peak) * 68)}px` }}
+                  title={`${d.count} card${d.count === 1 ? "" : "s"} on ${d.key}`}
+                />
+                <span
+                  className={cn(
+                    "truncate text-[10px]",
+                    d.isToday ? "font-semibold text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  {d.label}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* maturity mix */}
-      {stages.length > 0 && (
-        <div className="mt-5">
+      {(stages.length > 0 || perDeck.length > 0) && (
+        <div
+          className={cn(
+            "grid gap-5 border-t border-border pt-5",
+            stages.length > 0 && perDeck.length > 0 && "lg:grid-cols-[minmax(240px,0.75fr)_minmax(0,1.25fr)]",
+          )}
+        >
+          {/* maturity mix */}
+          {stages.length > 0 && <div className="min-w-0">
+            <p className="mb-2 text-[11px] font-medium text-muted-foreground">Memory stages</p>
           <div className="flex h-2 overflow-hidden rounded-full bg-secondary">
             {stages.map((s) => (
               <span
@@ -148,14 +157,14 @@ export function SrsDashboardWidget({ decks }: { decks: Deck[] }) {
               </span>
             ))}
           </div>
-        </div>
-      )}
+          </div>}
 
-      {/* per-deck queue */}
-      {perDeck.length > 0 && (
-        <ul className="mt-5 space-y-1.5">
-          {perDeck.map(({ deck, srs }) => (
-            <li key={deck.id}>
+          {/* per-deck queue */}
+          {perDeck.length > 0 && <div className="min-w-0">
+            <p className="mb-2 text-[11px] font-medium text-muted-foreground">Due by deck</p>
+            <ul className="grid gap-1.5 sm:grid-cols-2">
+              {perDeck.map(({ deck, srs }) => (
+                <li key={deck.id} className="min-w-0">
               <Link
                 to="/review"
                 search={{ deck: deck.id }}
@@ -165,9 +174,11 @@ export function SrsDashboardWidget({ decks }: { decks: Deck[] }) {
                 <span className="min-w-0 flex-1 truncate">{deck.title}</span>
                 <span className="shrink-0 text-xs font-semibold text-primary">{srs.due} due</span>
               </Link>
-            </li>
-          ))}
-        </ul>
+                </li>
+              ))}
+            </ul>
+          </div>}
+        </div>
       )}
     </div>
   );
