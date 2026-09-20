@@ -92,6 +92,7 @@ export function SrsDashboardWidget({ decks }: { decks: Deck[] }) {
             </Link>
           </Button>
         </div>
+        </div>
 
         {/* 7 day forecast */}
         <div className="min-w-0 border-t border-border pt-5 xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0">
