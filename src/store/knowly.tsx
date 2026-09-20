@@ -130,7 +130,15 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
     if (!hydrated || typeof document === "undefined") return;
     const s = state.settings;
     const root = document.documentElement;
-    root.classList.toggle("light", s.theme === "light");
+    const preset = getColorTheme(s.colorTheme);
+    const palette = s.colorTheme === "custom" ? s.customTheme : preset?.colors;
+    root.classList.toggle("light", palette ? (preset?.mode ?? "dark") === "light" : s.theme === "light");
+    for (const name of THEME_VAR_NAMES) root.style.removeProperty(name);
+    if (palette) {
+      for (const [name, value] of Object.entries(themeCssVars(palette))) {
+        root.style.setProperty(name, value);
+      }
+    }
     root.classList.toggle("contrast-high", s.highContrast);
     root.classList.toggle("colorblind", s.colorblindPalette);
     root.classList.toggle("reduce-motion", s.reducedMotion);
