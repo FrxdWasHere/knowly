@@ -219,18 +219,27 @@ function GeneratePage() {
               />
             </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label>Question count</Label>
-                <Badge variant="secondary">{count}</Badge>
-              </div>
-              <Slider
-                value={[count]}
+            <div className="space-y-2">
+              <Label htmlFor="question-count">Question count</Label>
+              <Input
+                id="question-count"
+                type="number"
                 min={5}
                 max={100}
                 step={5}
-                onValueChange={([v]) => setCount(v)}
+                value={count}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw === "") {
+                    setCount(5);
+                    return;
+                  }
+                  const n = Math.round(parseInt(raw, 10) / 5) * 5;
+                  setCount(Math.max(5, Math.min(100, n)));
+                }}
+                className="max-w-[140px]"
               />
+              <p className="text-xs text-muted-foreground">Rounds to the nearest multiple of 5, between 5 and 100.</p>
             </div>
 
             <div className="space-y-2">
