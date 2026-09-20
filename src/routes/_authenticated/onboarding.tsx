@@ -42,6 +42,7 @@ import { cn } from "@/lib/utils";
 
 import { useKnowly } from "@/store/knowly";
 import { Logo } from "@/components/brand/logo";
+import { ThemePicker } from "@/components/theme-picker";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({
