@@ -58,6 +58,8 @@ export const DEFAULT_SETTINGS: Settings = {
   dailyGoal: 20,
   confirmBeforeExit: true,
   theme: "dark",
+  colorTheme: "default",
+  customTheme: { ...DEFAULT_CUSTOM_THEME },
   accent: "ocean",
   wallpaper: null,
   wallpaperOpacity: 0.35,
