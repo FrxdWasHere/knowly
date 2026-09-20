@@ -131,13 +131,15 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
     const s = state.settings;
     const root = document.documentElement;
     const preset = getColorTheme(s.colorTheme);
-    const palette = s.colorTheme === "custom" ? s.customTheme : preset?.colors;
-    root.classList.toggle("light", palette ? (preset?.mode ?? "dark") === "light" : s.theme === "light");
+    const palette: ThemeColors | undefined = s.colorTheme === "custom" ? s.customTheme : preset?.colors;
+    const mode = palette
+      ? (preset?.mode ?? (luminance(palette.background) > 0.5 ? "light" : "dark"))
+      : s.theme;
+    root.classList.toggle("light", mode === "light");
     for (const name of THEME_VAR_NAMES) root.style.removeProperty(name);
     if (palette) {
-      for (const [name, value] of Object.entries(themeCssVars(palette))) {
-        root.style.setProperty(name, value);
-      }
+      const vars = themeCssVars(palette);
+      for (const name of Object.keys(vars)) root.style.setProperty(name, vars[name]!);
     }
     root.classList.toggle("contrast-high", s.highContrast);
     root.classList.toggle("colorblind", s.colorblindPalette);
