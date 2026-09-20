@@ -159,7 +159,7 @@ export interface Settings {
   confirmBeforeExit: boolean;
   // appearance
   theme: "dark" | "light";
-  /** preset palette id from COLOR_THEMES, "custom", or "default" for the built-in stylesheet */
+  /** preset palette id from COLOR_THEMES, a user theme id, "custom", or "default" */
   colorTheme: string;
   /** hex palette used when colorTheme === "custom" */
   customTheme: {
@@ -170,6 +170,20 @@ export interface Settings {
     primary: string;
     accent: string;
   };
+  /** user-created / edited palettes */
+  customThemes?: {
+    id: string;
+    label: string;
+    mode: "dark" | "light";
+    colors: {
+      background: string;
+      surface: string;
+      surface2: string;
+      foreground: string;
+      primary: string;
+      accent: string;
+    };
+  }[];
   accent: string;
   /** data URL of a user-uploaded wallpaper image, stored locally */
   wallpaper: string | null;
