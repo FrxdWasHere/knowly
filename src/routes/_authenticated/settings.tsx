@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Download, ImagePlus, RotateCcw, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
+import { ThemePicker } from "@/components/theme-picker";
 import { PageHeader } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -315,9 +316,21 @@ function SettingsPage() {
           )}
         </Section>
 
+        <Section
+          title="Colour theme"
+          description="Pick a preset palette or build your own from hex codes."
+        >
+          <ThemePicker />
+        </Section>
+
         <Section title="Appearance">
           <div>
-            <Label className="text-xs">Accent</Label>
+            <Label className="text-xs">
+              Accent{" "}
+              {s.colorTheme !== "default" && (
+                <span className="text-muted-foreground">(used by the default theme only)</span>
+              )}
+            </Label>
             <div className="mt-2 flex flex-wrap gap-2">
               {ACCENTS.map((a) => (
                 <button

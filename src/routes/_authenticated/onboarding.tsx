@@ -42,6 +42,7 @@ import { cn } from "@/lib/utils";
 
 import { useKnowly } from "@/store/knowly";
 import { Logo } from "@/components/brand/logo";
+import { ThemePicker } from "@/components/theme-picker";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({
@@ -520,8 +521,15 @@ function Onboarding() {
                 <div>
                   <h1 className="text-3xl font-bold">Make it look right</h1>
                   <p className="mt-3 text-muted-foreground">
-                    Choose an accent and comfort settings. You can change all of this later.
+                    Choose a colour theme and comfort settings. You can change all of this later.
                   </p>
+                </div>
+
+                <div>
+                  <Label className="text-xs">Colour theme</Label>
+                  <div className="mt-2">
+                    <ThemePicker compact />
+                  </div>
                 </div>
 
                 <div>

@@ -159,6 +159,17 @@ export interface Settings {
   confirmBeforeExit: boolean;
   // appearance
   theme: "dark" | "light";
+  /** preset palette id from COLOR_THEMES, "custom", or "default" for the built-in stylesheet */
+  colorTheme: string;
+  /** hex palette used when colorTheme === "custom" */
+  customTheme: {
+    background: string;
+    surface: string;
+    surface2: string;
+    foreground: string;
+    primary: string;
+    accent: string;
+  };
   accent: string;
   /** data URL of a user-uploaded wallpaper image, stored locally */
   wallpaper: string | null;

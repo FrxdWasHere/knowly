@@ -12,6 +12,14 @@ import { toast } from "sonner";
 import { ACCENTS, AVATAR_EMOJIS, DEFAULT_PROGRESS, DEFAULT_SETTINGS, DEFAULT_STATE, oceanDeckColor } from "@/lib/defaults";
 import { evaluateAchievements, ACHIEVEMENTS } from "@/lib/gamification";
 import { dayKey } from "@/lib/answers";
+import {
+  getColorTheme,
+  luminance,
+  sanitizePalette,
+  themeCssVars,
+  THEME_VAR_NAMES,
+  type ThemeColors,
+} from "@/lib/themes";
 import { schedule, type SrsGrade } from "@/lib/srs";
 import type {
   AppState,
@@ -130,7 +138,18 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
     if (!hydrated || typeof document === "undefined") return;
     const s = state.settings;
     const root = document.documentElement;
-    root.classList.toggle("light", s.theme === "light");
+    const preset = getColorTheme(s.colorTheme);
+    const palette: ThemeColors | undefined =
+      s.colorTheme === "custom" ? sanitizePalette(s.customTheme) : preset?.colors;
+    const mode = palette
+      ? (preset?.mode ?? (luminance(palette.background) > 0.5 ? "light" : "dark"))
+      : s.theme;
+    root.classList.toggle("light", mode === "light");
+    for (const name of THEME_VAR_NAMES) root.style.removeProperty(name);
+    if (palette) {
+      const vars = themeCssVars(palette);
+      for (const name of Object.keys(vars)) root.style.setProperty(name, vars[name]!);
+    }
     root.classList.toggle("contrast-high", s.highContrast);
     root.classList.toggle("colorblind", s.colorblindPalette);
     root.classList.toggle("reduce-motion", s.reducedMotion);
@@ -139,11 +158,13 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
     root.style.setProperty("--font-scale", String(s.fontScale));
     root.style.setProperty("--radius", `${s.radius}rem`);
     root.style.setProperty("--speed", String(s.animationSpeed));
-    const accent = ACCENTS.find((a) => a.id === s.accent) ?? ACCENTS[0];
-    root.style.setProperty("--primary", accent.value);
-    root.style.setProperty("--primary-glow", accent.glow);
-    root.style.setProperty("--ring", accent.value);
-    root.style.setProperty("--sidebar-primary", accent.value);
+    if (!palette) {
+      const accent = ACCENTS.find((a) => a.id === s.accent) ?? ACCENTS[0];
+      root.style.setProperty("--primary", accent.value);
+      root.style.setProperty("--primary-glow", accent.glow);
+      root.style.setProperty("--ring", accent.value);
+      root.style.setProperty("--sidebar-primary", accent.value);
+    }
   }, [state.settings, hydrated]);
 
   const flushAchievements = useCallback((progress: Progress, decks: Deck[]) => {

@@ -1,4 +1,5 @@
 import type { AppState, Progress, QuizConfig, Settings } from "./types";
+import { DEFAULT_CUSTOM_THEME } from "./themes";
 
 export const ACCENTS: { id: string; label: string; value: string; glow: string }[] = [
   { id: "ocean", label: "Ocean", value: "oklch(0.7 0.15 240)", glow: "oklch(0.79 0.12 225)" },
@@ -58,6 +59,8 @@ export const DEFAULT_SETTINGS: Settings = {
   dailyGoal: 20,
   confirmBeforeExit: true,
   theme: "dark",
+  colorTheme: "default",
+  customTheme: { ...DEFAULT_CUSTOM_THEME },
   accent: "ocean",
   wallpaper: null,
   wallpaperOpacity: 0.35,
