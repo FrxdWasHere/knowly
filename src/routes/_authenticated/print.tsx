@@ -243,7 +243,6 @@ function PrintExamPage() {
                 id="question-count"
                 type="number"
                 min={1}
-                max={100}
                 step={1}
                 value={count}
                 onChange={(e) => {
@@ -253,7 +252,7 @@ function PrintExamPage() {
                     return;
                   }
                   const n = parseInt(raw, 10);
-                  setCount(Math.max(1, Math.min(100, n)));
+                  setCount(Math.max(1, n));
                 }}
                 className="max-w-[120px]"
               />
