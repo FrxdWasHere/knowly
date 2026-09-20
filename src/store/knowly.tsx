@@ -15,6 +15,7 @@ import { dayKey } from "@/lib/answers";
 import {
   getColorTheme,
   luminance,
+  sanitizePalette,
   themeCssVars,
   THEME_VAR_NAMES,
   type ThemeColors,
