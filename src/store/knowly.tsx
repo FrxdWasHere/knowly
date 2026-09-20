@@ -12,6 +12,13 @@ import { toast } from "sonner";
 import { ACCENTS, AVATAR_EMOJIS, DEFAULT_PROGRESS, DEFAULT_SETTINGS, DEFAULT_STATE, oceanDeckColor } from "@/lib/defaults";
 import { evaluateAchievements, ACHIEVEMENTS } from "@/lib/gamification";
 import { dayKey } from "@/lib/answers";
+import {
+  getColorTheme,
+  luminance,
+  themeCssVars,
+  THEME_VAR_NAMES,
+  type ThemeColors,
+} from "@/lib/themes";
 import { schedule, type SrsGrade } from "@/lib/srs";
 import type {
   AppState,
