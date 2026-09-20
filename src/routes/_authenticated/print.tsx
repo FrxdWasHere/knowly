@@ -237,15 +237,25 @@ function PrintExamPage() {
           <section className="panel space-y-4 p-5">
             <h2 className="text-sm font-semibold">What goes on the paper</h2>
 
-            <div>
-              <Label className="text-xs">Questions: {count}</Label>
-              <Slider
-                className="mt-2"
+            <div className="space-y-2">
+              <Label htmlFor="question-count" className="text-xs">Questions</Label>
+              <Input
+                id="question-count"
+                type="number"
                 min={1}
                 max={100}
                 step={1}
-                value={[count]}
-                onValueChange={([v]) => setCount(v ?? 1)}
+                value={count}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw === "") {
+                    setCount(1);
+                    return;
+                  }
+                  const n = parseInt(raw, 10);
+                  setCount(Math.max(1, Math.min(100, n)));
+                }}
+                className="max-w-[120px]"
               />
             </div>
 
