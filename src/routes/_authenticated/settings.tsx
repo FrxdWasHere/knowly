@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Download, ImagePlus, RotateCcw, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
+import { ThemePicker } from "@/components/theme-picker";
 import { PageHeader } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
