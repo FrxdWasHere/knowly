@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
-import { Badge } from "@/components/ui/badge";
 import { buildAppendPrompt, buildPrompt, estimateQuestions } from "@/lib/prompt";
 import { TYPE_LABELS } from "@/lib/answers";
 import { questionTypes } from "@/lib/schema";
