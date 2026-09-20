@@ -279,3 +279,13 @@ export function themeCssVars(c: ThemeColors): Record<string, string> {
 }
 
 export const THEME_VAR_NAMES = Object.keys(themeCssVars(DEFAULT_CUSTOM_THEME));
+
+/** Replace any invalid hex entry with the default, so CSS never receives garbage. */
+export function sanitizePalette(c: Partial<ThemeColors> | undefined): ThemeColors {
+  const out = { ...DEFAULT_CUSTOM_THEME };
+  for (const key of Object.keys(out) as (keyof ThemeColors)[]) {
+    const v = c?.[key];
+    if (v && isValidHex(v)) out[key] = normalizeHex(v);
+  }
+  return out;
+}
