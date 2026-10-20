@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
   ArrowDown,
@@ -18,10 +18,11 @@ import {
   Highlighter,
   ImagePlus,
   LassoSelect,
+  Maximize2,
   Mic,
   MicOff,
-  MousePointer2,
   NotebookPen,
+  Palette,
   PenLine,
   Pencil,
   Plus,
@@ -29,12 +30,10 @@ import {
   RectangleHorizontal,
   Shapes,
   Sparkles,
-  Square,
   StickyNote,
   Trash2,
   Type,
   Undo2,
-  Wand2,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -51,14 +50,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useKnowly } from "@/store/knowly";
 import {
   exportNotebookBundle,
@@ -72,6 +65,7 @@ import {
   cloneElement,
   downloadDataUrl,
   downloadText,
+  drawTemplate,
   elementBounds,
   exportNotebookPdf,
   hitElement,
@@ -89,6 +83,7 @@ import {
 } from "@/lib/notes/study";
 import {
   emptyPage,
+  clampTemplateOpacity,
   HIGHLIGHTER_COLORS,
   NOTE_COLORS,
   PAGE_TEMPLATES,
@@ -109,7 +104,7 @@ export const Route = createFileRoute("/_authenticated/notes/$notebookId")({
     page: typeof search.page === "string" ? search.page : undefined,
   }),
   head: () => ({
-    meta: [{ title: "Notebook Editor â€” Handwriting, Pages & Study Tools | Knowly" }],
+    meta: [{ title: "Notebook Editor — Handwriting, Pages & Study Tools | Knowly" }],
   }),
   component: NotebookEditorPage,
 });
@@ -127,6 +122,13 @@ const TOOLS: { id: NoteTool; label: string; icon: typeof PenLine }[] = [
   { id: "image", label: "Image", icon: ImagePlus },
   { id: "pan", label: "Pan", icon: Hand },
 ];
+
+const TOOL_SHORT_LABELS: Partial<Record<NoteTool, string>> = {
+  highlighter: "Marker",
+  select: "Select",
+  sticky: "Sticky",
+  tape: "Tape",
+};
 
 type DragMode = "draw" | "erase" | "shape" | "tape" | "select-move" | "lasso" | "pan" | null;
 
@@ -196,6 +198,8 @@ function NotebookEditorPage() {
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
+  const [inkOpen, setInkOpen] = useState(false);
+  const [pageStyleOpen, setPageStyleOpen] = useState(false);
   const [studyOpen, setStudyOpen] = useState(false);
   const [studyMode, setStudyMode] = useState<"flashcards" | "summary" | "quiz">("flashcards");
   const [exporting, setExporting] = useState(false);
@@ -520,14 +524,22 @@ function NotebookEditorPage() {
     replacePage({ ...page, template, updatedAt: Date.now() });
   };
 
+  const updateTemplateOpacity = (value: number) => {
+    const page = pageRef.current;
+    if (!page) return;
+    replacePage({
+      ...page,
+      templateOpacity: clampTemplateOpacity(value),
+      updatedAt: Date.now(),
+    });
+  };
+
   const addPage = () => {
     if (!notebook || !currentPage) return;
-    const page = emptyPage(
-      notebook.id,
-      currentPage.template,
-      currentPage.width,
-      currentPage.height,
-    );
+    const page = {
+      ...emptyPage(notebook.id, currentPage.template, currentPage.width, currentPage.height),
+      templateOpacity: clampTemplateOpacity(currentPage.templateOpacity),
+    };
     void putPage(page);
     const nextPages = [...pages, page];
     setPages(nextPages);
@@ -792,7 +804,7 @@ function NotebookEditorPage() {
         height: 100,
         text: "",
         fontSize: 18,
-        color: "#1f2937",
+        color,
       };
       commitElements([...page.elements, element]);
       setSelectedIds([element.id]);
@@ -1091,7 +1103,7 @@ function NotebookEditorPage() {
       recorder.start();
       recorderRef.current = { recorder, chunks, stream };
       setRecording(true);
-      toast.info("Recordingâ€¦ tap the microphone again to stop");
+      toast.info("Recording… tap the microphone again to stop");
     } catch {
       toast.error("Microphone permission was denied");
     }
@@ -1200,6 +1212,14 @@ function NotebookEditorPage() {
 
   const linkedCourse = state.courses.find((course) => course.id === notebook.linkedCourseId);
   const linkedDeck = state.decks.find((deck) => deck.id === notebook.linkedDeckId);
+  const currentPageIndex = Math.max(
+    0,
+    pages.findIndex((page) => page.id === currentPage.id),
+  );
+  const goToPage = (delta: number) => {
+    const target = pages[currentPageIndex + delta];
+    if (target) setCurrentId(target.id);
+  };
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-background">
@@ -1216,9 +1236,10 @@ function NotebookEditorPage() {
       />
 
       <header className="flex flex-wrap items-center gap-2 border-b border-border bg-background/95 px-2 py-2 backdrop-blur sm:px-3">
-        <Button asChild variant="ghost" size="icon" aria-label="Back to notebooks">
+        <Button asChild variant="ghost" size="sm" aria-label="Back to notebooks">
           <Link to="/notes">
             <ArrowLeft className="size-4" />
+            <span className="hidden sm:inline">Notebooks</span>
           </Link>
         </Button>
         <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -1235,13 +1256,17 @@ function NotebookEditorPage() {
               saveState === "error" && "border-destructive/40 text-destructive",
             )}
           >
-            {saveState === "saving" ? "Savingâ€¦" : saveState === "error" ? "Save failed" : "Saved"}
+            {saveState === "saving" ? "Saving…" : saveState === "error" ? "Save failed" : "Saved"}
           </Badge>
+        </div>
+
+        <div className="hidden items-center gap-2 text-[11px] text-muted-foreground lg:flex">
+          <span className="rounded-full bg-surface2 px-2 py-1">Local notebook</span>
           {linkedCourse && (
             <Link
               to="/courses/$courseId"
               params={{ courseId: linkedCourse.id }}
-              className="hidden shrink-0 text-xs font-medium text-primary hover:underline lg:inline"
+              className="max-w-40 truncate font-medium text-primary hover:underline"
             >
               {linkedCourse.title}
             </Link>
@@ -1250,42 +1275,42 @@ function NotebookEditorPage() {
             <Link
               to="/decks/$deckId"
               params={{ deckId: linkedDeck.id }}
-              className="hidden shrink-0 text-xs font-medium text-primary hover:underline xl:inline"
+              className="max-w-40 truncate font-medium text-primary hover:underline"
             >
               {linkedDeck.title}
             </Link>
           )}
         </div>
-
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" onClick={undo} aria-label="Undo">
-            <Undo2 className="size-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={redo} aria-label="Redo">
-            <Redo2 className="size-4" />
-          </Button>
-          <Button
-            variant={recording ? "destructive" : "ghost"}
-            size="icon"
-            onClick={toggleRecording}
-            aria-label={recording ? "Stop recording" : "Record audio"}
-          >
-            {recording ? <MicOff className="size-4" /> : <Mic className="size-4" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => generateStudy("summary")}
-            aria-label="Study tools"
-          >
-            <Sparkles className="size-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
-            <Download className="size-4" />
-            <span className="hidden sm:inline">Export</span>
-          </Button>
-        </div>
       </header>
+
+      <ToolRibbon
+        tool={tool}
+        setTool={setTool}
+        color={color}
+        setColor={setColor}
+        penWidth={penWidth}
+        shapeKind={shapeKind}
+        setShapeKind={setShapeKind}
+        zoom={zoom}
+        setZoom={setZoom}
+        fitWidth={fitWidth}
+        deleteSelected={deleteSelected}
+        duplicateSelected={duplicateSelected}
+        selectedCount={selectedIds.length}
+        onOpenSize={() => setInkOpen(true)}
+        onUndo={undo}
+        onRedo={redo}
+        recording={recording}
+        onToggleRecording={toggleRecording}
+        onStudy={(mode) => generateStudy(mode)}
+        onExport={() => setExportOpen(true)}
+        onPageStyle={() => setPageStyleOpen(true)}
+        onAddPage={addPage}
+        pageNumber={currentPageIndex + 1}
+        pageCount={pages.length}
+        onPrevPage={() => goToPage(-1)}
+        onNextPage={() => goToPage(1)}
+      />
 
       <div className="flex min-h-0 flex-1">
         <aside className="hidden w-40 shrink-0 flex-col border-r border-border bg-surface/50 md:flex">
@@ -1423,24 +1448,6 @@ function NotebookEditorPage() {
           </div>
 
           <div className="flex min-h-0 flex-1">
-            <ToolRail
-              tool={tool}
-              setTool={setTool}
-              color={color}
-              setColor={setColor}
-              penWidth={penWidth}
-              setPenWidth={setPenWidth}
-              shapeKind={shapeKind}
-              setShapeKind={setShapeKind}
-              zoom={zoom}
-              setZoom={setZoom}
-              fitWidth={fitWidth}
-              deleteSelected={deleteSelected}
-              duplicateSelected={duplicateSelected}
-              selectedCount={selectedIds.length}
-              className="hidden sm:flex"
-            />
-
             <div
               ref={scrollRef}
               className="relative min-h-0 flex-1 overflow-auto bg-[radial-gradient(circle_at_1px_1px,rgba(80,92,120,0.18)_1px,transparent_0)] [background-size:22px_22px]"
@@ -1673,65 +1680,25 @@ function NotebookEditorPage() {
         </div>
       </div>
 
-      <div className="border-t border-border bg-background p-2 sm:hidden">
-        <ToolRail
-          tool={tool}
-          setTool={setTool}
-          color={color}
-          setColor={setColor}
-          penWidth={penWidth}
-          setPenWidth={setPenWidth}
-          shapeKind={shapeKind}
-          setShapeKind={setShapeKind}
-          zoom={zoom}
-          setZoom={setZoom}
-          fitWidth={fitWidth}
-          deleteSelected={deleteSelected}
-          duplicateSelected={duplicateSelected}
-          selectedCount={selectedIds.length}
-          compact
-        />
-      </div>
-
       <div className="hidden items-center justify-between gap-3 border-t border-border bg-background px-3 py-1.5 text-xs text-muted-foreground md:flex">
         <div className="flex items-center gap-3">
           <span>
-            Page {pages.findIndex((page) => page.id === currentPage.id) + 1} of {pages.length}
+            Page {currentPageIndex + 1} of {pages.length}
           </span>
-          <span>{currentPage.template} paper</span>
+          <span className="capitalize">{currentPage.template} paper</span>
+          <span>
+            {clampTemplateOpacity(currentPage.templateOpacity) === 100
+              ? "Pattern: pure black"
+              : `Pattern: ${clampTemplateOpacity(currentPage.templateOpacity)}%`}
+          </span>
           {selectedIds.length > 0 && <span>{selectedIds.length} selected</span>}
-          {recording && <span className="text-destructive">â— recording</span>}
+          {recording && <span className="text-destructive">Recording</span>}
         </div>
-        <div className="flex items-center gap-2">
-          <Select
-            value={currentPage.template}
-            onValueChange={(value) => updatePageTemplate(value as PageTemplate)}
-          >
-            <SelectTrigger className="h-7 w-32 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PAGE_TEMPLATES.map((item) => (
-                <SelectItem key={item.id} value={item.id}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <button
-            type="button"
-            onClick={() => generateStudy("flashcards")}
-            className="hover:text-foreground"
-          >
-            Flashcards
-          </button>
-          <button
-            type="button"
-            onClick={() => generateStudy("quiz")}
-            className="hover:text-foreground"
-          >
-            Quiz
-          </button>
+        <div className="flex items-center gap-3">
+          <span>{Math.round(zoom * 100)}% zoom</span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="size-1.5 rounded-full bg-success" /> Saved locally
+          </span>
         </div>
       </div>
 
@@ -1784,6 +1751,26 @@ function NotebookEditorPage() {
         </DialogContent>
       </Dialog>
 
+      <PageStyleDialog
+        open={pageStyleOpen}
+        onOpenChange={setPageStyleOpen}
+        template={currentPage.template}
+        opacity={currentPage.templateOpacity}
+        onTemplateChange={updatePageTemplate}
+        onOpacityChange={updateTemplateOpacity}
+        width={currentPage.width}
+        height={currentPage.height}
+      />
+
+      <InkSizeDialog
+        open={inkOpen}
+        onOpenChange={setInkOpen}
+        width={penWidth}
+        onWidthChange={setPenWidth}
+        tool={tool}
+        color={color}
+      />
+
       <Dialog open={studyOpen} onOpenChange={setStudyOpen}>
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-hidden">
           <DialogHeader>
@@ -1796,7 +1783,7 @@ function NotebookEditorPage() {
             </DialogTitle>
             <DialogDescription>
               Copy this prompt into your AI, then import the JSON result back into Knowly. The
-              notebook text is included only in the prompt â€” nothing is uploaded.
+              notebook text is included only in the prompt — nothing is uploaded.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-wrap gap-1.5">
@@ -1834,13 +1821,266 @@ function NotebookEditorPage() {
   );
 }
 
-function ToolRail({
+function PageStyleDialog({
+  open,
+  onOpenChange,
+  template,
+  opacity,
+  onTemplateChange,
+  onOpacityChange,
+  width,
+  height,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  template: PageTemplate;
+  opacity: number | undefined;
+  onTemplateChange: (template: PageTemplate) => void;
+  onOpacityChange: (value: number) => void;
+  width: number;
+  height: number;
+}) {
+  const pattern = clampTemplateOpacity(opacity);
+  const previewRef = useRef<HTMLCanvasElement>(null);
+  const presets = [
+    { label: "None", value: 0 },
+    { label: "Light", value: 30 },
+    { label: "Soft", value: 60 },
+    { label: "Full", value: 100 },
+  ];
+
+  useEffect(() => {
+    const canvas = previewRef.current;
+    if (!canvas) return;
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    drawTemplate(ctx, template, width, height, pattern / 100);
+  }, [template, pattern, width, height]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90dvh] max-w-xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Palette className="size-4 text-primary" /> Page style
+          </DialogTitle>
+          <DialogDescription>
+            Choose the paper type, then set how visible its pattern is. Pattern strength defaults to
+            100, which draws the pattern in pure black. At 0 the page keeps its paper colour and
+            becomes completely blank.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div>
+          <p className="text-xs font-medium">Paper type</p>
+          <div className="mt-2 grid grid-cols-4 gap-1.5">
+            {PAGE_TEMPLATES.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onTemplateChange(item.id)}
+                className={cn(
+                  "rounded-lg border px-2 py-2 text-[11px] font-medium transition-colors",
+                  template === item.id
+                    ? "border-primary/35 bg-primary/10 text-primary"
+                    : "border-border bg-background text-muted-foreground hover:border-primary/25 hover:text-foreground",
+                )}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-4 rounded-2xl border border-border bg-surface/50 p-3 sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:items-center">
+          <div className="relative mx-auto h-40 w-28 overflow-hidden rounded-xl border border-border bg-[#fffefa] shadow-inner sm:w-full">
+            <canvas
+              ref={previewRef}
+              aria-label={`${template} paper preview`}
+              className="h-full w-full object-cover object-top"
+            />
+            <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-1.5 py-0.5 text-[9px] font-semibold text-white">
+              {pattern}%
+            </span>
+          </div>
+
+          <div className="min-w-0">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium">Show page pattern</p>
+                <p className="mt-0.5 text-[11px] leading-4 text-muted-foreground">
+                  0 hides the pattern; 100 is pure black
+                </p>
+              </div>
+              <Switch
+                checked={pattern > 0}
+                onCheckedChange={(checked) => onOpacityChange(checked ? 100 : 0)}
+                aria-label="Toggle page pattern"
+              />
+            </div>
+
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="page-pattern" className="text-xs">
+                  Pattern strength
+                </Label>
+                <span className="rounded-md bg-background px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ring-1 ring-border">
+                  {pattern}%
+                </span>
+              </div>
+              <Slider
+                id="page-pattern"
+                value={[pattern]}
+                onValueChange={(next) => onOpacityChange(next[0] ?? 0)}
+                min={0}
+                max={100}
+                step={5}
+                aria-label="Page pattern strength"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 gap-2">
+          {presets.map((preset) => (
+            <button
+              key={preset.label}
+              type="button"
+              onClick={() => onOpacityChange(preset.value)}
+              className={cn(
+                "rounded-xl border px-2 py-2 text-xs font-medium transition-colors",
+                pattern === preset.value
+                  ? "border-primary/35 bg-primary/10 text-primary"
+                  : "border-border bg-background text-muted-foreground hover:border-primary/25 hover:text-foreground",
+              )}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+
+        <p className="text-[11px] leading-4 text-muted-foreground">
+          The pattern sits behind handwriting, images, and any PDF page. A PDF or image background
+          can cover the paper pattern on that page.
+        </p>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function InkSizeDialog({
+  open,
+  onOpenChange,
+  width,
+  onWidthChange,
+  tool,
+  color,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  width: number;
+  onWidthChange: (width: number) => void;
+  tool: NoteTool;
+  color: string;
+}) {
+  const effectiveWidth = tool === "highlighter" ? width * 6 : width;
+  const label =
+    tool === "highlighter" ? "Highlighter size" : tool === "pencil" ? "Pencil size" : "Ink size";
+  const presets = [1, 2, 3, 5, 8, 12];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <PenLine className="size-4 text-primary" /> {label}
+          </DialogTitle>
+          <DialogDescription>
+            Set the stroke width from hairline to bold marker. Your choice carries across pen,
+            pencil, shapes and tape edges.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="rounded-2xl border border-border bg-[#fffefa] p-4 shadow-inner">
+          <svg viewBox="0 0 280 64" className="h-16 w-full" aria-hidden>
+            <path
+              d="M12 44 C 44 8, 72 58, 102 26 S 156 8, 184 36 S 232 58, 268 18"
+              fill="none"
+              stroke={color}
+              strokeWidth={effectiveWidth}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity={tool === "highlighter" ? 0.45 : tool === "pencil" ? 0.82 : 1}
+            />
+          </svg>
+          <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground">
+            <span>Live preview</span>
+            <span className="font-semibold text-foreground">
+              {width}px{tool === "highlighter" ? ` → ${effectiveWidth}px` : ""}
+            </span>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="ink-size" className="text-xs">
+              Stroke width
+            </Label>
+            <span className="rounded-md bg-surface2 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums">
+              {width}px
+            </span>
+          </div>
+          <Slider
+            id="ink-size"
+            value={[width]}
+            onValueChange={(next) => onWidthChange(next[0] ?? 1)}
+            min={1}
+            max={12}
+            step={0.5}
+            aria-label="Ink stroke width"
+          />
+          <div className="flex justify-between text-[9px] text-muted-foreground">
+            <span>Hairline</span>
+            <span>Bold</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-6 gap-1.5">
+          {presets.map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              onClick={() => onWidthChange(preset)}
+              className={cn(
+                "grid h-9 place-items-center rounded-lg border text-[10px] font-semibold transition-colors",
+                width === preset
+                  ? "border-primary/35 bg-primary/10 text-primary"
+                  : "border-border bg-background text-muted-foreground hover:border-primary/25 hover:text-foreground",
+              )}
+            >
+              {preset}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex justify-end">
+          <Button size="sm" onClick={() => onOpenChange(false)}>
+            Done
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ToolRibbon({
   tool,
   setTool,
   color,
   setColor,
   penWidth,
-  setPenWidth,
   shapeKind,
   setShapeKind,
   zoom,
@@ -1849,15 +2089,25 @@ function ToolRail({
   deleteSelected,
   duplicateSelected,
   selectedCount,
-  compact,
-  className,
+  onOpenSize,
+  onUndo,
+  onRedo,
+  recording,
+  onToggleRecording,
+  onStudy,
+  onExport,
+  onPageStyle,
+  onAddPage,
+  pageNumber,
+  pageCount,
+  onPrevPage,
+  onNextPage,
 }: {
   tool: NoteTool;
   setTool: (tool: NoteTool) => void;
   color: string;
   setColor: (color: string) => void;
   penWidth: number;
-  setPenWidth: (width: number) => void;
   shapeKind: ShapeElement["shape"];
   setShapeKind: (shape: ShapeElement["shape"]) => void;
   zoom: number;
@@ -1866,193 +2116,329 @@ function ToolRail({
   deleteSelected: () => void;
   duplicateSelected: () => void;
   selectedCount: number;
-  compact?: boolean;
-  className?: string;
+  onOpenSize: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  recording: boolean;
+  onToggleRecording: () => void;
+  onStudy: (mode: "summary" | "flashcards" | "quiz") => void;
+  onExport: () => void;
+  onPageStyle: () => void;
+  onAddPage: () => void;
+  pageNumber: number;
+  pageCount: number;
+  onPrevPage: () => void;
+  onNextPage: () => void;
 }) {
   const palette = tool === "highlighter" ? HIGHLIGHTER_COLORS : PEN_COLORS;
+
+  return (
+    <section
+      aria-label="Notebook tools ribbon"
+      className="shrink-0 border-b border-border bg-surface/80 shadow-sm"
+    >
+      <div className="flex items-stretch gap-1.5 overflow-x-auto px-2 py-1.5 [scrollbar-width:thin] sm:gap-2 sm:px-3">
+        <RibbonGroup label="History">
+          <RibbonButton icon={Undo2} label="Undo" title="Undo (Ctrl+Z)" onClick={onUndo} />
+          <RibbonButton icon={Redo2} label="Redo" title="Redo (Ctrl+Y)" onClick={onRedo} />
+        </RibbonGroup>
+
+        <RibbonGroup label="Tools">
+          <div className="grid grid-flow-col grid-rows-2 gap-0.5">
+            {TOOLS.map((item) => {
+              const Icon = item.icon;
+              return (
+                <RibbonButton
+                  key={item.id}
+                  icon={Icon}
+                  label={TOOL_SHORT_LABELS[item.id] ?? item.label}
+                  title={item.label}
+                  active={tool === item.id}
+                  pressed={tool === item.id}
+                  onClick={() => setTool(item.id)}
+                />
+              );
+            })}
+          </div>
+        </RibbonGroup>
+
+        {tool === "shape" && (
+          <RibbonGroup label="Shape">
+            <div className="grid grid-cols-2 gap-0.5">
+              {(["rect", "ellipse", "line", "arrow"] as const).map((kind) => (
+                <button
+                  key={kind}
+                  type="button"
+                  onClick={() => setShapeKind(kind)}
+                  className={cn(
+                    "h-9 w-14 rounded-md border text-[10px] font-medium capitalize transition-colors",
+                    shapeKind === kind
+                      ? "border-primary/30 bg-primary/10 text-primary"
+                      : "border-border bg-background text-muted-foreground hover:border-primary/25 hover:text-foreground",
+                  )}
+                >
+                  {kind}
+                </button>
+              ))}
+            </div>
+          </RibbonGroup>
+        )}
+
+        {selectedCount > 0 && (
+          <RibbonGroup label="Selection">
+            <RibbonButton
+              icon={Copy}
+              label="Duplicate"
+              title="Duplicate selected items"
+              onClick={duplicateSelected}
+            />
+            <RibbonButton
+              icon={Trash2}
+              label="Delete"
+              title="Delete selected items"
+              danger
+              onClick={deleteSelected}
+            />
+          </RibbonGroup>
+        )}
+
+        <RibbonGroup label="Ink">
+          <div className="flex flex-col gap-1">
+            <div className="grid grid-cols-4 gap-1.5 px-0.5">
+              {palette.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setColor(item)}
+                  aria-label={`Use ink colour ${item}`}
+                  aria-pressed={color === item}
+                  title={item}
+                  className={cn(
+                    "size-[18px] rounded-full transition-transform hover:scale-110",
+                    color === item
+                      ? "ring-2 ring-primary ring-offset-2 ring-offset-surface"
+                      : "ring-1 ring-border",
+                  )}
+                  style={{ background: item }}
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={onOpenSize}
+              title="Open ink size settings"
+              aria-label={`Ink size is ${penWidth} pixels. Open size settings.`}
+              className="flex h-7 w-full items-center gap-1.5 rounded-md border border-border bg-background px-1.5 text-[10px] font-medium transition-colors hover:border-primary/30"
+            >
+              <span
+                className="min-w-1 flex-1 rounded-full"
+                style={{
+                  height: Math.max(1, Math.min(5, penWidth / 2)),
+                  background: color,
+                  boxShadow: "0 0 0 1px rgba(15, 23, 42, 0.12)",
+                }}
+              />
+              <span className="shrink-0 tabular-nums">{penWidth}px</span>
+            </button>
+          </div>
+        </RibbonGroup>
+
+        <RibbonGroup label="Page">
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-0.5">
+              <RibbonIconButton
+                icon={ChevronLeft}
+                label="Previous page"
+                onClick={onPrevPage}
+                disabled={pageNumber <= 1}
+              />
+              <div className="grid h-9 min-w-12 place-items-center rounded-md bg-background px-1 ring-1 ring-border">
+                <span className="text-[10px] font-semibold tabular-nums">
+                  {pageNumber}/{pageCount}
+                </span>
+                <span className="text-[8px] uppercase tracking-wide text-muted-foreground">
+                  page
+                </span>
+              </div>
+              <RibbonIconButton
+                icon={ChevronRight}
+                label="Next page"
+                onClick={onNextPage}
+                disabled={pageNumber >= pageCount}
+              />
+            </div>
+            <div className="flex items-center gap-0.5">
+              <RibbonButton
+                icon={Plus}
+                label="New page"
+                title="Add a new page"
+                onClick={onAddPage}
+              />
+              <RibbonButton
+                icon={Palette}
+                label="Paper"
+                title="Choose paper type and pattern strength"
+                onClick={onPageStyle}
+              />
+            </div>
+          </div>
+        </RibbonGroup>
+
+        <RibbonGroup label="View">
+          <RibbonButton
+            icon={ChevronLeft}
+            label="Zoom out"
+            onClick={() => setZoom(Math.max(0.35, Math.round((zoom - 0.1) * 100) / 100))}
+          />
+          <div className="grid h-9 min-w-12 place-items-center rounded-md bg-background px-1 ring-1 ring-border">
+            <span className="text-[10px] font-semibold tabular-nums">
+              {Math.round(zoom * 100)}%
+            </span>
+            <span className="text-[8px] uppercase tracking-wide text-muted-foreground">zoom</span>
+          </div>
+          <RibbonButton
+            icon={ChevronRight}
+            label="Zoom in"
+            onClick={() => setZoom(Math.min(2.2, Math.round((zoom + 0.1) * 100) / 100))}
+          />
+          <RibbonButton icon={Maximize2} label="Fit" title="Fit page width" onClick={fitWidth} />
+        </RibbonGroup>
+
+        <RibbonGroup label="Study">
+          <div className="grid grid-cols-2 gap-0.5">
+            <RibbonButton
+              icon={FileText}
+              label="Summary"
+              title="Generate an AI revision sheet from this notebook"
+              onClick={() => onStudy("summary")}
+            />
+            <RibbonButton
+              icon={Copy}
+              label="Cards"
+              title="Generate AI flashcards from this notebook"
+              onClick={() => onStudy("flashcards")}
+            />
+            <RibbonButton
+              icon={Check}
+              label="Quiz"
+              title="Generate an AI quiz from this notebook"
+              onClick={() => onStudy("quiz")}
+            />
+            <RibbonButton
+              icon={Download}
+              label="Export"
+              title="Export this page, the notebook PDF, or the archive"
+              onClick={onExport}
+            />
+          </div>
+        </RibbonGroup>
+
+        <RibbonGroup label="Audio">
+          <RibbonButton
+            icon={recording ? MicOff : Mic}
+            label={recording ? "Stop" : "Record"}
+            title={recording ? "Stop recording audio" : "Record audio onto this page"}
+            active={recording}
+            pressed={recording}
+            onClick={onToggleRecording}
+          />
+        </RibbonGroup>
+      </div>
+    </section>
+  );
+}
+
+function RibbonGroup({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <div
       className={cn(
-        "shrink-0 border-border bg-surface/60",
-        compact
-          ? "flex w-full items-center gap-1.5 overflow-x-auto py-1"
-          : "flex w-14 flex-col items-center gap-1 overflow-y-auto border-r py-2",
+        "flex shrink-0 flex-col justify-between border-r border-border/70 pr-1.5 last:border-r-0 last:pr-0",
         className,
       )}
     >
-      {TOOLS.map((item) => {
-        const Icon = item.icon;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setTool(item.id)}
-            title={item.label}
-            aria-label={item.label}
-            className={cn(
-              "grid size-9 shrink-0 place-items-center rounded-lg transition-colors",
-              tool === item.id
-                ? "bg-primary/15 text-primary ring-1 ring-primary/25"
-                : "text-muted-foreground hover:bg-surface2 hover:text-foreground",
-            )}
-          >
-            <Icon className="size-4" />
-          </button>
-        );
-      })}
-
-      <div
-        className={cn(
-          "shrink-0",
-          compact
-            ? "flex items-center gap-1 pl-2"
-            : "mt-2 flex flex-col gap-1 border-t border-border pt-2",
-        )}
-      >
-        {palette.map((item) => (
-          <button
-            key={item}
-            type="button"
-            onClick={() => setColor(item)}
-            aria-label={`Use ${item}`}
-            className={cn(
-              "rounded-full ring-2 ring-offset-1 ring-offset-background",
-              compact ? "size-4" : "size-5",
-              color === item ? "ring-primary" : "ring-transparent",
-            )}
-            style={{ background: item }}
-          />
-        ))}
-      </div>
-
-      {!compact && (
-        <div className="mt-2 w-10 border-t border-border pt-2">
-          <Slider
-            value={[penWidth]}
-            onValueChange={(value) => setPenWidth(value[0] ?? 1)}
-            min={1}
-            max={12}
-            step={0.5}
-            className="h-24 w-10 [writing-mode:vertical-lr]"
-          />
-          <span className="mt-1 block text-center text-[10px] text-muted-foreground">
-            {penWidth}px
-          </span>
-        </div>
-      )}
-
-      {compact && (
-        <div className="flex shrink-0 items-center gap-1 pl-2">
-          <input
-            type="range"
-            min={1}
-            max={12}
-            step={0.5}
-            value={penWidth}
-            onChange={(event) => setPenWidth(Number(event.target.value))}
-            aria-label="Pen width"
-            className="w-16 accent-primary"
-          />
-          <span className="text-[9px] text-muted-foreground">{penWidth}px</span>
-        </div>
-      )}
-
-      {tool === "shape" && !compact && (
-        <div className="mt-2 flex flex-col gap-1 border-t border-border pt-2">
-          {(["rect", "ellipse", "line", "arrow"] as const).map((kind) => (
-            <button
-              key={kind}
-              type="button"
-              onClick={() => setShapeKind(kind)}
-              className={cn(
-                "rounded px-1 py-0.5 text-[9px] capitalize",
-                shapeKind === kind ? "bg-primary/15 text-primary" : "text-muted-foreground",
-              )}
-            >
-              {kind}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {tool === "shape" && compact && (
-        <div className="flex shrink-0 items-center gap-0.5 pl-1">
-          {(["rect", "ellipse", "line", "arrow"] as const).map((kind) => (
-            <button
-              key={kind}
-              type="button"
-              onClick={() => setShapeKind(kind)}
-              className={cn(
-                "rounded px-1.5 py-1 text-[9px] capitalize",
-                shapeKind === kind ? "bg-primary/15 text-primary" : "text-muted-foreground",
-              )}
-            >
-              {kind}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div
-        className={cn(
-          "shrink-0",
-          compact
-            ? "flex items-center gap-1 pl-1"
-            : "mt-auto flex flex-col gap-1 border-t border-border pt-2",
-        )}
-      >
-        <button
-          type="button"
-          onClick={() => setZoom(Math.max(0.35, Math.round((zoom - 0.1) * 100) / 100))}
-          className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-surface2"
-          aria-label="Zoom out"
-        >
-          <ChevronLeft className="size-3.5" />
-        </button>
-        <button
-          type="button"
-          onClick={fitWidth}
-          className="rounded px-1 text-[10px] text-muted-foreground hover:text-foreground"
-        >
-          {Math.round(zoom * 100)}%
-        </button>
-        <button
-          type="button"
-          onClick={() => setZoom(Math.min(2.2, Math.round((zoom + 0.1) * 100) / 100))}
-          className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-surface2"
-          aria-label="Zoom in"
-        >
-          <ChevronRight className="size-3.5" />
-        </button>
-      </div>
-
-      {selectedCount > 0 && (
-        <div
-          className={cn(
-            "shrink-0",
-            compact
-              ? "flex items-center gap-1 pl-1"
-              : "mt-2 flex flex-col gap-1 border-t border-border pt-2",
-          )}
-        >
-          <button
-            type="button"
-            onClick={duplicateSelected}
-            className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-surface2"
-            aria-label="Duplicate selected"
-          >
-            <Copy className="size-4" />
-          </button>
-          <button
-            type="button"
-            onClick={deleteSelected}
-            className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-surface2 hover:text-destructive"
-            aria-label="Delete selected"
-          >
-            <Trash2 className="size-4" />
-          </button>
-        </div>
-      )}
+      <div className="flex items-start gap-0.5">{children}</div>
+      <p className="mt-0.5 text-center text-[8px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/65">
+        {label}
+      </p>
     </div>
+  );
+}
+
+function RibbonButton({
+  icon: Icon,
+  label,
+  title,
+  active,
+  pressed,
+  danger,
+  disabled,
+  onClick,
+}: {
+  icon: typeof PenLine;
+  label: string;
+  title?: string;
+  active?: boolean;
+  pressed?: boolean;
+  danger?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title ?? label}
+      aria-label={title ?? label}
+      aria-pressed={pressed}
+      disabled={disabled}
+      className={cn(
+        "flex h-9 w-[52px] shrink-0 flex-col items-center justify-center gap-0.5 rounded-md px-0.5 text-[9px] leading-none transition-colors",
+        active
+          ? "bg-primary/15 text-primary ring-1 ring-inset ring-primary/25"
+          : "text-muted-foreground hover:bg-surface2 hover:text-foreground",
+        danger && "hover:bg-destructive/10 hover:text-destructive",
+        disabled &&
+          "cursor-not-allowed opacity-35 hover:bg-transparent hover:text-muted-foreground",
+      )}
+    >
+      <Icon className="size-3.5" />
+      <span className="max-w-full truncate">{label}</span>
+    </button>
+  );
+}
+
+function RibbonIconButton({
+  icon: Icon,
+  label,
+  disabled,
+  onClick,
+}: {
+  icon: typeof PenLine;
+  label: string;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={label}
+      aria-label={label}
+      className={cn(
+        "grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-surface2 hover:text-foreground",
+        disabled && "cursor-not-allowed opacity-30 hover:bg-transparent",
+      )}
+    >
+      <Icon className="size-3.5" />
+    </button>
   );
 }

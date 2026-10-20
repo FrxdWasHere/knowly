@@ -40,9 +40,18 @@ import {
   FileBarChart,
   Shuffle,
   Keyboard,
+  ArrowLeft,
+  BookOpenCheck,
+  CheckCircle2,
+  Circle,
+  FileQuestion,
+  Pencil,
+  Play,
 } from "lucide-react";
 import { useKnowly } from "@/store/knowly";
 import { levelFromXp } from "@/lib/gamification";
+import { courseStats, lessonProgress, nextLesson } from "@/lib/courses";
+import type { Course } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useWallpaperUrl } from "@/hooks/use-wallpaper-url";
@@ -173,8 +182,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { state, updateSettings } = useKnowly();
   const palette = useCommandPalette();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const search = useRouterState({ select: (r) => r.location.searchStr });
   const collapsed = state.settings.sidebarCollapsed;
   const activeGroup = groupForPath(pathname);
+  const courseMatch = pathname.match(/^\/courses\/([^/]+)/);
+  const activeCourse = courseMatch
+    ? state.courses.find((course) => course.id === courseMatch[1])
+    : undefined;
+  const courseMode = Boolean(activeCourse);
   const [openGroup, setOpenGroup] = useState<string | null>(() =>
     activeGroup && activeGroup !== OVERVIEW_GROUP ? activeGroup.label : null,
   );
@@ -206,196 +221,214 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside
         className={cn(
           "sticky top-0 z-10 hidden h-screen shrink-0 flex-col border-r border-sidebar-border bg-sidebar/95 backdrop-blur transition-all duration-300 md:flex",
-          collapsed ? "w-[76px]" : "w-64",
+          courseMode ? "w-[304px]" : collapsed ? "w-[76px]" : "w-64",
         )}
       >
-        <div
-          className={cn("flex items-center gap-3 px-5 py-6", collapsed && "justify-center px-3")}
-        >
-          <span className="anim-pop grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary/30 via-primary/10 to-transparent shadow-[0_10px_24px_-12px_var(--primary)] ring-1 ring-primary/30">
-            <Logo className="size-7 rounded-md" />
-          </span>
-          {!collapsed && (
-            <div className="anim-fade-in min-w-0">
-              <p className="font-display text-base font-bold leading-none tracking-tight">Knowly</p>
-              <p className="mt-1.5 inline-flex max-w-full items-center gap-1 truncate rounded-full bg-sidebar-accent/70 px-2 py-0.5 text-[11px] text-muted-foreground ring-1 ring-sidebar-border">
-                {state.settings.avatarEmoji} {state.settings.displayName}
-              </p>
-            </div>
-          )}
-        </div>
-
-        <nav className="flex-1 overflow-y-auto px-3 pb-2">
-          {collapsed ? (
-            NAV_GROUPS.map((group) => (
-              <div key={group.label} className="mt-4 first:mt-1">
-                <div aria-hidden className="mx-3 mb-2 border-t border-sidebar-border" />
-                {group.items.map((item) => {
-                  const active = isNavItemActive(item, pathname);
-                  return (
-                    <Link
-                      key={item.to}
-                      to={item.to}
-                      title={item.label}
-                      className={cn(navLinkClass(active), "justify-center px-2")}
-                    >
-                      <span className={navIconClass(active)}>
-                        <item.icon className="size-4" />
-                      </span>
-                    </Link>
-                  );
-                })}
-              </div>
-            ))
-          ) : (
-            <>
-              {OVERVIEW_GROUP.items.map((item) => {
-                const active = isNavItemActive(item, pathname);
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    title={item.label}
-                    className={navLinkClass(active)}
-                  >
-                    <span className={navIconClass(active)}>
-                      <item.icon className="size-4" />
-                    </span>
-                    <span className="truncate">{item.label}</span>
-                  </Link>
-                );
-              })}
-              {SUBMENU_GROUPS.map((group) => {
-                const isOpen = openGroup === group.label;
-                const hasActive = group.items.some((item) => isNavItemActive(item, pathname));
-                const panelId = `sidebar-submenu-${group.label.toLowerCase()}`;
-                return (
-                  <div
-                    key={group.label}
-                    className={cn(
-                      "mt-1.5 rounded-2xl transition-colors duration-300",
-                      isOpen && "bg-background/40 ring-1 ring-sidebar-border",
-                    )}
-                  >
-                    <button
-                      type="button"
-                      aria-expanded={isOpen}
-                      aria-controls={panelId}
-                      title={`${group.label} submenu`}
-                      onClick={() => setOpenGroup(isOpen ? null : group.label)}
-                      className={cn(
-                        "press group flex w-full items-center gap-2.5 rounded-2xl px-2.5 py-2 text-sm transition-all duration-200",
-                        isOpen
-                          ? "text-sidebar-accent-foreground"
-                          : hasActive
-                            ? "text-sidebar-accent-foreground hover:bg-sidebar-accent/40"
-                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
-                      )}
-                    >
-                      <span className={navIconClass(isOpen || hasActive)}>
-                        <group.icon className="size-4" />
-                      </span>
-                      <span className="flex-1 truncate text-left text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/80">
-                        {group.label}
-                      </span>
-                      {hasActive && !isOpen && (
-                        <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-primary" />
-                      )}
-                      <ChevronDown
-                        className={cn(
-                          "size-4 shrink-0 text-muted-foreground transition-transform duration-300",
-                          isOpen && "rotate-180",
-                        )}
-                      />
-                    </button>
-                    <div
-                      className={cn(
-                        "grid transition-[grid-template-rows] duration-300 ease-out",
-                        isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
-                      )}
-                    >
-                      <div className="overflow-hidden" inert={!isOpen}>
-                        <ul
-                          id={panelId}
-                          className="mx-2 mb-2 divide-y divide-sidebar-border/60 overflow-hidden rounded-xl border border-sidebar-border/70 bg-background/50"
-                        >
-                          {group.items.map((item) => {
-                            const active = isNavItemActive(item, pathname);
-                            return (
-                              <li key={item.to}>
-                                <Link
-                                  to={item.to}
-                                  title={item.label}
-                                  aria-current={active ? "page" : undefined}
-                                  tabIndex={isOpen ? undefined : -1}
-                                  className={cn(
-                                    "press group/row flex items-center gap-2.5 px-2.5 py-2 text-sm font-medium transition-colors duration-150",
-                                    active
-                                      ? "bg-primary/10 text-foreground"
-                                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
-                                  )}
-                                >
-                                  <span
-                                    className={cn(
-                                      "grid size-6 shrink-0 place-items-center rounded-md ring-1 transition-all duration-200 group-hover/row:scale-105",
-                                      active
-                                        ? "bg-primary/15 text-primary ring-primary/30"
-                                        : "bg-background/40 text-muted-foreground ring-sidebar-border group-hover/row:text-primary",
-                                    )}
-                                  >
-                                    <item.icon className="size-3.5" />
-                                  </span>
-                                  <span className="flex-1 truncate">{item.label}</span>
-                                  <ChevronRight
-                                    className={cn(
-                                      "size-3.5 shrink-0 transition-all duration-150",
-                                      active
-                                        ? "text-primary"
-                                        : "text-muted-foreground/30 group-hover/row:translate-x-px group-hover/row:text-muted-foreground",
-                                    )}
-                                  />
-                                </Link>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </>
-          )}
-        </nav>
-
-        <div className="space-y-3 border-t border-sidebar-border p-3">
-          <div className="rounded-xl border border-sidebar-border bg-gradient-to-br from-sidebar-accent/80 to-sidebar-accent/30 p-3 shadow-sm">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold tracking-tight">Lv {level}</span>
+        {activeCourse ? (
+          <CourseSidebar course={activeCourse} pathname={pathname} search={search} />
+        ) : (
+          <>
+            <div
+              className={cn(
+                "flex items-center gap-3 px-5 py-6",
+                collapsed && "justify-center px-3",
+              )}
+            >
+              <span className="anim-pop grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary/30 via-primary/10 to-transparent shadow-[0_10px_24px_-12px_var(--primary)] ring-1 ring-primary/30">
+                <Logo className="size-7 rounded-md" />
+              </span>
               {!collapsed && (
-                <span className="text-muted-foreground">
-                  {intoLevel}/{needed} XP
-                </span>
+                <div className="anim-fade-in min-w-0">
+                  <p className="font-display text-base font-bold leading-none tracking-tight">
+                    Knowly
+                  </p>
+                  <p className="mt-1.5 inline-flex max-w-full items-center gap-1 truncate rounded-full bg-sidebar-accent/70 px-2 py-0.5 text-[11px] text-muted-foreground ring-1 ring-sidebar-border">
+                    {state.settings.avatarEmoji} {state.settings.displayName}
+                  </p>
+                </div>
               )}
             </div>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-background/60 ring-1 ring-sidebar-border">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-700 ease-out"
-                style={{ width: `${pct}%` }}
-              />
+
+            <nav className="flex-1 overflow-y-auto px-3 pb-2">
+              {collapsed ? (
+                NAV_GROUPS.map((group) => (
+                  <div key={group.label} className="mt-4 first:mt-1">
+                    <div aria-hidden className="mx-3 mb-2 border-t border-sidebar-border" />
+                    {group.items.map((item) => {
+                      const active = isNavItemActive(item, pathname);
+                      return (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          title={item.label}
+                          className={cn(navLinkClass(active), "justify-center px-2")}
+                        >
+                          <span className={navIconClass(active)}>
+                            <item.icon className="size-4" />
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ))
+              ) : (
+                <>
+                  {OVERVIEW_GROUP.items.map((item) => {
+                    const active = isNavItemActive(item, pathname);
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        title={item.label}
+                        className={navLinkClass(active)}
+                      >
+                        <span className={navIconClass(active)}>
+                          <item.icon className="size-4" />
+                        </span>
+                        <span className="truncate">{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                  {SUBMENU_GROUPS.map((group) => {
+                    const isOpen = openGroup === group.label;
+                    const hasActive = group.items.some((item) => isNavItemActive(item, pathname));
+                    const panelId = `sidebar-submenu-${group.label.toLowerCase()}`;
+                    return (
+                      <div
+                        key={group.label}
+                        className={cn(
+                          "mt-1.5 rounded-2xl transition-colors duration-300",
+                          isOpen && "bg-background/40 ring-1 ring-sidebar-border",
+                        )}
+                      >
+                        <button
+                          type="button"
+                          aria-expanded={isOpen}
+                          aria-controls={panelId}
+                          title={`${group.label} submenu`}
+                          onClick={() => setOpenGroup(isOpen ? null : group.label)}
+                          className={cn(
+                            "press group flex w-full items-center gap-2.5 rounded-2xl px-2.5 py-2 text-sm transition-all duration-200",
+                            isOpen
+                              ? "text-sidebar-accent-foreground"
+                              : hasActive
+                                ? "text-sidebar-accent-foreground hover:bg-sidebar-accent/40"
+                                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                          )}
+                        >
+                          <span className={navIconClass(isOpen || hasActive)}>
+                            <group.icon className="size-4" />
+                          </span>
+                          <span className="flex-1 truncate text-left text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/80">
+                            {group.label}
+                          </span>
+                          {hasActive && !isOpen && (
+                            <span
+                              aria-hidden
+                              className="size-1.5 shrink-0 rounded-full bg-primary"
+                            />
+                          )}
+                          <ChevronDown
+                            className={cn(
+                              "size-4 shrink-0 text-muted-foreground transition-transform duration-300",
+                              isOpen && "rotate-180",
+                            )}
+                          />
+                        </button>
+                        <div
+                          className={cn(
+                            "grid transition-[grid-template-rows] duration-300 ease-out",
+                            isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+                          )}
+                        >
+                          <div className="overflow-hidden" inert={!isOpen}>
+                            <ul
+                              id={panelId}
+                              className="mx-2 mb-2 divide-y divide-sidebar-border/60 overflow-hidden rounded-xl border border-sidebar-border/70 bg-background/50"
+                            >
+                              {group.items.map((item) => {
+                                const active = isNavItemActive(item, pathname);
+                                return (
+                                  <li key={item.to}>
+                                    <Link
+                                      to={item.to}
+                                      title={item.label}
+                                      aria-current={active ? "page" : undefined}
+                                      tabIndex={isOpen ? undefined : -1}
+                                      className={cn(
+                                        "press group/row flex items-center gap-2.5 px-2.5 py-2 text-sm font-medium transition-colors duration-150",
+                                        active
+                                          ? "bg-primary/10 text-foreground"
+                                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                                      )}
+                                    >
+                                      <span
+                                        className={cn(
+                                          "grid size-6 shrink-0 place-items-center rounded-md ring-1 transition-all duration-200 group-hover/row:scale-105",
+                                          active
+                                            ? "bg-primary/15 text-primary ring-primary/30"
+                                            : "bg-background/40 text-muted-foreground ring-sidebar-border group-hover/row:text-primary",
+                                        )}
+                                      >
+                                        <item.icon className="size-3.5" />
+                                      </span>
+                                      <span className="flex-1 truncate">{item.label}</span>
+                                      <ChevronRight
+                                        className={cn(
+                                          "size-3.5 shrink-0 transition-all duration-150",
+                                          active
+                                            ? "text-primary"
+                                            : "text-muted-foreground/30 group-hover/row:translate-x-px group-hover/row:text-muted-foreground",
+                                        )}
+                                      />
+                                    </Link>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </nav>
+
+            <div className="space-y-3 border-t border-sidebar-border p-3">
+              <div className="rounded-xl border border-sidebar-border bg-gradient-to-br from-sidebar-accent/80 to-sidebar-accent/30 p-3 shadow-sm">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold tracking-tight">Lv {level}</span>
+                  {!collapsed && (
+                    <span className="text-muted-foreground">
+                      {intoLevel}/{needed} XP
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-background/60 ring-1 ring-sidebar-border">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-700 ease-out"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                onClick={() => updateSettings({ sidebarCollapsed: !collapsed })}
+                className="press flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-xs text-muted-foreground transition-colors hover:border-sidebar-border hover:bg-sidebar-accent hover:text-foreground"
+              >
+                {collapsed ? (
+                  <PanelLeft className="size-4" />
+                ) : (
+                  <PanelLeftClose className="size-4" />
+                )}
+                {!collapsed && "Collapse"}
+              </Button>
             </div>
-          </div>
-          <Button
-            variant="ghost"
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            onClick={() => updateSettings({ sidebarCollapsed: !collapsed })}
-            className="press flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-xs text-muted-foreground transition-colors hover:border-sidebar-border hover:bg-sidebar-accent hover:text-foreground"
-          >
-            {collapsed ? <PanelLeft className="size-4" /> : <PanelLeftClose className="size-4" />}
-            {!collapsed && "Collapse"}
-          </Button>
-        </div>
+          </>
+        )}
       </aside>
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
@@ -434,19 +467,23 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <nav className="flex gap-1 overflow-x-auto border-b border-border bg-surface/40 px-3 py-2 md:hidden">
-          {NAV.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className="press shrink-0 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors"
-              activeProps={{ className: "bg-secondary text-foreground" }}
-              activeOptions={{ exact: item.to === "/dashboard" }}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        {activeCourse ? (
+          <CourseMobileBar course={activeCourse} pathname={pathname} search={search} />
+        ) : (
+          <nav className="flex gap-1 overflow-x-auto border-b border-border bg-surface/40 px-3 py-2 md:hidden">
+            {NAV.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className="press shrink-0 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors"
+                activeProps={{ className: "bg-secondary text-foreground" }}
+                activeOptions={{ exact: item.to === "/dashboard" }}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        )}
 
         <main key={pathname} className={cn("anim-fade-up flex-1", pad)}>
           {children}
@@ -458,6 +495,356 @@ export function AppShell({ children }: { children: ReactNode }) {
         onOpenChange={palette.setOpen}
         targets={NAV.map((item) => ({ to: item.to, label: item.label }))}
       />
+    </div>
+  );
+}
+
+function CourseSidebar({
+  course,
+  pathname,
+  search,
+}: {
+  course: Course;
+  pathname: string;
+  search: string;
+}) {
+  const { state } = useKnowly();
+  const progress = state.courseProgress[course.id];
+  const stats = courseStats(course, progress);
+  const next = nextLesson(course, progress);
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="shrink-0 border-b border-sidebar-border p-4">
+        <Link
+          to="/courses"
+          className="press inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-3.5" /> Course library
+        </Link>
+
+        <div className="mt-4 flex items-start gap-3">
+          <span
+            className="grid size-11 shrink-0 place-items-center rounded-2xl text-xl shadow-sm ring-1 ring-black/5"
+            style={{ background: `${course.color}24` }}
+          >
+            {course.emoji || "📘"}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              {course.subject}
+            </p>
+            <h1 className="mt-0.5 line-clamp-2 font-display text-base font-semibold leading-snug">
+              {course.title}
+            </h1>
+          </div>
+          <Link
+            to="/courses/$courseId/edit"
+            params={{ courseId: course.id }}
+            aria-label="Edit course"
+            className="press grid size-7 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+          >
+            <Pencil className="size-3.5" />
+          </Link>
+        </div>
+
+        <div className="mt-4">
+          <div className="mb-1.5 flex items-center justify-between text-[11px]">
+            <span className="font-medium text-muted-foreground">{stats.percent}% complete</span>
+            <span className="text-muted-foreground">
+              {stats.completedLessons}/{stats.lessons} lessons
+            </span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-sidebar-accent">
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${stats.percent}%`, background: course.color }}
+            />
+          </div>
+        </div>
+      </div>
+
+      <CourseOutline course={course} pathname={pathname} search={search} />
+
+      <div className="shrink-0 space-y-1.5 border-t border-sidebar-border p-3">
+        <Button asChild className="w-full justify-start rounded-xl" size="sm">
+          <Link
+            to={next ? "/courses/$courseId/lessons/$lessonId" : "/courses/$courseId"}
+            params={
+              next ? { courseId: course.id, lessonId: next.lesson.id } : { courseId: course.id }
+            }
+          >
+            <Play className="size-3.5" />
+            {next ? "Continue learning" : "Review course"}
+          </Link>
+        </Button>
+        <Link
+          to="/courses"
+          className="press flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
+        >
+          <ArrowLeft className="size-3.5" /> Exit to course library
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function CourseOutline({
+  course,
+  pathname,
+  search,
+}: {
+  course: Course;
+  pathname: string;
+  search: string;
+}) {
+  const { state } = useKnowly();
+  const progress = state.courseProgress[course.id];
+  const activeLessonId = pathname.match(/\/lessons\/([^/]+)/)?.[1];
+  const activeAssessment = new URLSearchParams(search).get("assessment") ?? undefined;
+  const overviewActive =
+    pathname === `/courses/${course.id}` || pathname === `/courses/${course.id}/`;
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const activeModule = course.modules.find(
+      (module) =>
+        module.lessons.some((lesson) => lesson.id === activeLessonId) ||
+        (module.quiz && module.quiz.id === activeAssessment),
+    );
+    if (!activeModule) return;
+    setExpanded((current) =>
+      current[activeModule.id] === false ? { ...current, [activeModule.id]: true } : current,
+    );
+  }, [activeLessonId, activeAssessment, course.id, course.modules]);
+
+  return (
+    <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-3" aria-label="Course contents">
+      <Link
+        to="/courses/$courseId"
+        params={{ courseId: course.id }}
+        aria-current={overviewActive ? "page" : undefined}
+        className={cn(
+          "press flex items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-colors",
+          overviewActive
+            ? "bg-primary/10 text-foreground ring-1 ring-inset ring-primary/20"
+            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
+        )}
+      >
+        <span className="grid size-6 place-items-center rounded-md bg-background/60 ring-1 ring-sidebar-border">
+          <BookOpenCheck className="size-3.5" />
+        </span>
+        Course home
+      </Link>
+
+      <div className="mb-2 mt-5 flex items-center justify-between px-2.5">
+        <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">
+          Curriculum
+        </p>
+        <span className="text-[9px] tabular-nums text-muted-foreground/60">
+          {course.modules.length} modules
+        </span>
+      </div>
+
+      <div className="space-y-1">
+        {course.modules.map((module, moduleIndex) => {
+          const completed = module.lessons.filter(
+            (lesson) => lessonProgress(progress, lesson.id).status === "completed",
+          ).length;
+          const moduleActive =
+            module.lessons.some((lesson) => lesson.id === activeLessonId) ||
+            Boolean(module.quiz && module.quiz.id === activeAssessment);
+          const open = expanded[module.id] ?? (moduleIndex === 0 || moduleActive);
+          const panelId = `course-module-${module.id}`;
+
+          return (
+            <div
+              key={module.id}
+              className={cn(
+                "rounded-xl transition-colors",
+                moduleActive && "bg-sidebar-accent/45 ring-1 ring-inset ring-sidebar-border",
+              )}
+            >
+              <button
+                type="button"
+                onClick={() => setExpanded((current) => ({ ...current, [module.id]: !open }))}
+                aria-expanded={open}
+                aria-controls={panelId}
+                className="press flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left hover:bg-sidebar-accent/60"
+              >
+                <span
+                  className={cn(
+                    "grid size-6 shrink-0 place-items-center rounded-lg text-[10px] font-semibold ring-1",
+                    moduleActive
+                      ? "bg-primary/15 text-primary ring-primary/20"
+                      : "bg-background/55 text-muted-foreground ring-sidebar-border",
+                  )}
+                >
+                  {moduleIndex + 1}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-xs font-semibold leading-5">
+                    {module.title}
+                  </span>
+                  <span className="block text-[9px] text-muted-foreground">
+                    {completed}/{module.lessons.length} lessons
+                    {module.quiz ? " · quiz" : ""}
+                  </span>
+                </span>
+                <ChevronDown
+                  className={cn(
+                    "size-3.5 shrink-0 text-muted-foreground transition-transform duration-200",
+                    open && "rotate-180",
+                  )}
+                />
+              </button>
+
+              {open && (
+                <div
+                  id={panelId}
+                  className="relative ml-4 border-l border-sidebar-border/80 pb-2 pl-2.5 pr-1"
+                >
+                  {module.lessons.map((lesson) => {
+                    const complete = lessonProgress(progress, lesson.id).status === "completed";
+                    const active = lesson.id === activeLessonId;
+                    return (
+                      <Link
+                        key={lesson.id}
+                        to="/courses/$courseId/lessons/$lessonId"
+                        params={{ courseId: course.id, lessonId: lesson.id }}
+                        aria-current={active ? "page" : undefined}
+                        className={cn(
+                          "press group/lesson relative -ml-3 flex items-center gap-2 rounded-lg py-1.5 pl-3 pr-1.5 text-xs transition-colors",
+                          active
+                            ? "bg-primary/10 font-semibold text-foreground"
+                            : "text-sidebar-foreground/65 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                        )}
+                      >
+                        {complete ? (
+                          <CheckCircle2 className="size-3.5 shrink-0 text-success" />
+                        ) : (
+                          <Circle
+                            className={cn(
+                              "size-3.5 shrink-0",
+                              active ? "text-primary" : "text-muted-foreground/45",
+                            )}
+                          />
+                        )}
+                        <span className="min-w-0 flex-1 truncate">{lesson.title}</span>
+                        {lesson.estimatedMinutes ? (
+                          <span className="shrink-0 text-[9px] tabular-nums text-muted-foreground/60">
+                            {lesson.estimatedMinutes}m
+                          </span>
+                        ) : null}
+                      </Link>
+                    );
+                  })}
+
+                  {module.quiz && module.quiz.questions.length > 0 && (
+                    <Link
+                      to="/courses/$courseId/quiz"
+                      params={{ courseId: course.id }}
+                      search={{ assessment: module.quiz.id }}
+                      aria-current={activeAssessment === module.quiz.id ? "page" : undefined}
+                      className={cn(
+                        "press relative -ml-3 flex items-center gap-2 rounded-lg py-1.5 pl-3 pr-1.5 text-xs transition-colors",
+                        activeAssessment === module.quiz.id
+                          ? "bg-primary/10 font-semibold text-foreground"
+                          : "text-sidebar-foreground/65 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                      )}
+                    >
+                      <FileQuestion className="size-3.5 shrink-0 text-muted-foreground" />
+                      <span className="min-w-0 flex-1 truncate">{module.quiz.title}</span>
+                      <span className="shrink-0 text-[9px] text-muted-foreground/60">
+                        {module.quiz.questions.length}q
+                      </span>
+                    </Link>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {course.finalExam && course.finalExam.questions.length > 0 && (
+        <Link
+          to="/courses/$courseId/quiz"
+          params={{ courseId: course.id }}
+          search={{ assessment: course.finalExam.id }}
+          aria-current={activeAssessment === course.finalExam.id ? "page" : undefined}
+          className={cn(
+            "press mt-4 flex items-center gap-2.5 rounded-xl border px-2.5 py-2.5 text-xs font-medium transition-colors",
+            activeAssessment === course.finalExam.id
+              ? "border-primary/30 bg-primary/10 text-foreground"
+              : "border-sidebar-border bg-background/40 text-sidebar-foreground/75 hover:border-primary/25 hover:bg-sidebar-accent/60",
+          )}
+        >
+          <span className="grid size-6 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+            <GraduationCap className="size-3.5" />
+          </span>
+          <span className="min-w-0 flex-1 truncate">{course.finalExam.title}</span>
+          <span className="shrink-0 text-[9px] text-muted-foreground">
+            {course.finalExam.questions.length}q
+          </span>
+        </Link>
+      )}
+    </nav>
+  );
+}
+
+function CourseMobileBar({
+  course,
+  pathname,
+  search,
+}: {
+  course: Course;
+  pathname: string;
+  search: string;
+}) {
+  const { state } = useKnowly();
+  const [open, setOpen] = useState(false);
+  const stats = courseStats(course, state.courseProgress[course.id]);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname, search]);
+
+  return (
+    <div className="border-b border-border bg-sidebar/95 md:hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        aria-expanded={open}
+        className="press flex w-full items-center gap-2.5 px-3 py-2.5 text-left"
+      >
+        <span
+          className="grid size-9 shrink-0 place-items-center rounded-xl text-lg"
+          style={{ background: `${course.color}24` }}
+        >
+          {course.emoji || "📘"}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold">{course.title}</span>
+          <span className="block text-[10px] text-muted-foreground">
+            {stats.percent}% complete · {stats.completedLessons}/{stats.lessons} lessons
+          </span>
+        </span>
+        <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">
+          Contents
+        </span>
+        <ChevronDown
+          className={cn(
+            "size-4 shrink-0 text-muted-foreground transition-transform",
+            open && "rotate-180",
+          )}
+        />
+      </button>
+      {open && (
+        <div className="max-h-[62dvh] overflow-y-auto border-t border-border bg-sidebar p-2">
+          <CourseOutline course={course} pathname={pathname} search={search} />
+        </div>
+      )}
     </div>
   );
 }

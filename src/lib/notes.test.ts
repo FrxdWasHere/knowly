@@ -8,6 +8,7 @@ import {
 } from "./notes/render";
 import { collectNotebookText } from "./notes/study";
 import {
+  clampTemplateOpacity,
   emptyPage,
   textFromPage,
   type NoteElement,
@@ -193,5 +194,17 @@ describe("emptyPage", () => {
     expect(created.height).toBe(1056);
     expect(created.elements).toEqual([]);
     expect(created.id).toMatch(/^pg_/);
+  });
+});
+
+describe("page pattern", () => {
+  it("clamps pattern strength and defaults to pure black", () => {
+    expect(clampTemplateOpacity(undefined)).toBe(100);
+    expect(clampTemplateOpacity(-20)).toBe(0);
+    expect(clampTemplateOpacity(42.6)).toBe(43);
+    expect(clampTemplateOpacity(100)).toBe(100);
+    expect(clampTemplateOpacity(180)).toBe(100);
+    expect(clampTemplateOpacity(Number.NaN)).toBe(100);
+    expect(emptyPage("nb-1", "grid", 794, 1123).templateOpacity).toBe(100);
   });
 });

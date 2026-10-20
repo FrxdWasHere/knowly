@@ -8,7 +8,9 @@ import {
   BookOpenCheck,
   Check,
   CheckCircle2,
+  ChevronRight,
   ClipboardCheck,
+  Clock3,
   Lightbulb,
   NotebookPen,
   Pencil,
@@ -18,7 +20,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
-import { PageHeader } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -83,6 +84,12 @@ function CourseLessonPage() {
   const currentIndex = flatLessons.findIndex((entry) => entry.lesson.id === lessonId);
   const previous = currentIndex > 0 ? flatLessons[currentIndex - 1] : null;
   const next = currentIndex >= 0 ? flatLessons[currentIndex + 1] : null;
+  const completedLessons = flatLessons.filter(
+    (entry) => lessonProgress(progress, entry.lesson.id).status === "completed",
+  ).length;
+  const coursePercent = flatLessons.length
+    ? Math.round((completedLessons / flatLessons.length) * 100)
+    : 0;
 
   if (!course || !found || !lessonState) {
     return (
@@ -183,169 +190,287 @@ function CourseLessonPage() {
 
   return (
     <AppPage>
-      <PageHeader
-        title={lesson.title}
-        description={`${course.title} · ${module.title}`}
-        action={
-          <>
-            <Button asChild variant="ghost">
-              <Link to="/courses/$courseId" params={{ courseId: course.id }}>
-                <ArrowLeft className="size-4" /> Course
+      <div className="mx-auto w-full max-w-[1400px]">
+        <header className="mb-4 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0 flex-1 basis-72">
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+              <Link
+                to="/courses/$courseId"
+                params={{ courseId: course.id }}
+                className="transition-colors hover:text-foreground"
+              >
+                {course.title}
               </Link>
-            </Button>
-            <Button asChild variant="outline">
+              <ChevronRight className="size-3.5 shrink-0" />
+              <span className="truncate">{module.title}</span>
+            </div>
+            <div className="mt-3 flex items-start gap-3">
+              <span
+                className="grid size-12 shrink-0 place-items-center rounded-2xl text-2xl ring-1 ring-border"
+                style={{ background: `${course.color}1d` }}
+              >
+                {course.emoji || "📘"}
+              </span>
+              <div className="min-w-0">
+                <h1 className="font-display text-2xl font-semibold leading-tight sm:text-3xl">
+                  {lesson.title}
+                </h1>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <Badge variant="outline">
+                    Lesson {currentIndex + 1} of {flatLessons.length}
+                  </Badge>
+                  {lesson.estimatedMinutes ? (
+                    <Badge variant="outline">
+                      <Clock3 className="mr-1 size-3" /> {lesson.estimatedMinutes} min
+                    </Badge>
+                  ) : null}
+                  {complete && <Badge className="bg-success/15 text-success">Completed</Badge>}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button asChild variant="ghost" size="sm">
               <Link to="/courses/$courseId/edit" params={{ courseId: course.id }}>
-                <Pencil className="size-4" /> Edit
+                <Pencil className="size-3.5" /> Edit
               </Link>
             </Button>
             {notebook ? (
-              <Button asChild variant="outline">
+              <Button asChild variant="outline" size="sm">
                 <Link to="/notes/$notebookId" params={{ notebookId: notebook.id }}>
-                  <NotebookPen className="size-4" /> Notebook
+                  <NotebookPen className="size-3.5" /> Notebook
                 </Link>
               </Button>
             ) : (
-              <Button variant="outline" onClick={createNotebook} disabled={creatingNotebook}>
-                <NotebookPen className="size-4" />{" "}
-                {creatingNotebook ? "Creating…" : "Create notebook"}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={createNotebook}
+                disabled={creatingNotebook}
+              >
+                <NotebookPen className="size-3.5" />
+                {creatingNotebook ? "Creating…" : "New notebook"}
               </Button>
             )}
-            <Button onClick={finishLesson} variant={complete ? "outline" : "default"}>
-              <CheckCircle2 className="size-4" /> {complete ? "Complete again" : "Mark complete"}
-            </Button>
-          </>
-        }
-      />
-
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,0.6fr)]">
-        <article className="panel p-5 sm:p-8">
-          <div className="mb-6 flex flex-wrap items-center gap-2">
-            <Badge variant="outline">Module: {module.title}</Badge>
-            {lesson.estimatedMinutes && (
-              <Badge variant="outline">{lesson.estimatedMinutes} min</Badge>
-            )}
-            {complete && <Badge className="bg-success/15 text-success">Completed</Badge>}
-          </div>
-
-          {lesson.summary && (
-            <p className="mb-6 border-l-2 border-primary/40 pl-4 text-sm leading-7 text-muted-foreground">
-              {lesson.summary}
-            </p>
-          )}
-
-          {lesson.blocks.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border p-10 text-center">
-              <Sparkles className="mx-auto size-7 text-primary" />
-              <h2 className="mt-3 font-display text-lg font-semibold">This lesson is a shell</h2>
-              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                Add content in the editor, or generate a lesson pack with Course Forge and import
-                it.
-              </p>
-              <Button asChild variant="outline" className="mt-4">
-                <Link to="/courses/$courseId/edit" params={{ courseId: course.id }}>
-                  Open editor
-                </Link>
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-5">
-              {lesson.blocks.map((block) => (
-                <LessonBlock key={block.id} block={block} />
-              ))}
-            </div>
-          )}
-
-          {checkpointQuestions.length > 0 && (
-            <section className="mt-10 border-t border-border pt-8">
-              <div className="mb-4 flex items-center gap-2">
-                <ClipboardCheck className="size-4 text-primary" />
-                <h2 className="font-display text-xl font-semibold">Check your understanding</h2>
-              </div>
-              <div className="space-y-4">
-                {checkpointQuestions.map((question) => (
-                  <Checkpoint
-                    key={question.id}
-                    question={question}
-                    onAnswered={(correct, grade) =>
-                      recordCourseQuestion(course.id, lesson.id, question.id, correct, grade)
-                    }
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
-          <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
-            {previous ? (
-              <Button asChild variant="outline">
-                <Link
-                  to="/courses/$courseId/lessons/$lessonId"
-                  params={{ courseId: course.id, lessonId: previous.lesson.id }}
-                >
-                  <ArrowLeft className="size-4" /> {previous.lesson.title}
-                </Link>
-              </Button>
-            ) : (
-              <span />
-            )}
-            <Button onClick={finishLesson}>
-              {next ? "Complete & next" : "Complete lesson"}
-              <ArrowRight className="size-4" />
+            <Button onClick={finishLesson} size="sm">
+              <CheckCircle2 className="size-3.5" />
+              {complete ? "Complete again" : "Mark complete"}
             </Button>
           </div>
-        </article>
+        </header>
 
-        <aside className="space-y-4">
-          {lesson.objectives.length > 0 && (
-            <div className="panel p-5">
-              <h2 className="font-display text-lg font-semibold">Objectives</h2>
-              <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
-                {lesson.objectives.map((objective) => (
-                  <li key={objective} className="flex gap-2">
-                    <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />
-                    {objective}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <div className="panel p-5">
-            <div className="flex items-center gap-2">
-              <NotebookPen className="size-4 text-primary" />
-              <h2 className="font-display text-lg font-semibold">Lesson notes</h2>
-            </div>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">
-              Quick notes are saved with this lesson. Use the notebook for handwriting and pages.
-            </p>
-            <Textarea
-              value={notes}
-              onChange={(event) => saveNotes(event.target.value)}
-              placeholder="Write a summary, questions to ask, or what to review…"
-              className="mt-3 min-h-52"
+        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
+          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            Course progress
+          </span>
+          <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-surface2">
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                width: `${coursePercent}%`,
+                background: course.color,
+              }}
             />
           </div>
+          <span className="shrink-0 text-xs font-semibold tabular-nums text-muted-foreground">
+            {completedLessons}/{flatLessons.length} lessons
+          </span>
+        </div>
 
-          <div className="panel p-5">
-            <h2 className="font-display text-lg font-semibold">Lesson progress</h2>
-            <div className="mt-3 space-y-2 text-sm">
-              <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">Status</span>
-                <span className="font-medium capitalize">
-                  {lessonState.status.replace("-", " ")}
-                </span>
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <article className="min-w-0 overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+            <div className="border-b border-border bg-gradient-to-br from-surface to-card px-5 py-5 sm:px-8">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline">Module {course.modules.indexOf(module) + 1}</Badge>
+                {lesson.objectives.length > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {lesson.objectives.length} learning objectives
+                  </span>
+                )}
               </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">Checkpoints</span>
-                <span className="font-medium">{lesson.questions.length}</span>
-              </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">Course</span>
-                <span className="font-medium">{course.title}</span>
+              {lesson.summary ? (
+                <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
+                  {lesson.summary}
+                </p>
+              ) : (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  Read the lesson, check your understanding, then mark it complete.
+                </p>
+              )}
+            </div>
+
+            <div className="p-5 sm:p-8">
+              {lesson.blocks.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border p-10 text-center">
+                  <Sparkles className="mx-auto size-7 text-primary" />
+                  <h2 className="mt-3 font-display text-lg font-semibold">
+                    This lesson is a shell
+                  </h2>
+                  <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                    Add content in the editor, or generate a lesson pack with Course Forge and
+                    import it.
+                  </p>
+                  <Button asChild variant="outline" className="mt-4">
+                    <Link to="/courses/$courseId/edit" params={{ courseId: course.id }}>
+                      Open editor
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-5">
+                  {lesson.blocks.map((block) => (
+                    <LessonBlock key={block.id} block={block} />
+                  ))}
+                </div>
+              )}
+
+              {checkpointQuestions.length > 0 && (
+                <section className="mt-10 border-t border-border pt-8">
+                  <div className="mb-4 flex items-center gap-2">
+                    <span className="grid size-8 place-items-center rounded-xl bg-primary/10 text-primary">
+                      <ClipboardCheck className="size-4" />
+                    </span>
+                    <div>
+                      <h2 className="font-display text-xl font-semibold">
+                        Check your understanding
+                      </h2>
+                      <p className="text-xs text-muted-foreground">
+                        Answer each checkpoint to feed your course review schedule.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    {checkpointQuestions.map((question) => (
+                      <Checkpoint
+                        key={question.id}
+                        question={question}
+                        onAnswered={(correct, grade) =>
+                          recordCourseQuestion(course.id, lesson.id, question.id, correct, grade)
+                        }
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
+                {previous ? (
+                  <Button asChild variant="outline" size="sm">
+                    <Link
+                      to="/courses/$courseId/lessons/$lessonId"
+                      params={{ courseId: course.id, lessonId: previous.lesson.id }}
+                    >
+                      <ArrowLeft className="size-4" />
+                      <span className="max-w-[16rem] truncate">{previous.lesson.title}</span>
+                    </Link>
+                  </Button>
+                ) : (
+                  <span className="hidden sm:block" />
+                )}
+                <Button onClick={finishLesson} size="sm">
+                  {next ? "Complete & next" : "Complete lesson"}
+                  <ArrowRight className="size-4" />
+                </Button>
               </div>
             </div>
-          </div>
-        </aside>
+          </article>
+
+          <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
+            {lesson.objectives.length > 0 && (
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="size-4 text-primary" />
+                  <h2 className="font-display text-base font-semibold">In this lesson</h2>
+                </div>
+                <ul className="mt-3 space-y-2.5 text-sm leading-6 text-muted-foreground">
+                  {lesson.objectives.map((objective) => (
+                    <li key={objective} className="flex gap-2">
+                      <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />
+                      {objective}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+              <div className="flex items-center gap-2">
+                <NotebookPen className="size-4 text-primary" />
+                <h2 className="font-display text-base font-semibold">Lesson notebook</h2>
+              </div>
+              {notebook ? (
+                <>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    {notebook.title} · {notebook.pageIds.length} pages
+                  </p>
+                  <Button asChild variant="outline" size="sm" className="mt-3 w-full">
+                    <Link to="/notes/$notebookId" params={{ notebookId: notebook.id }}>
+                      Open notebook <ArrowRight className="size-3.5" />
+                    </Link>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    Create a linked notebook for handwriting, PDFs and study pages.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 w-full"
+                    onClick={createNotebook}
+                    disabled={creatingNotebook}
+                  >
+                    <NotebookPen className="size-3.5" />
+                    {creatingNotebook ? "Creating…" : "Create notebook"}
+                  </Button>
+                </>
+              )}
+            </div>
+
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+              <h2 className="font-display text-base font-semibold">Quick notes</h2>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                Saved with this lesson. Use the notebook for handwriting and pages.
+              </p>
+              <Textarea
+                value={notes}
+                onChange={(event) => saveNotes(event.target.value)}
+                placeholder="Write a summary, questions to ask, or what to review…"
+                className="mt-3 min-h-48 bg-surface/40"
+              />
+            </div>
+
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+              <h2 className="font-display text-base font-semibold">Lesson progress</h2>
+              <div className="mt-3 space-y-2.5 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Status</span>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "capitalize",
+                      complete && "border-success/30 bg-success/10 text-success",
+                    )}
+                  >
+                    {lessonState.status.replace("-", " ")}
+                  </Badge>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground">Checkpoints</span>
+                  <span className="font-medium">{lesson.questions.length}</span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground">Module</span>
+                  <span className="max-w-[11rem] truncate text-right font-medium">
+                    {module.title}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
       </div>
     </AppPage>
   );

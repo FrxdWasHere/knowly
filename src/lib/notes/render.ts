@@ -9,6 +9,7 @@ import type {
   StrokeElement,
   TextElement,
 } from "./types";
+import { clampTemplateOpacity } from "./types";
 
 const imageCache = new Map<string, HTMLImageElement>();
 
@@ -31,12 +32,14 @@ export function drawTemplate(
   template: PageTemplate,
   width: number,
   height: number,
+  opacity = 1,
 ) {
   ctx.fillStyle = "#fffefa";
   ctx.fillRect(0, 0, width, height);
   ctx.save();
-  ctx.strokeStyle = "rgba(80, 92, 120, 0.18)";
-  ctx.fillStyle = "rgba(80, 92, 120, 0.18)";
+  ctx.globalAlpha = Math.min(1, Math.max(0, opacity));
+  ctx.strokeStyle = "rgba(0, 0, 0, 1)";
+  ctx.fillStyle = "rgba(0, 0, 0, 1)";
   ctx.lineWidth = 1;
 
   const margin = 64;
@@ -76,7 +79,7 @@ export function drawTemplate(
       ctx.stroke();
     }
     if (template === "graph") {
-      ctx.strokeStyle = "rgba(80, 92, 120, 0.3)";
+      ctx.strokeStyle = "rgba(0, 0, 0, 1)";
       ctx.lineWidth = 1.4;
       for (let x = margin; x < width - margin; x += step * 5) {
         ctx.beginPath();
@@ -324,7 +327,13 @@ export async function renderPageToCanvas(page: NotePage, scale = 2): Promise<HTM
   const ctx = canvas.getContext("2d");
   if (!ctx) return canvas;
   ctx.scale(scale, scale);
-  drawTemplate(ctx, page.template, page.width, page.height);
+  drawTemplate(
+    ctx,
+    page.template,
+    page.width,
+    page.height,
+    clampTemplateOpacity(page.templateOpacity) / 100,
+  );
 
   if (page.background) {
     try {

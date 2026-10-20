@@ -3,10 +3,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BookOpen,
   Check,
+  Compass,
   FileText,
   FolderOpen,
   Heart,
   NotebookPen,
+  PenLine,
   Plus,
   Search,
   Sparkles,
@@ -16,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
+import { FeatureTour, useFeatureTour, type TourStep } from "@/components/feature-tour";
 import { PageHeader } from "@/components/app-shell";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -66,9 +69,61 @@ export const Route = createFileRoute("/_authenticated/notes/")({
   component: NotesLibraryPage,
 });
 
+const NOTES_TOUR_STEPS: TourStep[] = [
+  {
+    eyebrow: "Welcome to Notebooks",
+    title: "A paper workspace that lives on your device",
+    description:
+      "Notebooks are for thinking on the page: handwriting, highlights, typed notes, PDFs, images and study tape. Everything is stored locally in this browser.",
+    icon: NotebookPen,
+    bullets: [
+      "Unlimited pages with A4, Letter, square and wide sizes",
+      "Automatic saving while you write",
+      "Export a page, the whole notebook, or a portable archive",
+    ],
+  },
+  {
+    eyebrow: "Natural tools",
+    title: "Write the way you already do",
+    description:
+      "Choose pen, pencil or highlighter, then adjust ink size in a proper horizontal control. Select, move and duplicate anything on the page.",
+    icon: PenLine,
+    bullets: [
+      "Pressure-aware ink and a clean size picker",
+      "Shapes, text, sticky notes, images and audio",
+      "Study tape hides answers until you double-click",
+    ],
+  },
+  {
+    eyebrow: "Bring your material",
+    title: "Annotate PDFs and control the page",
+    description:
+      "Import a PDF and each page becomes a canvas with searchable extracted text. Change the paper template or add a black page shade for focused night writing.",
+    icon: FileText,
+    bullets: [
+      "PDF pages render locally, ready for annotation",
+      "Page shade runs from completely off to deep black",
+      "Search typed notes and extracted PDF text from the library",
+    ],
+  },
+  {
+    eyebrow: "Study from your notes",
+    title: "Turn pages into active recall",
+    description:
+      "Create AI prompts from the text in a notebook, link notebooks to courses or decks, and keep your handwritten thinking close to your study plan.",
+    icon: Sparkles,
+    bullets: [
+      "Summary, flashcard and quiz prompts from notebook text",
+      "Link a notebook to a course lesson or practice deck",
+      "Import notebook archives on any device",
+    ],
+  },
+];
+
 function NotesLibraryPage() {
   const { state } = useKnowly();
   const navigate = useNavigate();
+  const tour = useFeatureTour("knowly.notes.tour.v1");
   const [notebooks, setNotebooks] = useState<NotebookMeta[]>([]);
   const [hits, setHits] = useState<NoteSearchHit[]>([]);
   const [query, setQuery] = useState("");
@@ -217,6 +272,9 @@ function NotesLibraryPage() {
             <Button onClick={() => setNewOpen(true)}>
               <Plus className="size-4" /> New notebook
             </Button>
+            <Button variant="ghost" size="icon" onClick={tour.replay} aria-label="Replay tour">
+              <Compass className="size-4" />
+            </Button>
           </>
         }
       />
@@ -322,6 +380,15 @@ function NotesLibraryPage() {
           </div>
         </section>
       )}
+
+      <FeatureTour
+        open={tour.open}
+        onOpenChange={tour.setOpen}
+        onDismiss={tour.dismiss}
+        steps={NOTES_TOUR_STEPS}
+        product="Knowly Notebooks"
+        finishLabel="Start writing"
+      />
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}

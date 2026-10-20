@@ -116,6 +116,8 @@ export interface NotePage {
   elements: NoteElement[];
   /** optional PDF/image page background as a data URL */
   background?: string;
+  /** strength of the selected paper pattern, 0 (hidden) to 100 (pure black) */
+  templateOpacity?: number;
   /** extracted text for search (PDF text, typed text is indexed separately) */
   searchText?: string;
   createdAt: number;
@@ -180,8 +182,23 @@ export const NOTE_COLORS = [
   "#8aa35a",
 ];
 
-export const PEN_COLORS = ["#1f2937", "#2563eb", "#dc2626", "#059669", "#7c3aed", "#d97706"];
+export const PEN_COLORS = [
+  "#1f2937",
+  "#2563eb",
+  "#dc2626",
+  "#059669",
+  "#7c3aed",
+  "#d97706",
+  "#f8fafc",
+  "#cbd5e1",
+];
 export const HIGHLIGHTER_COLORS = ["#fde68a", "#bbf7d0", "#bfdbfe", "#fecdd3", "#e9d5ff"];
+
+export function clampTemplateOpacity(value: number | undefined): number {
+  const numeric = value ?? 100;
+  if (!Number.isFinite(numeric)) return 100;
+  return Math.min(100, Math.max(0, Math.round(numeric)));
+}
 
 export function emptyPage(
   notebookId: string,
@@ -196,6 +213,7 @@ export function emptyPage(
     template,
     width,
     height,
+    templateOpacity: 100,
     elements: [],
     createdAt: now,
     updatedAt: now,

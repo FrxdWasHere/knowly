@@ -1,7 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { BookOpenCheck, ChevronRight, Layers, Plus, Search, Sparkles, Wand2 } from "lucide-react";
+import {
+  BookOpenCheck,
+  BrainCircuit,
+  ChevronRight,
+  Compass,
+  Layers,
+  PanelLeft,
+  Plus,
+  Search,
+  Sparkles,
+  Wand2,
+} from "lucide-react";
 import { AppPage } from "@/components/app-page";
+import { FeatureTour, useFeatureTour, type TourStep } from "@/components/feature-tour";
 import { PageHeader } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,8 +37,60 @@ export const Route = createFileRoute("/_authenticated/courses/")({
   component: CoursesPage,
 });
 
+const COURSE_TOUR_STEPS: TourStep[] = [
+  {
+    eyebrow: "Welcome to Courses",
+    title: "Learn in a structure that makes sense",
+    description:
+      "Courses live beside your decks but keep their own progress. Build knowledge in modules, then check it with short, focused questions.",
+    icon: BookOpenCheck,
+    bullets: [
+      "Modules keep related lessons together",
+      "Checkpoints test understanding as you read",
+      "Every lesson keeps its own notes and review schedule",
+    ],
+  },
+  {
+    eyebrow: "An immersive workspace",
+    title: "The sidebar becomes your curriculum",
+    description:
+      "Open any course and the normal navigation steps aside for a live course tree, so you always know where you are and what comes next.",
+    icon: PanelLeft,
+    bullets: [
+      "Jump between modules and lessons in one click",
+      "See lesson completion and the next lesson at a glance",
+      "Module quizzes and the final exam stay in reach",
+    ],
+  },
+  {
+    eyebrow: "Active recall built in",
+    title: "Read, answer, remember",
+    description:
+      "Checkpoint questions feed a separate course review schedule. Module quizzes and timed final exams give you a realistic test when you are ready.",
+    icon: BrainCircuit,
+    bullets: [
+      "Spaced review without mixing up your deck schedule",
+      "Pass marks, timers and retry history for assessments",
+      "Optional linked decks for extra practice",
+    ],
+  },
+  {
+    eyebrow: "Make it yours",
+    title: "Start with a topic or your own material",
+    description:
+      "Generate a complete course with AI, import a structured JSON course, or hand-build one lesson at a time. Your first course is a few clicks away.",
+    icon: Sparkles,
+    bullets: [
+      "Course Forge turns a topic into modules and lessons",
+      "Import generated JSON when you already have a plan",
+      "Link course lessons to handwritten notebooks",
+    ],
+  },
+];
+
 function CoursesPage() {
   const { state } = useKnowly();
+  const tour = useFeatureTour("knowly.courses.tour.v1");
   const [query, setQuery] = useState("");
   const courses = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -46,6 +110,10 @@ function CoursesPage() {
         description="Structured learning paths with lessons, checkpoints and assessments — independent of decks, connected when you want them to be."
         action={
           <>
+            <Button variant="ghost" onClick={tour.replay}>
+              <Compass className="size-4" />
+              <span className="hidden sm:inline">Tour</span>
+            </Button>
             <Button asChild variant="outline">
               <Link to="/courses/import">
                 <Plus className="size-4" /> Import course
@@ -82,6 +150,15 @@ function CoursesPage() {
           ))}
         </div>
       )}
+
+      <FeatureTour
+        open={tour.open}
+        onOpenChange={tour.setOpen}
+        onDismiss={tour.dismiss}
+        steps={COURSE_TOUR_STEPS}
+        product="Knowly Courses"
+        finishLabel="Browse courses"
+      />
     </AppPage>
   );
 }
