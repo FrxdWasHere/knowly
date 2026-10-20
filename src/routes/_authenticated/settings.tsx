@@ -824,13 +824,13 @@ function SettingsPage() {
 
         <Group
           title="Data & Storage"
-          footer={`${state.decks.length} decks · ${state.history.length} sessions stored in this browser. Export JSON to back up or move your library.`}
+          footer={`${state.decks.length} decks · ${state.courses.length} courses · ${state.history.length} sessions stored in this browser. Export JSON to back up or move your library. Notebook archives are exported separately from the Notebooks page.`}
         >
           <ActionRow
             icon={Download}
             tint="bg-green-500"
             label="Export backup"
-            hint="Download everything as JSON"
+            hint="Decks, courses, progress and settings"
             onClick={download}
           />
           <ActionRow
@@ -906,6 +906,8 @@ function SettingsPage() {
             </div>
             <p className="text-[13px] leading-5 text-muted-foreground">
               If the browser fills up, new saves stop — export a backup now and then to be safe.
+              Notebooks are stored separately; export each one as an archive from the Notebooks
+              page.
             </p>
           </div>
         </Group>

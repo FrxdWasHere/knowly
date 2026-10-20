@@ -15,6 +15,8 @@ import {
   BarChart3,
   BookOpen,
   Brain,
+  BookMarked,
+  NotebookPen,
 } from "lucide-react";
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
@@ -140,7 +142,7 @@ function Dashboard() {
               : "Your forge is empty. Generate a prompt, run it in any AI, then import the JSON to create your first deck."
           }
         />
-        <div className="panel grid gap-4 p-8 sm:grid-cols-3">
+        <div className="panel grid gap-4 p-8 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
               to: "/generate",
@@ -159,6 +161,18 @@ function Dashboard() {
               icon: Library,
               title: "JSON Format",
               body: "See the schema and a sample deck.",
+            },
+            {
+              to: "/courses/forge",
+              icon: BookMarked,
+              title: "Course Forge",
+              body: "Build a structured course with lessons and checkpoints.",
+            },
+            {
+              to: "/notes",
+              icon: NotebookPen,
+              title: "Notebooks",
+              body: "Handwrite notes or annotate a PDF on this device.",
             },
           ].map((c) => (
             <Link

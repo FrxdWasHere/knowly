@@ -33,6 +33,8 @@ import {
   Bug,
   Hash,
   NotebookPen,
+  NotebookText,
+  BookMarked,
   Search,
   Camera,
   FileBarChart,
@@ -80,6 +82,23 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: "Courses",
+    icon: BookMarked,
+    items: [
+      { to: "/courses", label: "Course Library", icon: BookMarked, exact: false },
+      { to: "/courses/forge", label: "Course Forge", icon: Wand2, exact: false },
+      { to: "/courses/import", label: "Import Course", icon: FileJson, exact: false },
+    ],
+  },
+  {
+    label: "Notes",
+    icon: NotebookText,
+    items: [
+      { to: "/notes", label: "Notebooks", icon: NotebookText, exact: false },
+      { to: "/journal", label: "Study Journal", icon: NotebookPen, exact: false },
+    ],
+  },
+  {
     label: "Study",
     icon: BookOpen,
     items: [
@@ -110,7 +129,6 @@ const NAV_GROUPS: NavGroup[] = [
       { to: "/goals", label: "Goals & Streaks", icon: CalendarCheck, exact: false },
       { to: "/achievements", label: "Achievements", icon: Trophy, exact: false },
       { to: "/report", label: "Progress Report", icon: FileBarChart, exact: false },
-      { to: "/journal", label: "Study Journal", icon: NotebookPen, exact: false },
     ],
   },
   {

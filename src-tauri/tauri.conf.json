@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Knowly",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "identifier": "com.FrxdWasHere.knowly",
   "build": {
     "frontendDist": "frontend",
@@ -28,9 +28,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "externalBin": [
-      "binaries/knowly-node"
-    ],
+    "externalBin": ["binaries/knowly-node"],
     "resources": {
       "../.output/server": ".output/server",
       "../.output/public": ".output/public"

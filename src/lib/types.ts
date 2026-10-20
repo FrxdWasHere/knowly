@@ -57,6 +57,115 @@ export interface Deck {
   suspended?: string[];
 }
 
+/* ------------------------------------------------------------------ *
+ * Courses
+ * ------------------------------------------------------------------ */
+
+export type CourseBlockType =
+  "markdown" | "callout" | "example" | "image" | "checkpoint" | "divider";
+
+export interface CourseBlock {
+  id: string;
+  type: CourseBlockType;
+  /** markdown / callout / example body */
+  markdown?: string;
+  /** callout tone */
+  tone?: "info" | "tip" | "warning" | "definition";
+  title?: string;
+  /** image blocks */
+  url?: string;
+  alt?: string;
+  caption?: string;
+  /** checkpoint blocks reference a question in the lesson */
+  questionId?: string;
+}
+
+export interface CourseLesson {
+  id: string;
+  title: string;
+  summary?: string;
+  objectives: string[];
+  estimatedMinutes?: number;
+  blocks: CourseBlock[];
+  /** course-owned checkpoint questions */
+  questions: Question[];
+  linkedDeckIds: string[];
+}
+
+export interface CourseAssessment {
+  id: string;
+  title: string;
+  questions: Question[];
+  passingScore: number;
+  timeLimitMinutes?: number;
+}
+
+export interface CourseModule {
+  id: string;
+  title: string;
+  summary?: string;
+  objectives: string[];
+  lessons: CourseLesson[];
+  quiz?: CourseAssessment;
+  linkedDeckIds: string[];
+}
+
+export interface CourseSource {
+  id: string;
+  title: string;
+  content: string;
+}
+
+export interface Course {
+  id: string;
+  title: string;
+  subject: string;
+  description?: string;
+  level?: string;
+  color: string;
+  emoji?: string;
+  tags: string[];
+  objectives: string[];
+  estimatedMinutes?: number;
+  sources: CourseSource[];
+  modules: CourseModule[];
+  finalExam?: CourseAssessment;
+  linkedDeckIds: string[];
+  createdAt: number;
+  updatedAt: number;
+  archived?: boolean;
+}
+
+export interface CourseLessonProgress {
+  status: "not-started" | "in-progress" | "completed";
+  openedAt?: number;
+  completedAt?: number;
+  /** spaced-repetition schedule for this lesson's checkpoints */
+  srs: Record<string, import("./srs").SrsCard>;
+  notes?: string;
+  bookmarks?: string[];
+}
+
+export interface CourseAssessmentResult {
+  id: string;
+  assessmentId: string;
+  createdAt: number;
+  score: number;
+  total: number;
+  percentage: number;
+  passed: boolean;
+  durationMs: number;
+}
+
+export interface CourseProgress {
+  courseId: string;
+  startedAt: number;
+  lastStudiedAt?: number;
+  lessons: Record<string, CourseLessonProgress>;
+  questionStats: Record<string, { attempts: number; correct: number; lastSeen: number }>;
+  assessments: Record<string, CourseAssessmentResult[]>;
+}
+
 export interface AnswerRecord {
   questionId: string;
   deckId: string;
@@ -247,6 +356,8 @@ export interface AppState {
   version: number;
   onboardingComplete: boolean;
   decks: Deck[];
+  courses: Course[];
+  courseProgress: Record<string, CourseProgress>;
   settings: Settings;
   progress: Progress;
   history: SessionSummary[];

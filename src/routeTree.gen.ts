@@ -40,9 +40,19 @@ import { Route as AuthenticatedStatsRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedTagsRouteImport } from './routes/_authenticated/tags'
 import { Route as AuthenticatedWeakSpotsRouteImport } from './routes/_authenticated/weak-spots'
 import { Route as AuthenticatedArenaDeckIdRouteImport } from './routes/_authenticated/arena.$deckId'
+import { Route as AuthenticatedCoursesIndexRouteImport } from './routes/_authenticated/courses.index'
+import { Route as AuthenticatedCoursesCourseIdRouteImport } from './routes/_authenticated/courses.$courseId'
+import { Route as AuthenticatedCoursesForgeRouteImport } from './routes/_authenticated/courses.forge'
+import { Route as AuthenticatedCoursesImportRouteImport } from './routes/_authenticated/courses.import'
 import { Route as AuthenticatedDecksIndexRouteImport } from './routes/_authenticated/decks.index'
 import { Route as AuthenticatedDecksDeckIdRouteImport } from './routes/_authenticated/decks.$deckId'
+import { Route as AuthenticatedNotesIndexRouteImport } from './routes/_authenticated/notes.index'
+import { Route as AuthenticatedNotesNotebookIdRouteImport } from './routes/_authenticated/notes.$notebookId'
 import { Route as AuthenticatedStudyDeckIdRouteImport } from './routes/_authenticated/study.$deckId'
+import { Route as AuthenticatedCoursesCourseIdIndexRouteImport } from './routes/_authenticated/courses.$courseId.index'
+import { Route as AuthenticatedCoursesCourseIdEditRouteImport } from './routes/_authenticated/courses.$courseId.edit'
+import { Route as AuthenticatedCoursesCourseIdQuizRouteImport } from './routes/_authenticated/courses.$courseId.quiz'
+import { Route as AuthenticatedCoursesCourseIdLessonsLessonIdRouteImport } from './routes/_authenticated/courses.$courseId.lessons.$lessonId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -200,6 +210,30 @@ const AuthenticatedArenaDeckIdRoute =
     path: '/arena/$deckId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCoursesIndexRoute =
+  AuthenticatedCoursesIndexRouteImport.update({
+    id: '/courses/',
+    path: '/courses/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCoursesCourseIdRoute =
+  AuthenticatedCoursesCourseIdRouteImport.update({
+    id: '/courses/$courseId',
+    path: '/courses/$courseId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCoursesForgeRoute =
+  AuthenticatedCoursesForgeRouteImport.update({
+    id: '/courses/forge',
+    path: '/courses/forge',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCoursesImportRoute =
+  AuthenticatedCoursesImportRouteImport.update({
+    id: '/courses/import',
+    path: '/courses/import',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDecksIndexRoute = AuthenticatedDecksIndexRouteImport.update({
   id: '/decks/',
   path: '/decks/',
@@ -211,11 +245,46 @@ const AuthenticatedDecksDeckIdRoute =
     path: '/decks/$deckId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedNotesIndexRoute = AuthenticatedNotesIndexRouteImport.update({
+  id: '/notes/',
+  path: '/notes/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedNotesNotebookIdRoute =
+  AuthenticatedNotesNotebookIdRouteImport.update({
+    id: '/notes/$notebookId',
+    path: '/notes/$notebookId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedStudyDeckIdRoute =
   AuthenticatedStudyDeckIdRouteImport.update({
     id: '/study/$deckId',
     path: '/study/$deckId',
     getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCoursesCourseIdIndexRoute =
+  AuthenticatedCoursesCourseIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedCoursesCourseIdRoute,
+  } as any)
+const AuthenticatedCoursesCourseIdEditRoute =
+  AuthenticatedCoursesCourseIdEditRouteImport.update({
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => AuthenticatedCoursesCourseIdRoute,
+  } as any)
+const AuthenticatedCoursesCourseIdQuizRoute =
+  AuthenticatedCoursesCourseIdQuizRouteImport.update({
+    id: '/quiz',
+    path: '/quiz',
+    getParentRoute: () => AuthenticatedCoursesCourseIdRoute,
+  } as any)
+const AuthenticatedCoursesCourseIdLessonsLessonIdRoute =
+  AuthenticatedCoursesCourseIdLessonsLessonIdRouteImport.update({
+    id: '/lessons/$lessonId',
+    path: '/lessons/$lessonId',
+    getParentRoute: () => AuthenticatedCoursesCourseIdRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -249,9 +318,19 @@ export interface FileRoutesByFullPath {
   '/tags': typeof AuthenticatedTagsRoute
   '/weak-spots': typeof AuthenticatedWeakSpotsRoute
   '/arena/$deckId': typeof AuthenticatedArenaDeckIdRoute
+  '/courses/$courseId': typeof AuthenticatedCoursesCourseIdRouteWithChildren
+  '/courses/forge': typeof AuthenticatedCoursesForgeRoute
+  '/courses/import': typeof AuthenticatedCoursesImportRoute
   '/decks/$deckId': typeof AuthenticatedDecksDeckIdRoute
+  '/notes/$notebookId': typeof AuthenticatedNotesNotebookIdRoute
   '/study/$deckId': typeof AuthenticatedStudyDeckIdRoute
+  '/courses/': typeof AuthenticatedCoursesIndexRoute
   '/decks/': typeof AuthenticatedDecksIndexRoute
+  '/notes/': typeof AuthenticatedNotesIndexRoute
+  '/courses/$courseId/edit': typeof AuthenticatedCoursesCourseIdEditRoute
+  '/courses/$courseId/quiz': typeof AuthenticatedCoursesCourseIdQuizRoute
+  '/courses/$courseId/': typeof AuthenticatedCoursesCourseIdIndexRoute
+  '/courses/$courseId/lessons/$lessonId': typeof AuthenticatedCoursesCourseIdLessonsLessonIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -284,9 +363,18 @@ export interface FileRoutesByTo {
   '/tags': typeof AuthenticatedTagsRoute
   '/weak-spots': typeof AuthenticatedWeakSpotsRoute
   '/arena/$deckId': typeof AuthenticatedArenaDeckIdRoute
+  '/courses/forge': typeof AuthenticatedCoursesForgeRoute
+  '/courses/import': typeof AuthenticatedCoursesImportRoute
   '/decks/$deckId': typeof AuthenticatedDecksDeckIdRoute
+  '/notes/$notebookId': typeof AuthenticatedNotesNotebookIdRoute
   '/study/$deckId': typeof AuthenticatedStudyDeckIdRoute
+  '/courses': typeof AuthenticatedCoursesIndexRoute
   '/decks': typeof AuthenticatedDecksIndexRoute
+  '/notes': typeof AuthenticatedNotesIndexRoute
+  '/courses/$courseId/edit': typeof AuthenticatedCoursesCourseIdEditRoute
+  '/courses/$courseId/quiz': typeof AuthenticatedCoursesCourseIdQuizRoute
+  '/courses/$courseId': typeof AuthenticatedCoursesCourseIdIndexRoute
+  '/courses/$courseId/lessons/$lessonId': typeof AuthenticatedCoursesCourseIdLessonsLessonIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -321,9 +409,19 @@ export interface FileRoutesById {
   '/_authenticated/tags': typeof AuthenticatedTagsRoute
   '/_authenticated/weak-spots': typeof AuthenticatedWeakSpotsRoute
   '/_authenticated/arena/$deckId': typeof AuthenticatedArenaDeckIdRoute
+  '/_authenticated/courses/$courseId': typeof AuthenticatedCoursesCourseIdRouteWithChildren
+  '/_authenticated/courses/forge': typeof AuthenticatedCoursesForgeRoute
+  '/_authenticated/courses/import': typeof AuthenticatedCoursesImportRoute
   '/_authenticated/decks/$deckId': typeof AuthenticatedDecksDeckIdRoute
+  '/_authenticated/notes/$notebookId': typeof AuthenticatedNotesNotebookIdRoute
   '/_authenticated/study/$deckId': typeof AuthenticatedStudyDeckIdRoute
+  '/_authenticated/courses/': typeof AuthenticatedCoursesIndexRoute
   '/_authenticated/decks/': typeof AuthenticatedDecksIndexRoute
+  '/_authenticated/notes/': typeof AuthenticatedNotesIndexRoute
+  '/_authenticated/courses/$courseId/edit': typeof AuthenticatedCoursesCourseIdEditRoute
+  '/_authenticated/courses/$courseId/quiz': typeof AuthenticatedCoursesCourseIdQuizRoute
+  '/_authenticated/courses/$courseId/': typeof AuthenticatedCoursesCourseIdIndexRoute
+  '/_authenticated/courses/$courseId/lessons/$lessonId': typeof AuthenticatedCoursesCourseIdLessonsLessonIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -358,9 +456,19 @@ export interface FileRouteTypes {
     | '/tags'
     | '/weak-spots'
     | '/arena/$deckId'
+    | '/courses/$courseId'
+    | '/courses/forge'
+    | '/courses/import'
     | '/decks/$deckId'
+    | '/notes/$notebookId'
     | '/study/$deckId'
+    | '/courses/'
     | '/decks/'
+    | '/notes/'
+    | '/courses/$courseId/edit'
+    | '/courses/$courseId/quiz'
+    | '/courses/$courseId/'
+    | '/courses/$courseId/lessons/$lessonId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -393,9 +501,18 @@ export interface FileRouteTypes {
     | '/tags'
     | '/weak-spots'
     | '/arena/$deckId'
+    | '/courses/forge'
+    | '/courses/import'
     | '/decks/$deckId'
+    | '/notes/$notebookId'
     | '/study/$deckId'
+    | '/courses'
     | '/decks'
+    | '/notes'
+    | '/courses/$courseId/edit'
+    | '/courses/$courseId/quiz'
+    | '/courses/$courseId'
+    | '/courses/$courseId/lessons/$lessonId'
   id:
     | '__root__'
     | '/'
@@ -429,9 +546,19 @@ export interface FileRouteTypes {
     | '/_authenticated/tags'
     | '/_authenticated/weak-spots'
     | '/_authenticated/arena/$deckId'
+    | '/_authenticated/courses/$courseId'
+    | '/_authenticated/courses/forge'
+    | '/_authenticated/courses/import'
     | '/_authenticated/decks/$deckId'
+    | '/_authenticated/notes/$notebookId'
     | '/_authenticated/study/$deckId'
+    | '/_authenticated/courses/'
     | '/_authenticated/decks/'
+    | '/_authenticated/notes/'
+    | '/_authenticated/courses/$courseId/edit'
+    | '/_authenticated/courses/$courseId/quiz'
+    | '/_authenticated/courses/$courseId/'
+    | '/_authenticated/courses/$courseId/lessons/$lessonId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -660,6 +787,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedArenaDeckIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/courses/': {
+      id: '/_authenticated/courses/'
+      path: '/courses'
+      fullPath: '/courses/'
+      preLoaderRoute: typeof AuthenticatedCoursesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/courses/$courseId': {
+      id: '/_authenticated/courses/$courseId'
+      path: '/courses/$courseId'
+      fullPath: '/courses/$courseId'
+      preLoaderRoute: typeof AuthenticatedCoursesCourseIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/courses/forge': {
+      id: '/_authenticated/courses/forge'
+      path: '/courses/forge'
+      fullPath: '/courses/forge'
+      preLoaderRoute: typeof AuthenticatedCoursesForgeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/courses/import': {
+      id: '/_authenticated/courses/import'
+      path: '/courses/import'
+      fullPath: '/courses/import'
+      preLoaderRoute: typeof AuthenticatedCoursesImportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/decks/': {
       id: '/_authenticated/decks/'
       path: '/decks'
@@ -674,6 +829,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDecksDeckIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/notes/': {
+      id: '/_authenticated/notes/'
+      path: '/notes'
+      fullPath: '/notes/'
+      preLoaderRoute: typeof AuthenticatedNotesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/notes/$notebookId': {
+      id: '/_authenticated/notes/$notebookId'
+      path: '/notes/$notebookId'
+      fullPath: '/notes/$notebookId'
+      preLoaderRoute: typeof AuthenticatedNotesNotebookIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/study/$deckId': {
       id: '/_authenticated/study/$deckId'
       path: '/study/$deckId'
@@ -681,8 +850,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudyDeckIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/courses/$courseId/': {
+      id: '/_authenticated/courses/$courseId/'
+      path: '/'
+      fullPath: '/courses/$courseId/'
+      preLoaderRoute: typeof AuthenticatedCoursesCourseIdIndexRouteImport
+      parentRoute: typeof AuthenticatedCoursesCourseIdRoute
+    }
+    '/_authenticated/courses/$courseId/edit': {
+      id: '/_authenticated/courses/$courseId/edit'
+      path: '/edit'
+      fullPath: '/courses/$courseId/edit'
+      preLoaderRoute: typeof AuthenticatedCoursesCourseIdEditRouteImport
+      parentRoute: typeof AuthenticatedCoursesCourseIdRoute
+    }
+    '/_authenticated/courses/$courseId/quiz': {
+      id: '/_authenticated/courses/$courseId/quiz'
+      path: '/quiz'
+      fullPath: '/courses/$courseId/quiz'
+      preLoaderRoute: typeof AuthenticatedCoursesCourseIdQuizRouteImport
+      parentRoute: typeof AuthenticatedCoursesCourseIdRoute
+    }
+    '/_authenticated/courses/$courseId/lessons/$lessonId': {
+      id: '/_authenticated/courses/$courseId/lessons/$lessonId'
+      path: '/lessons/$lessonId'
+      fullPath: '/courses/$courseId/lessons/$lessonId'
+      preLoaderRoute: typeof AuthenticatedCoursesCourseIdLessonsLessonIdRouteImport
+      parentRoute: typeof AuthenticatedCoursesCourseIdRoute
+    }
   }
 }
+
+interface AuthenticatedCoursesCourseIdRouteChildren {
+  AuthenticatedCoursesCourseIdEditRoute: typeof AuthenticatedCoursesCourseIdEditRoute
+  AuthenticatedCoursesCourseIdQuizRoute: typeof AuthenticatedCoursesCourseIdQuizRoute
+  AuthenticatedCoursesCourseIdIndexRoute: typeof AuthenticatedCoursesCourseIdIndexRoute
+  AuthenticatedCoursesCourseIdLessonsLessonIdRoute: typeof AuthenticatedCoursesCourseIdLessonsLessonIdRoute
+}
+
+const AuthenticatedCoursesCourseIdRouteChildren: AuthenticatedCoursesCourseIdRouteChildren =
+  {
+    AuthenticatedCoursesCourseIdEditRoute:
+      AuthenticatedCoursesCourseIdEditRoute,
+    AuthenticatedCoursesCourseIdQuizRoute:
+      AuthenticatedCoursesCourseIdQuizRoute,
+    AuthenticatedCoursesCourseIdIndexRoute:
+      AuthenticatedCoursesCourseIdIndexRoute,
+    AuthenticatedCoursesCourseIdLessonsLessonIdRoute:
+      AuthenticatedCoursesCourseIdLessonsLessonIdRoute,
+  }
+
+const AuthenticatedCoursesCourseIdRouteWithChildren =
+  AuthenticatedCoursesCourseIdRoute._addFileChildren(
+    AuthenticatedCoursesCourseIdRouteChildren,
+  )
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAchievementsRoute: typeof AuthenticatedAchievementsRoute
@@ -712,9 +933,15 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTagsRoute: typeof AuthenticatedTagsRoute
   AuthenticatedWeakSpotsRoute: typeof AuthenticatedWeakSpotsRoute
   AuthenticatedArenaDeckIdRoute: typeof AuthenticatedArenaDeckIdRoute
+  AuthenticatedCoursesCourseIdRoute: typeof AuthenticatedCoursesCourseIdRouteWithChildren
+  AuthenticatedCoursesForgeRoute: typeof AuthenticatedCoursesForgeRoute
+  AuthenticatedCoursesImportRoute: typeof AuthenticatedCoursesImportRoute
   AuthenticatedDecksDeckIdRoute: typeof AuthenticatedDecksDeckIdRoute
+  AuthenticatedNotesNotebookIdRoute: typeof AuthenticatedNotesNotebookIdRoute
   AuthenticatedStudyDeckIdRoute: typeof AuthenticatedStudyDeckIdRoute
+  AuthenticatedCoursesIndexRoute: typeof AuthenticatedCoursesIndexRoute
   AuthenticatedDecksIndexRoute: typeof AuthenticatedDecksIndexRoute
+  AuthenticatedNotesIndexRoute: typeof AuthenticatedNotesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -745,9 +972,16 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTagsRoute: AuthenticatedTagsRoute,
   AuthenticatedWeakSpotsRoute: AuthenticatedWeakSpotsRoute,
   AuthenticatedArenaDeckIdRoute: AuthenticatedArenaDeckIdRoute,
+  AuthenticatedCoursesCourseIdRoute:
+    AuthenticatedCoursesCourseIdRouteWithChildren,
+  AuthenticatedCoursesForgeRoute: AuthenticatedCoursesForgeRoute,
+  AuthenticatedCoursesImportRoute: AuthenticatedCoursesImportRoute,
   AuthenticatedDecksDeckIdRoute: AuthenticatedDecksDeckIdRoute,
+  AuthenticatedNotesNotebookIdRoute: AuthenticatedNotesNotebookIdRoute,
   AuthenticatedStudyDeckIdRoute: AuthenticatedStudyDeckIdRoute,
+  AuthenticatedCoursesIndexRoute: AuthenticatedCoursesIndexRoute,
   AuthenticatedDecksIndexRoute: AuthenticatedDecksIndexRoute,
+  AuthenticatedNotesIndexRoute: AuthenticatedNotesIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

@@ -26,6 +26,9 @@ import { createId } from "@/lib/id";
 import { schedule, DAY_MS, type SrsGrade } from "@/lib/srs";
 import type {
   AppState,
+  Course,
+  CourseAssessmentResult,
+  CourseProgress,
   Deck,
   Progress,
   Question,
@@ -69,6 +72,12 @@ type Migration = (state: AppState) => AppState;
 const MIGRATIONS: Partial<Record<number, Migration>> = {
   // v1 → v2: sentinels moved out of `studyDays` into dedicated booleans.
   1: (state) => ({ ...state, progress: normalizeProgress(state.progress) }),
+  // v2 → v3: first-class courses and their learning progress.
+  2: (state) => ({
+    ...state,
+    courses: state.courses ?? [],
+    courseProgress: state.courseProgress ?? {},
+  }),
 };
 
 /** Applies every migration needed to bring `parsed` up to `STATE_VERSION`. */
@@ -107,6 +116,8 @@ function normalizeState(parsed: Partial<AppState>): AppState {
       srs: { ...DEFAULT_SETTINGS.srs, ...(settings.srs ?? {}) },
     },
     decks: (state.decks ?? []).map((deck) => ({ ...deck, color: oceanDeckColor(deck.color) })),
+    courses: state.courses ?? [],
+    courseProgress: state.courseProgress ?? {},
     progress: normalizeProgress({ ...DEFAULT_PROGRESS, ...state.progress }),
   };
 }
@@ -134,6 +145,26 @@ interface Ctx {
   addQuestions: (deckId: string, questions: Question[]) => void;
   updateDeck: (id: string, patch: Partial<Deck>) => void;
   deleteDeck: (id: string) => void;
+  addCourse: (course: Course) => void;
+  updateCourse: (id: string, patch: Partial<Course>) => void;
+  deleteCourse: (id: string) => void;
+  updateCourseProgress: (
+    courseId: string,
+    updater: (progress: CourseProgress) => CourseProgress,
+  ) => void;
+  markCourseLesson: (
+    courseId: string,
+    lessonId: string,
+    status: "not-started" | "in-progress" | "completed",
+  ) => void;
+  recordCourseQuestion: (
+    courseId: string,
+    lessonId: string,
+    questionId: string,
+    correct: boolean,
+    grade: SrsGrade,
+  ) => void;
+  recordCourseAssessment: (courseId: string, result: CourseAssessmentResult) => void;
   /** grade one question's spaced-repetition card */
   reviewQuestion: (deckId: string, questionId: string, grade: SrsGrade) => void;
   recordSession: (input: RecordSessionInput) => void;
@@ -325,7 +356,191 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
 
   const deleteDeck = useCallback(
     (id: string) => {
-      setState((s) => ({ ...s, decks: s.decks.filter((d) => d.id !== id) }));
+      setState((s) => ({
+        ...s,
+        decks: s.decks.filter((d) => d.id !== id),
+        courses: s.courses.map((course) => ({
+          ...course,
+          linkedDeckIds: course.linkedDeckIds.filter((deckId) => deckId !== id),
+          modules: course.modules.map((module) => ({
+            ...module,
+            linkedDeckIds: module.linkedDeckIds.filter((deckId) => deckId !== id),
+            lessons: module.lessons.map((lesson) => ({
+              ...lesson,
+              linkedDeckIds: lesson.linkedDeckIds.filter((deckId) => deckId !== id),
+            })),
+          })),
+        })),
+      }));
+    },
+    [setState],
+  );
+
+  /** Returns existing course progress or a fresh record. */
+  const ensureProgress = (state: AppState, courseId: string): CourseProgress =>
+    state.courseProgress[courseId] ?? {
+      courseId,
+      startedAt: Date.now(),
+      lessons: {},
+      questionStats: {},
+      assessments: {},
+    };
+
+  const addCourse = useCallback(
+    (course: Course) => {
+      setState((s) => ({
+        ...s,
+        courses: [course, ...s.courses.filter((c) => c.id !== course.id)],
+        courseProgress: {
+          ...s.courseProgress,
+          [course.id]: ensureProgress(s, course.id),
+        },
+      }));
+    },
+    [setState],
+  );
+
+  const updateCourse = useCallback(
+    (id: string, patch: Partial<Course>) => {
+      setState((s) => ({
+        ...s,
+        courses: s.courses.map((course) =>
+          course.id === id ? { ...course, ...patch, updatedAt: Date.now() } : course,
+        ),
+      }));
+    },
+    [setState],
+  );
+
+  const deleteCourse = useCallback(
+    (id: string) => {
+      setState((s) => {
+        const { [id]: _removed, ...rest } = s.courseProgress;
+        return {
+          ...s,
+          courses: s.courses.filter((course) => course.id !== id),
+          courseProgress: rest,
+        };
+      });
+    },
+    [setState],
+  );
+
+  const updateCourseProgress = useCallback(
+    (courseId: string, updater: (progress: CourseProgress) => CourseProgress) => {
+      setState((s) => {
+        const current = ensureProgress(s, courseId);
+        const next = updater(current);
+        return {
+          ...s,
+          courseProgress: {
+            ...s.courseProgress,
+            [courseId]: { ...next, lastStudiedAt: Date.now() },
+          },
+        };
+      });
+    },
+    [setState],
+  );
+
+  const markCourseLesson = useCallback(
+    (courseId: string, lessonId: string, status: "not-started" | "in-progress" | "completed") => {
+      setState((s) => {
+        const progress = ensureProgress(s, courseId);
+        const existing = progress.lessons[lessonId];
+        const now = Date.now();
+        const lessonProgress = {
+          status,
+          openedAt: existing?.openedAt ?? now,
+          completedAt: status === "completed" ? (existing?.completedAt ?? now) : undefined,
+          srs: existing?.srs ?? {},
+          notes: existing?.notes,
+          bookmarks: existing?.bookmarks ?? [],
+        };
+        return {
+          ...s,
+          courseProgress: {
+            ...s.courseProgress,
+            [courseId]: {
+              ...progress,
+              lastStudiedAt: now,
+              lessons: { ...progress.lessons, [lessonId]: lessonProgress },
+            },
+          },
+        };
+      });
+    },
+    [setState],
+  );
+
+  const recordCourseQuestion = useCallback(
+    (courseId: string, lessonId: string, questionId: string, correct: boolean, grade: SrsGrade) => {
+      setState((s) => {
+        const progress = ensureProgress(s, courseId);
+        const existing = progress.lessons[lessonId];
+        const now = Date.now();
+        const stats = progress.questionStats[questionId] ?? {
+          attempts: 0,
+          correct: 0,
+          lastSeen: now,
+        };
+        return {
+          ...s,
+          courseProgress: {
+            ...s.courseProgress,
+            [courseId]: {
+              ...progress,
+              lastStudiedAt: now,
+              lessons: {
+                ...progress.lessons,
+                [lessonId]: {
+                  status: existing?.status === "completed" ? "completed" : "in-progress",
+                  openedAt: existing?.openedAt ?? now,
+                  completedAt: existing?.completedAt,
+                  srs: {
+                    ...(existing?.srs ?? {}),
+                    [questionId]: schedule(existing?.srs?.[questionId], grade, now, s.settings.srs),
+                  },
+                  notes: existing?.notes,
+                  bookmarks: existing?.bookmarks ?? [],
+                },
+              },
+              questionStats: {
+                ...progress.questionStats,
+                [questionId]: {
+                  attempts: stats.attempts + 1,
+                  correct: stats.correct + (correct ? 1 : 0),
+                  lastSeen: now,
+                },
+              },
+            },
+          },
+        };
+      });
+    },
+    [setState],
+  );
+
+  const recordCourseAssessment = useCallback(
+    (courseId: string, result: CourseAssessmentResult) => {
+      setState((s) => {
+        const progress = ensureProgress(s, courseId);
+        const attempts = progress.assessments[result.assessmentId] ?? [];
+        return {
+          ...s,
+          courseProgress: {
+            ...s.courseProgress,
+            [courseId]: {
+              ...progress,
+              lastStudiedAt: Date.now(),
+              assessments: {
+                ...progress.assessments,
+                [result.assessmentId]: [result, ...attempts].slice(0, 20),
+              },
+            },
+          },
+        };
+      });
     },
     [setState],
   );
@@ -432,6 +647,13 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
       addQuestions,
       updateDeck,
       deleteDeck,
+      addCourse,
+      updateCourse,
+      deleteCourse,
+      updateCourseProgress,
+      markCourseLesson,
+      recordCourseQuestion,
+      recordCourseAssessment,
       reviewQuestion,
       recordSession,
       saveTemplate: (t) =>
@@ -468,6 +690,13 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
       addQuestions,
       updateDeck,
       deleteDeck,
+      addCourse,
+      updateCourse,
+      deleteCourse,
+      updateCourseProgress,
+      markCourseLesson,
+      recordCourseQuestion,
+      recordCourseAssessment,
       reviewQuestion,
       recordSession,
     ],
