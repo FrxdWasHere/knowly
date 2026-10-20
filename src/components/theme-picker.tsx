@@ -105,10 +105,10 @@ function IconBtn({
 }
 
 const DEFAULT_PREVIEW: ThemeColors = {
-  background: "#101d2c",
-  surface: "#17293c",
-  surface2: "#20364d",
-  foreground: "#eaf2fb",
+  background: "#08111f",
+  surface: "#122235",
+  surface2: "#1a2f47",
+  foreground: "#eaf4ff",
   primary: "#5aa9f8",
   accent: "#49c2e8",
 };
@@ -173,7 +173,7 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
         <Swatch
           colors={DEFAULT_PREVIEW}
           label="Knowly Default"
-          blurb="The stock look."
+          blurb="Arc blue on deep navy."
           active={s.colorTheme === "default" || !s.colorTheme}
           onClick={() => updateSettings({ colorTheme: "default" })}
           actions={

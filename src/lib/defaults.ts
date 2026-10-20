@@ -3,7 +3,7 @@ import { DEFAULT_CUSTOM_THEME } from "./themes";
 import { DEFAULT_SRS_CONFIG } from "./srs";
 
 export const ACCENTS: { id: string; label: string; value: string; glow: string }[] = [
-  { id: "ocean", label: "Ocean", value: "oklch(0.7 0.15 240)", glow: "oklch(0.79 0.12 225)" },
+  { id: "ocean", label: "Ocean", value: "oklch(0.72 0.155 238)", glow: "oklch(0.83 0.115 210)" },
   {
     id: "deep-blue",
     label: "Deep Blue",
@@ -74,7 +74,7 @@ export const DEFAULT_SETTINGS: Settings = {
   wallpaperBlur: 4,
   fontScale: 1,
   density: "cozy",
-  radius: 0.5,
+  radius: 0.75,
   buttonSize: "default",
   animationSpeed: 1,
   showProgressBars: true,

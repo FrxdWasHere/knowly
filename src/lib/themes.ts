@@ -31,12 +31,12 @@ export const COLOR_THEMES: ColorTheme[] = [
     mode: "dark",
     blurb: "The Knowly original — deep navy and arc blue.",
     colors: {
-      background: "#0c1723",
-      surface: "#132234",
-      surface2: "#1b2f45",
-      foreground: "#eaf2fb",
-      primary: "#4da3ff",
-      accent: "#38bdf8",
+      background: "#08111f",
+      surface: "#122235",
+      surface2: "#1a2f47",
+      foreground: "#eaf4ff",
+      primary: "#5aa9f8",
+      accent: "#49c2e8",
     },
   },
   {
@@ -431,12 +431,12 @@ export function newUserThemeId() {
 }
 
 export const DEFAULT_CUSTOM_THEME: ThemeColors = {
-  background: "#0c1723",
-  surface: "#132234",
-  surface2: "#1b2f45",
-  foreground: "#eaf2fb",
-  primary: "#4da3ff",
-  accent: "#38bdf8",
+  background: "#08111f",
+  surface: "#122235",
+  surface2: "#1a2f47",
+  foreground: "#eaf4ff",
+  primary: "#5aa9f8",
+  accent: "#49c2e8",
 };
 
 export function getColorTheme(id: string): ColorTheme | undefined {

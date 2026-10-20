@@ -75,38 +75,38 @@
 
 /* Knowly design system — Ocean Deep, shared across every screen. */
 :root {
-  --radius: 0.5rem;
+  --radius: 0.75rem;
   --font-display-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-sans-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  /* Ocean Deep is the default application surface. */
-  --background: oklch(0.19 0.055 245);
-  --foreground: oklch(0.97 0.012 220);
-  --surface: oklch(0.23 0.055 240);
-  --surface-2: oklch(0.28 0.06 235);
-  --card: oklch(0.23 0.055 240);
-  --card-foreground: oklch(0.97 0.012 220);
-  --popover: oklch(0.23 0.055 240);
-  --popover-foreground: oklch(0.97 0.012 220);
-  --primary: oklch(0.7 0.15 240);
-  --primary-foreground: oklch(0.16 0.04 230);
-  --primary-glow: oklch(0.79 0.12 225);
-  --secondary: oklch(0.3 0.055 235);
+  /* Arc Deep — the default Knowly superapp surface. */
+  --background: oklch(0.165 0.048 250);
+  --foreground: oklch(0.975 0.012 220);
+  --surface: oklch(0.205 0.052 245);
+  --surface-2: oklch(0.25 0.055 240);
+  --card: oklch(0.205 0.052 245);
+  --card-foreground: oklch(0.975 0.012 220);
+  --popover: oklch(0.205 0.052 245);
+  --popover-foreground: oklch(0.975 0.012 220);
+  --primary: oklch(0.72 0.155 238);
+  --primary-foreground: oklch(0.15 0.04 235);
+  --primary-glow: oklch(0.83 0.115 210);
+  --secondary: oklch(0.27 0.05 240);
   --secondary-foreground: oklch(0.96 0.012 220);
-  --muted: oklch(0.29 0.045 235);
-  --muted-foreground: oklch(0.75 0.035 220);
-  --accent: oklch(0.64 0.13 230);
+  --muted: oklch(0.26 0.04 240);
+  --muted-foreground: oklch(0.76 0.03 220);
+  --accent: oklch(0.68 0.135 220);
   --accent-foreground: oklch(0.98 0.01 210);
   --destructive: oklch(0.58 0.2 265);
   --destructive-foreground: oklch(0.98 0.005 265);
-  --success: oklch(0.76 0.12 215);
-  --success-foreground: oklch(0.17 0.04 235);
-  --warning: oklch(0.72 0.14 250);
+  --success: oklch(0.78 0.12 210);
+  --success-foreground: oklch(0.16 0.04 230);
+  --warning: oklch(0.74 0.14 250);
   --warning-foreground: oklch(0.16 0.04 250);
-  --border: oklch(0.8 0.04 220 / 18%);
-  --input: oklch(0.8 0.04 220 / 24%);
-  --ring: oklch(0.7 0.15 240);
+  --border: oklch(0.85 0.03 220 / 16%);
+  --input: oklch(0.85 0.03 220 / 22%);
+  --ring: var(--primary);
   --chart-1: var(--primary);
   --chart-2: var(--accent);
   --chart-3: oklch(0.65 0.16 250);
@@ -118,23 +118,23 @@
   --deck-4: color-mix(in oklab, var(--primary) 60%, var(--foreground));
   --deck-5: color-mix(in oklab, var(--accent) 60%, var(--foreground));
   --deck-6: color-mix(in oklab, var(--primary) 65%, var(--background));
-  --sidebar: oklch(0.17 0.045 245);
+  --sidebar: oklch(0.145 0.04 250);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
   --sidebar-accent: var(--secondary);
   --sidebar-accent-foreground: var(--foreground);
-  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-border: oklch(1 0 0 / 9%);
   --sidebar-ring: var(--ring);
 
   --gradient-ocean: linear-gradient(135deg, var(--primary), var(--primary-glow));
   --gradient-surface: linear-gradient(
     155deg,
-    color-mix(in oklab, var(--surface) 88%, var(--accent) 12%),
+    color-mix(in oklab, var(--surface) 90%, var(--primary) 10%),
     var(--surface)
   );
-  --shadow-forge: 0 30px 80px -40px color-mix(in oklab, var(--primary) 48%, transparent);
-  --shadow-panel: 0 10px 40px -22px oklch(0 0 0 / 70%);
+  --shadow-forge: 0 30px 90px -40px color-mix(in oklab, var(--primary) 56%, transparent);
+  --shadow-panel: 0 24px 60px -34px oklch(0 0 0 / 78%);
   --speed: 1;
 }
 
@@ -147,14 +147,14 @@
   --card-foreground: oklch(0.22 0.02 265);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.22 0.02 265);
-  --primary: oklch(0.5 0.16 245);
+  --primary: oklch(0.52 0.17 245);
   --primary-foreground: oklch(0.99 0.005 85);
-  --primary-glow: oklch(0.62 0.14 225);
+  --primary-glow: oklch(0.64 0.14 220);
   --secondary: oklch(0.94 0.018 220);
   --secondary-foreground: oklch(0.25 0.02 265);
   --muted: oklch(0.95 0.01 220);
   --muted-foreground: oklch(0.48 0.02 265);
-  --accent: oklch(0.56 0.15 235);
+  --accent: oklch(0.58 0.15 225);
   --accent-foreground: oklch(0.99 0.005 85);
   --success: oklch(0.54 0.14 220);
   --warning: oklch(0.58 0.16 255);
@@ -539,8 +539,8 @@
   margin-inline: auto;
 }
 .workspace .panel {
-  background: var(--surface);
-  box-shadow: none;
+  background: var(--gradient-surface);
+  box-shadow: var(--shadow-panel);
 }
 .workspace .panel:hover {
   border-color: color-mix(in oklab, var(--primary) 32%, var(--border));
@@ -553,9 +553,11 @@
 .workspace :is(input, textarea, select) {
   background-color: var(--background);
 }
-.workspace .rounded-xl,
+.workspace .rounded-xl {
+  border-radius: calc(var(--radius) + 2px);
+}
 .workspace .rounded-2xl {
-  border-radius: var(--radius);
+  border-radius: calc(var(--radius) + 6px);
 }
 /* Button size preference (Settings > Appearance). */
 :root[data-btn="sm"] [data-knowly-btn][data-size="default"] {

@@ -40,6 +40,7 @@ import {
   FileBarChart,
   Shuffle,
   Keyboard,
+  HardDrive,
   ArrowLeft,
   BookOpenCheck,
   CheckCircle2,
@@ -164,17 +165,17 @@ const groupForPath = (pathname: string) =>
 
 const navLinkClass = (active: boolean) =>
   cn(
-    "press group relative mb-1 flex items-center gap-2.5 overflow-hidden rounded-xl px-2.5 py-2 text-sm font-medium transition-all duration-200 hover:translate-x-0.5",
+    "press group relative mb-1 flex items-center gap-2.5 overflow-hidden rounded-[0.9rem] px-2.5 py-2 text-sm font-medium transition-all duration-200 hover:translate-x-0.5",
     active
-      ? "bg-primary/10 text-sidebar-accent-foreground shadow-[inset_2px_0_0_var(--primary)] ring-1 ring-inset ring-primary/25"
-      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
+      ? "bg-gradient-to-r from-primary/16 via-primary/5 to-transparent text-sidebar-accent-foreground shadow-[inset_3px_0_0_var(--primary),0_12px_32px_-26px_var(--primary)] ring-1 ring-inset ring-primary/25"
+      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
   );
 
 const navIconClass = (active: boolean) =>
   cn(
-    "grid size-7 shrink-0 place-items-center rounded-lg ring-1 transition-all duration-200 group-hover:scale-105",
+    "grid size-7 shrink-0 place-items-center rounded-[0.65rem] ring-1 transition-all duration-200 group-hover:scale-105",
     active
-      ? "bg-primary/15 text-primary ring-primary/30"
+      ? "bg-primary/15 text-primary shadow-[0_0_18px_-8px_var(--primary)] ring-primary/30"
       : "bg-background/40 text-muted-foreground ring-sidebar-border group-hover:text-primary",
   );
 
@@ -220,36 +221,51 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
       <aside
         className={cn(
-          "sticky top-0 z-10 hidden h-screen shrink-0 flex-col border-r border-sidebar-border bg-sidebar/95 backdrop-blur transition-all duration-300 md:flex",
+          "sticky top-0 z-10 hidden h-screen shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar/90 backdrop-blur-2xl transition-all duration-300 md:flex",
           courseMode ? "w-[304px]" : collapsed ? "w-[76px]" : "w-64",
         )}
       >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,var(--primary),transparent_45%)] opacity-[0.14]"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.035] [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:20px_20px] [mask-image:linear-gradient(to_bottom,black,transparent_82%)]"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-primary/30 to-transparent"
+        />
         {activeCourse ? (
           <CourseSidebar course={activeCourse} pathname={pathname} search={search} />
         ) : (
           <>
             <div
               className={cn(
-                "flex items-center gap-3 px-5 py-6",
+                "relative flex items-center gap-3 px-5 py-5",
                 collapsed && "justify-center px-3",
               )}
             >
-              <span className="anim-pop grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary/30 via-primary/10 to-transparent shadow-[0_10px_24px_-12px_var(--primary)] ring-1 ring-primary/30">
-                <Logo className="size-7 rounded-md" />
+              <span className="anim-pop grid size-11 shrink-0 place-items-center rounded-[1.1rem] border border-white/10 bg-gradient-to-br from-primary/30 via-primary/10 to-transparent shadow-[0_16px_34px_-18px_var(--primary)] ring-1 ring-primary/25">
+                <Logo className="size-7 rounded-lg" />
               </span>
               {!collapsed && (
                 <div className="anim-fade-in min-w-0">
-                  <p className="font-display text-base font-bold leading-none tracking-tight">
-                    Knowly
-                  </p>
-                  <p className="mt-1.5 inline-flex max-w-full items-center gap-1 truncate rounded-full bg-sidebar-accent/70 px-2 py-0.5 text-[11px] text-muted-foreground ring-1 ring-sidebar-border">
+                  <div className="flex items-center gap-2">
+                    <p className="font-display text-base font-bold leading-none tracking-tight">
+                      Knowly
+                    </p>
+                    <span className="size-1.5 rounded-full bg-success shadow-[0_0_8px_var(--success)]" />
+                  </div>
+                  <p className="mt-1.5 inline-flex max-w-full items-center gap-1 truncate text-[10px] uppercase tracking-[0.16em] text-muted-foreground/60">
                     {state.settings.avatarEmoji} {state.settings.displayName}
                   </p>
                 </div>
               )}
             </div>
 
-            <nav className="flex-1 overflow-y-auto px-3 pb-2">
+            <nav className="relative flex-1 overflow-y-auto px-3 pb-2">
               {collapsed ? (
                 NAV_GROUPS.map((group) => (
                   <div key={group.label} className="mt-4 first:mt-1">
@@ -297,8 +313,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                       <div
                         key={group.label}
                         className={cn(
-                          "mt-1.5 rounded-2xl transition-colors duration-300",
-                          isOpen && "bg-background/40 ring-1 ring-sidebar-border",
+                          "mt-1.5 rounded-[1.15rem] transition-all duration-300",
+                          isOpen &&
+                            "bg-white/[0.035] shadow-[0_18px_40px_-30px_rgba(0,0,0,0.8)] ring-1 ring-white/10",
                         )}
                       >
                         <button
@@ -308,7 +325,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                           title={`${group.label} submenu`}
                           onClick={() => setOpenGroup(isOpen ? null : group.label)}
                           className={cn(
-                            "press group flex w-full items-center gap-2.5 rounded-2xl px-2.5 py-2 text-sm transition-all duration-200",
+                            "press group flex w-full items-center gap-2.5 rounded-[1.1rem] px-2.5 py-2 text-sm transition-all duration-200",
                             isOpen
                               ? "text-sidebar-accent-foreground"
                               : hasActive
@@ -344,7 +361,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                           <div className="overflow-hidden" inert={!isOpen}>
                             <ul
                               id={panelId}
-                              className="mx-2 mb-2 divide-y divide-sidebar-border/60 overflow-hidden rounded-xl border border-sidebar-border/70 bg-background/50"
+                              className="mx-2 mb-2 divide-y divide-sidebar-border/60 overflow-hidden rounded-[0.9rem] border border-white/10 bg-background/50 backdrop-blur-sm"
                             >
                               {group.items.map((item) => {
                                 const active = isNavItemActive(item, pathname);
@@ -358,7 +375,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                                       className={cn(
                                         "press group/row flex items-center gap-2.5 px-2.5 py-2 text-sm font-medium transition-colors duration-150",
                                         active
-                                          ? "bg-primary/10 text-foreground"
+                                          ? "bg-primary/10 text-foreground shadow-[inset_2px_0_0_var(--primary)]"
                                           : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
                                       )}
                                     >
@@ -395,8 +412,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               )}
             </nav>
 
-            <div className="space-y-3 border-t border-sidebar-border p-3">
-              <div className="rounded-xl border border-sidebar-border bg-gradient-to-br from-sidebar-accent/80 to-sidebar-accent/30 p-3 shadow-sm">
+            <div className="relative space-y-3 border-t border-sidebar-border p-3">
+              <div className="rounded-[1.05rem] border border-white/10 bg-gradient-to-br from-primary/10 via-sidebar-accent/60 to-sidebar-accent/20 p-3 shadow-[0_14px_30px_-24px_rgba(0,0,0,0.9)] backdrop-blur-sm">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-semibold tracking-tight">Lv {level}</span>
                   {!collapsed && (
@@ -432,33 +449,40 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-background/85 px-4 py-3 backdrop-blur md:px-8">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-background/70 px-4 py-3 backdrop-blur-xl md:px-8">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"
+          />
           <div className="flex items-center gap-2 md:hidden">
-            <Logo className="anim-float size-6" />
+            <span className="grid size-8 place-items-center rounded-xl border border-white/10 bg-gradient-to-br from-primary/25 to-transparent ring-1 ring-primary/20">
+              <Logo className="size-5 rounded-md" />
+            </span>
             <span className="font-display font-bold">Knowly</span>
           </div>
-          <div className="hidden items-center gap-2 text-xs text-muted-foreground md:flex">
-            <span className="inline-flex size-1.5 animate-pulse rounded-full bg-success" />
-            Saved in this browser · export JSON to move it
+          <div className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-muted-foreground backdrop-blur md:flex">
+            <span className="inline-flex size-1.5 animate-pulse rounded-full bg-success shadow-[0_0_8px_var(--success)]" />
+            <HardDrive className="size-3.5 text-primary" />
+            Saved on this device · export JSON to move it
           </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => palette.setOpen(true)}
               aria-label="Open command palette"
-              className="press inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+              className="press inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur transition-colors hover:border-primary/50 hover:text-foreground"
             >
               <Search className="size-3.5" />
               <span className="hidden sm:inline">Jump to…</span>
-              <kbd className="hidden rounded border border-border px-1.5 py-0.5 text-[10px] sm:inline">
+              <kbd className="hidden rounded-md border border-white/10 bg-background/40 px-1.5 py-0.5 text-[10px] sm:inline">
                 Ctrl K
               </kbd>
             </button>
-            <span className="press inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold transition-colors hover:border-primary/50">
+            <span className="press inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold backdrop-blur transition-colors hover:border-primary/50">
               <Flame className="size-3.5 text-primary" />
               {state.progress.streak} day
             </span>
-            <span className="press hidden min-[480px]:inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold transition-colors hover:border-primary/50">
+            <span className="press hidden min-[480px]:inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold backdrop-blur transition-colors hover:border-primary/50">
               <Zap className="size-3.5 text-primary" />
               <span className="max-w-[20vw] truncate">
                 {state.progress.lifetimeXp.toLocaleString()} XP
@@ -470,15 +494,19 @@ export function AppShell({ children }: { children: ReactNode }) {
         {activeCourse ? (
           <CourseMobileBar course={activeCourse} pathname={pathname} search={search} />
         ) : (
-          <nav className="flex gap-1 overflow-x-auto border-b border-border bg-surface/40 px-3 py-2 md:hidden">
+          <nav className="flex gap-1.5 overflow-x-auto border-b border-border bg-surface/30 px-3 py-2 backdrop-blur md:hidden">
             {NAV.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
-                className="press shrink-0 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors"
-                activeProps={{ className: "bg-secondary text-foreground" }}
+                className="press inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.02] px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors"
+                activeProps={{
+                  className:
+                    "border-primary/30 bg-primary/12 text-foreground shadow-[0_8px_24px_-18px_var(--primary)]",
+                }}
                 activeOptions={{ exact: item.to === "/dashboard" }}
               >
+                <item.icon className="size-3.5" />
                 {item.label}
               </Link>
             ))}
