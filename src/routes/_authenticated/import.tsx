@@ -143,7 +143,7 @@ function ImportPage() {
         <span className="text-xs text-muted-foreground">
           {mode === "deck"
             ? "Expects a full deck object with title, subject and questions."
-            : "Expects a question pack: { \"questions\": [ … ] }"}
+            : 'Expects a question pack: { "questions": [ … ] }'}
         </span>
       </div>
 

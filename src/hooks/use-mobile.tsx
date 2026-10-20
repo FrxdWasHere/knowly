@@ -1,19 +1,21 @@
-import * as React from "react";
+import { useEffect, useState } from "react";
 
-const MOBILE_BREAKPOINT = 768;
+/**
+ * True on touch-first devices. Used to skip desktop-only affordances such as
+ * auto-focusing text inputs (which would pop the keyboard on every question).
+ * All authenticated routes render client-side, so `window` is always defined.
+ */
+export function useCoarsePointer() {
+  const [coarse, setCoarse] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches,
+  );
 
-export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined);
-
-  React.useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
-    const onChange = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-    };
+  useEffect(() => {
+    const mql = window.matchMedia("(pointer: coarse)");
+    const onChange = () => setCoarse(mql.matches);
     mql.addEventListener("change", onChange);
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
     return () => mql.removeEventListener("change", onChange);
   }, []);
 
-  return !!isMobile;
+  return coarse;
 }

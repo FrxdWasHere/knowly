@@ -1,3 +1,5 @@
+import { createId } from "./id";
+
 export interface ThemeColors {
   /** page background */
   background: string;
@@ -425,7 +427,7 @@ export interface UserTheme {
 }
 
 export function newUserThemeId() {
-  return `user-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  return createId("user");
 }
 
 export const DEFAULT_CUSTOM_THEME: ThemeColors = {
@@ -510,6 +512,21 @@ export function themeCssVars(c: ThemeColors): Record<string, string> {
     "--sidebar-accent": c.surface2,
     "--sidebar-accent-foreground": c.foreground,
     "--sidebar-border": mix(c.foreground, 12, "transparent"),
+    // Status colours keep their meaning (green / red / amber) but are tinted
+    // toward the theme so they sit naturally in every palette.
+    "--success": mix("#2fb872", 72, c.accent),
+    "--success-foreground": readableOn(c.accent),
+    "--destructive": mix("#e5484d", 78, c.primary),
+    "--destructive-foreground": "#ffffff",
+    "--warning": mix("#f0a020", 78, c.primary),
+    "--warning-foreground": "#1a1204",
+    "--shadow-panel": `0 10px 40px -22px ${mix(c.foreground, 28, "transparent")}`,
+    "--deck-1": c.primary,
+    "--deck-2": c.accent,
+    "--deck-3": mix(c.primary, 55, c.accent),
+    "--deck-4": mix(c.primary, 60, c.foreground),
+    "--deck-5": mix(c.accent, 60, c.foreground),
+    "--deck-6": mix(c.primary, 65, c.background),
   };
 }
 

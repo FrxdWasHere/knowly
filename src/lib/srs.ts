@@ -26,7 +26,29 @@ export interface SrsCard {
   streak: number;
 }
 
-export type SrsMap = Record<string, SrsCard>;
+/** Tunable scheduler knobs, persisted in `settings.srs`. */
+export interface SrsConfig {
+  /** minutes a forgotten card waits before it comes back */
+  learningStepMinutes: number;
+  /** multiplier applied to the interval on an "easy" grade */
+  easyBonus: number;
+  /** global multiplier applied to every scheduled interval (0.5–2) */
+  intervalModifier: number;
+  /** hard ceiling so intervals never explode */
+  maxIntervalDays: number;
+}
+
+export const DEFAULT_SRS_CONFIG: SrsConfig = {
+  learningStepMinutes: 10,
+  easyBonus: 1.25,
+  intervalModifier: 1,
+  maxIntervalDays: 365,
+};
+
+const resolveConfig = (config?: Partial<SrsConfig>): SrsConfig => ({
+  ...DEFAULT_SRS_CONFIG,
+  ...config,
+});
 
 export const GRADE_META: {
   id: SrsGrade;
@@ -40,8 +62,7 @@ export const GRADE_META: {
     label: "Again",
     hint: "Forgot it",
     key: "1",
-    className:
-      "border-destructive/50 bg-destructive/10 text-destructive hover:bg-destructive/20",
+    className: "border-destructive/50 bg-destructive/10 text-destructive hover:bg-destructive/20",
   },
   {
     id: "hard",
@@ -73,21 +94,31 @@ export function newCard(now = Date.now()): SrsCard {
 }
 
 /** Interval (in days) a grade would produce, without mutating anything. */
-export function previewInterval(card: SrsCard | undefined, grade: SrsGrade): number {
+export function previewInterval(
+  card: SrsCard | undefined,
+  grade: SrsGrade,
+  config?: Partial<SrsConfig>,
+): number {
+  const cfg = resolveConfig(config);
   const c = card ?? newCard();
+  const clamp = (days: number) => Math.min(cfg.maxIntervalDays, Math.max(0, days));
   switch (grade) {
     case "again":
       return 0;
     case "hard":
-      return c.reps === 0 ? 1 : Math.max(1, Math.round(c.interval * 1.2));
+      return clamp(
+        c.reps === 0 ? 1 : Math.max(1, Math.round(c.interval * 1.2 * cfg.intervalModifier)),
+      );
     case "good":
-      if (c.reps === 0) return 1;
-      if (c.interval <= 1) return 3;
-      return Math.max(1, Math.round(c.interval * c.ease));
+      if (c.reps === 0) return clamp(1);
+      if (c.interval <= 1) return clamp(3);
+      return clamp(Math.max(1, Math.round(c.interval * c.ease * cfg.intervalModifier)));
     case "easy":
-      if (c.reps === 0) return 3;
-      if (c.interval <= 1) return 5;
-      return Math.max(2, Math.round(c.interval * c.ease * 1.25));
+      if (c.reps === 0) return clamp(3);
+      if (c.interval <= 1) return clamp(5);
+      return clamp(
+        Math.max(2, Math.round(c.interval * c.ease * cfg.easyBonus * cfg.intervalModifier)),
+      );
   }
 }
 
@@ -96,16 +127,19 @@ export function schedule(
   card: SrsCard | undefined,
   grade: SrsGrade,
   now = Date.now(),
+  config?: Partial<SrsConfig>,
 ): SrsCard {
+  const cfg = resolveConfig(config);
   const c = card ?? newCard(now);
-  const interval = previewInterval(c, grade);
+  const interval = previewInterval(c, grade, cfg);
   const easeDelta =
     grade === "again" ? -0.2 : grade === "hard" ? -0.15 : grade === "easy" ? 0.12 : 0;
   return {
     ease: clampEase(c.ease + easeDelta),
     interval,
-    // relearning cards come back in ~10 minutes, scheduled cards in N days
-    due: grade === "again" ? now + 10 * 60_000 : now + interval * DAY_MS,
+    // relearning cards come back in the configured learning step, scheduled
+    // cards in N days
+    due: grade === "again" ? now + cfg.learningStepMinutes * 60_000 : now + interval * DAY_MS,
     reps: c.reps + 1,
     lapses: c.lapses + (grade === "again" ? 1 : 0),
     lastReviewed: now,
@@ -211,14 +245,6 @@ export function deckSrs(deck: Deck, now = Date.now()): DeckSrs {
     ease: seen ? Number((easeSum / seen).toFixed(2)) : 2.5,
     retention: seen ? Math.round(((seen - lapsed) / seen) * 100) : 0,
   };
-}
-
-export function dueQuestions(deck: Deck, now = Date.now()): Question[] {
-  const map = deck.srs ?? {};
-  const paused = suspendedSet(deck);
-  return deck.questions
-    .filter((q) => !paused.has(q.id) && isDue(map[q.id], now))
-    .sort((a, b) => (map[a.id]?.due ?? 0) - (map[b.id]?.due ?? 0));
 }
 
 export interface DueItem {

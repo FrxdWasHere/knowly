@@ -45,8 +45,9 @@ export function displayAnswer(q: Question): string {
         .map((it, i) => `${i + 1}. ${it}`)
         .join("  ");
     case "matching":
-      return (q.pairs ?? []).map((p) => `${p.left} → ${p.right}`).join("   ·   ") ||
-        canonicalAnswer(q);
+      return (
+        (q.pairs ?? []).map((p) => `${p.left} → ${p.right}`).join("   ·   ") || canonicalAnswer(q)
+      );
     case "word-bank":
       return (q.blanks ?? canonicalAnswer(q).split(ITEM_SEP)).join(", ");
     default:

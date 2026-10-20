@@ -6,6 +6,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
@@ -13,6 +14,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { KnowlyProvider } from "@/store/knowly";
 import { Toaster } from "../components/ui/sonner";
+import { Button } from "@/components/ui/button";
+import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme-dom";
 
 function NotFoundComponent() {
   return (
@@ -36,7 +39,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
@@ -53,21 +56,17 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           Something went wrong on our end. You can try refreshing or head back home.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
+          <Button
             onClick={() => {
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Try again
-          </button>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            Go home
-          </a>
+          </Button>
+          <Button asChild variant="outline">
+            <a href="/">Go home</a>
+          </Button>
         </div>
       </div>
     </div>
@@ -80,17 +79,37 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Knowly — Local study dashboard" },
-      { name: "description", content: "Track XP, streaks, weak topics and decks in Knowly — a study workspace for AI-generated JSON question banks, stored in your browser." },
+      {
+        name: "description",
+        content:
+          "Track XP, streaks, weak topics and decks in Knowly — a study workspace for AI-generated JSON question banks, stored in your browser.",
+      },
       { name: "author", content: "Lovable" },
       { property: "og:title", content: "Knowly — Local study dashboard" },
-      { property: "og:description", content: "Track XP, streaks, weak topics and decks in Knowly — a study workspace for AI-generated JSON question banks, stored in your browser." },
+      {
+        property: "og:description",
+        content:
+          "Track XP, streaks, weak topics and decks in Knowly — a study workspace for AI-generated JSON question banks, stored in your browser.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "Knowly — Local study dashboard" },
-      { name: "twitter:description", content: "Track XP, streaks, weak topics and decks in Knowly — a study workspace for AI-generated JSON question banks, stored in your browser." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/73a20bc8-a697-475c-adfb-64348f72b302/id-preview-91177294--aae57bb8-07a6-43ea-a58c-114412ffe651.lovable.app-1785229173023.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/73a20bc8-a697-475c-adfb-64348f72b302/id-preview-91177294--aae57bb8-07a6-43ea-a58c-114412ffe651.lovable.app-1785229173023.png" },
+      {
+        name: "twitter:description",
+        content:
+          "Track XP, streaks, weak topics and decks in Knowly — a study workspace for AI-generated JSON question banks, stored in your browser.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/73a20bc8-a697-475c-adfb-64348f72b302/id-preview-91177294--aae57bb8-07a6-43ea-a58c-114412ffe651.lovable.app-1785229173023.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/73a20bc8-a697-475c-adfb-64348f72b302/id-preview-91177294--aae57bb8-07a6-43ea-a58c-114412ffe651.lovable.app-1785229173023.png",
+      },
     ],
     links: [
       {
@@ -115,11 +134,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         {children}
         <Scripts />
       </body>

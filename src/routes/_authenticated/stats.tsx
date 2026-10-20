@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useKnowly } from "@/store/knowly";
 import { dayKey, formatDuration } from "@/lib/answers";
+import { DAY_MS } from "@/lib/srs";
 import { levelFromXp } from "@/lib/gamification";
 import { cn } from "@/lib/utils";
 
@@ -41,7 +42,7 @@ function StatsPage() {
   const heatmap = useMemo(() => {
     const days: { key: string; count: number }[] = [];
     for (let i = 83; i >= 0; i--) {
-      const key = dayKey(Date.now() - i * 86400000);
+      const key = dayKey(Date.now() - i * DAY_MS);
       days.push({ key, count: p.studyDays[key] ?? 0 });
     }
     return days;
@@ -91,7 +92,10 @@ function StatsPage() {
           </Badge>
         </div>
         <div className="mt-4 h-2 overflow-hidden rounded-full bg-secondary">
-          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+          <div
+            className="h-full rounded-full bg-primary transition-all"
+            style={{ width: `${pct}%` }}
+          />
         </div>
       </section>
 
@@ -108,23 +112,23 @@ function StatsPage() {
         <h2 className="text-sm font-semibold">Activity — last 12 weeks</h2>
         <div className="mt-4 overflow-x-auto pb-1">
           <div className="grid min-w-max grid-flow-col grid-rows-7 gap-1">
-          {heatmap.map((d) => {
-            const intensity = d.count === 0 ? 0 : Math.ceil((d.count / maxCount) * 4);
-            return (
-              <div
-                key={d.key}
-                title={`${d.key}: ${d.count} answered`}
-                className={cn(
-                  "size-3.5 rounded-[3px]",
-                  intensity === 0 && "bg-secondary",
-                  intensity === 1 && "bg-primary/25",
-                  intensity === 2 && "bg-primary/50",
-                  intensity === 3 && "bg-primary/75",
-                  intensity >= 4 && "bg-primary",
-                )}
-              />
-            );
-          })}
+            {heatmap.map((d) => {
+              const intensity = d.count === 0 ? 0 : Math.ceil((d.count / maxCount) * 4);
+              return (
+                <div
+                  key={d.key}
+                  title={`${d.key}: ${d.count} answered`}
+                  className={cn(
+                    "size-3.5 rounded-[3px]",
+                    intensity === 0 && "bg-secondary",
+                    intensity === 1 && "bg-primary/25",
+                    intensity === 2 && "bg-primary/50",
+                    intensity === 3 && "bg-primary/75",
+                    intensity >= 4 && "bg-primary",
+                  )}
+                />
+              );
+            })}
           </div>
         </div>
       </section>

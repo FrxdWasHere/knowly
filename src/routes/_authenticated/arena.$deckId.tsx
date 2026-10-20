@@ -14,7 +14,8 @@ export const Route = createFileRoute("/_authenticated/arena/$deckId")({
       { property: "og:title", content: "Deck Arena — Knowly" },
       {
         property: "og:description",
-        content: "Combo multipliers, lives and timed rounds — an offline XP duel against your deck.",
+        content:
+          "Combo multipliers, lives and timed rounds — an offline XP duel against your deck.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

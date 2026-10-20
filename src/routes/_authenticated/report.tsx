@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useKnowly } from "@/store/knowly";
+import { dayKey } from "@/lib/answers";
 
 export const Route = createFileRoute("/_authenticated/report")({
   head: () => ({
@@ -40,7 +41,7 @@ function dayStart(ts: number) {
 }
 
 function isoDate(ts: number) {
-  return new Date(ts).toISOString().slice(0, 10);
+  return dayKey(ts);
 }
 
 function ReportPage() {
@@ -55,7 +56,9 @@ function ReportPage() {
 
   const sessions = useMemo(
     () =>
-      state.history.filter((s) => s.date >= fromTs && s.date <= toTs).sort((a, b) => a.date - b.date),
+      state.history
+        .filter((s) => s.date >= fromTs && s.date <= toTs)
+        .sort((a, b) => a.date - b.date),
     [state.history, fromTs, toTs],
   );
 
@@ -90,7 +93,8 @@ function ReportPage() {
 
   const daily = useMemo(() => {
     const map = new Map<number, number>();
-    for (const s of sessions) map.set(dayStart(s.date), (map.get(dayStart(s.date)) ?? 0) + s.answered);
+    for (const s of sessions)
+      map.set(dayStart(s.date), (map.get(dayStart(s.date)) ?? 0) + s.answered);
     return [...map.entries()].sort((a, b) => a[0] - b[0]);
   }, [sessions]);
 
@@ -187,7 +191,10 @@ function ReportPage() {
           <>
             <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {stats.map((s) => (
-                <div key={s.label} className="rounded-lg border border-border/70 p-4 print:border-gray-300">
+                <div
+                  key={s.label}
+                  className="rounded-lg border border-border/70 p-4 print:border-gray-300"
+                >
                   <p className="font-display text-2xl font-bold">{s.value}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{s.label}</p>
                 </div>
@@ -213,28 +220,32 @@ function ReportPage() {
             {perDeck.length > 0 && (
               <section className="mt-8">
                 <h3 className="text-sm font-semibold">By deck</h3>
-                <table className="mt-3 w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-xs text-muted-foreground">
-                      <th className="pb-2">Deck</th>
-                      <th className="pb-2">Sessions</th>
-                      <th className="pb-2">Answered</th>
-                      <th className="pb-2">Accuracy</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {perDeck.map(([title, v]) => (
-                      <tr key={title} className="border-t border-border/70 print:border-gray-300">
-                        <td className="py-2 font-medium">{title}</td>
-                        <td className="py-2">{v.sessions}</td>
-                        <td className="py-2">{v.answered}</td>
-                        <td className="py-2">
-                          {v.answered ? Math.round((v.correct / v.answered) * 100) : 0}%
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="mt-3 w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-xs text-muted-foreground">
+                        <th className="pb-2">Deck</th>
+                        <th className="pb-2">Sessions</th>
+                        <th className="pb-2">Answered</th>
+                        <th className="pb-2">Accuracy</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {perDeck.map(([title, v]) => (
+                        <tr key={title} className="border-t border-border/70 print:border-gray-300">
+                          <td className="max-w-[46vw] break-words py-2 pr-3 font-medium">
+                            {title}
+                          </td>
+                          <td className="py-2">{v.sessions}</td>
+                          <td className="py-2">{v.answered}</td>
+                          <td className="py-2">
+                            {v.answered ? Math.round((v.correct / v.answered) * 100) : 0}%
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </section>
             )}
           </>

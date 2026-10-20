@@ -26,8 +26,9 @@ Knowly is a study platform that works with AI-generated question banks. It does 
 - **Framework:** [TanStack Start](https://tanstack.com/start) v1 + [React](https://react.dev) 19 + [TypeScript](https://www.typescriptlang.org/)
 - **Build tool:** [Vite](https://vitejs.dev/) 8
 - **Styling:** [Tailwind CSS](https://tailwindcss.com/) v4 + shadcn/ui primitives (Radix)
-- **State & data:** in-memory store persisted to `localStorage` (`src/store/knowly.tsx`)
-- **Charts & UI:** Recharts, Sonner, date-fns, Zod, Lucide icons
+- **State & data:** in-memory store persisted to `localStorage` (`src/store/knowly.tsx`); wallpapers live in IndexedDB
+- **UI:** Radix/shadcn primitives, Sonner toasts, Zod validation, Lucide icons
+- **Desktop:** [Tauri](https://tauri.app/) 2 (Rust) in `src-tauri/`
 
 ---
 
@@ -35,22 +36,18 @@ Knowly is a study platform that works with AI-generated question banks. It does 
 
 ### Prerequisites
 
-- Node.js 20+ (or Bun)
-- npm, pnpm, yarn, or Bun
+- Node.js 22+
+- npm 10+
 
 ### Install
 
 ```bash
-bun install
-# or
 npm install
 ```
 
 ### Run locally
 
 ```bash
-bun dev
-# or
 npm run dev
 ```
 
@@ -59,10 +56,18 @@ The dev server starts at `http://localhost:8080`.
 ### Build
 
 ```bash
-bun run build
-# or
 npm run build
 ```
+
+### Desktop app
+
+The Tauri shell needs the Rust toolchain and the Visual Studio C++ build tools. Once those are installed:
+
+```bash
+npx tauri build
+```
+
+`beforeBuildCommand` runs the frontend build automatically.
 
 ---
 
@@ -88,12 +93,14 @@ public/                # Static assets
 
 | Script              | Description                  |
 | ------------------- | ---------------------------- |
-| `bun dev`           | Start the Vite dev server    |
-| `bun run build`     | Build for production         |
-| `bun run build:dev` | Build in development mode    |
-| `bun run preview`   | Preview the production build |
-| `bun run lint`      | Run ESLint                   |
-| `bun run format`    | Format with Prettier         |
+| `npm run dev`       | Start the Vite dev server    |
+| `npm run build`     | Build for production         |
+| `npm run build:dev` | Build in development mode    |
+| `npm run preview`   | Preview the production build |
+| `npm run typecheck` | Typecheck with TypeScript    |
+| `npm run lint`      | Run ESLint                   |
+| `npm test`          | Run the Vitest suite         |
+| `npm run format`    | Format with Prettier         |
 
 ---
 
@@ -101,7 +108,7 @@ public/                # Static assets
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Make your changes and run `bun run lint`
+3. Make your changes and run `npm run lint` and `npm test`
 4. Open a pull request
 
 Please keep changes focused and follow the existing TypeScript/React conventions.
@@ -110,7 +117,7 @@ Please keep changes focused and follow the existing TypeScript/React conventions
 
 ## License
 
-MIT — see [LICENSE](./LICENSE) (add a `LICENSE` file to make this link valid).
+MIT — see [LICENSE](./LICENSE).
 
 ---
 

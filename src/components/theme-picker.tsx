@@ -96,7 +96,7 @@ function IconBtn({
       title={label}
       aria-label={label}
       onClick={onClick}
-      className="grid size-6 place-items-center rounded-md border text-current opacity-70 transition hover:opacity-100"
+      className="grid min-h-[44px] min-w-[44px] place-items-center rounded-md border text-current opacity-70 transition hover:opacity-100"
       style={{ borderColor: "currentColor" }}
     >
       {children}
@@ -167,7 +167,9 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className="space-y-5">
-      <div className={cn("grid gap-3", compact ? "sm:grid-cols-3" : "sm:grid-cols-3 xl:grid-cols-4")}>
+      <div
+        className={cn("grid gap-3", compact ? "sm:grid-cols-3" : "sm:grid-cols-3 xl:grid-cols-4")}
+      >
         <Swatch
           colors={DEFAULT_PREVIEW}
           label="Knowly Default"
@@ -175,7 +177,10 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
           active={s.colorTheme === "default" || !s.colorTheme}
           onClick={() => updateSettings({ colorTheme: "default" })}
           actions={
-            <IconBtn label="Copy & edit" onClick={() => forkTheme("Knowly Default", DEFAULT_PREVIEW)}>
+            <IconBtn
+              label="Copy & edit"
+              onClick={() => forkTheme("Knowly Default", DEFAULT_PREVIEW)}
+            >
               <Pencil className="size-3" />
             </IconBtn>
           }
@@ -189,7 +194,10 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
             active={s.colorTheme === t.id}
             onClick={() => updateSettings({ colorTheme: t.id })}
             actions={
-              <IconBtn label={`Copy & edit ${t.label}`} onClick={() => forkTheme(t.label, t.colors)}>
+              <IconBtn
+                label={`Copy & edit ${t.label}`}
+                onClick={() => forkTheme(t.label, t.colors)}
+              >
                 <Pencil className="size-3" />
               </IconBtn>
             }
@@ -214,7 +222,10 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
                 >
                   <Pencil className="size-3" />
                 </IconBtn>
-                <IconBtn label={`Duplicate ${t.label}`} onClick={() => forkTheme(t.label, t.colors)}>
+                <IconBtn
+                  label={`Duplicate ${t.label}`}
+                  onClick={() => forkTheme(t.label, t.colors)}
+                >
                   <Copy className="size-3" />
                 </IconBtn>
                 <IconBtn label={`Delete ${t.label}`} onClick={() => removeTheme(t.id)}>
@@ -234,10 +245,13 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
             setEditingId("custom");
           }}
           actions={
-            <IconBtn label="Edit custom colours" onClick={() => {
-              updateSettings({ colorTheme: "custom" });
-              setEditingId("custom");
-            }}>
+            <IconBtn
+              label="Edit custom colours"
+              onClick={() => {
+                updateSettings({ colorTheme: "custom" });
+                setEditingId("custom");
+              }}
+            >
               <Pencil className="size-3" />
             </IconBtn>
           }
@@ -256,9 +270,7 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
         <div className="rounded-xl border border-border bg-surface-2/50 p-4">
           <div className="flex flex-wrap items-center gap-2">
             <Palette className="size-4 text-primary" />
-            <p className="text-sm font-semibold">
-              {editing ? "Editing" : "Custom colours"}
-            </p>
+            <p className="text-sm font-semibold">{editing ? "Editing" : "Custom colours"}</p>
             {editing && (
               <Input
                 value={editing.label}

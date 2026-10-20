@@ -16,7 +16,7 @@ import {
   BookOpen,
   Brain,
 } from "lucide-react";
-import { AppPage, } from "@/components/app-page";
+import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { SrsDashboardWidget } from "@/components/srs/srs-dashboard-widget";
@@ -40,7 +40,8 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
       { property: "og:title", content: "Knowly — Local-First Study Dashboard" },
       {
         property: "og:description",
-        content: "Track XP, streaks, weak topics and decks in Knowly — an offline study platform for AI-generated JSON question banks.",
+        content:
+          "Track XP, streaks, weak topics and decks in Knowly — an offline study platform for AI-generated JSON question banks.",
       },
     ],
   }),
@@ -76,7 +77,7 @@ function Widget({
         <button
           aria-label={`Hide ${title} widget`}
           onClick={() => onHide(id)}
-          className="opacity-0 transition-opacity group-hover:opacity-100"
+          className="grid min-h-[44px] min-w-[44px] place-items-center opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
         >
           <EyeOff className="size-3.5 text-muted-foreground hover:text-foreground" />
         </button>
@@ -141,9 +142,24 @@ function Dashboard() {
         />
         <div className="panel grid gap-4 p-8 sm:grid-cols-3">
           {[
-            { to: "/generate", icon: Wand2, title: "Prompt Forge", body: "Build a strict prompt from your material." },
-            { to: "/import", icon: Download, title: "Import JSON", body: "Validate and load an AI-generated deck." },
-            { to: "/format", icon: Library, title: "JSON Format", body: "See the schema and a sample deck." },
+            {
+              to: "/generate",
+              icon: Wand2,
+              title: "Prompt Forge",
+              body: "Build a strict prompt from your material.",
+            },
+            {
+              to: "/import",
+              icon: Download,
+              title: "Import JSON",
+              body: "Validate and load an AI-generated deck.",
+            },
+            {
+              to: "/format",
+              icon: Library,
+              title: "JSON Format",
+              body: "See the schema and a sample deck.",
+            },
           ].map((c) => (
             <Link
               key={c.to}
@@ -175,7 +191,11 @@ function Dashboard() {
           .join(" · ")}
         action={
           hidden.length ? (
-            <Button variant="outline" size="sm" onClick={() => updateSettings({ hiddenWidgets: [] })}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => updateSettings({ hiddenWidgets: [] })}
+            >
               <RotateCcw /> Reset layout
             </Button>
           ) : dueNow ? (
@@ -208,22 +228,28 @@ function Dashboard() {
         )}
 
         {show("continue") && recentDeck && (
-          <Widget id="continue" title="Continue studying" icon={Play} onHide={hide} className="md:col-span-2 xl:col-span-8">
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+          <Widget
+            id="continue"
+            title="Continue studying"
+            icon={Play}
+            onHide={hide}
+            className="md:col-span-2 xl:col-span-8"
+          >
+            <div className="grid grid-cols-1 items-center gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
               <div className="min-w-0">
-                <p className="font-display text-xl font-bold">{recentDeck.title}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="truncate font-display text-xl font-bold">{recentDeck.title}</p>
+                <p className="truncate text-xs text-muted-foreground">
                   {recentDeck.masteredIds.length}/{recentDeck.questions.length} mastered ·{" "}
                   {recentDeck.subject}
                 </p>
               </div>
-              <div className="flex shrink-0 gap-2">
-                <Button asChild>
+              <div className="flex shrink-0 flex-wrap gap-2">
+                <Button asChild className="min-h-[44px]">
                   <Link to="/study/$deckId" params={{ deckId: recentDeck.id }}>
                     Study
                   </Link>
                 </Button>
-                <Button variant="outline" asChild>
+                <Button variant="outline" asChild className="min-h-[44px]">
                   <Link to="/quiz">Quiz</Link>
                 </Button>
               </div>
@@ -242,7 +268,13 @@ function Dashboard() {
         )}
 
         {show("goal") && (
-          <Widget id="goal" title="Today's goal" icon={Target} onHide={hide} className="xl:col-span-4">
+          <Widget
+            id="goal"
+            title="Today's goal"
+            icon={Target}
+            onHide={hide}
+            className="xl:col-span-4"
+          >
             <p className="font-display text-3xl font-bold">
               {todayCount}
               <span className="text-base text-muted-foreground"> / {settings.dailyGoal}</span>
@@ -261,7 +293,13 @@ function Dashboard() {
         )}
 
         {show("subjects") && subjectRows.length > 0 && (
-          <Widget id="subjects" title="Your subjects" icon={BookOpen} onHide={hide} className="md:col-span-2 xl:col-span-8">
+          <Widget
+            id="subjects"
+            title="Your subjects"
+            icon={BookOpen}
+            onHide={hide}
+            className="md:col-span-2 xl:col-span-8"
+          >
             <div className="grid gap-3 sm:grid-cols-2">
               {subjectRows.map((s) => (
                 <Link
@@ -290,7 +328,6 @@ function Dashboard() {
           </Widget>
         )}
 
-
         {show("level") && (
           <Widget id="level" title="Level & XP" icon={Zap} onHide={hide} className="xl:col-span-4">
             <div className="flex items-baseline gap-2">
@@ -311,7 +348,13 @@ function Dashboard() {
         )}
 
         {show("streak") && (
-          <Widget id="streak" title="Study streak" icon={Flame} onHide={hide} className="xl:col-span-4">
+          <Widget
+            id="streak"
+            title="Study streak"
+            icon={Flame}
+            onHide={hide}
+            className="xl:col-span-4"
+          >
             <p className="font-display text-3xl font-bold">{progress.streak} days</p>
             <p className="mt-2 text-xs text-muted-foreground">
               Longest {progress.longestStreak} · {formatDuration(progress.studyTimeMs)} studied
@@ -334,7 +377,13 @@ function Dashboard() {
         )}
 
         {show("activity") && (
-          <Widget id="activity" title="Recent activity" icon={BarChart3} onHide={hide} className="md:col-span-2 xl:col-span-8">
+          <Widget
+            id="activity"
+            title="Recent activity"
+            icon={BarChart3}
+            onHide={hide}
+            className="md:col-span-2 xl:col-span-8"
+          >
             {history.length ? (
               <ul className="space-y-2">
                 {history.slice(0, 5).map((h) => (
@@ -359,7 +408,13 @@ function Dashboard() {
         )}
 
         {show("weak") && (
-          <Widget id="weak" title="Weak topics" icon={TrendingDown} onHide={hide} className="xl:col-span-4">
+          <Widget
+            id="weak"
+            title="Weak topics"
+            icon={TrendingDown}
+            onHide={hide}
+            className="xl:col-span-4"
+          >
             {weak.length ? (
               <ul className="space-y-2 text-sm">
                 {weak.map((w) => (
@@ -372,13 +427,21 @@ function Dashboard() {
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted-foreground">Answer more questions to surface trends.</p>
+              <p className="text-sm text-muted-foreground">
+                Answer more questions to surface trends.
+              </p>
             )}
           </Widget>
         )}
 
         {show("decks") && (
-          <Widget id="decks" title="Recent decks" icon={Library} onHide={hide} className="md:col-span-2 xl:col-span-8">
+          <Widget
+            id="decks"
+            title="Recent decks"
+            icon={Library}
+            onHide={hide}
+            className="md:col-span-2 xl:col-span-8"
+          >
             <div className="grid gap-3 sm:grid-cols-2">
               {[...decks]
                 .sort((a, b) => (b.lastStudiedAt ?? b.createdAt) - (a.lastStudiedAt ?? a.createdAt))
@@ -405,19 +468,34 @@ function Dashboard() {
         )}
 
         {show("achievements") && (
-          <Widget id="achievements" title="Achievements" icon={Trophy} onHide={hide} className="xl:col-span-4">
+          <Widget
+            id="achievements"
+            title="Achievements"
+            icon={Trophy}
+            onHide={hide}
+            className="xl:col-span-4"
+          >
             <p className="font-display text-3xl font-bold">
               {unlocked.length}
               <span className="text-base text-muted-foreground"> / {ACHIEVEMENTS.length}</span>
             </p>
-            <Link to="/achievements" className="mt-2 inline-block text-xs text-primary hover:underline">
+            <Link
+              to="/achievements"
+              className="mt-2 inline-block text-xs text-primary hover:underline"
+            >
               View all →
             </Link>
           </Widget>
         )}
 
         {show("stats") && (
-          <Widget id="stats" title="Lifetime stats" icon={BarChart3} onHide={hide} className="md:col-span-2 xl:col-span-4">
+          <Widget
+            id="stats"
+            title="Lifetime stats"
+            icon={BarChart3}
+            onHide={hide}
+            className="md:col-span-2 xl:col-span-4"
+          >
             <dl className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <dt className="text-xs text-muted-foreground">Answered</dt>

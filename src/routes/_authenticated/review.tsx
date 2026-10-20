@@ -10,14 +10,7 @@ import { InteractiveQuestion } from "@/components/questions/interactive-question
 import { displayAnswer, isInteractive } from "@/lib/interactive";
 import { TYPE_LABELS, formatDuration } from "@/lib/answers";
 import { xpForAnswer } from "@/lib/gamification";
-import {
-  collectDue,
-  collectWeak,
-  formatInterval,
-  previewInterval,
-  type DueItem,
-  type SrsGrade,
-} from "@/lib/srs";
+import { collectDue, collectWeak, formatInterval, type DueItem, type SrsGrade } from "@/lib/srs";
 import { useKnowly } from "@/store/knowly";
 import { cn } from "@/lib/utils";
 import type { AnswerRecord } from "@/lib/types";
@@ -221,7 +214,7 @@ function ReviewSession() {
         <p className="mt-2 text-sm text-muted-foreground">
           {answers.length} card{answers.length === 1 ? "" : "s"} rescheduled
         </p>
-        <div className="mt-8 grid grid-cols-4 gap-3">
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {(["again", "hard", "good", "easy"] as SrsGrade[]).map((g) => (
             <div key={g} className="rounded-xl bg-surface-2/60 p-3">
               <p className="font-display text-xl font-bold">{gradeCounts[g]}</p>
@@ -302,7 +295,9 @@ function ReviewSession() {
           </span>
         </div>
 
-        <h1 className="mt-6 text-2xl font-semibold leading-snug">{question.question}</h1>
+        <h1 className="mt-6 break-words text-2xl font-semibold leading-snug">
+          {question.question}
+        </h1>
 
         {question.hint && settings.showHints && !revealed && (
           <p className="mt-3 text-xs text-muted-foreground">Hint: {question.hint}</p>
@@ -314,7 +309,7 @@ function ReviewSession() {
               <li
                 key={o}
                 className={cn(
-                  "rounded-lg border border-border px-4 py-3 text-sm",
+                  "rounded-lg border border-border break-words px-4 py-3 text-sm",
                   revealed && o === question.answer && "border-success bg-success/10 text-success",
                 )}
               >
@@ -358,18 +353,28 @@ function ReviewSession() {
             <p className="mt-6 text-xs text-muted-foreground">
               How well did you recall it? Your answer sets the next review date.
             </p>
-            <GradeButtons card={liveCard ?? item.card} onGrade={grade} className="mt-2" />
+            <GradeButtons
+              card={liveCard ?? item.card}
+              onGrade={grade}
+              config={state.settings.srs}
+              className="mt-2"
+            />
           </>
         ) : (
-          <Button className="mt-6" variant="secondary" onClick={() => setRevealed(true)}>
-            <Eye /> Reveal answer <span className="ml-1 text-[10px] opacity-60">Space</span>
+          <Button
+            className="mt-6 min-h-[44px]"
+            variant="secondary"
+            onClick={() => setRevealed(true)}
+          >
+            <Eye /> Reveal answer{" "}
+            <span className="ml-1 hidden text-[10px] opacity-60 sm:inline">Space</span>
           </Button>
         )}
       </article>
 
-      <p className="mt-4 text-center text-[11px] text-muted-foreground">
-        Space reveals · 1 Again ({formatInterval(previewInterval(item.card, "again"))}) · 2 Hard · 3
-        Good · 4 Easy
+      <p className="mt-4 hidden text-center text-[11px] text-muted-foreground sm:block">
+        Space reveals · 1 Again ({state.settings.srs.learningStepMinutes}m) · 2 Hard · 3 Good · 4
+        Easy
       </p>
     </div>
   );

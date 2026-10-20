@@ -17,6 +17,7 @@ import { formatDuration, TYPE_LABELS } from "@/lib/answers";
 import { gradeFor } from "@/lib/gamification";
 import { cn } from "@/lib/utils";
 import type { AnswerRecord, QuizResult } from "@/lib/types";
+import { useKnowly } from "@/store/knowly";
 
 export function QuizReport({
   result,
@@ -43,8 +44,9 @@ export function QuizReport({
   const avgTime = result.answers.length
     ? result.answers.reduce((s, a) => s + a.timeMs, 0) / result.answers.length
     : 0;
-  const fastest = result.answers.reduce((m, a) => Math.min(m, a.timeMs), Infinity);
-  const slowest = result.answers.reduce((m, a) => Math.max(m, a.timeMs), 0);
+  const timed = result.answers.filter((a) => !a.skipped);
+  const fastest = timed.reduce((m, a) => Math.min(m, a.timeMs), Infinity);
+  const slowest = timed.reduce((m, a) => Math.max(m, a.timeMs), 0);
 
   const byConcept = useMemo(() => {
     const map: Record<string, { correct: number; total: number }> = {};
@@ -83,8 +85,7 @@ export function QuizReport({
     const p = result.percentage;
     if (p === 100) return "Flawless run — every answer landed.";
     if (p >= 90) return "Excellent. This material is nearly mastered.";
-    if (p >= result.config.passingScore)
-      return "Solid pass. A few weak spots to shore up.";
+    if (p >= result.config.passingScore) return "Solid pass. A few weak spots to shore up.";
     if (p >= 50) return "You're building. Focus the weak concepts below and retake.";
     return "Rough round. Review the deck, then come back swinging.";
   }, [result.percentage, result.config.passingScore]);
@@ -195,11 +196,11 @@ export function QuizReport({
             <p className="mt-1 text-sm text-muted-foreground">{verdict}</p>
             <div className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
               <Badge variant={result.passed ? "default" : "destructive"}>
-                {result.passed ? `Passed · target ${result.config.passingScore}%` : `Below ${result.config.passingScore}% target`}
+                {result.passed
+                  ? `Passed · target ${result.config.passingScore}%`
+                  : `Below ${result.config.passingScore}% target`}
               </Badge>
-              {skipped.length > 0 && (
-                <Badge variant="secondary">{skipped.length} skipped</Badge>
-              )}
+              {skipped.length > 0 && <Badge variant="secondary">{skipped.length} skipped</Badge>}
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -242,10 +243,18 @@ export function QuizReport({
             ))}
           </div>
           <div className="mt-2 flex gap-4 text-[10px] text-muted-foreground">
-            <span className="flex items-center gap-1"><span className="size-2 rounded-sm bg-success" /> Correct</span>
-            <span className="flex items-center gap-1"><span className="size-2 rounded-sm bg-success/50" /> Marked right</span>
-            <span className="flex items-center gap-1"><span className="size-2 rounded-sm bg-destructive" /> Wrong</span>
-            <span className="flex items-center gap-1"><span className="size-2 rounded-sm bg-muted-foreground/40" /> Skipped</span>
+            <span className="flex items-center gap-1">
+              <span className="size-2 rounded-sm bg-success" /> Correct
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="size-2 rounded-sm bg-success/50" /> Marked right
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="size-2 rounded-sm bg-destructive" /> Wrong
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="size-2 rounded-sm bg-muted-foreground/40" /> Skipped
+            </span>
           </div>
         </div>
 
@@ -271,11 +280,13 @@ export function QuizReport({
 
       {/* Insights row */}
       <div className="grid gap-4 sm:grid-cols-3">
-        {strongest && (
+        {strongest && strongest[1].correct > 0 && (
           <div className="panel anim-pop flex items-start gap-3 p-5">
             <Trophy className="mt-0.5 size-5 shrink-0 text-success" />
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Strongest concept</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Strongest concept
+              </p>
               <p className="text-sm font-semibold">{strongest[0]}</p>
               <p className="text-xs text-muted-foreground">
                 {strongest[1].correct}/{strongest[1].total} correct
@@ -287,7 +298,9 @@ export function QuizReport({
           <div className="panel anim-pop flex items-start gap-3 p-5">
             <TrendingDown className="mt-0.5 size-5 shrink-0 text-destructive" />
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Weakest concept</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Weakest concept
+              </p>
               <p className="text-sm font-semibold">{weakest[0]}</p>
               <p className="text-xs text-muted-foreground">
                 {weakest[1].correct}/{weakest[1].total} correct — retry missed to drill it
@@ -300,10 +313,14 @@ export function QuizReport({
           <div>
             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Pace</p>
             <p className="text-sm font-semibold">
-              {(fastest / 1000).toFixed(1)}s – {(slowest / 1000).toFixed(1)}s
+              {answered > 0
+                ? `${(fastest / 1000).toFixed(1)}s – ${(slowest / 1000).toFixed(1)}s`
+                : "—"}
             </p>
             <p className="text-xs text-muted-foreground">
-              Fastest to slowest answer · {answered} answered
+              {answered > 0
+                ? `Fastest to slowest answer · ${answered} answered`
+                : "No questions answered"}
             </p>
           </div>
         </div>
@@ -402,6 +419,10 @@ function ReviewRow({
   index: number;
   onOverride: (index: number) => void;
 }) {
+  const { state } = useKnowly();
+  const q = state.decks
+    .find((d) => d.id === a.deckId)
+    ?.questions.find((x) => x.id === a.questionId);
   return (
     <li
       className={cn(
@@ -418,11 +439,18 @@ function ReviewRow({
         {a.concept && <Badge variant="secondary">{a.concept}</Badge>}
         <span className="ml-auto text-muted-foreground">{(a.timeMs / 1000).toFixed(1)}s</span>
       </div>
-      <p className="mt-2">
+      {q && <p className="mt-2 break-words font-medium">{q.question}</p>}
+      <p className="mt-1 break-words text-muted-foreground">
         {a.skipped ? "Skipped" : a.correct ? "Correct" : "Incorrect"}
         {a.overridden ? " (marked as right)" : ""}
         {a.given ? ` — you answered “${a.given}”` : ""}
       </p>
+      {q && !a.correct && q.answer && (
+        <p className="mt-1 text-xs">
+          <span className="text-muted-foreground">Answer: </span>
+          {q.answer}
+        </p>
+      )}
       {!a.correct && !a.skipped && (
         <Button size="sm" variant="outline" className="mt-3" onClick={() => onOverride(index)}>
           <Check /> I was actually right

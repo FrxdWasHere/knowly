@@ -25,7 +25,10 @@ export function SrsRing({
   const pct = Math.max(0, Math.min(100, value));
 
   return (
-    <div className={cn("relative grid place-items-center", className)} style={{ width: size, height: size }}>
+    <div
+      className={cn("relative grid place-items-center", className)}
+      style={{ width: size, height: size }}
+    >
       <svg width={size} height={size} className="-rotate-90" aria-hidden>
         <circle
           cx={size / 2}

@@ -15,7 +15,7 @@ export function LegalPage({
   children: ReactNode;
 }) {
   return (
-    <div className="ocean-premium min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
           <Link to="/" className="flex items-center gap-3 font-display text-lg font-bold">
@@ -25,7 +25,9 @@ export function LegalPage({
             Knowly
           </Link>
           <Button asChild variant="ghost" size="sm">
-            <Link to="/"><ArrowLeft /> Back home</Link>
+            <Link to="/">
+              <ArrowLeft /> Back home
+            </Link>
           </Button>
         </div>
       </header>
@@ -39,8 +41,12 @@ export function LegalPage({
       <footer className="border-t border-border py-8">
         <div className="mx-auto flex max-w-3xl flex-wrap gap-x-6 gap-y-2 px-6 text-sm text-muted-foreground">
           <span>© 2026 Knowly</span>
-          <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
-          <Link to="/terms" className="hover:text-foreground">Terms</Link>
+          <Link to="/privacy" className="hover:text-foreground">
+            Privacy
+          </Link>
+          <Link to="/terms" className="hover:text-foreground">
+            Terms
+          </Link>
         </div>
       </footer>
     </div>

@@ -214,7 +214,11 @@ function FocusPage() {
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]">
         <section className="flex flex-col items-center justify-center gap-6 rounded-xl border border-border/60 bg-card/60 p-8">
           <Badge variant={phase === "focus" ? "default" : "secondary"} className="gap-1.5">
-            {phase === "focus" ? <TimerIcon className="size-3.5" /> : <Coffee className="size-3.5" />}
+            {phase === "focus" ? (
+              <TimerIcon className="size-3.5" />
+            ) : (
+              <Coffee className="size-3.5" />
+            )}
             {PHASE_LABEL[phase]}
           </Badge>
 
@@ -244,7 +248,9 @@ function FocusPage() {
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-5xl font-bold tabular-nums tracking-tight">{fmt(remaining)}</span>
+              <span className="text-5xl font-bold tabular-nums tracking-tight">
+                {fmt(remaining)}
+              </span>
               <span className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">
                 Round {completedRounds + (phase === "focus" ? 1 : 0)} of {roundsBeforeLong}
               </span>

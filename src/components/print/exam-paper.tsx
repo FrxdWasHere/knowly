@@ -1,4 +1,11 @@
-import { LETTERS, printableAnswer, type ExamOptions } from "@/lib/exam-print";
+import {
+  EXAM_FONTS,
+  LETTERS,
+  printableAnswer,
+  type ExamOptions,
+  type QuestionEdit,
+} from "@/lib/exam-print";
+import { X } from "lucide-react";
 import type { Question } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -6,25 +13,102 @@ function Lines({ count }: { count: number }) {
   return (
     <div className="mt-2 space-y-4">
       {Array.from({ length: Math.max(1, count) }).map((_, i) => (
-        <div key={i} className="border-b border-black/40" />
+        <div key={i} className="border-b border-foreground/40 print:border-black/40" />
       ))}
     </div>
   );
 }
 
 function Blank({ width = "w-24" }: { width?: string }) {
-  return <span className={cn("inline-block border-b border-black/60 align-baseline", width)} />;
+  return (
+    <span
+      className={cn(
+        "inline-block border-b border-foreground/60 align-baseline print:border-black/60",
+        width,
+      )}
+    />
+  );
 }
 
-function QuestionBody({ q, options }: { q: Question; options: ExamOptions }) {
+/** Text that can be typed over directly on the paper when editing is on. */
+function Editable({
+  value,
+  enabled,
+  onCommit,
+  className,
+  placeholder,
+}: {
+  value: string;
+  enabled: boolean;
+  onCommit?: (v: string) => void;
+  className?: string;
+  placeholder?: string;
+}) {
+  if (!enabled || !onCommit) return <span className={className}>{value}</span>;
+  return (
+    <span
+      key={value}
+      role="textbox"
+      aria-label={placeholder ?? "Edit text"}
+      contentEditable
+      suppressContentEditableWarning
+      spellCheck
+      data-placeholder={placeholder}
+      className={cn(
+        "inline-block min-w-[2ch] rounded-sm px-0.5 outline-none ring-1 ring-primary/30 hover:ring-primary/60 focus:bg-primary/5 focus:ring-2 focus:ring-primary print:ring-0",
+        className,
+      )}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          (e.currentTarget as HTMLElement).blur();
+        }
+      }}
+      onBlur={(e) => {
+        const next = (e.currentTarget.textContent ?? "").trim();
+        if (next !== value) onCommit(next);
+      }}
+    >
+      {value}
+    </span>
+  );
+}
+
+function letter(i: number, options: ExamOptions) {
+  const l = LETTERS[i] ?? String(i + 1);
+  return options.optionCase === "lower" ? l.toLowerCase() : l;
+}
+
+function numberLabel(i: number, options: ExamOptions) {
+  if (options.numberStyle === "q") return `Q${i + 1}.`;
+  if (options.numberStyle === "paren") return `(${i + 1})`;
+  return `${i + 1}.`;
+}
+
+function QuestionBody({
+  q,
+  options,
+  editing,
+  onEditOption,
+}: {
+  q: Question;
+  options: ExamOptions;
+  editing: boolean;
+  onEditOption?: (index: number, value: string) => void;
+}) {
   switch (q.type) {
     case "multiple-choice":
       return (
         <ol className="mt-2 space-y-1.5">
           {(q.options ?? []).map((opt, i) => (
             <li key={`${opt}-${i}`} className="flex gap-2">
-              <span className="font-semibold">{LETTERS[i]}.</span>
-              <span>{opt}</span>
+              <span className="font-semibold">{letter(i, options)}.</span>
+              <Editable
+                value={opt}
+                enabled={editing}
+                onCommit={onEditOption ? (v) => onEditOption(i, v) : undefined}
+                placeholder={`Option ${letter(i, options)}`}
+              />
             </li>
           ))}
         </ol>
@@ -51,7 +135,7 @@ function QuestionBody({ q, options }: { q: Question; options: ExamOptions }) {
       const pairs = q.pairs ?? [];
       const rights = pairs.map((p) => p.right);
       return (
-        <div className="mt-2 grid grid-cols-2 gap-6">
+        <div className="mt-2 grid grid-cols-1 gap-6 print:grid-cols-2">
           <ol className="space-y-1.5">
             {pairs.map((p, i) => (
               <li key={`${p.left}-${i}`} className="flex gap-2">
@@ -65,7 +149,7 @@ function QuestionBody({ q, options }: { q: Question; options: ExamOptions }) {
           <ol className="space-y-1.5">
             {rights.map((r, i) => (
               <li key={`${r}-${i}`}>
-                <span className="font-semibold">{LETTERS[i]}.</span> {r}
+                <span className="font-semibold">{letter(i, options)}.</span> {r}
               </li>
             ))}
           </ol>
@@ -76,7 +160,7 @@ function QuestionBody({ q, options }: { q: Question; options: ExamOptions }) {
       return (
         <div className="mt-2">
           {!!q.wordBank?.length && (
-            <p className="border border-black/50 px-3 py-2 text-[11px] leading-relaxed">
+            <p className="border border-foreground/50 px-3 py-2 text-[11px] leading-relaxed print:border-black/50">
               <span className="font-semibold">Word bank: </span>
               {q.wordBank.join(" · ")}
             </p>
@@ -95,34 +179,76 @@ function QuestionBody({ q, options }: { q: Question; options: ExamOptions }) {
 export function ExamPaper({
   questions,
   options,
+  editing = false,
+  onChange,
+  onEditQuestion,
 }: {
   questions: Question[];
   options: ExamOptions;
+  /** show type-over editing on the paper (preview only) */
+  editing?: boolean;
+  onChange?: (patch: Partial<ExamOptions>) => void;
+  onEditQuestion?: (id: string, edit: QuestionEdit) => void;
 }) {
   const totalMarks = questions.length * Math.max(0, options.pointsPerQuestion);
   const gap = options.spacing === "compact" ? "space-y-4" : "space-y-7";
+  const font = EXAM_FONTS.find((f) => f.id === options.fontFamily) ?? EXAM_FONTS[0]!;
+  const size =
+    options.fontSize === "small"
+      ? "text-[12px]"
+      : options.fontSize === "large"
+        ? "text-[15px]"
+        : "text-[13px]";
+  const centered = options.headerAlign === "center";
+  const commit = (key: keyof ExamOptions) =>
+    onChange ? (v: string) => onChange({ [key]: v } as Partial<ExamOptions>) : undefined;
 
   return (
-    <div className="exam-paper bg-white p-8 text-[13px] leading-relaxed text-black md:p-10">
-      <div className="border-b-2 border-black pb-4">
-        <div className="flex flex-wrap items-end justify-between gap-3">
+    <div
+      className={cn(
+        "exam-paper bg-card p-8 leading-relaxed text-card-foreground md:p-10 print:bg-white print:text-black",
+        size,
+      )}
+      style={{ fontFamily: font.stack }}
+    >
+      <div className="border-b-2 border-foreground pb-4 print:border-black">
+        <div
+          className={cn(
+            "flex flex-wrap items-end justify-between gap-3",
+            centered && "flex-col items-center text-center",
+          )}
+        >
           <div>
-            <h2 className="text-xl font-bold tracking-tight">{options.title || "Practice Exam"}</h2>
-            {options.subject && <p className="mt-1 text-xs uppercase tracking-wider">{options.subject}</p>}
+            <h2 className="text-[1.55em] font-bold tracking-tight">
+              <Editable
+                value={options.title || "Practice Exam"}
+                enabled={editing}
+                onCommit={commit("title")}
+                placeholder="Exam title"
+              />
+            </h2>
+            {(options.subject || editing) && (
+              <p className="mt-1 text-[0.85em] uppercase tracking-wider">
+                <Editable
+                  value={options.subject}
+                  enabled={editing}
+                  onCommit={commit("subject")}
+                  placeholder="Subject"
+                />
+              </p>
+            )}
           </div>
-          <div className="text-right text-xs">
+          <div className={cn("text-[0.85em]", centered ? "text-center" : "text-right")}>
             {options.date && <p>Date: {options.date}</p>}
             {options.showPoints && (
-              <p className="font-semibold">
-                Total: ____ / {totalMarks} marks
-              </p>
+              <p className="font-semibold">Total: ____ / {totalMarks} marks</p>
             )}
             <p>{questions.length} questions</p>
           </div>
         </div>
 
         {options.showNameLines && (
-          <div className="mt-4 grid grid-cols-3 gap-5 text-xs">
+          <div className="mt-4 grid grid-cols-1 gap-5 text-[0.85em] print:grid-cols-3">
             <p>
               Name:{" "}
               {options.studentName ? (
@@ -146,8 +272,15 @@ export function ExamPaper({
         )}
       </div>
 
-      {options.showInstructions && options.instructions.trim() && (
-        <p className="mt-4 border-l-2 border-black/70 pl-3 text-xs italic">{options.instructions}</p>
+      {options.showInstructions && (options.instructions.trim() || editing) && (
+        <p className="mt-4 border-l-2 border-foreground/70 pl-3 text-[0.85em] italic print:border-black/70">
+          <Editable
+            value={options.instructions}
+            enabled={editing}
+            onCommit={commit("instructions")}
+            placeholder="Instructions"
+          />
+        </p>
       )}
 
       <ol
@@ -158,32 +291,61 @@ export function ExamPaper({
         )}
       >
         {questions.map((q, i) => (
-          <li key={q.id} className="exam-question break-inside-avoid">
+          <li key={q.id} className="exam-question group relative break-inside-avoid">
             <div className="flex gap-2">
-              <span className="font-bold">{i + 1}.</span>
+              <span className="shrink-0 font-bold">{numberLabel(i, options)}</span>
               <div className="min-w-0 flex-1">
                 <p className="font-medium">
-                  {q.question}
+                  <Editable
+                    value={q.question}
+                    enabled={editing}
+                    onCommit={
+                      onEditQuestion ? (v) => onEditQuestion(q.id, { question: v }) : undefined
+                    }
+                    placeholder="Question"
+                  />
                   {options.showPoints && (
-                    <span className="ml-2 text-[11px] font-normal">
+                    <span className="ml-2 text-[0.85em] font-normal">
                       [{options.pointsPerQuestion}]
                     </span>
                   )}
                 </p>
-                <QuestionBody q={q} options={options} />
+                <QuestionBody
+                  q={q}
+                  options={options}
+                  editing={editing}
+                  onEditOption={
+                    onEditQuestion
+                      ? (index, value) => onEditQuestion(q.id, { options: { [index]: value } })
+                      : undefined
+                  }
+                />
               </div>
+              {editing && onEditQuestion && (
+                <button
+                  type="button"
+                  aria-label={`Remove question ${i + 1}`}
+                  title="Remove from this paper"
+                  onClick={() => onEditQuestion(q.id, { removed: true })}
+                  className="grid min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive print:hidden"
+                >
+                  <X className="size-4" />
+                </button>
+              )}
             </div>
           </li>
         ))}
       </ol>
 
       {options.includeAnswerKey && (
-        <section className="exam-answer-key mt-10 border-t-2 border-black pt-5">
-          <h3 className="text-base font-bold">Answer key — {options.title || "Practice Exam"}</h3>
-          <ol className="mt-3 space-y-2 text-xs">
+        <section className="exam-answer-key mt-10 border-t-2 border-foreground pt-5 print:border-black">
+          <h3 className="text-[1.2em] font-bold">
+            Answer key — {options.title || "Practice Exam"}
+          </h3>
+          <ol className="mt-3 space-y-2 text-[0.85em]">
             {questions.map((q, i) => (
               <li key={q.id} className="break-inside-avoid">
-                <span className="font-bold">{i + 1}.</span> {printableAnswer(q)}
+                <span className="font-bold">{numberLabel(i, options)}</span> {printableAnswer(q)}
                 {q.explanation && <span className="italic"> — {q.explanation}</span>}
               </li>
             ))}

@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { buildAppendPrompt, buildPrompt, estimateQuestions } from "@/lib/prompt";
 import { TYPE_LABELS } from "@/lib/answers";
+import { createId } from "@/lib/id";
 import { questionTypes } from "@/lib/schema";
 import { useKnowly } from "@/store/knowly";
 import type { Difficulty, QuestionType } from "@/lib/types";
@@ -99,7 +100,6 @@ function GeneratePage() {
     state.settings.gradeLevel,
     state.settings.studyReason,
   ]);
-
 
   const toggleType = (t: QuestionType) =>
     setTypes((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
@@ -237,7 +237,9 @@ function GeneratePage() {
                 }}
                 className="max-w-[140px]"
               />
-              <p className="text-xs text-muted-foreground">Rounds to the nearest multiple of 5. No upper limit.</p>
+              <p className="text-xs text-muted-foreground">
+                Rounds to the nearest multiple of 5. No upper limit.
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -301,7 +303,7 @@ function GeneratePage() {
                 size="sm"
                 onClick={() => {
                   const name = title || `Template ${state.templates.length + 1}`;
-                  saveTemplate({ id: Math.random().toString(36).slice(2), name, body: prompt });
+                  saveTemplate({ id: createId(), name, body: prompt });
                   toast.success("Template saved locally");
                 }}
               >

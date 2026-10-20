@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import * as LucideIcons from "lucide-react";
-import { Lock, Trophy, Award, type LucideIcon } from "lucide-react";
+import { Lock, Trophy } from "lucide-react";
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
+import { achievementIcon } from "@/components/achievement-icon";
 import { ACHIEVEMENTS } from "@/lib/gamification";
 import { useKnowly } from "@/store/knowly";
 import { cn } from "@/lib/utils";
@@ -34,8 +34,6 @@ export const Route = createFileRoute("/_authenticated/achievements")({
 function AchievementsPage() {
   const { state } = useKnowly();
   const unlocked = state.progress.unlockedAchievements;
-  const iconFor = (name: string): LucideIcon =>
-    ((LucideIcons as unknown as Record<string, LucideIcon>)[name] ?? Award);
 
   return (
     <div>
@@ -69,7 +67,7 @@ function AchievementsPage() {
               >
                 {has ? (
                   (() => {
-                    const Icon = iconFor(a.icon);
+                    const Icon = achievementIcon(a.icon);
                     return <Icon className="size-5" />;
                   })()
                 ) : (

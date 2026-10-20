@@ -14,11 +14,13 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   ALL_DIFFICULTIES,
   ALL_TYPES,
-  TYPE_LABELS,
   defaultExamOptions,
   selectQuestions,
+  EXAM_FONTS,
   type ExamOptions,
+  type QuestionEdit,
 } from "@/lib/exam-print";
+import { TYPE_LABELS } from "@/lib/answers";
 import { validateDeckJson, validateQuestionsJson } from "@/lib/schema";
 import type { Difficulty, Question, QuestionType } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -106,6 +108,37 @@ function PrintExamPage() {
     [pool, types, difficulties, count, shuffle, nonce],
   );
 
+  const [editing, setEditing] = useState(false);
+  const [edits, setEdits] = useState<Record<string, QuestionEdit>>({});
+  const editQuestion = (id: string, edit: QuestionEdit) =>
+    setEdits((all) => {
+      const prev = all[id] ?? {};
+      return {
+        ...all,
+        [id]: { ...prev, ...edit, options: { ...prev.options, ...edit.options } },
+      };
+    });
+
+  const paperQuestions = useMemo<Question[]>(
+    () =>
+      questions
+        .filter((q) => !edits[q.id]?.removed)
+        .map((q) => {
+          const e = edits[q.id];
+          if (!e) return q;
+          let answer = q.answer;
+          const opts = q.options?.map((o, i) => {
+            const next = e.options?.[i];
+            if (next === undefined) return o;
+            if (o === q.answer) answer = next; // keep the answer key in step
+            return next;
+          });
+          return { ...q, question: e.question ?? q.question, options: opts, answer };
+        }),
+    [questions, edits],
+  );
+  const editCount = Object.keys(edits).length;
+
   const toggle = <T,>(list: T[], value: T, setter: (v: T[]) => void) =>
     setter(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
 
@@ -183,13 +216,17 @@ function PrintExamPage() {
                       key={d.id}
                       type="button"
                       onClick={() => {
-                        const next = active ? deckIds.filter((x) => x !== d.id) : [...deckIds, d.id];
+                        const next = active
+                          ? deckIds.filter((x) => x !== d.id)
+                          : [...deckIds, d.id];
                         setDeckIds(next);
                         if (!active) applyDeckTitle(next);
                       }}
                       className={cn(
                         "press flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
-                        active ? "border-primary bg-primary/10" : "border-border hover:border-primary/40",
+                        active
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-primary/40",
                       )}
                     >
                       <span className="min-w-0">
@@ -238,7 +275,9 @@ function PrintExamPage() {
             <h2 className="text-sm font-semibold">What goes on the paper</h2>
 
             <div className="space-y-2">
-              <Label htmlFor="question-count" className="text-xs">Questions</Label>
+              <Label htmlFor="question-count" className="text-xs">
+                Questions
+              </Label>
               <Input
                 id="question-count"
                 type="number"
@@ -262,7 +301,11 @@ function PrintExamPage() {
               <Label className="text-xs">Question types</Label>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {ALL_TYPES.map((t) => (
-                  <Chip key={t} active={types.includes(t)} onClick={() => toggle(types, t, setTypes)}>
+                  <Chip
+                    key={t}
+                    active={types.includes(t)}
+                    onClick={() => toggle(types, t, setTypes)}
+                  >
                     {TYPE_LABELS[t]}
                   </Chip>
                 ))}
@@ -293,6 +336,102 @@ function PrintExamPage() {
                   </Button>
                 )}
                 <Switch checked={shuffle} onCheckedChange={setShuffle} />
+              </div>
+            </div>
+          </section>
+
+          <section className="panel space-y-4 p-5">
+            <h2 className="text-sm font-semibold">Look & style</h2>
+            <div className="space-y-2">
+              <Label className="text-xs">Font</Label>
+              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                {EXAM_FONTS.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => set({ fontFamily: f.id })}
+                    className={cn(
+                      "rounded-md border px-2 py-2 text-left text-sm transition-colors",
+                      options.fontFamily === f.id
+                        ? "border-primary bg-primary/10 text-foreground"
+                        : "border-border hover:border-primary/50",
+                    )}
+                    style={{ fontFamily: f.stack }}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Text size</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {(["small", "normal", "large"] as const).map((v) => (
+                  <Chip
+                    key={v}
+                    active={options.fontSize === v}
+                    onClick={() => set({ fontSize: v })}
+                  >
+                    <span className="capitalize">{v}</span>
+                  </Chip>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Title position</Label>
+              <div className="flex flex-wrap gap-1.5">
+                <Chip
+                  active={options.headerAlign === "left"}
+                  onClick={() => set({ headerAlign: "left" })}
+                >
+                  Left
+                </Chip>
+                <Chip
+                  active={options.headerAlign === "center"}
+                  onClick={() => set({ headerAlign: "center" })}
+                >
+                  Centred
+                </Chip>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Question numbers</Label>
+              <div className="flex flex-wrap gap-1.5">
+                <Chip
+                  active={options.numberStyle === "dot"}
+                  onClick={() => set({ numberStyle: "dot" })}
+                >
+                  1.
+                </Chip>
+                <Chip
+                  active={options.numberStyle === "q"}
+                  onClick={() => set({ numberStyle: "q" })}
+                >
+                  Q1.
+                </Chip>
+                <Chip
+                  active={options.numberStyle === "paren"}
+                  onClick={() => set({ numberStyle: "paren" })}
+                >
+                  (1)
+                </Chip>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Answer choice letters</Label>
+              <div className="flex flex-wrap gap-1.5">
+                <Chip
+                  active={options.optionCase === "upper"}
+                  onClick={() => set({ optionCase: "upper" })}
+                >
+                  A. B. C.
+                </Chip>
+                <Chip
+                  active={options.optionCase === "lower"}
+                  onClick={() => set({ optionCase: "lower" })}
+                >
+                  a. b. c.
+                </Chip>
               </div>
             </div>
           </section>
@@ -337,8 +476,6 @@ function PrintExamPage() {
               </div>
             </div>
 
-
-
             <div className="space-y-2">
               <Label className="text-xs">Instructions</Label>
               <Textarea
@@ -378,7 +515,10 @@ function PrintExamPage() {
               <Chip active={options.columns === 2} onClick={() => set({ columns: 2 })}>
                 Two columns
               </Chip>
-              <Chip active={options.spacing === "compact"} onClick={() => set({ spacing: "compact" })}>
+              <Chip
+                active={options.spacing === "compact"}
+                onClick={() => set({ spacing: "compact" })}
+              >
                 Compact
               </Chip>
               <Chip active={options.spacing === "roomy"} onClick={() => set({ spacing: "roomy" })}>
@@ -406,12 +546,39 @@ function PrintExamPage() {
         </div>
 
         <div className="space-y-3">
-          <p className="text-xs text-muted-foreground">
-            Preview · {questions.length} of {pool.length} available questions
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">
+              Preview · {paperQuestions.length} of {pool.length} available questions
+              {editCount > 0 && ` · ${editCount} edited`}
+            </p>
+            <div className="flex items-center gap-2">
+              {editCount > 0 && (
+                <Button size="sm" variant="ghost" onClick={() => setEdits({})}>
+                  Undo all edits
+                </Button>
+              )}
+              <Label htmlFor="edit-paper" className="text-xs">
+                Edit on paper
+              </Label>
+              <Switch id="edit-paper" checked={editing} onCheckedChange={setEditing} />
+            </div>
+          </div>
+          {editing && (
+            <p className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs">
+              Click any title, instruction, question or answer choice on the paper and type over it.
+              Press Enter to finish. Use the × beside a question to drop it from this paper. Your
+              decks aren't changed.
+            </p>
+          )}
           <div className="overflow-hidden rounded-xl border border-border shadow-sm">
-            {questions.length ? (
-              <ExamPaper questions={questions} options={options} />
+            {paperQuestions.length ? (
+              <ExamPaper
+                questions={paperQuestions}
+                options={options}
+                editing={editing}
+                onChange={set}
+                onEditQuestion={editQuestion}
+              />
             ) : (
               <p className="p-10 text-center text-sm text-muted-foreground">
                 Choose a deck or load JSON to see the paper.
@@ -422,9 +589,9 @@ function PrintExamPage() {
       </div>
 
       {/* Print-only clean copy */}
-      {!!questions.length && (
+      {!!paperQuestions.length && (
         <div className="print-only hidden">
-          <ExamPaper questions={questions} options={options} />
+          <ExamPaper questions={paperQuestions} options={options} />
         </div>
       )}
     </div>

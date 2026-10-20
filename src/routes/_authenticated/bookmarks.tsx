@@ -56,7 +56,14 @@ function BookmarksPage() {
         const bookmarked = deck.bookmarks.includes(q.id);
         const note = deck.notes[q.id] ?? "";
         if (bookmarked || note.trim()) {
-          out.push({ deckId: deck.id, deckTitle: deck.title, deckColor: deck.color, q, note, bookmarked });
+          out.push({
+            deckId: deck.id,
+            deckTitle: deck.title,
+            deckColor: deck.color,
+            q,
+            note,
+            bookmarked,
+          });
         }
       }
     }
@@ -120,7 +127,8 @@ function BookmarksPage() {
         description="Everything you've starred or written about, across every deck — reread it, reword it, or clear it out."
         action={
           <Badge variant="secondary" className="gap-1.5 px-3 py-1.5">
-            <Star className="size-3.5" /> {starred.length} starred · <NotebookPen className="size-3.5" /> {noted.length} noted
+            <Star className="size-3.5" /> {starred.length} starred ·{" "}
+            <NotebookPen className="size-3.5" /> {noted.length} noted
           </Badge>
         }
       />
@@ -155,12 +163,18 @@ function BookmarksPage() {
         </div>
       ) : (
         <section className="panel divide-y divide-border overflow-hidden p-0">
-          {list.map(({ deckId, deckTitle, deckColor, q, note, bookmarked }) => {
+          {list.map(({ deckId, deckTitle, deckColor, q, note }) => {
             const key = `${deckId}:${q.id}`;
             const isOpen = expanded === key;
             const draft = drafts[key];
             return (
-              <div key={key} className={cn("transition-colors", isOpen ? "bg-secondary/30" : "hover:bg-secondary/20")}>
+              <div
+                key={key}
+                className={cn(
+                  "transition-colors",
+                  isOpen ? "bg-secondary/30" : "hover:bg-secondary/20",
+                )}
+              >
                 <div className="flex items-start gap-3 px-4 py-3 sm:px-5">
                   {tab === "starred" ? (
                     <button
@@ -174,10 +188,15 @@ function BookmarksPage() {
                   ) : (
                     <NotebookPen className="mt-0.5 size-4 shrink-0 text-primary" />
                   )}
-                  <button onClick={() => setExpanded(isOpen ? null : key)} className="min-w-0 flex-1 text-left">
+                  <button
+                    onClick={() => setExpanded(isOpen ? null : key)}
+                    className="min-w-0 flex-1 text-left"
+                  >
                     <p className="truncate text-sm font-medium">{q.question}</p>
                     {note.trim() && (
-                      <p className="mt-0.5 truncate text-xs italic text-muted-foreground">“{note.trim()}”</p>
+                      <p className="mt-0.5 truncate text-xs italic text-muted-foreground">
+                        “{note.trim()}”
+                      </p>
                     )}
                     <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
                       <span className="inline-flex items-center gap-1.5">
@@ -193,16 +212,22 @@ function BookmarksPage() {
                     aria-label={isOpen ? "Collapse" : "Expand"}
                     className="press mt-0.5 shrink-0 text-muted-foreground"
                   >
-                    <ChevronDown className={cn("size-4 transition-transform", isOpen && "rotate-180")} />
+                    <ChevronDown
+                      className={cn("size-4 transition-transform", isOpen && "rotate-180")}
+                    />
                   </button>
                 </div>
                 {isOpen && (
                   <div className="border-t border-border bg-background/40 px-4 py-4 sm:px-5">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">Answer</p>
                     <p className="mt-1 text-sm">{displayAnswer(q)}</p>
-                    {q.explanation && <p className="mt-2 text-sm text-muted-foreground">{q.explanation}</p>}
+                    {q.explanation && (
+                      <p className="mt-2 text-sm text-muted-foreground">{q.explanation}</p>
+                    )}
                     <div className="mt-4">
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Your note</p>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Your note
+                      </p>
                       <Textarea
                         value={draft ?? note}
                         onChange={(e) => setDrafts((d) => ({ ...d, [key]: e.target.value }))}

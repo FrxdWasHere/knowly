@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useKnowly } from "@/store/knowly";
 import { oceanDeckColor, DECK_COLORS } from "@/lib/defaults";
+import { createId } from "@/lib/id";
 import { cn } from "@/lib/utils";
 import type { Deck } from "@/lib/types";
 
@@ -73,7 +74,7 @@ function DeckToolsPage() {
     if (decks.length < 2) return;
     const now = Date.now();
     const merged: Deck = {
-      id: `deck-${now}`,
+      id: createId("deck"),
       title: mergeTitle.trim() || "Merged deck",
       subject: mergeSubject.trim() || decks[0].subject,
       color: nextColor(),
@@ -98,7 +99,6 @@ function DeckToolsPage() {
 
   const doSplit = () => {
     if (!splitDeck) return;
-    const now = Date.now();
     let groups: { title: string; tags: string[]; questions: typeof splitDeck.questions }[] = [];
 
     if (splitMode === "tags") {
@@ -132,7 +132,7 @@ function DeckToolsPage() {
     const colorSeq = DECK_COLORS.indexOf(splitDeck.color);
     const newDecks: Deck[] = groups.map((g, i) => ({
       ...splitDeck,
-      id: `deck-${now}-${i}`,
+      id: createId("deck"),
       title: g.title,
       tags: g.tags,
       color: DECK_COLORS[(colorSeq + i + 1) % DECK_COLORS.length],
@@ -181,14 +181,19 @@ function DeckToolsPage() {
                 )}
               >
                 <span className="flex min-w-0 items-center gap-2">
-                  <span className="size-2.5 shrink-0 rounded-full" style={{ background: oceanDeckColor(d.color) }} />
+                  <span
+                    className="size-2.5 shrink-0 rounded-full"
+                    style={{ background: oceanDeckColor(d.color) }}
+                  />
                   <span className="truncate">{d.title}</span>
                 </span>
                 <span className="shrink-0 text-xs text-muted-foreground">{d.questions.length}</span>
               </button>
             ))}
             {state.decks.length === 0 && (
-              <p className="text-sm text-muted-foreground">No decks yet — create or import one first.</p>
+              <p className="text-sm text-muted-foreground">
+                No decks yet — create or import one first.
+              </p>
             )}
           </div>
 
@@ -274,7 +279,15 @@ function DeckToolsPage() {
                 ) : (
                   <div className="mt-4 flex flex-wrap gap-2">
                     {splitTags.map((t) => (
-                      <button key={t} type="button" onClick={() => setSplitTagsPicked((p) => (p.includes(t) ? p.filter((x) => x !== t) : [...p, t]))}>
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() =>
+                          setSplitTagsPicked((p) =>
+                            p.includes(t) ? p.filter((x) => x !== t) : [...p, t],
+                          )
+                        }
+                      >
                         <Badge
                           variant={splitTagsPicked.includes(t) ? "default" : "secondary"}
                           className="cursor-pointer"

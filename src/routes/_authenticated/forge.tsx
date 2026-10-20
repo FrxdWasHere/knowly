@@ -28,6 +28,7 @@ import {
 } from "@/lib/schema";
 import { BLANK_TOKEN, countBlanks } from "@/lib/interactive";
 import { TYPE_LABELS } from "@/lib/answers";
+import { createId } from "@/lib/id";
 import { useKnowly } from "@/store/knowly";
 import { cn } from "@/lib/utils";
 import type { Difficulty, QuestionType } from "@/lib/types";
@@ -79,7 +80,7 @@ interface DraftQuestion {
   tags: string;
 }
 
-const newKey = () => Math.random().toString(36).slice(2, 10);
+const newKey = () => createId();
 
 function blankQuestion(type: QuestionType = "flashcard"): DraftQuestion {
   return {
@@ -89,7 +90,13 @@ function blankQuestion(type: QuestionType = "flashcard"): DraftQuestion {
     answer: type === "true-false" ? "true" : "",
     options: type === "multiple-choice" ? ["", "", "", ""] : [],
     items: type === "ordering" ? ["", ""] : [],
-    pairs: type === "matching" ? [{ left: "", right: "" }, { left: "", right: "" }] : [],
+    pairs:
+      type === "matching"
+        ? [
+            { left: "", right: "" },
+            { left: "", right: "" },
+          ]
+        : [],
     blanks: [],
     wordBank: [],
     explanation: "",
@@ -110,7 +117,10 @@ function toPayload(d: DraftQuestion) {
   if (d.explanation.trim()) base.explanation = d.explanation.trim();
   if (d.concept.trim()) base.concept = d.concept.trim();
   if (d.hint.trim()) base.hint = d.hint.trim();
-  const tags = d.tags.split(",").map((t) => t.trim()).filter(Boolean);
+  const tags = d.tags
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
   if (tags.length) base.tags = tags;
 
   switch (d.type) {
@@ -162,7 +172,10 @@ function ForgePage() {
           title: title.trim(),
           subject: subject.trim() || "General",
           description: description.trim() || undefined,
-          tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
+          tags: tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean),
           questions: qs,
         })
       : JSON.stringify({ questions: qs });
@@ -502,7 +515,13 @@ function QuestionEditor({
           </select>
         </div>
         <div className="flex gap-1">
-          <Button variant="ghost" size="icon" onClick={() => onMove(-1)} disabled={index === 0} aria-label="Move up">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onMove(-1)}
+            disabled={index === 0}
+            aria-label="Move up"
+          >
             <ChevronUp />
           </Button>
           <Button
@@ -530,9 +549,7 @@ function QuestionEditor({
       </div>
 
       <div className="space-y-1.5">
-        <Label>
-          {draft.type === "flashcard" ? "Front (term or prompt) *" : "Question *"}
-        </Label>
+        <Label>{draft.type === "flashcard" ? "Front (term or prompt) *" : "Question *"}</Label>
         <Textarea
           value={draft.question}
           onChange={(e) => {
@@ -661,7 +678,9 @@ function QuestionEditor({
                 value={p.left}
                 onChange={(e) =>
                   onChange({
-                    pairs: draft.pairs.map((x, j) => (j === i ? { ...x, left: e.target.value } : x)),
+                    pairs: draft.pairs.map((x, j) =>
+                      j === i ? { ...x, left: e.target.value } : x,
+                    ),
                   })
                 }
                 placeholder="Left"
@@ -670,7 +689,9 @@ function QuestionEditor({
                 value={p.right}
                 onChange={(e) =>
                   onChange({
-                    pairs: draft.pairs.map((x, j) => (j === i ? { ...x, right: e.target.value } : x)),
+                    pairs: draft.pairs.map((x, j) =>
+                      j === i ? { ...x, right: e.target.value } : x,
+                    ),
                   })
                 }
                 placeholder="Right"

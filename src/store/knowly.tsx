@@ -9,18 +9,21 @@ import {
   type ReactNode,
 } from "react";
 import { toast } from "sonner";
-import { ACCENTS, AVATAR_EMOJIS, DEFAULT_PROGRESS, DEFAULT_SETTINGS, DEFAULT_STATE, oceanDeckColor } from "@/lib/defaults";
+import {
+  ACCENTS,
+  AVATAR_EMOJIS,
+  DEFAULT_PROGRESS,
+  DEFAULT_SETTINGS,
+  DEFAULT_STATE,
+  STATE_VERSION,
+  oceanDeckColor,
+} from "@/lib/defaults";
 import { evaluateAchievements, ACHIEVEMENTS } from "@/lib/gamification";
 import { dayKey } from "@/lib/answers";
-import {
-  getColorTheme,
-  luminance,
-  sanitizePalette,
-  themeCssVars,
-  THEME_VAR_NAMES,
-  type ThemeColors,
-} from "@/lib/themes";
-import { schedule, type SrsGrade } from "@/lib/srs";
+import { applyThemeToRoot } from "@/lib/theme-dom";
+import { loadWallpaper, saveWallpaper } from "@/lib/wallpaper-store";
+import { createId } from "@/lib/id";
+import { schedule, DAY_MS, type SrsGrade } from "@/lib/srs";
 import type {
   AppState,
   Deck,
@@ -36,33 +39,84 @@ const STORAGE_KEY = "studyforge.state.v1";
 const HISTORY_LIMIT = 200;
 const RESULTS_LIMIT = 50;
 
+/**
+ * Repairs older persisted progress: earlier versions stored the night-owl and
+ * early-bird achievements as `__nightowl` / `__earlybird` keys inside
+ * `studyDays`, which polluted per-day statistics. Pull them out into booleans.
+ * Idempotent — safe to run on any state.
+ */
+function normalizeProgress(input: Progress): Progress {
+  const studyDays = input.studyDays ?? {};
+  const days: Record<string, number> = {};
+  for (const [key, value] of Object.entries(studyDays)) {
+    if (!key.startsWith("__")) days[key] = value;
+  }
+  return {
+    ...input,
+    studyDays: days,
+    nightOwl: Boolean(input.nightOwl) || Boolean(studyDays["__nightowl"]),
+    earlyBird: Boolean(input.earlyBird) || Boolean(studyDays["__earlybird"]),
+  };
+}
+
+/** Upgrades a state snapshot by exactly one version. */
+type Migration = (state: AppState) => AppState;
+
+/**
+ * Oldest-first list of migrations, keyed by the version they upgrade *from*.
+ * Saves written before versioning existed are treated as v1.
+ */
+const MIGRATIONS: Partial<Record<number, Migration>> = {
+  // v1 → v2: sentinels moved out of `studyDays` into dedicated booleans.
+  1: (state) => ({ ...state, progress: normalizeProgress(state.progress) }),
+};
+
+/** Applies every migration needed to bring `parsed` up to `STATE_VERSION`. */
+function migrate(parsed: Partial<AppState>): AppState {
+  let state = { ...DEFAULT_STATE, ...parsed } as AppState;
+  let version = typeof state.version === "number" ? state.version : 1;
+  while (version < STATE_VERSION) {
+    const step = MIGRATIONS[version];
+    if (step) state = step(state);
+    version += 1;
+  }
+  return { ...state, version: STATE_VERSION };
+}
+
+/** Merges defaults, applies migrations, and repairs known field shapes. */
+function normalizeState(parsed: Partial<AppState>): AppState {
+  const state = migrate(parsed);
+  const settings = state.settings ?? DEFAULT_SETTINGS;
+  const accent = ACCENTS.some((item) => item.id === settings.accent)
+    ? settings.accent
+    : DEFAULT_SETTINGS.accent;
+  const avatarEmoji = AVATAR_EMOJIS.includes(settings.avatarEmoji)
+    ? settings.avatarEmoji
+    : DEFAULT_SETTINGS.avatarEmoji;
+  return {
+    ...state,
+    settings: {
+      ...DEFAULT_SETTINGS,
+      ...settings,
+      accent,
+      avatarEmoji,
+      defaultQuizConfig: {
+        ...DEFAULT_SETTINGS.defaultQuizConfig,
+        ...(settings.defaultQuizConfig ?? {}),
+      },
+      srs: { ...DEFAULT_SETTINGS.srs, ...(settings.srs ?? {}) },
+    },
+    decks: (state.decks ?? []).map((deck) => ({ ...deck, color: oceanDeckColor(deck.color) })),
+    progress: normalizeProgress({ ...DEFAULT_PROGRESS, ...state.progress }),
+  };
+}
+
 function loadPersistedState(): AppState {
   if (typeof window === "undefined") return DEFAULT_STATE;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_STATE;
-    const parsed = JSON.parse(raw) as Partial<AppState>;
-    const state = { ...DEFAULT_STATE, ...parsed } as AppState;
-    const accent = ACCENTS.some((item) => item.id === state.settings.accent)
-      ? state.settings.accent
-      : DEFAULT_SETTINGS.accent;
-    const avatarEmoji = AVATAR_EMOJIS.includes(state.settings.avatarEmoji)
-      ? state.settings.avatarEmoji
-      : DEFAULT_SETTINGS.avatarEmoji;
-    return {
-      ...state,
-      settings: {
-        ...DEFAULT_SETTINGS,
-        ...state.settings,
-        accent,
-        avatarEmoji,
-        defaultQuizConfig: {
-          ...DEFAULT_SETTINGS.defaultQuizConfig,
-          ...(state.settings.defaultQuizConfig ?? {}),
-        },
-      },
-      decks: state.decks.map((deck) => ({ ...deck, color: oceanDeckColor(deck.color) })),
-    };
+    return normalizeState(JSON.parse(raw) as Partial<AppState>);
   } catch {
     return DEFAULT_STATE;
   }
@@ -73,6 +127,8 @@ interface Ctx {
   hydrated: boolean;
   setState: (updater: (s: AppState) => AppState) => void;
   updateSettings: (patch: Partial<Settings>) => void;
+  /** Persist (or clear) the wallpaper. Stored in IndexedDB, not the state blob. */
+  setWallpaper: (dataUrl: string | null) => void;
   resetSettings: () => void;
   addDeck: (deck: Deck) => void;
   addQuestions: (deckId: string, questions: Question[]) => void;
@@ -93,8 +149,10 @@ export interface RecordSessionInput {
   mode: "study" | "quiz";
   deckIds: string[];
   deckTitles: string[];
+  /** cards actually answered — excludes skipped cards */
   answered: number;
   correct: number;
+  /** cards the learner skipped; disjoint from `answered` */
   skipped: number;
   durationMs: number;
   xpEarned: number;
@@ -104,18 +162,40 @@ export interface RecordSessionInput {
   result?: QuizResult;
 }
 
-const KnowlyContext = createContext<Ctx | null>(null);
+// Keep one shared context even when this file hot-reloads, so the provider
+// and the pages never end up holding two different copies.
+const g = globalThis as unknown as { __knowlyCtx?: import("react").Context<Ctx | null> };
+const KnowlyContext = (g.__knowlyCtx ??= createContext<Ctx | null>(null));
 
 export function KnowlyProvider({ children }: { children: ReactNode }) {
   const [state, setInternal] = useState<AppState>(DEFAULT_STATE);
   const [hydrated, setHydrated] = useState(false);
-  const pendingAchievements = useRef<string[]>([]);
+  const seenAchievements = useRef<string[] | null>(null);
+  const saveErrorShown = useRef(false);
   const stateRef = useRef(state);
   stateRef.current = state;
 
   useEffect(() => {
-    setInternal(loadPersistedState());
-    setHydrated(true);
+    const persisted = loadPersistedState();
+    setInternal(persisted);
+    let cancelled = false;
+    void (async () => {
+      // Migrate a legacy inline wallpaper out of the blob, otherwise hydrate
+      // the wallpaper from its own store.
+      const legacy = persisted.settings.wallpaper;
+      if (legacy) {
+        await saveWallpaper(legacy);
+      } else {
+        const stored = await loadWallpaper();
+        if (!cancelled && stored) {
+          setInternal((s) => ({ ...s, settings: { ...s.settings, wallpaper: stored } }));
+        }
+      }
+      if (!cancelled) setHydrated(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const setState = useCallback((updater: (s: AppState) => AppState) => {
@@ -126,77 +206,66 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
     if (!hydrated || typeof window === "undefined") return;
     const timer = window.setTimeout(() => {
       try {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(stateRef.current));
+        // The wallpaper is persisted separately (IndexedDB) so a large image
+        // can never exhaust the state blob's quota.
+        const snapshot: AppState = {
+          ...stateRef.current,
+          settings: { ...stateRef.current.settings, wallpaper: null },
+        };
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+        saveErrorShown.current = false;
       } catch {
-        /* quota — ignore */
+        if (!saveErrorShown.current) {
+          saveErrorShown.current = true;
+          toast.error("Couldn't save your data — browser storage is full", {
+            id: "storage-full",
+            description: "Try exporting a backup, then free up space or remove large wallpapers.",
+          });
+        }
       }
     }, 400);
     return () => window.clearTimeout(timer);
   }, [state, hydrated]);
 
   useEffect(() => {
-    if (!hydrated || typeof document === "undefined") return;
-    const s = state.settings;
-    const root = document.documentElement;
-    const preset = getColorTheme(s.colorTheme);
-    const userTheme = s.customThemes?.find((t) => t.id === s.colorTheme);
-    const palette: ThemeColors | undefined =
-      s.colorTheme === "custom"
-        ? sanitizePalette(s.customTheme)
-        : userTheme
-          ? sanitizePalette(userTheme.colors)
-          : preset?.colors;
-    const mode = palette
-      ? (preset?.mode ?? (luminance(palette.background) > 0.5 ? "light" : "dark"))
-      : s.theme;
-    root.classList.toggle("light", mode === "light");
-    for (const name of THEME_VAR_NAMES) root.style.removeProperty(name);
-    if (palette) {
-      const vars = themeCssVars(palette);
-      for (const name of Object.keys(vars)) root.style.setProperty(name, vars[name]!);
-    }
-    root.classList.toggle("contrast-high", s.highContrast);
-    root.classList.toggle("colorblind", s.colorblindPalette);
-    root.classList.toggle("reduce-motion", s.reducedMotion);
-    root.classList.toggle("focus-strong", s.focusIndicators);
-    root.dataset.btn = s.buttonSize;
-    root.style.setProperty("--font-scale", String(s.fontScale));
-    root.style.setProperty("--radius", `${s.radius}rem`);
-    root.style.setProperty("--speed", String(s.animationSpeed));
-    if (!palette) {
-      const accent = ACCENTS.find((a) => a.id === s.accent) ?? ACCENTS[0];
-      root.style.setProperty("--primary", accent.value);
-      root.style.setProperty("--primary-glow", accent.glow);
-      root.style.setProperty("--ring", accent.value);
-      root.style.setProperty("--sidebar-primary", accent.value);
-    }
+    if (!hydrated) return;
+    applyThemeToRoot(state.settings);
   }, [state.settings, hydrated]);
 
-  const flushAchievements = useCallback((progress: Progress, decks: Deck[]) => {
+  /** Pure: returns progress with any newly-earned achievements unlocked. */
+  const flushAchievements = useCallback((progress: Progress, decks: Deck[]): Progress => {
     const unlocked = evaluateAchievements(progress, decks);
     if (!unlocked.length) return progress;
-    pendingAchievements.current.push(...unlocked.map((a) => a.id));
     return {
       ...progress,
       unlockedAchievements: [...progress.unlockedAchievements, ...unlocked.map((a) => a.id)],
     };
   }, []);
 
+  // Announce achievements that appear after this session has hydrated. The ref
+  // seeds a baseline so already-unlocked achievements aren't re-announced.
   useEffect(() => {
-    if (!pendingAchievements.current.length || !state.settings.achievementPopups) {
-      pendingAchievements.current = [];
+    if (!hydrated) return;
+    const unlockedIds = state.progress.unlockedAchievements;
+    if (seenAchievements.current === null) {
+      seenAchievements.current = unlockedIds;
       return;
     }
-    const ids = [...pendingAchievements.current];
-    pendingAchievements.current = [];
-    ids.forEach((id, i) => {
+    const previous = seenAchievements.current;
+    seenAchievements.current = unlockedIds;
+    if (!state.settings.achievementPopups) return;
+    const fresh = [...new Set(unlockedIds.filter((id) => !previous.includes(id)))];
+    fresh.forEach((id, i) => {
       const a = ACHIEVEMENTS.find((x) => x.id === id);
       if (!a) return;
       window.setTimeout(() => {
-        toast.success(`Achievement unlocked — ${a.name}`, { description: a.description });
+        toast.success(`Achievement unlocked — ${a.name}`, {
+          id: `achievement-${a.id}`,
+          description: a.description,
+        });
       }, i * 500);
     });
-  }, [state, state.settings.achievementPopups]);
+  }, [hydrated, state.progress.unlockedAchievements, state.settings.achievementPopups]);
 
   const addDeck = useCallback(
     (deck: Deck) => {
@@ -242,7 +311,10 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
             ? {
                 ...d,
                 lastStudiedAt: Date.now(),
-                srs: { ...(d.srs ?? {}), [questionId]: schedule(d.srs?.[questionId], grade) },
+                srs: {
+                  ...(d.srs ?? {}),
+                  [questionId]: schedule(d.srs?.[questionId], grade, Date.now(), s.settings.srs),
+                },
               }
             : d,
         ),
@@ -263,13 +335,9 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
       setState((s) => {
         const today = dayKey();
         const p = s.progress;
-        const yesterday = dayKey(Date.now() - 86400000);
+        const yesterday = dayKey(Date.now() - DAY_MS);
         const streak =
-          p.lastStudyDay === today
-            ? p.streak
-            : p.lastStudyDay === yesterday
-              ? p.streak + 1
-              : 1;
+          p.lastStudyDay === today ? p.streak : p.lastStudyDay === yesterday ? p.streak + 1 : 1;
         const hour = new Date().getHours();
         const conceptStats = { ...p.conceptStats };
         for (const [k, v] of Object.entries(input.conceptStats)) {
@@ -284,7 +352,8 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
           lifetimeXp: p.lifetimeXp + input.xpEarned,
           totalAnswered: p.totalAnswered + input.answered,
           totalCorrect: p.totalCorrect + input.correct,
-          totalIncorrect: p.totalIncorrect + (input.answered - input.correct - input.skipped),
+          // `answered` already excludes skipped cards, so incorrect is simply the remainder.
+          totalIncorrect: p.totalIncorrect + (input.answered - input.correct),
           totalSkipped: p.totalSkipped + input.skipped,
           studyTimeMs: p.studyTimeMs + input.durationMs,
           streak,
@@ -293,9 +362,9 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
           studyDays: {
             ...p.studyDays,
             [today]: (p.studyDays[today] ?? 0) + input.answered,
-            ...(hour < 4 ? { __nightowl: 1 } : {}),
-            ...(hour >= 4 && hour < 7 ? { __earlybird: 1 } : {}),
           },
+          nightOwl: p.nightOwl || hour < 4,
+          earlyBird: p.earlyBird || (hour >= 4 && hour < 7),
           quizzesCompleted: p.quizzesCompleted + (input.mode === "quiz" ? 1 : 0),
           perfectQuizzes:
             p.perfectQuizzes +
@@ -321,7 +390,7 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
         progress = flushAchievements(progress, decks);
 
         const summary: SessionSummary = {
-          id: Math.random().toString(36).slice(2),
+          id: createId(),
           date: now,
           mode: input.mode,
           deckTitles: input.deckTitles,
@@ -350,9 +419,15 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
       state,
       hydrated,
       setState,
-      updateSettings: (patch) =>
-        setState((s) => ({ ...s, settings: { ...s.settings, ...patch } })),
-      resetSettings: () => setState((s) => ({ ...s, settings: DEFAULT_SETTINGS })),
+      updateSettings: (patch) => setState((s) => ({ ...s, settings: { ...s.settings, ...patch } })),
+      setWallpaper: (dataUrl) => {
+        setState((s) => ({ ...s, settings: { ...s.settings, wallpaper: dataUrl } }));
+        void saveWallpaper(dataUrl);
+      },
+      resetSettings: () => {
+        setState((s) => ({ ...s, settings: DEFAULT_SETTINGS }));
+        void saveWallpaper(null);
+      },
       addDeck,
       addQuestions,
       updateDeck,
@@ -369,31 +444,16 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
       completeOnboarding: () => setState((s) => ({ ...s, onboardingComplete: true })),
       resetAll: () => {
         setState(() => ({ ...DEFAULT_STATE, onboardingComplete: true }));
+        void saveWallpaper(null);
       },
       exportState: () => JSON.stringify(state, null, 2),
       importState: (json) => {
         try {
-          const parsed = JSON.parse(json) as AppState;
+          const parsed = JSON.parse(json) as Partial<AppState> | null;
           if (!parsed || typeof parsed !== "object") return false;
-          const next = {
-            ...DEFAULT_STATE,
-            ...parsed,
-            settings: {
-              ...DEFAULT_SETTINGS,
-              ...parsed.settings,
-              accent: ACCENTS.some((item) => item.id === parsed.settings?.accent)
-                ? parsed.settings.accent
-                : DEFAULT_SETTINGS.accent,
-              avatarEmoji: AVATAR_EMOJIS.includes(parsed.settings?.avatarEmoji ?? "")
-                ? parsed.settings.avatarEmoji
-                : DEFAULT_SETTINGS.avatarEmoji,
-            },
-            decks: (parsed.decks ?? []).map((deck) => ({
-              ...deck,
-              color: oceanDeckColor(deck.color),
-            })),
-          };
+          const next = normalizeState(parsed);
           setState(() => next);
+          void saveWallpaper(next.settings.wallpaper ?? null);
           return true;
         } catch {
           return false;

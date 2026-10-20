@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useKnowly } from "@/store/knowly";
+import { createId } from "@/lib/id";
 import { cn } from "@/lib/utils";
 import type { JournalEntry, JournalMood } from "@/lib/types";
 
@@ -60,7 +61,7 @@ function fmtDate(ts: number) {
 
 function JournalPage() {
   const { state, setState } = useKnowly();
-  const entries = state.journal ?? [];
+  const entries = useMemo(() => state.journal ?? [], [state.journal]);
 
   const [query, setQuery] = useState("");
   const [moodFilter, setMoodFilter] = useState<"all" | JournalMood>("all");
@@ -77,10 +78,7 @@ function JournalPage() {
     () => [...state.history].sort((a, b) => b.date - a.date).slice(0, 12),
     [state.history],
   );
-  const sessionById = useMemo(
-    () => new Map(state.history.map((s) => [s.id, s])),
-    [state.history],
-  );
+  const sessionById = useMemo(() => new Map(state.history.map((s) => [s.id, s])), [state.history]);
 
   const reset = () => {
     setTitle("");
@@ -126,13 +124,21 @@ function JournalPage() {
           ...s,
           journal: list.map((e) =>
             e.id === editingId
-              ? { ...e, title: cleanTitle, body, mood, tags, sessionId: sessionId || undefined, updatedAt: now }
+              ? {
+                  ...e,
+                  title: cleanTitle,
+                  body,
+                  mood,
+                  tags,
+                  sessionId: sessionId || undefined,
+                  updatedAt: now,
+                }
               : e,
           ),
         };
       }
       const entry: JournalEntry = {
-        id: `jrn-${now}-${Math.random().toString(36).slice(2, 8)}`,
+        id: createId("jrn"),
         createdAt: now,
         updatedAt: now,
         title: cleanTitle,
@@ -264,8 +270,11 @@ function JournalPage() {
                       variant={sessionId === s.id ? "default" : "outline"}
                       onClick={() => setSessionId(s.id)}
                     >
-                      {new Date(s.date).toLocaleDateString(undefined, { day: "numeric", month: "short" })} ·{" "}
-                      {s.deckTitles[0] ?? s.mode} · {s.percentage}%
+                      {new Date(s.date).toLocaleDateString(undefined, {
+                        day: "numeric",
+                        month: "short",
+                      })}{" "}
+                      · {s.deckTitles[0] ?? s.mode} · {s.percentage}%
                     </Button>
                   ))}
                 </div>
@@ -374,10 +383,20 @@ function JournalPage() {
                   </p>
                 </div>
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => startEdit(entry)} aria-label="Edit entry">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => startEdit(entry)}
+                    aria-label="Edit entry"
+                  >
                     <Pencil className="size-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => remove(entry.id)} aria-label="Delete entry">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => remove(entry.id)}
+                    aria-label="Delete entry"
+                  >
                     <Trash2 className="size-4" />
                   </Button>
                 </div>
@@ -397,8 +416,8 @@ function JournalPage() {
                 ))}
                 {session && (
                   <Badge variant="outline">
-                    {session.deckTitles.join(", ") || session.mode} · {session.correct}/{session.answered} ·{" "}
-                    {session.percentage}%
+                    {session.deckTitles.join(", ") || session.mode} · {session.correct}/
+                    {session.answered} · {session.percentage}%
                   </Badge>
                 )}
               </div>
@@ -420,7 +439,9 @@ function JournalPage() {
                 className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/70 px-4 py-3"
               >
                 <div className="min-w-0 text-sm">
-                  <p className="truncate font-medium">{s.deckTitles.join(", ") || "Study session"}</p>
+                  <p className="truncate font-medium">
+                    {s.deckTitles.join(", ") || "Study session"}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {fmtDate(s.date)} · {s.correct}/{s.answered} correct · {s.percentage}%
                   </p>

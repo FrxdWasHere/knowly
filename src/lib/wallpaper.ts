@@ -37,7 +37,7 @@ export async function fileToWallpaperDataUrl(file: File): Promise<string> {
   ctx.drawImage(img, 0, 0, width, height);
 
   const out = canvas.toDataURL("image/jpeg", 0.82);
-  if (out.length > 4_500_000) {
+  if (out.length > 8_000_000) {
     throw new Error("Image is too heavy to store locally — try a smaller one.");
   }
   return out;

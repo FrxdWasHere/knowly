@@ -22,9 +22,9 @@ import {
   isInteractiveComplete,
 } from "@/components/questions/interactive-question";
 import { useKnowly } from "@/store/knowly";
+import { useCoarsePointer } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import type { Question } from "@/lib/types";
-
 
 const BASE_XP: Record<string, number> = { easy: 8, medium: 12, hard: 18 };
 const PENALTY: Record<string, number> = { easy: 6, medium: 8, hard: 10 };
@@ -42,6 +42,7 @@ interface Floater {
 export function DeckArena({ deckId }: { deckId: string }) {
   const { state, recordSession } = useKnowly();
   const navigate = useNavigate();
+  const coarsePointer = useCoarsePointer();
   const deck = state.decks.find((d) => d.id === deckId);
 
   const [phase, setPhase] = useState<Phase>("intro");
@@ -182,17 +183,7 @@ export function DeckArena({ deckId }: { deckId: string }) {
       masteredIds: { [deck.id]: mastered },
       conceptStats: concepts,
     });
-  }, [
-    phase,
-    deck,
-    recordSession,
-    answered,
-    correct,
-    roundXp,
-    bestCombo,
-    mastered,
-    concepts,
-  ]);
+  }, [phase, deck, recordSession, answered, correct, roundXp, bestCombo, mastered, concepts]);
 
   if (!deck) {
     return (
@@ -287,7 +278,9 @@ export function DeckArena({ deckId }: { deckId: string }) {
               key={i}
               className={cn(
                 "size-5 transition-all duration-300",
-                i < lives ? "fill-destructive text-destructive" : "scale-90 text-muted-foreground/40",
+                i < lives
+                  ? "fill-destructive text-destructive"
+                  : "scale-90 text-muted-foreground/40",
               )}
             />
           ))}
@@ -347,7 +340,9 @@ export function DeckArena({ deckId }: { deckId: string }) {
           {question.concept && <Badge variant="outline">{question.concept}</Badge>}
         </div>
 
-        <h2 className="mt-5 font-display text-2xl font-bold leading-snug">{question.question}</h2>
+        <h2 className="mt-5 break-words font-display text-2xl font-bold leading-snug">
+          {question.question}
+        </h2>
 
         {question.type === "multiple-choice" || question.type === "true-false" ? (
           <div className="stagger mt-6 grid gap-2">
@@ -363,7 +358,7 @@ export function DeckArena({ deckId }: { deckId: string }) {
                     resolve(checkAnswer(question, opt));
                   }}
                   className={cn(
-                    "press rounded-xl border border-border bg-surface-2/60 px-4 py-3 text-left text-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/60",
+                    "press min-h-[44px] rounded-xl border border-border break-words bg-surface-2/60 px-4 py-3 text-left text-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/60",
                     revealed && isAnswer && "border-success bg-success/15",
                     revealed && chosen && !isAnswer && "border-destructive bg-destructive/15",
                   )}
@@ -381,10 +376,14 @@ export function DeckArena({ deckId }: { deckId: string }) {
               </p>
             ) : (
               <div className="flex flex-wrap gap-2">
-                <Button className="press" onClick={() => resolve(true)}>
+                <Button className="press min-h-[44px]" onClick={() => resolve(true)}>
                   <Check /> I knew it
                 </Button>
-                <Button variant="outline" className="press" onClick={() => resolve(false)}>
+                <Button
+                  variant="outline"
+                  className="press min-h-[44px]"
+                  onClick={() => resolve(false)}
+                >
                   <X /> I missed it
                 </Button>
               </div>
@@ -416,19 +415,23 @@ export function DeckArena({ deckId }: { deckId: string }) {
             }}
           >
             <Input
-              autoFocus
+              autoFocus={!coarsePointer}
+              enterKeyHint="go"
               value={input}
               disabled={revealed}
               placeholder="Type your answer…"
               onChange={(e) => setInput(e.target.value)}
-              className="min-w-56 flex-1"
+              className="min-w-0 flex-1 basis-48"
             />
-            <Button type="submit" className="press" disabled={revealed || !input.trim()}>
+            <Button
+              type="submit"
+              className="press min-h-[44px]"
+              disabled={revealed || !input.trim()}
+            >
               Lock in
             </Button>
           </form>
         )}
-
 
         {revealed && (
           <div className="anim-fade-up mt-6 border-t border-border pt-5">

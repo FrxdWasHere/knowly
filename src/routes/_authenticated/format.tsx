@@ -99,7 +99,9 @@ function FormatPage() {
               {FIELD_DOCS.map((f) => (
                 <tr key={f.field} className="border-t border-border align-top">
                   <td className="px-6 py-3 font-mono text-xs text-primary">{f.field}</td>
-                  <td className="px-6 py-3 font-mono text-[11px] text-muted-foreground">{f.type}</td>
+                  <td className="px-6 py-3 font-mono text-[11px] text-muted-foreground">
+                    {f.type}
+                  </td>
                   <td className="px-6 py-3 text-xs">{f.required ? "Yes" : "Optional"}</td>
                   <td className="px-6 py-3 text-xs text-muted-foreground">{f.note}</td>
                 </tr>
@@ -170,12 +172,18 @@ function FormatPage() {
                 : `${result.errors.length} error(s) found.`}
             </p>
             {result.errors.map((e) => (
-              <p key={e} className="rounded-md bg-destructive/10 px-3 py-2 font-mono text-xs text-destructive">
+              <p
+                key={e}
+                className="rounded-md bg-destructive/10 px-3 py-2 font-mono text-xs text-destructive"
+              >
                 {e}
               </p>
             ))}
             {result.warnings.map((w) => (
-              <p key={w} className="rounded-md bg-warning/10 px-3 py-2 font-mono text-xs text-warning">
+              <p
+                key={w}
+                className="rounded-md bg-warning/10 px-3 py-2 font-mono text-xs text-warning"
+              >
                 {w}
               </p>
             ))}

@@ -53,45 +53,45 @@ export function SrsDashboardWidget({ decks }: { decks: Deck[] }) {
     <div className="space-y-6">
       <div className="grid items-center gap-6 xl:grid-cols-[minmax(260px,0.8fr)_minmax(420px,1.2fr)]">
         <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-5">
-        <SrsRing
-          value={due.length ? Math.min(100, (due.length / Math.max(1, totals.total)) * 100) : 100}
-          size={86}
-          stroke={7}
-          color={due.length ? "var(--primary)" : "var(--success)"}
-        >
-          <span className="text-center">
-            {due.length ? (
-              <>
-                <span className="block font-display text-xl font-bold leading-none">
-                  {due.length}
-                </span>
-                <span className="block text-[9px] text-muted-foreground">due</span>
-              </>
-            ) : (
-              <CheckCircle2 className="size-6 text-success" />
-            )}
-          </span>
-        </SrsRing>
+          <SrsRing
+            value={due.length ? Math.min(100, (due.length / Math.max(1, totals.total)) * 100) : 100}
+            size={86}
+            stroke={7}
+            color={due.length ? "var(--primary)" : "var(--success)"}
+          >
+            <span className="text-center">
+              {due.length ? (
+                <>
+                  <span className="block font-display text-xl font-bold leading-none">
+                    {due.length}
+                  </span>
+                  <span className="block text-[9px] text-muted-foreground">due</span>
+                </>
+              ) : (
+                <CheckCircle2 className="size-6 text-success" />
+              )}
+            </span>
+          </SrsRing>
 
-        <div className="min-w-0">
-          <p className="font-display text-lg font-bold leading-tight">
-            {due.length
-              ? `${due.length} card${due.length === 1 ? "" : "s"} ready for recall`
-              : "All caught up"}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {due.length
-              ? `${scheduledPct}% of your library is on a long-term schedule · ${retention}% retention`
-              : nextUp
-                ? `Next card ripens ${formatDue(nextUp, now)} · ${retention}% retention`
-                : "Study a deck to start scheduling cards."}
-          </p>
-          <Button size="sm" className="press mt-3 anim-glow" asChild>
-            <Link to="/review">
-              <Play /> {due.length ? "Start review" : "Review ahead"}
-            </Link>
-          </Button>
-        </div>
+          <div className="min-w-0">
+            <p className="font-display text-lg font-bold leading-tight">
+              {due.length
+                ? `${due.length} card${due.length === 1 ? "" : "s"} ready for recall`
+                : "All caught up"}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {due.length
+                ? `${scheduledPct}% of your library is on a long-term schedule · ${retention}% retention`
+                : nextUp
+                  ? `Next card ripens ${formatDue(nextUp, now)} · ${retention}% retention`
+                  : "Study a deck to start scheduling cards."}
+            </p>
+            <Button size="sm" className="press mt-3 anim-glow" asChild>
+              <Link to="/review">
+                <Play /> {due.length ? "Start review" : "Review ahead"}
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* 7 day forecast */}
@@ -127,57 +127,68 @@ export function SrsDashboardWidget({ decks }: { decks: Deck[] }) {
         <div
           className={cn(
             "grid gap-5 border-t border-border pt-5",
-            stages.length > 0 && perDeck.length > 0 && "lg:grid-cols-[minmax(240px,0.75fr)_minmax(0,1.25fr)]",
+            stages.length > 0 &&
+              perDeck.length > 0 &&
+              "lg:grid-cols-[minmax(240px,0.75fr)_minmax(0,1.25fr)]",
           )}
         >
           {/* maturity mix */}
-          {stages.length > 0 && <div className="min-w-0">
-            <p className="mb-2 text-[11px] font-medium text-muted-foreground">Memory stages</p>
-          <div className="flex h-2 overflow-hidden rounded-full bg-secondary">
-            {stages.map((s) => (
-              <span
-                key={s.key}
-                className="h-full first:rounded-l-full last:rounded-r-full"
-                style={{
-                  width: `${(s.count / Math.max(1, totals.total)) * 100}%`,
-                  background: STAGE_META[s.key].color,
-                }}
-                title={`${s.count} ${STAGE_META[s.key].label}`}
-              />
-            ))}
-          </div>
-          <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-muted-foreground">
-            {stages.map((s) => (
-              <span key={s.key} className="inline-flex items-center gap-1.5">
-                <span
-                  className="size-2 rounded-full"
-                  style={{ background: STAGE_META[s.key].color }}
-                />
-                {STAGE_META[s.key].label} {s.count}
-              </span>
-            ))}
-          </div>
-          </div>}
+          {stages.length > 0 && (
+            <div className="min-w-0">
+              <p className="mb-2 text-[11px] font-medium text-muted-foreground">Memory stages</p>
+              <div className="flex h-2 overflow-hidden rounded-full bg-secondary">
+                {stages.map((s) => (
+                  <span
+                    key={s.key}
+                    className="h-full first:rounded-l-full last:rounded-r-full"
+                    style={{
+                      width: `${(s.count / Math.max(1, totals.total)) * 100}%`,
+                      background: STAGE_META[s.key].color,
+                    }}
+                    title={`${s.count} ${STAGE_META[s.key].label}`}
+                  />
+                ))}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-muted-foreground">
+                {stages.map((s) => (
+                  <span key={s.key} className="inline-flex items-center gap-1.5">
+                    <span
+                      className="size-2 rounded-full"
+                      style={{ background: STAGE_META[s.key].color }}
+                    />
+                    {STAGE_META[s.key].label} {s.count}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* per-deck queue */}
-          {perDeck.length > 0 && <div className="min-w-0">
-            <p className="mb-2 text-[11px] font-medium text-muted-foreground">Due by deck</p>
-            <ul className="grid gap-1.5 sm:grid-cols-2">
-              {perDeck.map(({ deck, srs }) => (
-                <li key={deck.id} className="min-w-0">
-              <Link
-                to="/review"
-                search={{ deck: deck.id }}
-                className="press flex items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm transition-colors hover:border-primary/60"
-              >
-                <span className="size-2.5 shrink-0 rounded-full" style={{ background: deck.color }} />
-                <span className="min-w-0 flex-1 truncate">{deck.title}</span>
-                <span className="shrink-0 text-xs font-semibold text-primary">{srs.due} due</span>
-              </Link>
-                </li>
-              ))}
-            </ul>
-          </div>}
+          {perDeck.length > 0 && (
+            <div className="min-w-0">
+              <p className="mb-2 text-[11px] font-medium text-muted-foreground">Due by deck</p>
+              <ul className="grid gap-1.5 sm:grid-cols-2">
+                {perDeck.map(({ deck, srs }) => (
+                  <li key={deck.id} className="min-w-0">
+                    <Link
+                      to="/review"
+                      search={{ deck: deck.id }}
+                      className="press flex items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm transition-colors hover:border-primary/60"
+                    >
+                      <span
+                        className="size-2.5 shrink-0 rounded-full"
+                        style={{ background: deck.color }}
+                      />
+                      <span className="min-w-0 flex-1 truncate">{deck.title}</span>
+                      <span className="shrink-0 text-xs font-semibold text-primary">
+                        {srs.due} due
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -1,15 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import {
-  Play,
-  Timer,
-  Zap,
-  Flame,
-  Target,
-  SkipForward,
-  ArrowRight,
-  Settings2,
-} from "lucide-react";
+import { Play, Timer, Zap, Flame, Target, SkipForward, ArrowRight, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -18,16 +9,19 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { PageHeader } from "@/components/app-shell";
 import { QuizReport } from "@/components/quiz/quiz-report";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
   InteractiveQuestion,
   isInteractiveComplete,
 } from "@/components/questions/interactive-question";
 import { useKnowly } from "@/store/knowly";
+import { useCoarsePointer } from "@/hooks/use-mobile";
 import { checkAnswer, shuffleArray, TYPE_LABELS } from "@/lib/answers";
 import { displayAnswer, isInteractive } from "@/lib/interactive";
 import { xpForAnswer, comboMultiplier } from "@/lib/gamification";
 import { questionTypes } from "@/lib/schema";
 import { cn } from "@/lib/utils";
+import { createId } from "@/lib/id";
 
 import type {
   AnswerRecord,
@@ -117,7 +111,13 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
             const answered = answers.filter((a) => !a.skipped).length;
             const score = answers.filter((a) => a.correct).length;
             const percentage = answered ? Math.round((score / answered) * 100) : 0;
-            return { ...r, answers, score, percentage, passed: percentage >= r.config.passingScore };
+            return {
+              ...r,
+              answers,
+              score,
+              percentage,
+              passed: percentage >= r.config.passingScore,
+            };
           });
         }}
         onRetry={() => {
@@ -167,7 +167,7 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
             };
           });
           const quizResult: QuizResult = {
-            id: Math.random().toString(36).slice(2),
+            id: createId(),
             createdAt: Date.now(),
             deckIds,
             deckTitles,
@@ -221,6 +221,7 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
         action={
           <Button
             size="lg"
+            className="min-h-[44px]"
             disabled={!availableQuestions.length}
             onClick={() => start()}
           >
@@ -229,7 +230,7 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid items-start gap-6 lg:grid-cols-2">
         <section className="panel space-y-5 p-6">
           <h2 className="text-sm font-semibold">Decks</h2>
           <div className="flex flex-wrap gap-2">
@@ -349,17 +350,17 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
           ]
             .filter((row) => !exam || row.key !== "instantFeedback")
             .map((row) => (
-            <div key={row.key} className="flex items-center justify-between gap-4">
-              <div>
-                <Label className="text-sm">{row.label}</Label>
-                <p className="text-[11px] text-muted-foreground">{row.hint}</p>
+              <div key={row.key} className="flex items-center justify-between gap-4">
+                <div>
+                  <Label className="text-sm">{row.label}</Label>
+                  <p className="text-[11px] text-muted-foreground">{row.hint}</p>
+                </div>
+                <Switch
+                  checked={config[row.key as keyof QuizConfig] as boolean}
+                  onCheckedChange={(v) => toggle(row.key as keyof QuizConfig, v as never)}
+                />
               </div>
-              <Switch
-                checked={config[row.key as keyof QuizConfig] as boolean}
-                onCheckedChange={(v) => toggle(row.key as keyof QuizConfig, v as never)}
-              />
-            </div>
-          ))}
+            ))}
 
           <div className="grid grid-cols-2 gap-3">
             {!exam && (
@@ -421,9 +422,7 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
             {Object.entries(widgets).map(([key, value]) => (
               <button
                 key={key}
-                onClick={() =>
-                  updateSettings({ quizWidgets: { ...widgets, [key]: !value } })
-                }
+                onClick={() => updateSettings({ quizWidgets: { ...widgets, [key]: !value } })}
                 className={cn(
                   "rounded-full border border-border px-3 py-1.5 text-xs capitalize",
                   value && "border-primary bg-primary/15 text-primary",
@@ -472,8 +471,12 @@ function QuizRun({
   const [xp, setXp] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [questionElapsed, setQuestionElapsed] = useState(0);
+  const [confirmQuit, setConfirmQuit] = useState(false);
+  const coarsePointer = useCoarsePointer();
   const started = useRef(Date.now());
   const questionStart = useRef(Date.now());
+  const advanceTimer = useRef<number | null>(null);
+  const answerInput = useRef<HTMLInputElement>(null);
 
   const question = pool[index];
   const total = pool.length;
@@ -513,7 +516,12 @@ function QuizRun({
         questionStart.current = Date.now();
         setQuestionElapsed(0);
         if (index + 1 >= total) {
-          onFinish(nextAnswers, Date.now() - started.current, Math.max(bestCombo, nextCombo), xp + gained);
+          onFinish(
+            nextAnswers,
+            Date.now() - started.current,
+            Math.max(bestCombo, nextCombo),
+            xp + gained,
+          );
         } else {
           setIndex((i) => i + 1);
         }
@@ -521,12 +529,24 @@ function QuizRun({
 
       if (config.instantFeedback && !skipped) {
         setFeedback({ correct });
-        window.setTimeout(advance, 1400);
+        if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
+        advanceTimer.current = window.setTimeout(advance, 1400);
       } else {
         advance();
       }
     },
-    [answers, bestCombo, combo, config.instantFeedback, config.xpEnabled, index, onFinish, question, total, xp],
+    [
+      answers,
+      bestCombo,
+      combo,
+      config.instantFeedback,
+      config.xpEnabled,
+      index,
+      onFinish,
+      question,
+      total,
+      xp,
+    ],
   );
 
   // timers
@@ -537,6 +557,25 @@ function QuizRun({
     }, 250);
     return () => window.clearInterval(id);
   }, []);
+
+  // Cancel a pending instant-feedback advance if the quiz unmounts (e.g. quit)
+  // so an abandoned quiz can never be recorded.
+  useEffect(
+    () => () => {
+      if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
+    },
+    [],
+  );
+
+  // Focus the answer box as soon as a question that has one appears, and again
+  // after instant feedback re-enables it. Touch devices are skipped so the
+  // on-screen keyboard doesn't pop up over every card.
+  useEffect(() => {
+    if (coarsePointer || feedback) return;
+    const el = answerInput.current;
+    if (!el || el.disabled) return;
+    el.focus({ preventScroll: true });
+  }, [coarsePointer, feedback, index]);
 
   useEffect(() => {
     if (!perQuestionSeconds || feedback) return;
@@ -577,7 +616,11 @@ function QuizRun({
     widgets.accuracy && { icon: Target, label: "Accuracy", value: `${accuracy}%` },
     widgets.score && { icon: Target, label: "Score", value: `${correctCount}` },
     widgets.xp && { icon: Zap, label: "XP", value: `+${xp}` },
-    widgets.combo && { icon: Flame, label: "Combo", value: `${combo}x (${comboMultiplier(combo)}×)` },
+    widgets.combo && {
+      icon: Flame,
+      label: "Combo",
+      value: `${combo}x (${comboMultiplier(combo)}×)`,
+    },
     widgets.remaining && { icon: ArrowRight, label: "Remaining", value: `${total - index - 1}` },
   ].filter(Boolean) as { icon: React.ElementType; label: string; value: string }[];
 
@@ -588,12 +631,10 @@ function QuizRun({
           variant="ghost"
           size="sm"
           onClick={() => {
-            if (
-              settings.confirmBeforeExit &&
-              answers.length > 0 &&
-              !window.confirm("Quit this quiz? Your progress in this session will be lost.")
-            )
+            if (settings.confirmBeforeExit && answers.length > 0) {
+              setConfirmQuit(true);
               return;
+            }
             onQuit();
           }}
         >
@@ -635,7 +676,9 @@ function QuizRun({
         <Badge variant="outline" className="text-[11px]">
           {TYPE_LABELS[question.type]}
         </Badge>
-        <h1 className="mt-4 text-2xl font-semibold leading-snug">{question.question}</h1>
+        <h1 className="mt-4 break-words text-2xl font-semibold leading-snug">
+          {question.question}
+        </h1>
 
         {question.hint && settings.showHints && !exam && !feedback && (
           <p className="mt-3 text-xs text-muted-foreground">Hint: {question.hint}</p>
@@ -652,10 +695,15 @@ function QuizRun({
                     commit(o, false);
                   }}
                   className={cn(
-                    "w-full rounded-lg border border-border px-4 py-3 text-left text-sm transition-colors hover:border-primary/60",
+                    "w-full rounded-lg border border-border break-words px-4 py-3 text-left text-sm transition-colors hover:border-primary/60",
                     selected === o && "border-primary bg-primary/10",
-                    feedback && o === question.answer && "border-success bg-success/10 text-success",
-                    feedback && selected === o && o !== question.answer && "border-destructive bg-destructive/10 text-destructive",
+                    feedback &&
+                      o === question.answer &&
+                      "border-success bg-success/10 text-success",
+                    feedback &&
+                      selected === o &&
+                      o !== question.answer &&
+                      "border-destructive bg-destructive/10 text-destructive",
                   )}
                 >
                   {o}
@@ -677,8 +725,13 @@ function QuizRun({
                 }}
                 className={cn(
                   "rounded-lg border border-border py-4 text-sm font-medium capitalize transition-colors hover:border-primary/60",
-                  feedback && o === question.answer.toLowerCase() && "border-success bg-success/10 text-success",
-                  feedback && selected === o && o !== question.answer.toLowerCase() && "border-destructive bg-destructive/10 text-destructive",
+                  feedback &&
+                    o === question.answer.toLowerCase() &&
+                    "border-success bg-success/10 text-success",
+                  feedback &&
+                    selected === o &&
+                    o !== question.answer.toLowerCase() &&
+                    "border-destructive bg-destructive/10 text-destructive",
                 )}
               >
                 {o}
@@ -690,7 +743,8 @@ function QuizRun({
         {["fill-blank", "short-answer", "flashcard"].includes(question.type) && (
           <div className="mt-6 space-y-3">
             <Input
-              autoFocus
+              ref={answerInput}
+              enterKeyHint="go"
               value={input}
               disabled={!!feedback}
               onChange={(e) => setInput(e.target.value)}
@@ -699,7 +753,11 @@ function QuizRun({
               }}
               placeholder="Type your answer and press Enter…"
             />
-            <Button disabled={!input.trim() || !!feedback} onClick={() => commit(input, false)}>
+            <Button
+              className="min-h-[44px]"
+              disabled={!input.trim() || !!feedback}
+              onClick={() => commit(input, false)}
+            >
               Submit answer
             </Button>
           </div>
@@ -715,6 +773,7 @@ function QuizRun({
               revealed={!!feedback}
             />
             <Button
+              className="min-h-[44px]"
               disabled={!!feedback || !isInteractiveComplete(question, input)}
               onClick={() => commit(input, false)}
             >
@@ -732,7 +791,12 @@ function QuizRun({
                 : "border-destructive/40 bg-destructive/10",
             )}
           >
-            <p className={cn("text-sm font-semibold", feedback.correct ? "text-success" : "text-destructive")}>
+            <p
+              className={cn(
+                "text-sm font-semibold",
+                feedback.correct ? "text-success" : "text-destructive",
+              )}
+            >
               {feedback.correct ? "Correct" : `Answer: ${displayAnswer(question)}`}
             </p>
             {question.explanation && settings.showExplanations && (
@@ -741,13 +805,28 @@ function QuizRun({
           </div>
         )}
 
-
         <div className="mt-8 flex gap-2">
-          <Button variant="outline" disabled={!!feedback} onClick={() => commit(null, true)}>
+          <Button
+            variant="outline"
+            className="min-h-[44px]"
+            disabled={!!feedback}
+            onClick={() => commit(null, true)}
+          >
             <SkipForward /> Skip
           </Button>
         </div>
       </article>
+
+      <ConfirmDialog
+        open={confirmQuit}
+        onOpenChange={setConfirmQuit}
+        title="Quit this quiz?"
+        description="Your progress in this session will be lost."
+        confirmLabel="Quit quiz"
+        cancelLabel="Keep going"
+        destructive
+        onConfirm={onQuit}
+      />
     </div>
   );
 }

@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/decks/")({
   validateSearch: (search: Record<string, unknown>): { q?: string } =>
-    typeof search['q'] === "string" ? { q: search['q'] as string } : {},
+    typeof search["q"] === "string" ? { q: search["q"] as string } : {},
   head: () => ({
     meta: [
       { title: "Deck Library — Search, Tag & Track Decks | Knowly" },
@@ -183,7 +183,7 @@ function DeckLibrary() {
                 <button
                   aria-label="Toggle favorite"
                   onClick={() => updateDeck(d.id, { favorite: !d.favorite })}
-                  className="absolute right-3 top-3 rounded-full bg-background/70 p-2 backdrop-blur"
+                  className="absolute right-3 top-3 grid min-h-[44px] min-w-[44px] place-items-center rounded-full bg-background/70 backdrop-blur"
                 >
                   <Star
                     className={cn(
@@ -216,7 +216,10 @@ function DeckLibrary() {
                       <span>{pct}%</span>
                     </div>
                     <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-secondary">
-                      <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+                      <div
+                        className="h-full rounded-full bg-primary"
+                        style={{ width: `${pct}%` }}
+                      />
                     </div>
                     <p className="mt-2 text-[11px] text-muted-foreground">
                       {srs.fresh} new · {srs.learning} learning · {srs.young} young · {srs.mature}{" "}

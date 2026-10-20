@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useKnowly } from "@/store/knowly";
 import { DEFAULT_STATE } from "@/lib/defaults";
+import { createId } from "@/lib/id";
 import type { AppState } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/snapshots")({
@@ -91,7 +92,7 @@ function SnapshotsPage() {
 
   const take = () => {
     const snap: Snapshot = {
-      id: `snap-${Date.now()}`,
+      id: createId("snap"),
       label: `${state.decks.length} decks · ${cardCount} cards`,
       createdAt: Date.now(),
       deckCount: state.decks.length,
@@ -133,7 +134,7 @@ function SnapshotsPage() {
         return;
       }
       const snap: Snapshot = {
-        id: `snap-${Date.now()}`,
+        id: createId("snap"),
         label: `Imported · ${parsed.decks.length} decks`,
         createdAt: Date.now(),
         deckCount: parsed.decks.length,

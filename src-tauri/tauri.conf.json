@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Knowly",
-  "version": "1.0.0",
+  "version": "2.2.0",
   "identifier": "com.FrxdWasHere.knowly",
   "build": {
     "frontendDist": "frontend",
@@ -17,6 +17,7 @@
         "height": 800,
         "resizable": true,
         "fullscreen": false,
+        "dragDropEnabled": false,
         "url": "about:blank"
       }
     ],

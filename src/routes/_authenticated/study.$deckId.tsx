@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { checkAnswer, shuffleArray, TYPE_LABELS, formatDuration } from "@/lib/answers";
 import { displayAnswer, isInteractive } from "@/lib/interactive";
 import { InteractiveQuestion } from "@/components/questions/interactive-question";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 import { xpForAnswer } from "@/lib/gamification";
 import { gradeFromOutcome } from "@/lib/srs";
@@ -71,6 +72,7 @@ function StudySession() {
   const [bestCombo, setBestCombo] = useState(0);
   const [xp, setXp] = useState(0);
   const [done, setDone] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(false);
   const started = useRef(Date.now());
   const questionStart = useRef(Date.now());
 
@@ -183,7 +185,7 @@ function StudySession() {
       <div className="panel mx-auto max-w-xl p-10 text-center">
         <h1 className="font-display text-3xl font-bold">Session complete</h1>
         <p className="mt-2 text-sm text-muted-foreground">{deck.title}</p>
-        <div className="mt-8 grid grid-cols-3 gap-4">
+        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
           {[
             { label: "Correct", value: `${correct}/${answered || 0}` },
             { label: "XP earned", value: `+${settings.xpEnabled ? xp : 0}` },
@@ -217,12 +219,10 @@ function StudySession() {
           variant="ghost"
           size="sm"
           onClick={() => {
-            if (
-              settings.confirmBeforeExit &&
-              answers.length > 0 &&
-              !window.confirm("Leave this session? Your progress so far won't be saved.")
-            )
+            if (settings.confirmBeforeExit && answers.length > 0) {
+              setConfirmLeave(true);
               return;
+            }
             navigate({ to: "/decks/$deckId", params: { deckId: deck.id } });
           }}
         >
@@ -239,7 +239,10 @@ function StudySession() {
 
       {settings.showProgressBars && (
         <div className="mb-6 h-1.5 overflow-hidden rounded-full bg-secondary">
-          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+          <div
+            className="h-full rounded-full bg-primary transition-all"
+            style={{ width: `${progress}%` }}
+          />
         </div>
       )}
 
@@ -251,7 +254,7 @@ function StudySession() {
           </Badge>
           {question.concept && <Badge variant="secondary">{question.concept}</Badge>}
           <button
-            className="ml-auto"
+            className="ml-auto grid min-h-[44px] min-w-[44px] place-items-center"
             aria-label="Bookmark question"
             onClick={() =>
               updateDeck(deck.id, {
@@ -265,7 +268,9 @@ function StudySession() {
           </button>
         </div>
 
-        <h1 className="mt-6 text-2xl font-semibold leading-snug">{question.question}</h1>
+        <h1 className="mt-6 break-words text-2xl font-semibold leading-snug">
+          {question.question}
+        </h1>
 
         {question.hint && settings.showHints && !revealed && (
           <p className="mt-3 text-xs text-muted-foreground">Hint: {question.hint}</p>
@@ -277,7 +282,7 @@ function StudySession() {
               <li
                 key={o}
                 className={cn(
-                  "rounded-lg border border-border px-4 py-3 text-sm",
+                  "rounded-lg border border-border break-words px-4 py-3 text-sm",
                   revealed && o === question.answer && "border-success bg-success/10 text-success",
                 )}
               >
@@ -304,7 +309,9 @@ function StudySession() {
                   checkAnswer(question, input) ? "text-success" : "text-destructive",
                 )}
               >
-                {checkAnswer(question, input) ? "Close enough — counted as correct." : "Doesn't match the expected answer."}
+                {checkAnswer(question, input)
+                  ? "Close enough — counted as correct."
+                  : "Doesn't match the expected answer."}
               </p>
             )}
           </div>
@@ -330,25 +337,43 @@ function StudySession() {
             )}
           </div>
         ) : (
-          <Button className="mt-6" variant="secondary" onClick={() => setRevealed(true)}>
-            <Eye /> Reveal answer <span className="ml-1 text-[10px] opacity-60">Space</span>
+          <Button
+            className="mt-6 min-h-[44px]"
+            variant="secondary"
+            onClick={() => setRevealed(true)}
+          >
+            <Eye /> Reveal answer{" "}
+            <span className="ml-1 hidden text-[10px] opacity-60 sm:inline">Space</span>
           </Button>
         )}
 
         <div className="mt-8 flex flex-wrap gap-2">
-          <Button onClick={() => submit("correct")} className="bg-success text-success-foreground hover:bg-success/90">
-            <Check /> I knew it <span className="ml-1 text-[10px] opacity-70">1</span>
+          <Button
+            onClick={() => submit("correct")}
+            className="min-h-[44px] bg-success text-success-foreground hover:bg-success/90"
+          >
+            <Check /> I knew it{" "}
+            <span className="ml-1 hidden text-[10px] opacity-70 sm:inline">1</span>
           </Button>
-          <Button variant="destructive" onClick={() => submit("incorrect")}>
-            <X /> Missed it <span className="ml-1 text-[10px] opacity-70">2</span>
+          <Button
+            variant="destructive"
+            className="min-h-[44px]"
+            onClick={() => submit("incorrect")}
+          >
+            <X /> Missed it <span className="ml-1 hidden text-[10px] opacity-70 sm:inline">2</span>
           </Button>
-          <Button variant="outline" onClick={() => submit("skip")}>
-            <SkipForward /> Skip <span className="ml-1 text-[10px] opacity-70">S</span>
+          <Button variant="outline" className="min-h-[44px]" onClick={() => submit("skip")}>
+            <SkipForward /> Skip{" "}
+            <span className="ml-1 hidden text-[10px] opacity-70 sm:inline">S</span>
           </Button>
-          <Button variant="ghost" onClick={() => setNoteOpen((n) => !n)}>
+          <Button variant="ghost" className="min-h-[44px]" onClick={() => setNoteOpen((n) => !n)}>
             <StickyNote /> Note
           </Button>
-          <Button variant="ghost" onClick={() => setIndex((i) => Math.min(questions.length - 1, i + 1))}>
+          <Button
+            variant="ghost"
+            className="min-h-[44px]"
+            onClick={() => setIndex((i) => Math.min(questions.length - 1, i + 1))}
+          >
             Review later <ArrowRight />
           </Button>
         </div>
@@ -365,9 +390,20 @@ function StudySession() {
         )}
       </article>
 
-      <p className="mt-4 text-center text-[11px] text-muted-foreground">
+      <p className="mt-4 hidden text-center text-[11px] text-muted-foreground sm:block">
         Shortcuts: Space reveal · 1 correct · 2 missed · S skip · ← → navigate
       </p>
+
+      <ConfirmDialog
+        open={confirmLeave}
+        onOpenChange={setConfirmLeave}
+        title="Leave this session?"
+        description="Your progress so far won't be saved."
+        confirmLabel="Leave"
+        cancelLabel="Keep studying"
+        destructive
+        onConfirm={() => navigate({ to: "/decks/$deckId", params: { deckId: deck.id } })}
+      />
     </div>
   );
 }

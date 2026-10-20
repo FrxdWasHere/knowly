@@ -18,5 +18,3 @@ export function Logo({ className, alt = "Knowly" }: LogoProps) {
     />
   );
 }
-
-export default Logo;

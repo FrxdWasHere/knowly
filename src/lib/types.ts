@@ -126,6 +126,10 @@ export interface Progress {
   longestStreak: number;
   lastStudyDay: string | null;
   studyDays: Record<string, number>;
+  /** studied between midnight and 4am at least once */
+  nightOwl: boolean;
+  /** studied between 4am and 7am at least once */
+  earlyBird: boolean;
   unlockedAchievements: string[];
   perfectQuizzes: number;
   quizzesCompleted: number;
@@ -207,6 +211,8 @@ export interface Settings {
   shuffleStudy: boolean;
   showHints: boolean;
   showExplanations: boolean;
+  /** spaced-repetition scheduler tuning */
+  srs: import("./srs").SrsConfig;
   // quiz defaults
   defaultQuizConfig: QuizConfig;
   quizWidgets: QuizWidgets;

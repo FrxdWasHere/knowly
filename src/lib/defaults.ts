@@ -1,9 +1,15 @@
 import type { AppState, Progress, QuizConfig, Settings } from "./types";
 import { DEFAULT_CUSTOM_THEME } from "./themes";
+import { DEFAULT_SRS_CONFIG } from "./srs";
 
 export const ACCENTS: { id: string; label: string; value: string; glow: string }[] = [
   { id: "ocean", label: "Ocean", value: "oklch(0.7 0.15 240)", glow: "oklch(0.79 0.12 225)" },
-  { id: "deep-blue", label: "Deep Blue", value: "oklch(0.62 0.18 255)", glow: "oklch(0.74 0.15 245)" },
+  {
+    id: "deep-blue",
+    label: "Deep Blue",
+    value: "oklch(0.62 0.18 255)",
+    glow: "oklch(0.74 0.15 245)",
+  },
   { id: "cyan", label: "Arc Blue", value: "oklch(0.75 0.12 220)", glow: "oklch(0.84 0.09 215)" },
   { id: "azure", label: "Azure", value: "oklch(0.68 0.17 235)", glow: "oklch(0.79 0.13 225)" },
   { id: "midnight", label: "Midnight", value: "oklch(0.55 0.2 270)", glow: "oklch(0.68 0.17 260)" },
@@ -11,17 +17,18 @@ export const ACCENTS: { id: string; label: string; value: string; glow: string }
 ];
 
 export const DECK_COLORS = [
-  "oklch(0.7 0.15 240)",
-  "oklch(0.75 0.12 220)",
-  "oklch(0.65 0.17 250)",
-  "oklch(0.58 0.19 265)",
-  "oklch(0.68 0.15 205)",
-  "oklch(0.78 0.1 230)",
+  "var(--deck-1)",
+  "var(--deck-2)",
+  "var(--deck-3)",
+  "var(--deck-4)",
+  "var(--deck-5)",
+  "var(--deck-6)",
 ];
 
 export function oceanDeckColor(color: string) {
   if (DECK_COLORS.includes(color)) return color;
-  const index = Array.from(color).reduce((sum, char) => sum + char.charCodeAt(0), 0) % DECK_COLORS.length;
+  const index =
+    Array.from(color).reduce((sum, char) => sum + char.charCodeAt(0), 0) % DECK_COLORS.length;
   return DECK_COLORS[index];
 }
 
@@ -81,6 +88,7 @@ export const DEFAULT_SETTINGS: Settings = {
   shuffleStudy: false,
   showHints: true,
   showExplanations: true,
+  srs: DEFAULT_SRS_CONFIG,
   defaultQuizConfig: DEFAULT_QUIZ_CONFIG,
   quizWidgets: {
     progress: true,
@@ -111,6 +119,8 @@ export const DEFAULT_PROGRESS: Progress = {
   longestStreak: 0,
   lastStudyDay: null,
   studyDays: {},
+  nightOwl: false,
+  earlyBird: false,
   unlockedAchievements: [],
   perfectQuizzes: 0,
   quizzesCompleted: 0,
@@ -119,8 +129,15 @@ export const DEFAULT_PROGRESS: Progress = {
   conceptStats: {},
 };
 
+/**
+ * Persisted schema version. Bump this whenever the shape of `AppState` changes
+ * in a way that older saves need repair; add a matching entry to the migration
+ * table in `src/store/knowly.tsx`.
+ */
+export const STATE_VERSION = 2;
+
 export const DEFAULT_STATE: AppState = {
-  version: 1,
+  version: STATE_VERSION,
   onboardingComplete: false,
   decks: [],
   settings: DEFAULT_SETTINGS,

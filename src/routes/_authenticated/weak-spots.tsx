@@ -38,10 +38,7 @@ function WeakSpotsPage() {
 
   const weak = useMemo(() => collectWeak(state.decks, 60), [state.decks]);
 
-  const leeches = useMemo(
-    () => weak.filter((w) => (w.card as SrsCard).lapses >= 3),
-    [weak],
-  );
+  const leeches = useMemo(() => weak.filter((w) => (w.card as SrsCard).lapses >= 3), [weak]);
 
   const avgEase = useMemo(() => {
     if (!weak.length) return 0;
@@ -90,7 +87,12 @@ function WeakSpotsPage() {
         ))}
       </section>
 
-      <div className={cn("grid items-start gap-6", weak.length > 0 && concepts.length > 0 && "xl:grid-cols-[1.25fr_0.75fr]")}>
+      <div
+        className={cn(
+          "grid items-start gap-6",
+          weak.length > 0 && concepts.length > 0 && "xl:grid-cols-[1.25fr_0.75fr]",
+        )}
+      >
         <section className="panel p-6">
           <h2 className="text-sm font-semibold">Shakiest cards</h2>
           {weak.length === 0 ? (

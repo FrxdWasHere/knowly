@@ -9,44 +9,48 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedWeakSpotsRouteImport } from './routes/_authenticated/weak-spots'
-import { Route as AuthenticatedTagsRouteImport } from './routes/_authenticated/tags'
-import { Route as AuthenticatedStatsRouteImport } from './routes/_authenticated/stats'
-import { Route as AuthenticatedSnapshotsRouteImport } from './routes/_authenticated/snapshots'
-import { Route as AuthenticatedShortcutsRouteImport } from './routes/_authenticated/shortcuts'
-import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
-import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
-import { Route as AuthenticatedReportRouteImport } from './routes/_authenticated/report'
-import { Route as AuthenticatedQuizRouteImport } from './routes/_authenticated/quiz'
-import { Route as AuthenticatedPrintRouteImport } from './routes/_authenticated/print'
-import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
-import { Route as AuthenticatedLeechesRouteImport } from './routes/_authenticated/leeches'
-import { Route as AuthenticatedJournalRouteImport } from './routes/_authenticated/journal'
-import { Route as AuthenticatedImportRouteImport } from './routes/_authenticated/import'
-import { Route as AuthenticatedGoalsRouteImport } from './routes/_authenticated/goals'
-import { Route as AuthenticatedGenerateRouteImport } from './routes/_authenticated/generate'
-import { Route as AuthenticatedFormatRouteImport } from './routes/_authenticated/format'
-import { Route as AuthenticatedForgeRouteImport } from './routes/_authenticated/forge'
-import { Route as AuthenticatedFocusRouteImport } from './routes/_authenticated/focus'
-import { Route as AuthenticatedExamRouteImport } from './routes/_authenticated/exam'
-import { Route as AuthenticatedDeckToolsRouteImport } from './routes/_authenticated/deck-tools'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedCramRouteImport } from './routes/_authenticated/cram'
-import { Route as AuthenticatedCardsRouteImport } from './routes/_authenticated/cards'
-import { Route as AuthenticatedBookmarksRouteImport } from './routes/_authenticated/bookmarks'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAchievementsRouteImport } from './routes/_authenticated/achievements'
-import { Route as AuthenticatedDecksIndexRouteImport } from './routes/_authenticated/decks.index'
-import { Route as AuthenticatedStudyDeckIdRouteImport } from './routes/_authenticated/study.$deckId'
-import { Route as AuthenticatedDecksDeckIdRouteImport } from './routes/_authenticated/decks.$deckId'
+import { Route as AuthenticatedBookmarksRouteImport } from './routes/_authenticated/bookmarks'
+import { Route as AuthenticatedCardsRouteImport } from './routes/_authenticated/cards'
+import { Route as AuthenticatedCramRouteImport } from './routes/_authenticated/cram'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedDeckToolsRouteImport } from './routes/_authenticated/deck-tools'
+import { Route as AuthenticatedExamRouteImport } from './routes/_authenticated/exam'
+import { Route as AuthenticatedFocusRouteImport } from './routes/_authenticated/focus'
+import { Route as AuthenticatedForgeRouteImport } from './routes/_authenticated/forge'
+import { Route as AuthenticatedFormatRouteImport } from './routes/_authenticated/format'
+import { Route as AuthenticatedGenerateRouteImport } from './routes/_authenticated/generate'
+import { Route as AuthenticatedGoalsRouteImport } from './routes/_authenticated/goals'
+import { Route as AuthenticatedImportRouteImport } from './routes/_authenticated/import'
+import { Route as AuthenticatedJournalRouteImport } from './routes/_authenticated/journal'
+import { Route as AuthenticatedLeechesRouteImport } from './routes/_authenticated/leeches'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedPrintRouteImport } from './routes/_authenticated/print'
+import { Route as AuthenticatedQuizRouteImport } from './routes/_authenticated/quiz'
+import { Route as AuthenticatedReportRouteImport } from './routes/_authenticated/report'
+import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedShortcutsRouteImport } from './routes/_authenticated/shortcuts'
+import { Route as AuthenticatedSnapshotsRouteImport } from './routes/_authenticated/snapshots'
+import { Route as AuthenticatedStatsRouteImport } from './routes/_authenticated/stats'
+import { Route as AuthenticatedTagsRouteImport } from './routes/_authenticated/tags'
+import { Route as AuthenticatedWeakSpotsRouteImport } from './routes/_authenticated/weak-spots'
 import { Route as AuthenticatedArenaDeckIdRouteImport } from './routes/_authenticated/arena.$deckId'
+import { Route as AuthenticatedDecksIndexRouteImport } from './routes/_authenticated/decks.index'
+import { Route as AuthenticatedDecksDeckIdRouteImport } from './routes/_authenticated/decks.$deckId'
+import { Route as AuthenticatedStudyDeckIdRouteImport } from './routes/_authenticated/study.$deckId'
 
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -54,139 +58,10 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedWeakSpotsRoute = AuthenticatedWeakSpotsRouteImport.update({
-  id: '/weak-spots',
-  path: '/weak-spots',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedTagsRoute = AuthenticatedTagsRouteImport.update({
-  id: '/tags',
-  path: '/tags',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedStatsRoute = AuthenticatedStatsRouteImport.update({
-  id: '/stats',
-  path: '/stats',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedSnapshotsRoute = AuthenticatedSnapshotsRouteImport.update({
-  id: '/snapshots',
-  path: '/snapshots',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedShortcutsRoute = AuthenticatedShortcutsRouteImport.update({
-  id: '/shortcuts',
-  path: '/shortcuts',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedReviewRoute = AuthenticatedReviewRouteImport.update({
-  id: '/review',
-  path: '/review',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedReportRoute = AuthenticatedReportRouteImport.update({
-  id: '/report',
-  path: '/report',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedQuizRoute = AuthenticatedQuizRouteImport.update({
-  id: '/quiz',
-  path: '/quiz',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedPrintRoute = AuthenticatedPrintRouteImport.update({
-  id: '/print',
-  path: '/print',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedLeechesRoute = AuthenticatedLeechesRouteImport.update({
-  id: '/leeches',
-  path: '/leeches',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedJournalRoute = AuthenticatedJournalRouteImport.update({
-  id: '/journal',
-  path: '/journal',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedImportRoute = AuthenticatedImportRouteImport.update({
-  id: '/import',
-  path: '/import',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedGoalsRoute = AuthenticatedGoalsRouteImport.update({
-  id: '/goals',
-  path: '/goals',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedGenerateRoute = AuthenticatedGenerateRouteImport.update({
-  id: '/generate',
-  path: '/generate',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedFormatRoute = AuthenticatedFormatRouteImport.update({
-  id: '/format',
-  path: '/format',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedForgeRoute = AuthenticatedForgeRouteImport.update({
-  id: '/forge',
-  path: '/forge',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedFocusRoute = AuthenticatedFocusRouteImport.update({
-  id: '/focus',
-  path: '/focus',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedExamRoute = AuthenticatedExamRouteImport.update({
-  id: '/exam',
-  path: '/exam',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedDeckToolsRoute = AuthenticatedDeckToolsRouteImport.update({
-  id: '/deck-tools',
-  path: '/deck-tools',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedCramRoute = AuthenticatedCramRouteImport.update({
-  id: '/cram',
-  path: '/cram',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedCardsRoute = AuthenticatedCardsRouteImport.update({
-  id: '/cards',
-  path: '/cards',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedBookmarksRoute = AuthenticatedBookmarksRouteImport.update({
-  id: '/bookmarks',
-  path: '/bookmarks',
-  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAchievementsRoute =
   AuthenticatedAchievementsRouteImport.update({
@@ -194,27 +69,152 @@ const AuthenticatedAchievementsRoute =
     path: '/achievements',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedBookmarksRoute = AuthenticatedBookmarksRouteImport.update({
+  id: '/bookmarks',
+  path: '/bookmarks',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCardsRoute = AuthenticatedCardsRouteImport.update({
+  id: '/cards',
+  path: '/cards',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCramRoute = AuthenticatedCramRouteImport.update({
+  id: '/cram',
+  path: '/cram',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDeckToolsRoute = AuthenticatedDeckToolsRouteImport.update({
+  id: '/deck-tools',
+  path: '/deck-tools',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedExamRoute = AuthenticatedExamRouteImport.update({
+  id: '/exam',
+  path: '/exam',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFocusRoute = AuthenticatedFocusRouteImport.update({
+  id: '/focus',
+  path: '/focus',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedForgeRoute = AuthenticatedForgeRouteImport.update({
+  id: '/forge',
+  path: '/forge',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFormatRoute = AuthenticatedFormatRouteImport.update({
+  id: '/format',
+  path: '/format',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedGenerateRoute = AuthenticatedGenerateRouteImport.update({
+  id: '/generate',
+  path: '/generate',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedGoalsRoute = AuthenticatedGoalsRouteImport.update({
+  id: '/goals',
+  path: '/goals',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedImportRoute = AuthenticatedImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedJournalRoute = AuthenticatedJournalRouteImport.update({
+  id: '/journal',
+  path: '/journal',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLeechesRoute = AuthenticatedLeechesRouteImport.update({
+  id: '/leeches',
+  path: '/leeches',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPrintRoute = AuthenticatedPrintRouteImport.update({
+  id: '/print',
+  path: '/print',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedQuizRoute = AuthenticatedQuizRouteImport.update({
+  id: '/quiz',
+  path: '/quiz',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedReportRoute = AuthenticatedReportRouteImport.update({
+  id: '/report',
+  path: '/report',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedReviewRoute = AuthenticatedReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedShortcutsRoute = AuthenticatedShortcutsRouteImport.update({
+  id: '/shortcuts',
+  path: '/shortcuts',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSnapshotsRoute = AuthenticatedSnapshotsRouteImport.update({
+  id: '/snapshots',
+  path: '/snapshots',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedStatsRoute = AuthenticatedStatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTagsRoute = AuthenticatedTagsRouteImport.update({
+  id: '/tags',
+  path: '/tags',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedWeakSpotsRoute = AuthenticatedWeakSpotsRouteImport.update({
+  id: '/weak-spots',
+  path: '/weak-spots',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedArenaDeckIdRoute =
+  AuthenticatedArenaDeckIdRouteImport.update({
+    id: '/arena/$deckId',
+    path: '/arena/$deckId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDecksIndexRoute = AuthenticatedDecksIndexRouteImport.update({
   id: '/decks/',
   path: '/decks/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedStudyDeckIdRoute =
-  AuthenticatedStudyDeckIdRouteImport.update({
-    id: '/study/$deckId',
-    path: '/study/$deckId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedDecksDeckIdRoute =
   AuthenticatedDecksDeckIdRouteImport.update({
     id: '/decks/$deckId',
     path: '/decks/$deckId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedArenaDeckIdRoute =
-  AuthenticatedArenaDeckIdRouteImport.update({
-    id: '/arena/$deckId',
-    path: '/arena/$deckId',
+const AuthenticatedStudyDeckIdRoute =
+  AuthenticatedStudyDeckIdRouteImport.update({
+    id: '/study/$deckId',
+    path: '/study/$deckId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
@@ -443,18 +443,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -464,179 +457,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/weak-spots': {
-      id: '/_authenticated/weak-spots'
-      path: '/weak-spots'
-      fullPath: '/weak-spots'
-      preLoaderRoute: typeof AuthenticatedWeakSpotsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/tags': {
-      id: '/_authenticated/tags'
-      path: '/tags'
-      fullPath: '/tags'
-      preLoaderRoute: typeof AuthenticatedTagsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/stats': {
-      id: '/_authenticated/stats'
-      path: '/stats'
-      fullPath: '/stats'
-      preLoaderRoute: typeof AuthenticatedStatsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/snapshots': {
-      id: '/_authenticated/snapshots'
-      path: '/snapshots'
-      fullPath: '/snapshots'
-      preLoaderRoute: typeof AuthenticatedSnapshotsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/shortcuts': {
-      id: '/_authenticated/shortcuts'
-      path: '/shortcuts'
-      fullPath: '/shortcuts'
-      preLoaderRoute: typeof AuthenticatedShortcutsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/settings': {
-      id: '/_authenticated/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/review': {
-      id: '/_authenticated/review'
-      path: '/review'
-      fullPath: '/review'
-      preLoaderRoute: typeof AuthenticatedReviewRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/report': {
-      id: '/_authenticated/report'
-      path: '/report'
-      fullPath: '/report'
-      preLoaderRoute: typeof AuthenticatedReportRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/quiz': {
-      id: '/_authenticated/quiz'
-      path: '/quiz'
-      fullPath: '/quiz'
-      preLoaderRoute: typeof AuthenticatedQuizRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/print': {
-      id: '/_authenticated/print'
-      path: '/print'
-      fullPath: '/print'
-      preLoaderRoute: typeof AuthenticatedPrintRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/onboarding': {
-      id: '/_authenticated/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/leeches': {
-      id: '/_authenticated/leeches'
-      path: '/leeches'
-      fullPath: '/leeches'
-      preLoaderRoute: typeof AuthenticatedLeechesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/journal': {
-      id: '/_authenticated/journal'
-      path: '/journal'
-      fullPath: '/journal'
-      preLoaderRoute: typeof AuthenticatedJournalRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/import': {
-      id: '/_authenticated/import'
-      path: '/import'
-      fullPath: '/import'
-      preLoaderRoute: typeof AuthenticatedImportRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/goals': {
-      id: '/_authenticated/goals'
-      path: '/goals'
-      fullPath: '/goals'
-      preLoaderRoute: typeof AuthenticatedGoalsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/generate': {
-      id: '/_authenticated/generate'
-      path: '/generate'
-      fullPath: '/generate'
-      preLoaderRoute: typeof AuthenticatedGenerateRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/format': {
-      id: '/_authenticated/format'
-      path: '/format'
-      fullPath: '/format'
-      preLoaderRoute: typeof AuthenticatedFormatRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/forge': {
-      id: '/_authenticated/forge'
-      path: '/forge'
-      fullPath: '/forge'
-      preLoaderRoute: typeof AuthenticatedForgeRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/focus': {
-      id: '/_authenticated/focus'
-      path: '/focus'
-      fullPath: '/focus'
-      preLoaderRoute: typeof AuthenticatedFocusRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/exam': {
-      id: '/_authenticated/exam'
-      path: '/exam'
-      fullPath: '/exam'
-      preLoaderRoute: typeof AuthenticatedExamRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/deck-tools': {
-      id: '/_authenticated/deck-tools'
-      path: '/deck-tools'
-      fullPath: '/deck-tools'
-      preLoaderRoute: typeof AuthenticatedDeckToolsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/cram': {
-      id: '/_authenticated/cram'
-      path: '/cram'
-      fullPath: '/cram'
-      preLoaderRoute: typeof AuthenticatedCramRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/cards': {
-      id: '/_authenticated/cards'
-      path: '/cards'
-      fullPath: '/cards'
-      preLoaderRoute: typeof AuthenticatedCardsRouteImport
+    '/_authenticated/achievements': {
+      id: '/_authenticated/achievements'
+      path: '/achievements'
+      fullPath: '/achievements'
+      preLoaderRoute: typeof AuthenticatedAchievementsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/bookmarks': {
@@ -646,11 +485,179 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBookmarksRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/achievements': {
-      id: '/_authenticated/achievements'
-      path: '/achievements'
-      fullPath: '/achievements'
-      preLoaderRoute: typeof AuthenticatedAchievementsRouteImport
+    '/_authenticated/cards': {
+      id: '/_authenticated/cards'
+      path: '/cards'
+      fullPath: '/cards'
+      preLoaderRoute: typeof AuthenticatedCardsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cram': {
+      id: '/_authenticated/cram'
+      path: '/cram'
+      fullPath: '/cram'
+      preLoaderRoute: typeof AuthenticatedCramRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/deck-tools': {
+      id: '/_authenticated/deck-tools'
+      path: '/deck-tools'
+      fullPath: '/deck-tools'
+      preLoaderRoute: typeof AuthenticatedDeckToolsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/exam': {
+      id: '/_authenticated/exam'
+      path: '/exam'
+      fullPath: '/exam'
+      preLoaderRoute: typeof AuthenticatedExamRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/focus': {
+      id: '/_authenticated/focus'
+      path: '/focus'
+      fullPath: '/focus'
+      preLoaderRoute: typeof AuthenticatedFocusRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/forge': {
+      id: '/_authenticated/forge'
+      path: '/forge'
+      fullPath: '/forge'
+      preLoaderRoute: typeof AuthenticatedForgeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/format': {
+      id: '/_authenticated/format'
+      path: '/format'
+      fullPath: '/format'
+      preLoaderRoute: typeof AuthenticatedFormatRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/generate': {
+      id: '/_authenticated/generate'
+      path: '/generate'
+      fullPath: '/generate'
+      preLoaderRoute: typeof AuthenticatedGenerateRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/goals': {
+      id: '/_authenticated/goals'
+      path: '/goals'
+      fullPath: '/goals'
+      preLoaderRoute: typeof AuthenticatedGoalsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/import': {
+      id: '/_authenticated/import'
+      path: '/import'
+      fullPath: '/import'
+      preLoaderRoute: typeof AuthenticatedImportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/journal': {
+      id: '/_authenticated/journal'
+      path: '/journal'
+      fullPath: '/journal'
+      preLoaderRoute: typeof AuthenticatedJournalRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/leeches': {
+      id: '/_authenticated/leeches'
+      path: '/leeches'
+      fullPath: '/leeches'
+      preLoaderRoute: typeof AuthenticatedLeechesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/print': {
+      id: '/_authenticated/print'
+      path: '/print'
+      fullPath: '/print'
+      preLoaderRoute: typeof AuthenticatedPrintRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/quiz': {
+      id: '/_authenticated/quiz'
+      path: '/quiz'
+      fullPath: '/quiz'
+      preLoaderRoute: typeof AuthenticatedQuizRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/report': {
+      id: '/_authenticated/report'
+      path: '/report'
+      fullPath: '/report'
+      preLoaderRoute: typeof AuthenticatedReportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/review': {
+      id: '/_authenticated/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof AuthenticatedReviewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/shortcuts': {
+      id: '/_authenticated/shortcuts'
+      path: '/shortcuts'
+      fullPath: '/shortcuts'
+      preLoaderRoute: typeof AuthenticatedShortcutsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/snapshots': {
+      id: '/_authenticated/snapshots'
+      path: '/snapshots'
+      fullPath: '/snapshots'
+      preLoaderRoute: typeof AuthenticatedSnapshotsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/stats': {
+      id: '/_authenticated/stats'
+      path: '/stats'
+      fullPath: '/stats'
+      preLoaderRoute: typeof AuthenticatedStatsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/tags': {
+      id: '/_authenticated/tags'
+      path: '/tags'
+      fullPath: '/tags'
+      preLoaderRoute: typeof AuthenticatedTagsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/weak-spots': {
+      id: '/_authenticated/weak-spots'
+      path: '/weak-spots'
+      fullPath: '/weak-spots'
+      preLoaderRoute: typeof AuthenticatedWeakSpotsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/arena/$deckId': {
+      id: '/_authenticated/arena/$deckId'
+      path: '/arena/$deckId'
+      fullPath: '/arena/$deckId'
+      preLoaderRoute: typeof AuthenticatedArenaDeckIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/decks/': {
@@ -660,13 +667,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDecksIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/study/$deckId': {
-      id: '/_authenticated/study/$deckId'
-      path: '/study/$deckId'
-      fullPath: '/study/$deckId'
-      preLoaderRoute: typeof AuthenticatedStudyDeckIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/decks/$deckId': {
       id: '/_authenticated/decks/$deckId'
       path: '/decks/$deckId'
@@ -674,11 +674,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDecksDeckIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/arena/$deckId': {
-      id: '/_authenticated/arena/$deckId'
-      path: '/arena/$deckId'
-      fullPath: '/arena/$deckId'
-      preLoaderRoute: typeof AuthenticatedArenaDeckIdRouteImport
+    '/_authenticated/study/$deckId': {
+      id: '/_authenticated/study/$deckId'
+      path: '/study/$deckId'
+      fullPath: '/study/$deckId'
+      preLoaderRoute: typeof AuthenticatedStudyDeckIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
   }

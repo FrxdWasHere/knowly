@@ -9,6 +9,7 @@ import {
   serializeWordBank,
 } from "./interactive";
 import type { Deck, Question } from "./types";
+import { createId } from "./id";
 
 export const questionTypes = [
   "flashcard",
@@ -70,7 +71,9 @@ function buildQuestion(
     }
     case "ordering": {
       if (!q.items || q.items.length < 2) {
-        errors.push(`questions[${i}]: ordering questions need an "items" array with 2+ entries in the correct order.`);
+        errors.push(
+          `questions[${i}]: ordering questions need an "items" array with 2+ entries in the correct order.`,
+        );
       } else {
         answer = serializeOrdering(q.items);
       }
@@ -78,7 +81,9 @@ function buildQuestion(
     }
     case "matching": {
       if (!q.pairs || q.pairs.length < 2) {
-        errors.push(`questions[${i}]: matching questions need a "pairs" array with 2+ {left, right} entries.`);
+        errors.push(
+          `questions[${i}]: matching questions need a "pairs" array with 2+ {left, right} entries.`,
+        );
       } else if (q.pairs.some((p) => !p.left.trim() || !p.right.trim())) {
         errors.push(`questions[${i}]: every matching pair needs a non-empty "left" and "right".`);
       } else {
@@ -89,15 +94,23 @@ function buildQuestion(
     case "word-bank": {
       const slots = countBlanks(q.question);
       if (!q.blanks || !q.blanks.length) {
-        errors.push(`questions[${i}]: word-bank questions need a "blanks" array with the correct word for each ${BLANK_TOKEN}.`);
+        errors.push(
+          `questions[${i}]: word-bank questions need a "blanks" array with the correct word for each ${BLANK_TOKEN}.`,
+        );
       } else if (slots === 0) {
-        errors.push(`questions[${i}]: word-bank questions must contain at least one ${BLANK_TOKEN} placeholder in the question text.`);
+        errors.push(
+          `questions[${i}]: word-bank questions must contain at least one ${BLANK_TOKEN} placeholder in the question text.`,
+        );
       } else if (slots !== q.blanks.length) {
-        errors.push(`questions[${i}]: found ${slots} ${BLANK_TOKEN} placeholder(s) but ${q.blanks.length} blank answer(s).`);
+        errors.push(
+          `questions[${i}]: found ${slots} ${BLANK_TOKEN} placeholder(s) but ${q.blanks.length} blank answer(s).`,
+        );
       } else {
         answer = serializeWordBank(q.blanks);
         if (!q.wordBank || q.wordBank.length <= q.blanks.length) {
-          warnings.push(`questions[${i}]: no distractor words in "wordBank" — the blanks will be easy to guess.`);
+          warnings.push(
+            `questions[${i}]: no distractor words in "wordBank" — the blanks will be easy to guess.`,
+          );
         }
       }
       break;
@@ -138,8 +151,6 @@ export const deckSchema = z.object({
   questions: z.array(questionSchema).min(1, "A deck needs at least one question"),
 });
 
-export type ParsedDeck = z.infer<typeof deckSchema>;
-
 export interface ValidationResult {
   ok: boolean;
   errors: string[];
@@ -147,7 +158,7 @@ export interface ValidationResult {
   deck?: Deck;
 }
 
-const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+const uid = () => createId();
 
 export function validateDeckJson(raw: string): ValidationResult {
   const errors: string[] = [];
@@ -179,7 +190,8 @@ export function validateDeckJson(raw: string): ValidationResult {
 
   const questions: Question[] = parsed.data.questions.map((q, i) => {
     if (!q.explanation) warnings.push(`questions[${i}]: no explanation provided.`);
-    if (!q.concept) warnings.push(`questions[${i}]: no concept tag — topic analytics will be thin.`);
+    if (!q.concept)
+      warnings.push(`questions[${i}]: no concept tag — topic analytics will be thin.`);
     return buildQuestion(q, i, errors, warnings, q.id || uid());
   });
 
@@ -418,7 +430,13 @@ export function validateQuestionsJson(
   });
 
   if (errors.length) return { ok: false, errors, warnings };
-  return { ok: true, errors, warnings: warnings.slice(0, 12), questions, deckTitle: parsed.data.deckTitle };
+  return {
+    ok: true,
+    errors,
+    warnings: warnings.slice(0, 12),
+    questions,
+    deckTitle: parsed.data.deckTitle,
+  };
 }
 
 export const SAMPLE_QUESTIONS_JSON = `{

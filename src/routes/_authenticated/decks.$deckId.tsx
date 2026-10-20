@@ -1,5 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Star, Trash2, Download, Play, BrainCircuit, Bookmark, Swords , Plus, Brain }from "lucide-react";
+import {
+  Star,
+  Trash2,
+  Download,
+  Play,
+  BrainCircuit,
+  Bookmark,
+  Swords,
+  Plus,
+  Brain,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
@@ -78,7 +88,10 @@ function DeckDetail() {
         description={`${deck.subject} · ${deck.questions.length} questions · ${pct}% mastered`}
         action={
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => updateDeck(deck.id, { favorite: !deck.favorite })}>
+            <Button
+              variant="outline"
+              onClick={() => updateDeck(deck.id, { favorite: !deck.favorite })}
+            >
               <Star className={cn(deck.favorite && "fill-primary text-primary")} />
               {deck.favorite ? "Favorited" : "Favorite"}
             </Button>
@@ -213,7 +226,7 @@ function DeckDetail() {
                   {card ? ` · ${formatDue(card.due)}` : ""}
                 </span>
                 <button
-                  className="ml-auto"
+                  className="ml-auto grid min-h-[44px] min-w-[44px] place-items-center"
                   aria-label="Toggle bookmark"
                   onClick={() =>
                     updateDeck(deck.id, {
@@ -228,14 +241,14 @@ function DeckDetail() {
                   />
                 </button>
               </div>
-              <p className="mt-3 font-medium">{q.question}</p>
+              <p className="mt-3 break-words font-medium">{q.question}</p>
               {q.options && (
                 <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
                   {q.options.map((o) => (
                     <li
                       key={o}
                       className={cn(
-                        "rounded-md border border-border px-3 py-1.5 text-xs",
+                        "break-words rounded-md border border-border px-3 py-1.5 text-xs",
                         o === q.answer && "border-success/60 text-success",
                       )}
                     >

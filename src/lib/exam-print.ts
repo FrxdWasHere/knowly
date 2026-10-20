@@ -1,4 +1,5 @@
 import type { Difficulty, Question, QuestionType } from "./types";
+import { shuffleArray } from "./answers";
 
 export interface ExamOptions {
   title: string;
@@ -15,6 +16,36 @@ export interface ExamOptions {
   spacing: "compact" | "roomy";
   answerLines: number;
   includeAnswerKey: boolean;
+  fontFamily: ExamFont;
+  fontSize: "small" | "normal" | "large";
+  headerAlign: "left" | "center";
+  numberStyle: "dot" | "q" | "paren";
+  optionCase: "upper" | "lower";
+}
+
+export type ExamFont =
+  "default" | "classic" | "serif" | "sans" | "rounded" | "mono" | "handwritten";
+
+/** Fonts that ship with the computer — no downloads, works fully offline. */
+export const EXAM_FONTS: { id: ExamFont; label: string; stack: string }[] = [
+  { id: "default", label: "Normal", stack: "var(--font-sans, inherit)" },
+  { id: "classic", label: "Classic", stack: '"Times New Roman", Times, serif' },
+  { id: "serif", label: "Book serif", stack: 'Georgia, Cambria, "Palatino Linotype", serif' },
+  { id: "sans", label: "Clean sans", stack: 'Arial, Helvetica, "Segoe UI", system-ui, sans-serif' },
+  { id: "rounded", label: "Friendly", stack: '"Trebuchet MS", Verdana, "Segoe UI", sans-serif' },
+  { id: "mono", label: "Typewriter", stack: '"Courier New", Courier, ui-monospace, monospace' },
+  {
+    id: "handwritten",
+    label: "Handwritten",
+    stack: '"Comic Sans MS", "Chalkboard SE", "Bradley Hand", cursive',
+  },
+];
+
+/** Per-question edits made directly on the paper. */
+export interface QuestionEdit {
+  question?: string;
+  options?: Record<number, string>;
+  removed?: boolean;
 }
 
 export const DEFAULT_INSTRUCTIONS =
@@ -33,17 +64,6 @@ export const ALL_TYPES: QuestionType[] = [
 
 export const ALL_DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard"];
 
-export const TYPE_LABELS: Record<QuestionType, string> = {
-  flashcard: "Flashcard",
-  "multiple-choice": "Multiple choice",
-  "true-false": "True / false",
-  "fill-blank": "Fill in the blank",
-  "short-answer": "Short answer",
-  ordering: "Ordering",
-  matching: "Matching",
-  "word-bank": "Word bank",
-};
-
 export function defaultExamOptions(title = "Practice Exam", subject = ""): ExamOptions {
   return {
     title,
@@ -60,19 +80,15 @@ export function defaultExamOptions(title = "Practice Exam", subject = ""): ExamO
     spacing: "roomy",
     answerLines: 2,
     includeAnswerKey: true,
+    fontFamily: "default",
+    fontSize: "normal",
+    headerAlign: "left",
+    numberStyle: "dot",
+    optionCase: "upper",
   };
 }
 
 export const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-
-function shuffleArray<T>(items: T[]): T[] {
-  const out = [...items];
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [out[i], out[j]] = [out[j]!, out[i]!];
-  }
-  return out;
-}
 
 export interface SelectionFilters {
   types: QuestionType[];

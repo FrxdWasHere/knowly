@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useKnowly } from "@/store/knowly";
 import { dayKey } from "@/lib/answers";
+import { DAY_MS } from "@/lib/srs";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/goals")({
@@ -41,8 +42,6 @@ export const Route = createFileRoute("/_authenticated/goals")({
     </AppPage>
   ),
 });
-
-const DAY_MS = 86_400_000;
 
 const GOAL_PRESETS = [5, 10, 20, 30, 50, 100];
 
@@ -97,8 +96,14 @@ function GoalsPage() {
       (best, [k, c]) => (c > (best?.c ?? 0) ? { k, c } : best),
       null as { k: string; c: number } | null,
     );
-    const last7 = Array.from({ length: 7 }, (_, i) => progress.studyDays[dayKey(now - i * DAY_MS)] ?? 0);
-    const last30 = Array.from({ length: 30 }, (_, i) => progress.studyDays[dayKey(now - i * DAY_MS)] ?? 0);
+    const last7 = Array.from(
+      { length: 7 },
+      (_, i) => progress.studyDays[dayKey(now - i * DAY_MS)] ?? 0,
+    );
+    const last30 = Array.from(
+      { length: 30 },
+      (_, i) => progress.studyDays[dayKey(now - i * DAY_MS)] ?? 0,
+    );
     return {
       totalActiveDays: totalActive.length,
       bestDay,
@@ -113,23 +118,29 @@ function GoalsPage() {
 
   const heat = useMemo(() => {
     const weeks = 18;
-    const now = new Date();
-    const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-    const todayDow = new Date(todayUtc).getUTCDay(); // 0 = Sunday
-    const end = todayUtc + (6 - todayDow) * DAY_MS; // end of current week column
-    const start = end - (weeks * 7 - 1) * DAY_MS;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayKey = dayKey(today);
+
+    // End on the Saturday of the current week; walk whole local calendar days
+    // (setDate) so DST transitions never shift a cell into the wrong column.
+    const end = new Date(today);
+    end.setDate(end.getDate() + (6 - end.getDay()));
+    const cursor = new Date(end);
+    cursor.setDate(cursor.getDate() - (weeks * 7 - 1));
+
     const columns: { key: string; count: number; isFuture: boolean; isToday: boolean }[][] = [];
     for (let w = 0; w < weeks; w++) {
       const col: { key: string; count: number; isFuture: boolean; isToday: boolean }[] = [];
       for (let d = 0; d < 7; d++) {
-        const ts = start + (w * 7 + d) * DAY_MS;
-        const key = dayKey(ts);
+        const key = dayKey(cursor);
         col.push({
           key,
           count: progress.studyDays[key] ?? 0,
-          isFuture: ts > todayUtc,
-          isToday: ts === todayUtc,
+          isFuture: cursor.getTime() > today.getTime(),
+          isToday: key === todayKey,
         });
+        cursor.setDate(cursor.getDate() + 1);
       }
       columns.push(col);
     }
@@ -158,7 +169,14 @@ function GoalsPage() {
         <div className="panel flex items-center gap-6 p-6">
           <div className="relative size-32 shrink-0">
             <svg viewBox="0 0 128 128" className="size-full -rotate-90">
-              <circle cx="64" cy="64" r={R} fill="none" strokeWidth="10" className="stroke-secondary" />
+              <circle
+                cx="64"
+                cy="64"
+                r={R}
+                fill="none"
+                strokeWidth="10"
+                className="stroke-secondary"
+              />
               <circle
                 cx="64"
                 cy="64"
@@ -224,7 +242,9 @@ function GoalsPage() {
                 min={1}
                 max={999}
                 value={goal}
-                onChange={(e) => setDraftGoal(Math.max(1, Math.min(999, Number(e.target.value) || 1)))}
+                onChange={(e) =>
+                  setDraftGoal(Math.max(1, Math.min(999, Number(e.target.value) || 1)))
+                }
                 onBlur={() => {
                   if (draftGoal != null) updateSettings({ dailyGoal: draftGoal });
                   setDraftGoal(null);
@@ -260,7 +280,9 @@ function GoalsPage() {
           </div>
           <div className="panel p-5">
             <Target className="size-4 text-primary" />
-            <p className="mt-3 font-display text-2xl font-bold">{stats.bestDay ? stats.bestDay.c : 0}</p>
+            <p className="mt-3 font-display text-2xl font-bold">
+              {stats.bestDay ? stats.bestDay.c : 0}
+            </p>
             <p className="mt-1 truncate text-xs text-muted-foreground">
               Best day{stats.bestDay ? ` · ${stats.bestDay.k}` : ""}
             </p>
@@ -273,16 +295,22 @@ function GoalsPage() {
           <div className="panel col-span-2 p-5 md:col-span-4">
             <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
               <span>
-                Last 7 days: <strong className="text-foreground">{stats.last7Total}</strong> questions
+                Last 7 days: <strong className="text-foreground">{stats.last7Total}</strong>{" "}
+                questions
               </span>
               <span>
-                Active days in last 30: <strong className="text-foreground">{stats.last30Active}</strong>
+                Active days in last 30:{" "}
+                <strong className="text-foreground">{stats.last30Active}</strong>
               </span>
               <span>
-                Total study days: <strong className="text-foreground">{stats.totalActiveDays}</strong>
+                Total study days:{" "}
+                <strong className="text-foreground">{stats.totalActiveDays}</strong>
               </span>
               <span>
-                Lifetime answers: <strong className="text-foreground">{progress.totalAnswered.toLocaleString()}</strong>
+                Lifetime answers:{" "}
+                <strong className="text-foreground">
+                  {progress.totalAnswered.toLocaleString()}
+                </strong>
               </span>
             </div>
           </div>
@@ -311,7 +339,9 @@ function GoalsPage() {
                     title={`${cell.key}: ${cell.count} question${cell.count === 1 ? "" : "s"}`}
                     className={cn(
                       "size-3.5 rounded-sm transition-colors",
-                      cell.isFuture ? "bg-transparent" : HEAT_STYLE[heatLevel(cell.count, settings.dailyGoal)],
+                      cell.isFuture
+                        ? "bg-transparent"
+                        : HEAT_STYLE[heatLevel(cell.count, settings.dailyGoal)],
                       cell.isToday && "ring-1 ring-primary ring-offset-1 ring-offset-background",
                     )}
                   />
@@ -379,7 +409,9 @@ function GoalsPage() {
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-sm font-medium">{m.label}</p>
-                      <p className="text-[11px] text-muted-foreground">{m.n.toLocaleString()} answers</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {m.n.toLocaleString()} answers
+                      </p>
                     </div>
                     {achieved ? (
                       <Badge className="gap-1 bg-success/15 text-success hover:bg-success/15">

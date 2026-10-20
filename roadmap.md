@@ -4,6 +4,8 @@
 - [x] Verify study pages and theme rendering.
 - [x] Remove every warm accent and legacy warm-theme reference.
 - [x] Verify Ocean Deep across public and study screens.
+- [x] Audit theme coverage across public pages, onboarding, workspace screens, overlays, charts, and print previews.
+- [x] Remove fixed Ocean Deep page scopes and make pre-load/error states reuse the selected palette.
 
 # Spaced repetition
 - [x] SRS scheduler, Daily Review session, dashboard widget, deck due rings.

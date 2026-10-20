@@ -58,10 +58,7 @@ function LeechesPage() {
   const [draftQ, setDraftQ] = useState("");
   const [draftA, setDraftA] = useState("");
 
-  const leeches = useMemo(
-    () => collectLeeches(state.decks, threshold),
-    [state.decks, threshold],
-  );
+  const leeches = useMemo(() => collectLeeches(state.decks, threshold), [state.decks, threshold]);
   const active = leeches.filter((l) => !l.suspended);
   const paused = leeches.filter((l) => l.suspended);
 

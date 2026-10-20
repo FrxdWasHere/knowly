@@ -2,10 +2,6 @@ import type { AnswerRecord, Deck, Progress } from "./types";
 
 export const XP_PER_ANSWER = 2;
 export const XP_PER_CORRECT = 8;
-export const XP_SESSION_BONUS = 25;
-export const XP_PERFECT_BONUS = 100;
-export const XP_STREAK_BONUS = 15;
-export const XP_DECK_COMPLETE = 250;
 
 /** Level curve: level n requires 100 * n^1.35 cumulative-ish XP. */
 export function levelFromXp(xp: number) {
@@ -91,14 +87,14 @@ export const ACHIEVEMENTS: Achievement[] = [
     name: "Night Owl",
     description: "Study between midnight and 4am.",
     icon: "Moon",
-    check: (p) => Boolean(p.studyDays["__nightowl"]),
+    check: (p) => p.nightOwl,
   },
   {
     id: "early-bird",
     name: "Early Bird",
     description: "Study between 4am and 7am.",
     icon: "Sunrise",
-    check: (p) => Boolean(p.studyDays["__earlybird"]),
+    check: (p) => p.earlyBird,
   },
   {
     id: "deck-master",

@@ -1,21 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import {
-  ArrowLeft,
-  Check,
-  Eye,
-  Flame,
-  RotateCcw,
-  Timer,
-  X,
-  Zap,
-} from "lucide-react";
+import { ArrowLeft, Check, Eye, Flame, RotateCcw, Timer, X, Zap } from "lucide-react";
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useKnowly } from "@/store/knowly";
-import { TYPE_LABELS, formatDuration } from "@/lib/answers";
+import { TYPE_LABELS, formatDuration, shuffleArray } from "@/lib/answers";
 import { displayAnswer } from "@/lib/interactive";
 import { xpForAnswer } from "@/lib/gamification";
 import { cardStage, weakness, type SrsCard } from "@/lib/srs";
@@ -57,7 +48,7 @@ const ORDERS: { id: Order; label: string; hint: string }[] = [
 ];
 
 function buildQueue(decks: Deck[], ids: string[], order: Order, count: number): CramItem[] {
-  const items: CramItem[] = [];
+  let items: CramItem[] = [];
   for (const deck of decks) {
     if (!ids.includes(deck.id)) continue;
     for (const q of deck.questions) {
@@ -68,10 +59,7 @@ function buildQueue(decks: Deck[], ids: string[], order: Order, count: number): 
     decks.find((d) => d.id === item.deckId)?.srs?.[item.question.id];
 
   if (order === "random") {
-    for (let i = items.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [items[i], items[j]] = [items[j]!, items[i]!];
-    }
+    items = shuffleArray(items);
   } else if (order === "weakest") {
     items.sort((a, b) => {
       const ca = srsOf(a);
@@ -158,7 +146,10 @@ function CramPage() {
                     on ? "border-primary/60 bg-primary/10" : "border-border hover:bg-surface-2/60",
                   )}
                 >
-                  <span className="size-2.5 shrink-0 rounded-full" style={{ background: d.color }} />
+                  <span
+                    className="size-2.5 shrink-0 rounded-full"
+                    style={{ background: d.color }}
+                  />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium">{d.title}</span>
                     <span className="block text-[11px] text-muted-foreground">
@@ -393,7 +384,7 @@ function CramRun({
         <p className="mt-2 text-sm text-muted-foreground">
           {answered} card{answered === 1 ? "" : "s"} · schedule untouched
         </p>
-        <div className="mt-8 grid grid-cols-4 gap-3">
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
             { v: `${pct}%`, l: "Accuracy" },
             { v: String(hits), l: "Got it" },
@@ -521,13 +512,18 @@ function CramRun({
             </div>
           </>
         ) : (
-          <Button className="mt-6" variant="secondary" onClick={() => setRevealed(true)}>
-            <Eye /> Reveal <span className="ml-1 text-[10px] opacity-60">Space</span>
+          <Button
+            className="mt-6 min-h-[44px]"
+            variant="secondary"
+            onClick={() => setRevealed(true)}
+          >
+            <Eye /> Reveal{" "}
+            <span className="ml-1 hidden text-[10px] opacity-60 sm:inline">Space</span>
           </Button>
         )}
       </article>
 
-      <p className="mt-4 text-center text-[11px] text-muted-foreground">
+      <p className="mt-4 hidden text-center text-[11px] text-muted-foreground sm:block">
         Space reveals · 1 missed · 2 got it — nothing here changes your review schedule
       </p>
     </div>
