@@ -51,6 +51,7 @@ import { Route as AuthenticatedNotesNotebookIdRouteImport } from './routes/_auth
 import { Route as AuthenticatedStudyDeckIdRouteImport } from './routes/_authenticated/study.$deckId'
 import { Route as AuthenticatedCoursesCourseIdIndexRouteImport } from './routes/_authenticated/courses.$courseId.index'
 import { Route as AuthenticatedCoursesCourseIdEditRouteImport } from './routes/_authenticated/courses.$courseId.edit'
+import { Route as AuthenticatedCoursesCourseIdPrintRouteImport } from './routes/_authenticated/courses.$courseId.print'
 import { Route as AuthenticatedCoursesCourseIdQuizRouteImport } from './routes/_authenticated/courses.$courseId.quiz'
 import { Route as AuthenticatedCoursesCourseIdLessonsLessonIdRouteImport } from './routes/_authenticated/courses.$courseId.lessons.$lessonId'
 
@@ -274,6 +275,12 @@ const AuthenticatedCoursesCourseIdEditRoute =
     path: '/edit',
     getParentRoute: () => AuthenticatedCoursesCourseIdRoute,
   } as any)
+const AuthenticatedCoursesCourseIdPrintRoute =
+  AuthenticatedCoursesCourseIdPrintRouteImport.update({
+    id: '/print',
+    path: '/print',
+    getParentRoute: () => AuthenticatedCoursesCourseIdRoute,
+  } as any)
 const AuthenticatedCoursesCourseIdQuizRoute =
   AuthenticatedCoursesCourseIdQuizRouteImport.update({
     id: '/quiz',
@@ -328,6 +335,7 @@ export interface FileRoutesByFullPath {
   '/decks/': typeof AuthenticatedDecksIndexRoute
   '/notes/': typeof AuthenticatedNotesIndexRoute
   '/courses/$courseId/edit': typeof AuthenticatedCoursesCourseIdEditRoute
+  '/courses/$courseId/print': typeof AuthenticatedCoursesCourseIdPrintRoute
   '/courses/$courseId/quiz': typeof AuthenticatedCoursesCourseIdQuizRoute
   '/courses/$courseId/': typeof AuthenticatedCoursesCourseIdIndexRoute
   '/courses/$courseId/lessons/$lessonId': typeof AuthenticatedCoursesCourseIdLessonsLessonIdRoute
@@ -372,6 +380,7 @@ export interface FileRoutesByTo {
   '/decks': typeof AuthenticatedDecksIndexRoute
   '/notes': typeof AuthenticatedNotesIndexRoute
   '/courses/$courseId/edit': typeof AuthenticatedCoursesCourseIdEditRoute
+  '/courses/$courseId/print': typeof AuthenticatedCoursesCourseIdPrintRoute
   '/courses/$courseId/quiz': typeof AuthenticatedCoursesCourseIdQuizRoute
   '/courses/$courseId': typeof AuthenticatedCoursesCourseIdIndexRoute
   '/courses/$courseId/lessons/$lessonId': typeof AuthenticatedCoursesCourseIdLessonsLessonIdRoute
@@ -419,6 +428,7 @@ export interface FileRoutesById {
   '/_authenticated/decks/': typeof AuthenticatedDecksIndexRoute
   '/_authenticated/notes/': typeof AuthenticatedNotesIndexRoute
   '/_authenticated/courses/$courseId/edit': typeof AuthenticatedCoursesCourseIdEditRoute
+  '/_authenticated/courses/$courseId/print': typeof AuthenticatedCoursesCourseIdPrintRoute
   '/_authenticated/courses/$courseId/quiz': typeof AuthenticatedCoursesCourseIdQuizRoute
   '/_authenticated/courses/$courseId/': typeof AuthenticatedCoursesCourseIdIndexRoute
   '/_authenticated/courses/$courseId/lessons/$lessonId': typeof AuthenticatedCoursesCourseIdLessonsLessonIdRoute
@@ -466,6 +476,7 @@ export interface FileRouteTypes {
     | '/decks/'
     | '/notes/'
     | '/courses/$courseId/edit'
+    | '/courses/$courseId/print'
     | '/courses/$courseId/quiz'
     | '/courses/$courseId/'
     | '/courses/$courseId/lessons/$lessonId'
@@ -510,6 +521,7 @@ export interface FileRouteTypes {
     | '/decks'
     | '/notes'
     | '/courses/$courseId/edit'
+    | '/courses/$courseId/print'
     | '/courses/$courseId/quiz'
     | '/courses/$courseId'
     | '/courses/$courseId/lessons/$lessonId'
@@ -556,6 +568,7 @@ export interface FileRouteTypes {
     | '/_authenticated/decks/'
     | '/_authenticated/notes/'
     | '/_authenticated/courses/$courseId/edit'
+    | '/_authenticated/courses/$courseId/print'
     | '/_authenticated/courses/$courseId/quiz'
     | '/_authenticated/courses/$courseId/'
     | '/_authenticated/courses/$courseId/lessons/$lessonId'
@@ -864,6 +877,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCoursesCourseIdEditRouteImport
       parentRoute: typeof AuthenticatedCoursesCourseIdRoute
     }
+    '/_authenticated/courses/$courseId/print': {
+      id: '/_authenticated/courses/$courseId/print'
+      path: '/print'
+      fullPath: '/courses/$courseId/print'
+      preLoaderRoute: typeof AuthenticatedCoursesCourseIdPrintRouteImport
+      parentRoute: typeof AuthenticatedCoursesCourseIdRoute
+    }
     '/_authenticated/courses/$courseId/quiz': {
       id: '/_authenticated/courses/$courseId/quiz'
       path: '/quiz'
@@ -883,6 +903,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedCoursesCourseIdRouteChildren {
   AuthenticatedCoursesCourseIdEditRoute: typeof AuthenticatedCoursesCourseIdEditRoute
+  AuthenticatedCoursesCourseIdPrintRoute: typeof AuthenticatedCoursesCourseIdPrintRoute
   AuthenticatedCoursesCourseIdQuizRoute: typeof AuthenticatedCoursesCourseIdQuizRoute
   AuthenticatedCoursesCourseIdIndexRoute: typeof AuthenticatedCoursesCourseIdIndexRoute
   AuthenticatedCoursesCourseIdLessonsLessonIdRoute: typeof AuthenticatedCoursesCourseIdLessonsLessonIdRoute
@@ -892,6 +913,8 @@ const AuthenticatedCoursesCourseIdRouteChildren: AuthenticatedCoursesCourseIdRou
   {
     AuthenticatedCoursesCourseIdEditRoute:
       AuthenticatedCoursesCourseIdEditRoute,
+    AuthenticatedCoursesCourseIdPrintRoute:
+      AuthenticatedCoursesCourseIdPrintRoute,
     AuthenticatedCoursesCourseIdQuizRoute:
       AuthenticatedCoursesCourseIdQuizRoute,
     AuthenticatedCoursesCourseIdIndexRoute:

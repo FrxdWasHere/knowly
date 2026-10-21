@@ -659,6 +659,14 @@
     break-inside: avoid;
     page-break-inside: avoid;
   }
+  .course-paper section {
+    break-inside: auto;
+  }
+  .course-paper > section + section,
+  .course-paper .exam-answer-key {
+    break-before: page;
+    page-break-before: always;
+  }
   .exam-answer-key {
     break-before: page;
     page-break-before: always;

@@ -14,6 +14,7 @@ import {
   NotebookPen,
   Pencil,
   Play,
+  Printer,
   Plus,
   Sparkles,
   Target,
@@ -144,6 +145,16 @@ function CourseOverviewPage() {
                   <ArrowLeft className="size-3.5" /> All courses
                 </Link>
                 <div className="flex items-center gap-2">
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="sm"
+                    className="text-white/70 hover:bg-white/10 hover:text-white"
+                  >
+                    <Link to="/courses/$courseId/print" params={{ courseId: course.id }}>
+                      <Printer className="size-3.5" /> Print course
+                    </Link>
+                  </Button>
                   <Button
                     asChild
                     variant="ghost"
