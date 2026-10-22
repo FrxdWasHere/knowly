@@ -653,7 +653,7 @@ export function CoursePaper({
       </div>
 
       {/* paper stage */}
-      <div ref={stageRef} className="flex w-full flex-col items-center gap-7">
+      <div ref={stageRef} className="paper-flow flex w-full flex-col items-center gap-7">
         {!layout &&
           Array.from({ length: 3 }).map((_, skeletonIndex) => (
             <SheetShell
@@ -798,7 +798,8 @@ function SheetShell({
             </div>
           )}
           {headerText && (
-            <header
+            <div
+              aria-hidden
               className="absolute inset-x-0 flex items-center justify-center gap-2 text-[9px] font-semibold uppercase tracking-[0.28em] text-gray-400"
               style={{
                 top: Math.round(padding.padTop * 0.24),
@@ -807,7 +808,7 @@ function SheetShell({
               }}
             >
               {headerText}
-            </header>
+            </div>
           )}
           {footer && footer.text && (
             <footer
@@ -1443,14 +1444,21 @@ function PaperLines({ count }: { count: number }) {
 function printStylesheet(dims: { width: number; height: number }) {
   return `@media print {
   @page { size: ${dims.width}px ${dims.height}px; margin: 0; }
+  html, body { overflow: visible !important; height: auto !important; }
   .preview-stage { padding: 0 !important; background: none !important; }
+  /* sheets must sit flush so each one fills its printed page exactly */
+  .paper-flow { display: block !important; }
+  .paper-flow > * { margin: 0 !important; }
   .preview-scale-wrap { width: auto !important; height: auto !important; }
   .preview-scale { transform: none !important; }
   .print-page {
+    display: block !important;
     width: ${dims.width}px !important;
-    height: ${dims.height}px !important;
+    /* half a pixel under the @page height avoids subpixel spill-over pages */
+    height: ${dims.height - 0.5}px !important;
     break-after: page;
     page-break-after: always;
+    break-inside: avoid;
     box-shadow: none !important;
     border: 0 !important;
   }

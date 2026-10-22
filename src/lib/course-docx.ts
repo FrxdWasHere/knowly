@@ -484,6 +484,7 @@ export async function courseDocxBlob(
   progress: CourseProgress | undefined,
   decks: Deck[],
   options: CoursePrintOptions,
+  onStatus?: (message: string) => void,
 ): Promise<Blob> {
   const accent = hex(course.color);
   const dims = getPaperDims(options.paper, options.orientation);
@@ -491,6 +492,8 @@ export async function courseDocxBlob(
   const fontFamily = options.typeface === "serif" ? "Georgia" : "Calibri";
   const docFontSizes = { small: 20, normal: 22, large: 25 } as const;
   const docLine = { compact: 240, normal: 276, relaxed: 312 } as const;
+
+  onStatus?.("Gathering course content…");
 
   const children: (Paragraph | Table | TableOfContents)[] = [];
   const pushAll = (parts: (Paragraph | Table)[]) => {
@@ -637,6 +640,7 @@ export async function courseDocxBlob(
   };
 
   for (const [moduleIndex, module] of course.modules.entries()) {
+    onStatus?.(`Writing module ${moduleIndex + 1} of ${course.modules.length} · ${module.title}`);
     children.push(
       new Paragraph({
         heading: HeadingLevel.HEADING_1,
@@ -718,6 +722,7 @@ export async function courseDocxBlob(
           );
           pushAll(markdownToDocx(block.markdown ?? "", accent, { fill, borderColor: tone.border }));
         } else if (block.type === "image") {
+          onStatus?.(`Embedding image · ${lesson.title}`);
           pushAll(await imageChildren(block));
         } else if (block.type === "divider") {
           children.push(
@@ -909,6 +914,7 @@ export async function courseDocxBlob(
           ],
         });
 
+  onStatus?.("Assembling the Word document…");
   const docxDocument = new Document({
     creator: "Knowly",
     title: course.title,
@@ -948,6 +954,7 @@ export async function courseDocxBlob(
     ],
   });
 
+  onStatus?.("Saving study pack .docx…");
   return Packer.toBlob(docxDocument);
 }
 

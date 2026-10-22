@@ -3,6 +3,8 @@ import {
   ArrowDownToLine,
   BookOpenCheck,
   Columns2,
+  Copy,
+  Loader2,
   Printer,
   RotateCcw,
   Ruler,
@@ -103,12 +105,26 @@ function loadOptions(): CoursePrintOptions {
   }
 }
 
+type ExportState =
+  { kind: "idle" } | { kind: "working"; message: string } | { kind: "error"; log: string };
+
+function buildErrorLog(error: unknown): string {
+  const e = error as { name?: string; message?: string; stack?: string; cause?: unknown };
+  const head = [e?.name ?? "Error", e?.message ?? String(error)].filter(Boolean).join(": ");
+  const cause = e?.cause
+    ? `\nCaused by: ${e.cause instanceof Error ? `${e.cause.name}: ${e.cause.message}` : String(e.cause)}`
+    : "";
+  const stack = e?.stack ? `\n\n${e.stack}` : "";
+  return `${head}${cause}${stack}`;
+}
+
 function CoursePrintPage() {
   const { courseId } = Route.useParams();
   const { state } = useKnowly();
   const course = state.courses.find((course) => course.id === courseId);
   const [options, setOptions] = useState<CoursePrintOptions>(loadOptions);
-  const [docxWorking, setDocxWorking] = useState(false);
+  const [exportState, setExportState] = useState<ExportState>({ kind: "idle" });
+  const docxWorking = exportState.kind === "working";
   const dims = getPaperDims(options.paper, options.orientation);
 
   useEffect(() => {
@@ -139,22 +155,24 @@ function CoursePrintPage() {
     setOptions((current) => ({ ...current, ...changes }));
 
   const handleExportDocx = async () => {
-    setDocxWorking(true);
-    toast.info("Building Word document…");
+    setExportState({ kind: "working", message: "Preparing the export…" });
     try {
-      const blob = await courseDocxBlob(course, progress, linkedDecks, options);
+      const blob = await courseDocxBlob(course, progress, linkedDecks, options, (message) =>
+        setExportState({ kind: "working", message }),
+      );
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
       anchor.download = `${course.title.replace(/[\\/:*?"<>|]+/g, "-").trim() || "course"} — study pack.docx`;
       anchor.click();
       URL.revokeObjectURL(url);
+      setExportState({ kind: "idle" });
       toast.success("Word document downloaded");
     } catch (error) {
-      console.error(error);
-      toast.error("Couldn't build the Word document");
-    } finally {
-      setDocxWorking(false);
+      console.error("DOCX export failed:", error);
+      setExportState({ kind: "error", log: buildErrorLog(error) });
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error("DOCX export failed", { description: message.slice(0, 200) });
     }
   };
 
@@ -178,8 +196,65 @@ function CoursePrintPage() {
           />
         </div>
 
-        <div className="print-hide grid gap-4 xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
-          <div className="panel space-y-5 self-start p-5">
+        {exportState.kind === "error" && (
+          <div className="print-hide mb-4 rounded-2xl border border-destructive/40 bg-destructive/10 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-destructive">DOCX export failed</p>
+                <p className="text-[11px] text-muted-foreground">
+                  The full error log is below — copy it if you want to report the problem.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleExportDocx}>
+                  <RotateCcw /> Retry export
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    void navigator.clipboard
+                      .writeText(exportState.log)
+                      .then(() => toast.success("Error log copied"));
+                  }}
+                >
+                  <Copy /> Copy log
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setExportState({ kind: "idle" })}>
+                  Dismiss
+                </Button>
+              </div>
+            </div>
+            <pre className="mt-3 max-h-56 overflow-auto whitespace-pre-wrap break-words rounded-xl border border-destructive/25 bg-background/60 p-3 text-left text-[11px] leading-4 text-muted-foreground">
+              {exportState.log}
+            </pre>
+          </div>
+        )}
+
+        {exportState.kind === "working" && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="print-hide fixed inset-0 z-[80] grid place-items-center bg-background/70 p-6 backdrop-blur-sm"
+          >
+            <div className="panel w-full max-w-sm p-7 text-center">
+              <BookOpenCheck className="mx-auto size-8 animate-pulse text-primary" />
+              <h2 className="mt-4 font-display text-lg font-semibold">Building your book set…</h2>
+              <p className="mt-1.5 truncate text-sm text-muted-foreground">{course.title}</p>
+              <div className="mt-4 flex items-center justify-center gap-2 rounded-xl border bg-surface/50 px-4 py-3 text-xs text-muted-foreground">
+                <Loader2 className="size-3.5 shrink-0 animate-spin text-primary" />
+                <span className="min-w-0 truncate">{exportState.message}</span>
+              </div>
+              <p className="mt-3 text-[11px] leading-4 text-muted-foreground">
+                Everything is generated right inside your browser — larger courses take a few
+                seconds.
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
+          <div className="panel print-hide space-y-5 self-start p-5">
             <OptionGroup icon={<Ruler className="size-4 text-primary" />} label="Paper">
               <div className="flex flex-wrap gap-1.5">
                 {PAPER_SIZE_OPTIONS.map((size) => (

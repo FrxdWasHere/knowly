@@ -844,7 +844,7 @@ function CourseMobileBar({
   }, [pathname, search]);
 
   return (
-    <div className="border-b border-border bg-sidebar/95 md:hidden">
+    <div className="print-hide border-b border-border bg-sidebar/95 md:hidden">
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
