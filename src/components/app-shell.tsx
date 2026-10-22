@@ -606,6 +606,11 @@ function CourseSidebar({
             {next ? "Continue learning" : "Review course"}
           </Link>
         </Button>
+        <Button asChild variant="outline" size="sm" className="w-full justify-start rounded-xl">
+          <Link to="/courses/$courseId/print" params={{ courseId: course.id }}>
+            <Printer className="size-3.5" /> Print course
+          </Link>
+        </Button>
         <Link
           to="/courses"
           className="press flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
@@ -871,6 +876,13 @@ function CourseMobileBar({
       {open && (
         <div className="max-h-[62dvh] overflow-y-auto border-t border-border bg-sidebar p-2">
           <CourseOutline course={course} pathname={pathname} search={search} />
+          <div className="mt-2 border-t border-sidebar-border p-2">
+            <Button asChild variant="outline" size="sm" className="w-full justify-start">
+              <Link to="/courses/$courseId/print" params={{ courseId: course.id }}>
+                <Printer className="size-3.5" /> Print course
+              </Link>
+            </Button>
+          </div>
         </div>
       )}
     </div>

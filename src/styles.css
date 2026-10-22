@@ -671,6 +671,12 @@
     break-before: page;
     page-break-before: always;
   }
+
+  /* Keep the course pack's tinted callouts and module chips in colour. */
+  .course-paper {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }
 /* Exam paper: headings follow the chosen paper font; empty editable fields show a hint. */
 .exam-paper :is(h1, h2, h3) {

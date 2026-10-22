@@ -1,7 +1,13 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { EXAM_FONTS, LETTERS, printableAnswer } from "@/lib/exam-print";
-import { courseStats, lessonProgress, lessonStats, type CourseStats } from "@/lib/courses";
+import {
+  courseStats,
+  decksForCourse,
+  lessonProgress,
+  lessonStats,
+  type CourseStats,
+} from "@/lib/courses";
 import { TYPE_LABELS } from "@/lib/answers";
 import {
   type Course,
@@ -33,6 +39,9 @@ export function CoursePaper({
   const stats = courseStats(course, progress);
   const printedDecks = new Set<string>();
   const courseDeckEntries = decksForIds(course.linkedDeckIds, decks, printedDecks);
+  const linkedPracticeCount = decksForCourse(course, decks).filter(
+    (deck) => deck.questions.length > 0,
+  ).length;
   const font = EXAM_FONTS.find((font) => font.id === "default") ?? EXAM_FONTS[0]!;
 
   return (
@@ -41,6 +50,8 @@ export function CoursePaper({
       style={{ fontFamily: font.stack }}
     >
       <CourseCover course={course} stats={stats} />
+
+      <PaperToc course={course} practiceCount={linkedPracticeCount} />
 
       {course.modules.map((module, moduleIndex) => (
         <PaperModule
@@ -75,14 +86,29 @@ export function CoursePaper({
 
 function CourseCover({ course, stats }: { course: Course; stats: CourseStats }) {
   return (
-    <section className="pb-6">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-        {course.subject}
-        {course.level ? ` · ${course.level}` : ""}
-      </p>
-      <h1 className="mt-2 text-[2em] font-bold leading-tight">{course.title}</h1>
+    <section className="pb-8">
+      <div className="flex items-start gap-4">
+        <span
+          className="grid size-14 shrink-0 place-items-center rounded-2xl border border-foreground/15 text-3xl"
+          style={{ background: `color-mix(in oklab, ${course.color} 14%, transparent)` }}
+        >
+          {course.emoji || "📘"}
+        </span>
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            {course.subject}
+            {course.level ? ` · ${course.level}` : ""}
+          </p>
+          <h1 className="mt-1.5 text-[2em] font-bold leading-tight">{course.title}</h1>
+        </div>
+      </div>
+      <div
+        aria-hidden
+        className="mt-4 h-1 w-28 rounded-full"
+        style={{ background: course.color }}
+      />
       {course.description && (
-        <p className="mt-3 max-w-3xl leading-7 text-muted-foreground">{course.description}</p>
+        <p className="mt-4 max-w-3xl leading-7 text-muted-foreground">{course.description}</p>
       )}
 
       <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-[11px] text-muted-foreground">
@@ -118,6 +144,93 @@ function CourseCover({ course, stats }: { course: Course; stats: CourseStats }) 
   );
 }
 
+/* ---------------------------- table of contents ---------------------------- */
+
+function PaperToc({ course, practiceCount }: { course: Course; practiceCount: number }) {
+  return (
+    <section className="border-t-2 border-foreground pt-5">
+      <div className="flex items-baseline justify-between gap-4">
+        <h2 className="text-[1.2em] font-bold">Contents</h2>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          Modules · lessons · assessments
+        </p>
+      </div>
+
+      <div className="mt-4 space-y-1.5 text-[0.95em]">
+        {course.modules.map((module, moduleIndex) => (
+          <div key={module.id} className="space-y-1.5">
+            <TocRow
+              strong
+              label={`${moduleIndex + 1}. ${module.title}`}
+              meta={`${module.lessons.length} lessons`}
+            />
+            {module.lessons.map((lesson, lessonIndex) => (
+              <TocRow
+                key={lesson.id}
+                indent
+                label={lesson.title}
+                meta={lesson.estimatedMinutes ? `${lesson.estimatedMinutes} min` : undefined}
+              />
+            ))}
+            {module.quiz && module.quiz.questions.length > 0 && (
+              <TocRow
+                indent
+                label={module.quiz.title}
+                meta={`${module.quiz.questions.length} questions`}
+              />
+            )}
+          </div>
+        ))}
+
+        {course.finalExam && course.finalExam.questions.length > 0 && (
+          <TocRow
+            strong
+            label={`Final exam · ${course.finalExam.title}`}
+            meta={`${course.finalExam.questions.length} questions`}
+          />
+        )}
+
+        {practiceCount > 0 && (
+          <TocRow strong label="Linked practice decks" meta={`${practiceCount} decks`} />
+        )}
+
+        <TocRow strong label="Answer key" />
+      </div>
+    </section>
+  );
+}
+
+function TocRow({
+  label,
+  meta,
+  indent = false,
+  strong = false,
+}: {
+  label: string;
+  meta?: string;
+  indent?: boolean;
+  strong?: boolean;
+}) {
+  return (
+    <div className={cn("flex items-baseline gap-3", indent && "pl-6")}>
+      <span
+        className={cn(
+          "min-w-0 truncate",
+          strong ? "font-semibold text-foreground" : "text-foreground/75",
+        )}
+      >
+        {label}
+      </span>
+      <span aria-hidden className="min-w-6 flex-1 border-b border-dotted border-foreground/30" />
+      {meta && (
+        <span className="min-w-14 shrink-0 text-right text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+          {meta}
+        </span>
+      )}
+    </div>
+  );
+}
+
 /* ---------------------------- module ---------------------------- */
 
 function PaperModule({
@@ -142,10 +255,20 @@ function PaperModule({
   return (
     <PaperSection pageBreak={moduleIndex > 0}>
       <section>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          Module {moduleIndex + 1} · {module.lessons.length} lessons · {percent}% complete
-        </p>
-        <h2 className="mt-1.5 text-[1.6em] font-bold leading-snug">{module.title}</h2>
+        <div className="flex items-start gap-3">
+          <span
+            className="grid size-9 shrink-0 place-items-center rounded-lg text-sm font-bold text-white"
+            style={{ background: course.color }}
+          >
+            {moduleIndex + 1}
+          </span>
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Module {moduleIndex + 1} · {module.lessons.length} lessons · {percent}% complete
+            </p>
+            <h2 className="mt-1 text-[1.6em] font-bold leading-snug">{module.title}</h2>
+          </div>
+        </div>
         {module.summary && (
           <p className="mt-2 max-w-3xl leading-7 text-muted-foreground">{module.summary}</p>
         )}
@@ -209,6 +332,11 @@ function PaperLesson({
     <section className="mt-8">
       <div className="break-inside-avoid">
         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          <span
+            aria-hidden
+            className="mr-1.5 inline-block size-1.5 rounded-full align-middle"
+            style={{ background: course.color }}
+          />
           Lesson {lessonIndex + 1}
           {lesson.estimatedMinutes ? ` · ${lesson.estimatedMinutes} min` : ""} ·{" "}
           {complete ? "Completed" : lessonState.status.replace("-", " ")}
@@ -291,16 +419,25 @@ function PaperBlock({ block }: { block: CourseBlock }) {
       );
     case "callout":
     case "example": {
+      const tone = block.type === "example" ? "example" : (block.tone ?? "info");
       return (
         <div
           className={cn(
             "rounded-xl border px-4 py-3",
-            block.type === "example"
-              ? "border-foreground/35 bg-foreground/[0.03]"
-              : "border-foreground/25 bg-foreground/[0.02]",
+            tone === "example" && "border-emerald-600/40 bg-emerald-500/10",
+            tone === "warning" && "border-amber-600/45 bg-amber-500/10",
+            tone === "definition" && "border-sky-600/40 bg-sky-500/10",
+            tone === "info" && "border-slate-500/35 bg-slate-500/5",
           )}
         >
-          <p className="text-[12px] font-semibold">
+          <p
+            className={cn(
+              "text-[12px] font-semibold",
+              tone === "example" && "text-emerald-900",
+              tone === "warning" && "text-amber-900",
+              tone === "definition" && "text-sky-900",
+            )}
+          >
             {block.title || (block.type === "example" ? "Example" : "Note")}
           </p>
           <PaperMarkdown markdown={block.markdown ?? ""} />
