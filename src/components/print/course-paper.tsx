@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
  * Print options + paper sizes
  * --------------------------------------------------------------------- */
 
-export type PaperSizeId = "a4" | "letter" | "b5" | "a5";
+export type PaperSizeId = "a4" | "letter" | "legal" | "b5" | "a5";
 export type PaperOrientation = "portrait" | "landscape";
 export type PaperFontScale = "small" | "normal" | "large";
 export type PaperMarginId = "narrow" | "normal" | "wide";
@@ -68,6 +68,7 @@ export const STORAGE_KEY_COURSE_PRINT = "knowly.course-print.v1";
 export const PAPER_SIZE_OPTIONS: { id: PaperSizeId; label: string; sub: string }[] = [
   { id: "a4", label: "A4", sub: "210 × 297 mm" },
   { id: "letter", label: "US Letter", sub: "8.5 × 11 in" },
+  { id: "legal", label: "Legal", sub: "8.5 × 13 in" },
   { id: "b5", label: "B5", sub: "176 × 250 mm" },
   { id: "a5", label: "A5", sub: "148 × 210 mm" },
 ];
@@ -76,6 +77,7 @@ export const PAPER_SIZE_OPTIONS: { id: PaperSizeId; label: string; sub: string }
 const PAPER_DIMS: Record<PaperSizeId, { w: number; h: number }> = {
   a4: { w: 794, h: 1123 },
   letter: { w: 816, h: 1056 },
+  legal: { w: 816, h: 1248 },
   b5: { w: 665, h: 945 },
   a5: { w: 559, h: 794 },
 };
