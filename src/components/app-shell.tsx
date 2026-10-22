@@ -51,12 +51,13 @@ import {
 } from "lucide-react";
 import { useKnowly } from "@/store/knowly";
 import { levelFromXp } from "@/lib/gamification";
+import { collectDue } from "@/lib/srs";
 import { courseStats, lessonProgress, nextLesson } from "@/lib/courses";
 import type { Course } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useWallpaperUrl } from "@/hooks/use-wallpaper-url";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
 import { CommandPalette, useCommandPalette } from "@/components/command-palette";
 
@@ -65,103 +66,291 @@ interface NavItem {
   label: string;
   icon: typeof LayoutDashboard;
   exact: boolean;
+  /** Short line explaining what the feature does — shown under the label. */
+  hint?: string;
 }
 
 interface NavGroup {
   label: string;
   icon: typeof LayoutDashboard;
+  /** One-liner shown next to the section heading. */
+  hint?: string;
   items: NavItem[];
 }
 
+/** Ordered around the actual study loop: home → study → library → build → notes → progress → system. */
 const NAV_GROUPS: NavGroup[] = [
   {
-    label: "Overview",
+    label: "Home",
     icon: LayoutDashboard,
-    items: [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true }],
+    items: [
+      {
+        to: "/dashboard",
+        label: "Dashboard",
+        icon: LayoutDashboard,
+        exact: true,
+        hint: "Daily snapshot — due cards, streak, weak topics",
+      },
+    ],
   },
   {
-    label: "Library",
-    icon: LibraryBig,
+    label: "Study cycle",
+    icon: Brain,
+    hint: "Every way to practice",
     items: [
-      { to: "/decks", label: "Deck Library", icon: Library, exact: false },
-      { to: "/generate", label: "Prompt Forge", icon: Wand2, exact: false },
-      { to: "/forge", label: "Deck Forge", icon: Hammer, exact: false },
-      { to: "/import", label: "Import JSON", icon: Download, exact: false },
-      { to: "/format", label: "JSON Format", icon: FileJson, exact: false },
-      { to: "/deck-tools", label: "Merge & Split", icon: Shuffle, exact: false },
+      {
+        to: "/review",
+        label: "Daily Review",
+        icon: Brain,
+        exact: false,
+        hint: "Spaced repetition — cards due today",
+      },
+      {
+        to: "/weak-spots",
+        label: "Weak Spots",
+        icon: Target,
+        exact: false,
+        hint: "Drill your 60 shakiest cards first",
+      },
+      {
+        to: "/cram",
+        label: "Cram Mode",
+        icon: Rocket,
+        exact: false,
+        hint: "Last-minute blitz — ignores the schedule",
+      },
+      {
+        to: "/quiz",
+        label: "Practice Quiz",
+        icon: BrainCircuit,
+        exact: false,
+        hint: "Build a custom quiz from any decks",
+      },
+      {
+        to: "/exam",
+        label: "Exam Simulator",
+        icon: GraduationCap,
+        exact: false,
+        hint: "Timed mock exam, graded after submit",
+      },
+      {
+        to: "/print",
+        label: "Print Exam",
+        icon: Printer,
+        exact: false,
+        hint: "Paper exam + answer key, ready to print",
+      },
+      {
+        to: "/focus",
+        label: "Focus Timer",
+        icon: Timer,
+        exact: false,
+        hint: "Pomodoro rounds with session tracking",
+      },
     ],
   },
   {
     label: "Courses",
     icon: BookMarked,
+    hint: "Structured multi-week learning",
     items: [
-      { to: "/courses", label: "Course Library", icon: BookMarked, exact: false },
-      { to: "/courses/forge", label: "Course Forge", icon: Wand2, exact: false },
-      { to: "/courses/import", label: "Import Course", icon: FileJson, exact: false },
+      {
+        to: "/courses",
+        label: "Course Library",
+        icon: BookMarked,
+        exact: false,
+        hint: "Lessons, checkpoints and final exams",
+      },
+      {
+        to: "/courses/forge",
+        label: "Course Forge",
+        icon: Wand2,
+        exact: false,
+        hint: "Design a course — write it or forge it with AI outside",
+      },
+      {
+        to: "/courses/import",
+        label: "Import Course",
+        icon: FileJson,
+        exact: false,
+        hint: "Paste a course JSON and validate it",
+      },
+    ],
+  },
+  {
+    label: "Decks & cards",
+    icon: Library,
+    hint: "Browse everything you've collected",
+    items: [
+      {
+        to: "/decks",
+        label: "Deck Library",
+        icon: Library,
+        exact: false,
+        hint: "All decks with due-count and mastery",
+      },
+      {
+        to: "/cards",
+        label: "Card Browser",
+        icon: Table2,
+        exact: false,
+        hint: "One searchable table of every question",
+      },
+      {
+        to: "/tags",
+        label: "Tag Explorer",
+        icon: Hash,
+        exact: false,
+        hint: "Browse by tag and concept",
+      },
+      {
+        to: "/bookmarks",
+        label: "Bookmarks & Notes",
+        icon: Star,
+        exact: false,
+        hint: "Starred cards with your personal notes",
+      },
+    ],
+  },
+  {
+    label: "Build & import",
+    icon: Hammer,
+    hint: "Create and maintain decks",
+    items: [
+      {
+        to: "/forge",
+        label: "Deck Forge",
+        icon: Hammer,
+        exact: false,
+        hint: "Hand-build cards in all 8 question types",
+      },
+      {
+        to: "/deck-tools",
+        label: "Merge & Split",
+        icon: Shuffle,
+        exact: false,
+        hint: "Combine decks or split one by tag",
+      },
+      {
+        to: "/import",
+        label: "Import JSON",
+        icon: Download,
+        exact: false,
+        hint: "Paste question-bank JSON with validation",
+      },
+      {
+        to: "/generate",
+        label: "Prompt Forge",
+        icon: Wand2,
+        exact: false,
+        hint: "Build an AI prompt — run it outside, import the result",
+      },
+      {
+        to: "/format",
+        label: "JSON Format",
+        icon: FileJson,
+        exact: false,
+        hint: "Schema reference + sample deck files",
+      },
     ],
   },
   {
     label: "Notes",
     icon: NotebookText,
+    hint: "Where thinking happens",
     items: [
-      { to: "/notes", label: "Notebooks", icon: NotebookText, exact: false },
-      { to: "/journal", label: "Study Journal", icon: NotebookPen, exact: false },
-    ],
-  },
-  {
-    label: "Study",
-    icon: BookOpen,
-    items: [
-      { to: "/review", label: "Daily Review", icon: Brain, exact: false },
-      { to: "/cram", label: "Cram Mode", icon: Rocket, exact: false },
-      { to: "/exam", label: "Exam Simulator", icon: GraduationCap, exact: false },
-      { to: "/quiz", label: "Practice Quiz", icon: BrainCircuit, exact: false },
-      { to: "/print", label: "Print Exam", icon: Printer, exact: false },
-      { to: "/focus", label: "Focus Timer", icon: Timer, exact: false },
-    ],
-  },
-  {
-    label: "Improve",
-    icon: Compass,
-    items: [
-      { to: "/weak-spots", label: "Weak Spots", icon: Target, exact: false },
-      { to: "/leeches", label: "Leech Manager", icon: Bug, exact: false },
-      { to: "/cards", label: "Card Browser", icon: Table2, exact: false },
-      { to: "/tags", label: "Tag Explorer", icon: Hash, exact: false },
-      { to: "/bookmarks", label: "Bookmarks & Notes", icon: Star, exact: false },
+      {
+        to: "/notes",
+        label: "Notebooks",
+        icon: NotebookText,
+        exact: false,
+        hint: "Handwriting, drawing, PDF pages and audio",
+      },
+      {
+        to: "/journal",
+        label: "Study Journal",
+        icon: NotebookPen,
+        exact: false,
+        hint: "Daily reflections with mood and tags",
+      },
     ],
   },
   {
     label: "Progress",
     icon: Activity,
+    hint: "See how you're doing",
     items: [
-      { to: "/stats", label: "Statistics", icon: BarChart3, exact: false },
-      { to: "/goals", label: "Goals & Streaks", icon: CalendarCheck, exact: false },
-      { to: "/achievements", label: "Achievements", icon: Trophy, exact: false },
-      { to: "/report", label: "Progress Report", icon: FileBarChart, exact: false },
+      {
+        to: "/stats",
+        label: "Statistics",
+        icon: BarChart3,
+        exact: false,
+        hint: "Heatmap, study time, accuracy trends",
+      },
+      {
+        to: "/goals",
+        label: "Goals & Streaks",
+        icon: CalendarCheck,
+        exact: false,
+        hint: "Daily question goals and streak milestones",
+      },
+      {
+        to: "/achievements",
+        label: "Achievements",
+        icon: Trophy,
+        exact: false,
+        hint: "Badges unlocked as you study",
+      },
+      {
+        to: "/leeches",
+        label: "Leech Manager",
+        icon: Bug,
+        exact: false,
+        hint: "Fix the cards you keep forgetting",
+      },
+      {
+        to: "/report",
+        label: "Progress Report",
+        icon: FileBarChart,
+        exact: false,
+        hint: "Printable summary for any date range",
+      },
     ],
   },
   {
     label: "System",
     icon: SlidersHorizontal,
+    hint: "Backups and preferences",
     items: [
-      { to: "/snapshots", label: "Snapshots", icon: Camera, exact: false },
-      { to: "/shortcuts", label: "Shortcuts & Help", icon: Keyboard, exact: false },
-      { to: "/settings", label: "Settings", icon: SettingsIcon, exact: false },
+      {
+        to: "/snapshots",
+        label: "Snapshots",
+        icon: Camera,
+        exact: false,
+        hint: "Back up or restore your entire library",
+      },
+      {
+        to: "/shortcuts",
+        label: "Shortcuts & Help",
+        icon: Keyboard,
+        exact: false,
+        hint: "Every keyboard shortcut and FAQ",
+      },
+      {
+        to: "/settings",
+        label: "Settings",
+        icon: SettingsIcon,
+        exact: false,
+        hint: "Theme, scheduling, gamification, data",
+      },
     ],
   },
 ];
 
-const NAV: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
-
-const OVERVIEW_GROUP = NAV_GROUPS[0];
-const SUBMENU_GROUPS = NAV_GROUPS.filter((group) => group !== OVERVIEW_GROUP);
+const NAV: NavItem[] = NAV_GROUPS.flatMap((group) => group.items);
 
 const isNavItemActive = (item: NavItem, pathname: string) =>
   item.exact ? pathname === item.to : pathname.startsWith(item.to);
-
-const groupForPath = (pathname: string) =>
-  NAV_GROUPS.find((group) => group.items.some((item) => isNavItemActive(item, pathname)));
 
 const navLinkClass = (active: boolean) =>
   cn(
@@ -179,26 +368,50 @@ const navIconClass = (active: boolean) =>
       : "bg-background/40 text-muted-foreground ring-sidebar-border group-hover:text-primary",
   );
 
+/** Flat, always-labelled nav row: icon · name · one-line hint. */
+function NavRow({ item, active, dueCount }: { item: NavItem; active: boolean; dueCount?: number }) {
+  return (
+    <Link to={item.to} title={item.hint ?? item.label} className={navLinkClass(active)}>
+      <span className={navIconClass(active)}>
+        <item.icon className="size-4" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[13px] font-semibold leading-tight">{item.label}</span>
+        {item.hint && (
+          <span className="mt-0.5 block truncate text-[10px] leading-tight text-muted-foreground/70 transition-colors group-hover:text-muted-foreground">
+            {item.hint}
+          </span>
+        )}
+      </span>
+      {item.to === "/review" && dueCount != null && dueCount > 0 && (
+        <span className="press inline-grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-primary/15 px-1.5 text-[10px] font-bold tabular-nums text-primary ring-1 ring-inset ring-primary/30">
+          {dueCount > 99 ? "99+" : dueCount}
+        </span>
+      )}
+      {active && <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-primary" />}
+    </Link>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { state, updateSettings } = useKnowly();
   const palette = useCommandPalette();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const search = useRouterState({ select: (r) => r.location.searchStr });
   const collapsed = state.settings.sidebarCollapsed;
-  const activeGroup = groupForPath(pathname);
   const courseMatch = pathname.match(/^\/courses\/([^/]+)/);
   const activeCourse = courseMatch
     ? state.courses.find((course) => course.id === courseMatch[1])
     : undefined;
   const courseMode = Boolean(activeCourse);
-  const [openGroup, setOpenGroup] = useState<string | null>(() =>
-    activeGroup && activeGroup !== OVERVIEW_GROUP ? activeGroup.label : null,
-  );
-
-  useEffect(() => {
-    setOpenGroup(activeGroup && activeGroup !== OVERVIEW_GROUP ? activeGroup.label : null);
-  }, [activeGroup]);
+  /** Sections stay open by default; a click on the heading tucks it away. */
+  const [closedGroups, setClosedGroups] = useState<string[]>([]);
+  const toggleGroup = (label: string) =>
+    setClosedGroups((current) =>
+      current.includes(label) ? current.filter((name) => name !== label) : [...current, label],
+    );
   const { level, pct, intoLevel, needed } = levelFromXp(state.progress.lifetimeXp);
+  const dueCount = useMemo(() => collectDue(state.decks).length, [state.decks]);
   const density = state.settings.density;
   const pad = density === "compact" ? "p-4" : density === "spacious" ? "p-5 md:p-8" : "p-5 md:p-8";
   const wallpaper = useWallpaperUrl(state.settings.wallpaper);
@@ -276,7 +489,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                         <Link
                           key={item.to}
                           to={item.to}
-                          title={item.label}
+                          title={item.hint ? `${item.label} — ${item.hint}` : item.label}
                           className={cn(navLinkClass(active), "justify-center px-2")}
                         >
                           <span className={navIconClass(active)}>
@@ -289,57 +502,36 @@ export function AppShell({ children }: { children: ReactNode }) {
                 ))
               ) : (
                 <>
-                  {OVERVIEW_GROUP.items.map((item) => {
-                    const active = isNavItemActive(item, pathname);
-                    return (
-                      <Link
-                        key={item.to}
-                        to={item.to}
-                        title={item.label}
-                        className={navLinkClass(active)}
-                      >
-                        <span className={navIconClass(active)}>
-                          <item.icon className="size-4" />
-                        </span>
-                        <span className="truncate">{item.label}</span>
-                      </Link>
-                    );
-                  })}
-                  {SUBMENU_GROUPS.map((group) => {
-                    const isOpen = openGroup === group.label;
+                  {NAV_GROUPS.map((group) => {
+                    const closed = closedGroups.includes(group.label);
                     const hasActive = group.items.some((item) => isNavItemActive(item, pathname));
-                    const panelId = `sidebar-submenu-${group.label.toLowerCase()}`;
+                    const panelId = `sidebar-section-${group.label.replace(/[^a-z]/gi, "-").toLowerCase()}`;
                     return (
-                      <div
+                      <section
                         key={group.label}
-                        className={cn(
-                          "mt-1.5 rounded-[1.15rem] transition-all duration-300",
-                          isOpen &&
-                            "bg-white/[0.035] shadow-[0_18px_40px_-30px_rgba(0,0,0,0.8)] ring-1 ring-white/10",
-                        )}
+                        className="mt-4 first:mt-1"
+                        aria-label={group.label}
                       >
+                        {group.label !== "Home" && (
+                          <div aria-hidden className="mx-3 mb-2 border-t border-sidebar-border" />
+                        )}
                         <button
                           type="button"
-                          aria-expanded={isOpen}
+                          aria-expanded={!closed}
                           aria-controls={panelId}
-                          title={`${group.label} submenu`}
-                          onClick={() => setOpenGroup(isOpen ? null : group.label)}
-                          className={cn(
-                            "press group flex w-full items-center gap-2.5 rounded-[1.1rem] px-2.5 py-2 text-sm transition-all duration-200",
-                            isOpen
-                              ? "text-sidebar-accent-foreground"
-                              : hasActive
-                                ? "text-sidebar-accent-foreground hover:bg-sidebar-accent/40"
-                                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
-                          )}
+                          title={group.hint ? `${group.label} — ${group.hint}` : group.label}
+                          onClick={() => toggleGroup(group.label)}
+                          className="press group/head mb-1 flex w-full items-center gap-1.5 rounded-lg px-2.5 py-1 text-left"
                         >
-                          <span className={navIconClass(isOpen || hasActive)}>
-                            <group.icon className="size-4" />
-                          </span>
-                          <span className="flex-1 truncate text-left text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/80">
+                          <span
+                            className={cn(
+                              "flex-1 truncate text-[10px] font-semibold uppercase tracking-[0.18em] transition-colors",
+                              hasActive ? "text-primary" : "text-muted-foreground/60",
+                            )}
+                          >
                             {group.label}
                           </span>
-                          {hasActive && !isOpen && (
+                          {hasActive && !closed && (
                             <span
                               aria-hidden
                               className="size-1.5 shrink-0 rounded-full bg-primary"
@@ -347,65 +539,25 @@ export function AppShell({ children }: { children: ReactNode }) {
                           )}
                           <ChevronDown
                             className={cn(
-                              "size-4 shrink-0 text-muted-foreground transition-transform duration-300",
-                              isOpen && "rotate-180",
+                              "size-3.5 shrink-0 text-muted-foreground/50 transition-transform duration-300 group-hover/head:text-muted-foreground",
+                              closed && "-rotate-90",
                             )}
                           />
                         </button>
-                        <div
-                          className={cn(
-                            "grid transition-[grid-template-rows] duration-300 ease-out",
-                            isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
-                          )}
-                        >
-                          <div className="overflow-hidden" inert={!isOpen}>
-                            <ul
-                              id={panelId}
-                              className="mx-2 mb-2 divide-y divide-sidebar-border/60 overflow-hidden rounded-[0.9rem] border border-white/10 bg-background/50 backdrop-blur-sm"
-                            >
-                              {group.items.map((item) => {
-                                const active = isNavItemActive(item, pathname);
-                                return (
-                                  <li key={item.to}>
-                                    <Link
-                                      to={item.to}
-                                      title={item.label}
-                                      aria-current={active ? "page" : undefined}
-                                      tabIndex={isOpen ? undefined : -1}
-                                      className={cn(
-                                        "press group/row flex items-center gap-2.5 px-2.5 py-2 text-sm font-medium transition-colors duration-150",
-                                        active
-                                          ? "bg-primary/10 text-foreground shadow-[inset_2px_0_0_var(--primary)]"
-                                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
-                                      )}
-                                    >
-                                      <span
-                                        className={cn(
-                                          "grid size-6 shrink-0 place-items-center rounded-md ring-1 transition-all duration-200 group-hover/row:scale-105",
-                                          active
-                                            ? "bg-primary/15 text-primary ring-primary/30"
-                                            : "bg-background/40 text-muted-foreground ring-sidebar-border group-hover/row:text-primary",
-                                        )}
-                                      >
-                                        <item.icon className="size-3.5" />
-                                      </span>
-                                      <span className="flex-1 truncate">{item.label}</span>
-                                      <ChevronRight
-                                        className={cn(
-                                          "size-3.5 shrink-0 transition-all duration-150",
-                                          active
-                                            ? "text-primary"
-                                            : "text-muted-foreground/30 group-hover/row:translate-x-px group-hover/row:text-muted-foreground",
-                                        )}
-                                      />
-                                    </Link>
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
+                        {!closed && (
+                          <ul id={panelId}>
+                            {group.items.map((item) => (
+                              <li key={item.to}>
+                                <NavRow
+                                  item={item}
+                                  active={isNavItemActive(item, pathname)}
+                                  dueCount={dueCount}
+                                />
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </section>
                     );
                   })}
                 </>
@@ -494,21 +646,37 @@ export function AppShell({ children }: { children: ReactNode }) {
         {activeCourse ? (
           <CourseMobileBar course={activeCourse} pathname={pathname} search={search} />
         ) : (
-          <nav className="flex gap-1.5 overflow-x-auto border-b border-border bg-surface/30 px-3 py-2 backdrop-blur md:hidden">
-            {NAV.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className="press inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.02] px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors"
-                activeProps={{
-                  className:
-                    "border-primary/30 bg-primary/12 text-foreground shadow-[0_8px_24px_-18px_var(--primary)]",
-                }}
-                activeOptions={{ exact: item.to === "/dashboard" }}
-              >
-                <item.icon className="size-3.5" />
-                {item.label}
-              </Link>
+          <nav
+            aria-label="Main navigation"
+            className="flex gap-1.5 overflow-x-auto border-b border-border bg-surface/30 px-3 py-2 backdrop-blur md:hidden"
+          >
+            {NAV_GROUPS.map((group, groupIndex) => (
+              <div key={group.label} className="flex items-center gap-1.5">
+                {groupIndex > 0 && (
+                  <span aria-hidden className="h-5 w-px shrink-0 bg-sidebar-border" />
+                )}
+                {group.items.map((item) => (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    title={item.hint ? `${item.label} — ${item.hint}` : item.label}
+                    className="press inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.02] px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors"
+                    activeProps={{
+                      className:
+                        "border-primary/30 bg-primary/12 text-foreground shadow-[0_8px_24px_-18px_var(--primary)]",
+                    }}
+                    activeOptions={{ exact: item.to === "/dashboard" }}
+                  >
+                    <item.icon className="size-3.5" />
+                    {item.label}
+                    {item.to === "/review" && dueCount > 0 && (
+                      <span className="inline-grid h-4 min-w-4 place-items-center rounded-full bg-primary/15 px-1 text-[9px] font-bold tabular-nums text-primary">
+                        {dueCount > 99 ? "99+" : dueCount}
+                      </span>
+                    )}
+                  </Link>
+                ))}
+              </div>
             ))}
           </nav>
         )}
