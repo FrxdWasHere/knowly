@@ -43,6 +43,7 @@ import { validateDeckJson, type ValidationResult } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 
 import { useKnowly } from "@/store/knowly";
+import { buildSampleProfile } from "@/lib/sample-profile";
 import { ThemePicker } from "@/components/theme-picker";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
@@ -181,6 +182,7 @@ function Onboarding() {
   const [backupRestored, setBackupRestored] = useState(false);
   const [customSubject, setCustomSubject] = useState("");
   const [studyTime, setStudyTime] = useState("");
+  const [sampleArmed, setSampleArmed] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const backupFileRef = useRef<HTMLInputElement>(null);
 
@@ -228,6 +230,24 @@ function Onboarding() {
   const finish = (to: "/dashboard" | "/generate" | "/format" | "/decks") => {
     completeOnboarding();
     navigate({ to });
+  };
+
+  /** Two-step confirm, then replaces the library with a fully "lived-in" demo profile. */
+  const applySampleProfile = () => {
+    if (!sampleArmed) {
+      setSampleArmed(true);
+      window.setTimeout(() => setSampleArmed(false), 5000);
+      return;
+    }
+    setSampleArmed(false);
+    const ok = importState(JSON.stringify(buildSampleProfile()));
+    if (!ok) {
+      toast.error("Couldn't build the sample profile");
+      return;
+    }
+    completeOnboarding();
+    toast.success("Sample profile loaded — 5 decks, 2 courses, 13-day streak. Explore freely!");
+    navigate({ to: "/dashboard" });
   };
 
   const doImport = () => {
@@ -1264,6 +1284,21 @@ function Onboarding() {
             onClick={() => go(6)}
           >
             I have a deck or backup — bring it now
+          </button>
+          <button
+            type="button"
+            title="Replaces whatever is in this browser with a fully-used demo profile: decks mid-schedule, a course halfway through, 6 weeks of history. Great for exploring."
+            onClick={applySampleProfile}
+            className={cn(
+              "underline-offset-4 transition-colors hover:underline",
+              sampleArmed
+                ? "text-destructive hover:text-destructive"
+                : "text-muted-foreground/60 hover:text-foreground",
+            )}
+          >
+            {sampleArmed
+              ? "Sure? Click again — this replaces everything here"
+              : "Just exploring? Import a sample profile"}
           </button>
         </div>
       </main>
