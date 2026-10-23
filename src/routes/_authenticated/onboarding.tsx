@@ -290,28 +290,28 @@ function Onboarding() {
       </div>
 
       <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-4 sm:px-6 sm:py-6">
-        <div className="relative rounded-[1.75rem] bg-gradient-to-br from-primary/60 via-border to-primary/30 p-px shadow-[0_35px_100px_-45px_rgba(15,23,42,0.6)]">
+        <div className="relative rounded-[1.75rem] bg-gradient-to-br from-primary/60 via-border to-primary/30 p-px shadow-[0_35px_100px_-45px_color-mix(in_oklab,var(--foreground)_42%,transparent)]">
           <div className="grid w-full overflow-hidden rounded-[calc(1.75rem-1px)] bg-background lg:h-[min(780px,calc(100vh-6.5rem))] lg:grid-cols-[0.82fr_1.18fr]">
-            <aside className="relative flex min-h-64 flex-col overflow-hidden bg-slate-950 p-6 text-white lg:min-h-0 lg:p-8">
+            <aside className="relative flex min-h-64 flex-col overflow-hidden bg-surface-2 p-6 text-foreground lg:min-h-0 lg:p-8">
               <div
                 aria-hidden
                 className="absolute -right-24 -top-20 size-72 rounded-full bg-primary/50 blur-3xl"
               />
               <div
                 aria-hidden
-                className="absolute -bottom-24 -left-20 size-64 rounded-full bg-cyan-400/30 blur-3xl"
+                className="absolute -bottom-24 -left-20 size-64 rounded-full bg-accent/30 blur-3xl"
               />
               <div
                 aria-hidden
-                className="absolute inset-0 opacity-[0.06] [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_78%)]"
+                className="absolute inset-0 opacity-[0.06] [background-image:radial-gradient(circle_at_1px_1px,currentColor_1px,transparent_0)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_78%)]"
               />
 
               <div className="relative flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/65">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
                   <Sparkles className="size-3.5" />
                   Knowly · Setup
                 </div>
-                <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-medium tabular-nums text-white/55">
+                <span className="rounded-full border border-border bg-foreground/[0.04] px-2.5 py-1 text-[10px] font-medium tabular-nums text-muted-foreground">
                   {String(step + 1).padStart(2, "0")} / {String(STEP_META.length).padStart(2, "0")}
                 </span>
               </div>
@@ -322,34 +322,34 @@ function Onboarding() {
                     aria-hidden
                     className="absolute inset-0 scale-125 rounded-full bg-primary/25 blur-2xl"
                   />
-                  <div className="relative grid size-24 place-items-center rounded-[1.75rem] border border-white/20 bg-white/10 shadow-2xl backdrop-blur-xl lg:size-32 lg:rounded-[2rem]">
+                  <div className="relative grid size-24 place-items-center rounded-[1.75rem] border border-primary/20 bg-primary/10 shadow-2xl backdrop-blur-xl lg:size-32 lg:rounded-[2rem]">
                     <div
                       aria-hidden
-                      className="absolute inset-3 rounded-[1.35rem] border border-white/10 lg:rounded-[1.45rem]"
+                      className="absolute inset-3 rounded-[1.35rem] border border-primary/15 lg:rounded-[1.45rem]"
                     />
                     <StepIcon className="relative size-10 lg:size-14" strokeWidth={1.4} />
                   </div>
-                  <span className="absolute -left-16 top-1 hidden rounded-full border border-white/10 bg-white/10 px-2.5 py-1 text-[10px] font-medium text-white/75 shadow-lg backdrop-blur sm:block">
+                  <span className="absolute -left-16 top-1 hidden rounded-full border border-border bg-foreground/5 px-2.5 py-1 text-[10px] font-medium text-foreground/80 shadow-lg backdrop-blur sm:block">
                     Local-first
                   </span>
-                  <span className="absolute -right-14 bottom-1 hidden rounded-full border border-cyan-300/20 bg-cyan-400/10 px-2.5 py-1 text-[10px] font-medium text-cyan-100/80 shadow-lg backdrop-blur sm:block">
+                  <span className="absolute -right-14 bottom-1 hidden rounded-full border border-accent/30 bg-accent/15 px-2.5 py-1 text-[10px] font-medium text-foreground/80 shadow-lg backdrop-blur sm:block">
                     JSON backup
                   </span>
-                  <span className="absolute -right-10 -top-5 hidden rounded-full border border-white/10 bg-white/10 px-2.5 py-1 text-[10px] font-medium text-white/70 shadow-lg backdrop-blur sm:block">
+                  <span className="absolute -right-10 -top-5 hidden rounded-full border border-border bg-foreground/5 px-2.5 py-1 text-[10px] font-medium text-foreground/80 shadow-lg backdrop-blur sm:block">
                     8-step setup
                   </span>
                 </div>
                 <div className="mt-5 text-center">
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/40">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/70">
                     Now setting up
                   </p>
-                  <p className="mt-1 font-display text-lg font-semibold text-white">
+                  <p className="mt-1 font-display text-lg font-semibold text-foreground">
                     {STEP_META[step].label}
                   </p>
                 </div>
               </div>
 
-              <div className="relative mt-4 hidden rounded-2xl border border-white/10 bg-white/[0.045] p-3 backdrop-blur sm:block">
+              <div className="relative mt-4 hidden rounded-2xl border border-border bg-foreground/[0.05] p-3 backdrop-blur sm:block">
                 <div className="flex items-center gap-3">
                   <div className="relative grid size-11 shrink-0 place-items-center">
                     <svg
@@ -362,7 +362,7 @@ function Onboarding() {
                         cy="18"
                         r="15.5"
                         fill="none"
-                        stroke="rgba(255,255,255,0.14)"
+                        style={{ stroke: "color-mix(in oklab, currentColor 15%, transparent)" }}
                         strokeWidth="3"
                       />
                       <circle
@@ -377,20 +377,20 @@ function Onboarding() {
                         className="transition-all duration-500 ease-out"
                       />
                     </svg>
-                    <span className="text-[10px] font-semibold tabular-nums text-white">
+                    <span className="text-[10px] font-semibold tabular-nums text-foreground">
                       {Math.round(progress)}%
                     </span>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-white">Setup progress</p>
-                    <p className="mt-0.5 text-[10px] text-white/50">
+                    <p className="text-xs font-medium text-foreground">Setup progress</p>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">
                       {step + 1} of {STEP_META.length} steps
                     </p>
                   </div>
                 </div>
               </div>
 
-              <p className="relative mt-3 hidden text-[9px] font-semibold uppercase tracking-[0.18em] text-white/30 lg:block">
+              <p className="relative mt-3 hidden text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70 lg:block">
                 Jump to a step
               </p>
               <nav
@@ -408,19 +408,21 @@ function Onboarding() {
                       aria-current={active ? "step" : undefined}
                       className={cn(
                         "group flex items-center gap-3 rounded-xl px-3 py-1.5 text-left text-[13px] transition-colors",
-                        active && "bg-white/10 text-white ring-1 ring-white/15",
-                        done && "text-white/65 hover:bg-white/5 hover:text-white",
-                        !done && !active && "text-white/45 hover:bg-white/5 hover:text-white/80",
+                        active && "bg-foreground/10 text-foreground ring-1 ring-primary/25",
+                        done && "text-foreground/70 hover:bg-foreground/5 hover:text-foreground",
+                        !done &&
+                          !active &&
+                          "text-muted-foreground hover:bg-foreground/5 hover:text-foreground/80",
                       )}
                     >
                       <span
                         className={cn(
                           "grid size-6 shrink-0 place-items-center rounded-full border",
                           active
-                            ? "border-white/30 bg-white/15"
+                            ? "border-primary/40 bg-primary/20"
                             : done
-                              ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
-                              : "border-white/15",
+                              ? "border-success/40 bg-success/15 text-success"
+                              : "border-border",
                         )}
                       >
                         {done ? <Check className="size-3" /> : <s.icon className="size-3" />}
@@ -432,8 +434,8 @@ function Onboarding() {
                 })}
               </nav>
 
-              <div className="relative mt-3 hidden items-start gap-2 text-[11px] leading-5 text-white/55 sm:flex lg:mt-auto">
-                <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-white/40" />
+              <div className="relative mt-3 hidden items-start gap-2 text-[11px] leading-5 text-muted-foreground sm:flex lg:mt-auto">
+                <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-muted-foreground/60" />
                 <span>
                   Decks, notes, courses and progress live in this browser. Export a JSON backup
                   whenever you want a portable copy.
@@ -444,7 +446,7 @@ function Onboarding() {
             <section className="relative flex min-h-0 flex-col overflow-hidden bg-background">
               <div
                 aria-hidden
-                className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(77,163,255,0.1),transparent_45%)]"
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,color-mix(in_oklab,var(--primary)_10%,transparent),transparent_45%)]"
               />
               <div
                 aria-hidden

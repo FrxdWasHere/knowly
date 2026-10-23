@@ -217,7 +217,7 @@ function CourseQuizPage() {
           <span
             className={cn(
               "mx-auto grid size-20 place-items-center rounded-full",
-              result.passed ? "bg-success/15 text-success" : "bg-amber-500/15 text-amber-600",
+              result.passed ? "bg-success/15 text-success" : "bg-warning/15 text-warning",
             )}
           >
             <Trophy className="size-9" />

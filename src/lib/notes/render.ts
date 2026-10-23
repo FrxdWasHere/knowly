@@ -10,8 +10,26 @@ import type {
   TextElement,
 } from "./types";
 import { clampTemplateOpacity } from "./types";
+import { readableOn } from "@/lib/themes";
 
 const imageCache = new Map<string, HTMLImageElement>();
+
+/** Read a themed CSS variable (scene canvases must follow the active theme). */
+function themeVar(name: string) {
+  if (typeof document === "undefined") return "";
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+/**
+ * Resolve an arbitrary CSS color (including color-mix / var references) into a
+ * concrete canvas color by round-tripping it through fillStyle. If the browser
+ * can't parse it, the fallback stays in place and is returned instead.
+ */
+function canvasColor(ctx: CanvasRenderingContext2D, raw: string, fallback: string) {
+  ctx.fillStyle = fallback;
+  if (raw) ctx.fillStyle = raw;
+  return String(ctx.fillStyle);
+}
 
 export function loadImage(src: string): Promise<HTMLImageElement> {
   const cached = imageCache.get(src);
@@ -34,12 +52,28 @@ export function drawTemplate(
   height: number,
   opacity = 1,
 ) {
-  ctx.fillStyle = "#fffefa";
+  const paper = canvasColor(ctx, themeVar("--card"), "#fffefa");
+  ctx.fillStyle = paper;
   ctx.fillRect(0, 0, width, height);
   ctx.save();
   ctx.globalAlpha = Math.min(1, Math.max(0, opacity));
-  ctx.strokeStyle = "rgba(0, 0, 0, 1)";
-  ctx.fillStyle = "rgba(0, 0, 0, 1)";
+  const inkFaint = canvasColor(
+    ctx,
+    "color-mix(in oklab, var(--foreground) 62%, transparent)",
+    "rgba(0, 0, 0, 0.75)",
+  );
+  const inkStrong = canvasColor(
+    ctx,
+    "color-mix(in oklab, var(--foreground) 88%, transparent)",
+    "rgba(0, 0, 0, 1)",
+  );
+  const inkLabel = canvasColor(
+    ctx,
+    "color-mix(in oklab, var(--foreground) 55%, var(--card))",
+    "#6b7280",
+  );
+  ctx.strokeStyle = inkFaint;
+  ctx.fillStyle = inkFaint;
   ctx.lineWidth = 1;
 
   const margin = 64;
@@ -60,9 +94,11 @@ export function drawTemplate(
       ctx.lineTo(width - margin, height * 0.72);
       ctx.stroke();
       ctx.font = "600 13px system-ui, sans-serif";
+      ctx.fillStyle = inkLabel;
       ctx.fillText("CUES", margin + 10, margin + 22);
       ctx.fillText("NOTES", width * 0.3 + 16, margin + 22);
       ctx.fillText("SUMMARY", margin + 10, height * 0.72 + 22);
+      ctx.fillStyle = inkFaint;
     }
   } else if (template === "grid" || template === "graph") {
     const step = template === "graph" ? 24 : 32;
@@ -79,7 +115,7 @@ export function drawTemplate(
       ctx.stroke();
     }
     if (template === "graph") {
-      ctx.strokeStyle = "rgba(0, 0, 0, 1)";
+      ctx.strokeStyle = inkStrong;
       ctx.lineWidth = 1.4;
       for (let x = margin; x < width - margin; x += step * 5) {
         ctx.beginPath();
@@ -210,13 +246,17 @@ function drawElement(ctx: CanvasRenderingContext2D, element: NoteElement) {
   } else if (element.type === "sticky") {
     ctx.save();
     ctx.fillStyle = element.color;
-    ctx.shadowColor = "rgba(30, 40, 60, 0.18)";
+    ctx.shadowColor = canvasColor(
+      ctx,
+      "color-mix(in oklab, var(--foreground) 18%, transparent)",
+      "rgba(30, 40, 60, 0.18)",
+    );
     ctx.shadowBlur = 10;
     ctx.shadowOffsetY = 4;
     roundRect(ctx, element.x, element.y, element.width, element.height, 8);
     ctx.fill();
     ctx.shadowColor = "transparent";
-    ctx.fillStyle = "#28303f";
+    ctx.fillStyle = readableOn(element.color);
     ctx.font = "500 16px system-ui, sans-serif";
     const words = element.text.split(/\s+/);
     let line = "";
@@ -241,7 +281,7 @@ function drawElement(ctx: CanvasRenderingContext2D, element: NoteElement) {
     ctx.fill();
     ctx.globalAlpha = 1;
     if (element.revealed) {
-      ctx.fillStyle = "#334155";
+      ctx.fillStyle = readableOn(element.color);
       ctx.font = "600 12px system-ui, sans-serif";
       ctx.fillText("revealed", element.x + 8, element.y + 18);
     }
@@ -255,12 +295,20 @@ function drawElement(ctx: CanvasRenderingContext2D, element: NoteElement) {
     }
   } else if (element.type === "audio") {
     ctx.save();
-    ctx.fillStyle = "#eef2ff";
-    ctx.strokeStyle = "#c7d2fe";
+    ctx.fillStyle = canvasColor(
+      ctx,
+      "color-mix(in oklab, var(--primary) 14%, var(--card))",
+      "#eef2ff",
+    );
+    ctx.strokeStyle = canvasColor(
+      ctx,
+      "color-mix(in oklab, var(--primary) 45%, var(--card))",
+      "#c7d2fe",
+    );
     roundRect(ctx, element.x, element.y, element.width, element.height, 10);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = "#334155";
+    ctx.fillStyle = canvasColor(ctx, themeVar("--foreground"), "#1f2937");
     ctx.font = "600 13px system-ui, sans-serif";
     ctx.fillText(`♪ ${element.label}`, element.x + 12, element.y + 26);
     ctx.restore();

@@ -98,6 +98,31 @@ import {
   type StrokeElement,
 } from "@/lib/notes/types";
 import { cn } from "@/lib/utils";
+import { readableOn } from "@/lib/themes";
+
+/** Read a theme CSS variable so canvas always draws in the current theme. */
+function themePrimary() {
+  if (typeof document === "undefined") return "#5aa9f8";
+  const v = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim();
+  return v || "#5aa9f8";
+}
+
+/** Blend a hex theme colour toward transparency for canvas strokes/fills. */
+function withCanvasAlpha(hex: string, alpha: number) {
+  let h = hex.trim();
+  if (h.startsWith("#")) h = h.slice(1);
+  if (h.length === 3)
+    h = h
+      .split("")
+      .map((c) => c + c)
+      .join("");
+  const int = parseInt(h.slice(0, 6), 16);
+  if (Number.isNaN(int)) return hex;
+  const r = (int >> 16) & 255;
+  const g = (int >> 8) & 255;
+  const b = int & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 export const Route = createFileRoute("/_authenticated/notes/$notebookId")({
   validateSearch: (search: Record<string, unknown>): { page?: string } => ({
@@ -720,8 +745,8 @@ function NotebookEditorPage() {
     const ctx = liveContext();
     if (!ctx || points.length < 6) return;
     clearLive();
-    ctx.strokeStyle = "rgba(80, 100, 240, 0.8)";
-    ctx.fillStyle = "rgba(80, 100, 240, 0.08)";
+    ctx.strokeStyle = withCanvasAlpha(themePrimary(), 0.8);
+    ctx.fillStyle = withCanvasAlpha(themePrimary(), 0.08);
     ctx.lineWidth = 1.4;
     ctx.setLineDash([6, 5]);
     ctx.beginPath();
@@ -1338,7 +1363,7 @@ function NotebookEditorPage() {
                     type="button"
                     onClick={() => setCurrentId(page.id)}
                     className={cn(
-                      "relative block w-full overflow-hidden rounded-lg border-2 bg-white shadow-sm transition-all",
+                      "relative block w-full overflow-hidden rounded-lg border-2 bg-card shadow-sm transition-all",
                       active
                         ? "border-primary ring-2 ring-primary/20"
                         : "border-border hover:border-primary/40",
@@ -1353,11 +1378,11 @@ function NotebookEditorPage() {
                     ) : (
                       <div className="aspect-[3/4] w-full animate-pulse bg-surface2" />
                     )}
-                    <span className="absolute bottom-1 left-1 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                    <span className="absolute bottom-1 left-1 rounded bg-foreground/60 px-1.5 py-0.5 text-[10px] font-medium text-background">
                       {index + 1}
                     </span>
                     {bookmarked && (
-                      <BookmarkCheck className="absolute right-1 top-1 size-3.5 text-amber-500" />
+                      <BookmarkCheck className="absolute right-1 top-1 size-3.5 text-warning" />
                     )}
                   </button>
                   {active && (
@@ -1390,7 +1415,7 @@ function NotebookEditorPage() {
                         type="button"
                         className={cn(
                           "grid size-6 place-items-center rounded text-muted-foreground hover:bg-surface2 hover:text-foreground",
-                          bookmarked && "text-amber-500",
+                          bookmarked && "text-warning",
                         )}
                         onClick={() => toggleBookmark(page.id)}
                         aria-label="Bookmark page"
@@ -1450,11 +1475,11 @@ function NotebookEditorPage() {
           <div className="flex min-h-0 flex-1">
             <div
               ref={scrollRef}
-              className="relative min-h-0 flex-1 overflow-auto bg-[radial-gradient(circle_at_1px_1px,rgba(80,92,120,0.18)_1px,transparent_0)] [background-size:22px_22px]"
+              className="relative min-h-0 flex-1 overflow-auto bg-[radial-gradient(circle_at_1px_1px,color-mix(in_oklab,var(--foreground)_14%,transparent)_1px,transparent_0)] [background-size:22px_22px]"
             >
               <div className="flex min-h-full justify-center p-3 sm:p-6">
                 <div
-                  className="relative h-fit shrink-0 shadow-[0_18px_50px_rgba(30,42,70,0.18)]"
+                  className="relative h-fit shrink-0 shadow-[var(--shadow-panel)]"
                   style={{
                     width: currentPage.width * zoom,
                     minHeight: currentPage.height * zoom,
@@ -1464,7 +1489,7 @@ function NotebookEditorPage() {
                     ref={bgCanvasRef}
                     width={Math.round(currentPage.width * 2)}
                     height={Math.round(currentPage.height * 2)}
-                    className="absolute inset-0 h-full w-full rounded-sm bg-white"
+                    className="absolute inset-0 h-full w-full rounded-sm bg-card"
                   />
                   <canvas
                     ref={liveCanvasRef}
@@ -1493,7 +1518,7 @@ function NotebookEditorPage() {
                                 finishEditing(event.currentTarget.value);
                               }
                             }}
-                            className="absolute z-50 resize-none rounded border border-primary/50 bg-white/95 p-1 outline-none"
+                            className="absolute z-50 resize-none rounded border border-primary/50 bg-card/95 p-1 text-foreground outline-none"
                             style={{
                               left: element.x * zoom,
                               top: element.y * zoom,
@@ -1547,13 +1572,15 @@ function NotebookEditorPage() {
                                 finishEditing(event.currentTarget.value);
                               }
                             }}
-                            className="absolute z-50 resize-none rounded-lg border border-amber-500/50 bg-amber-100 p-2 text-slate-800 shadow-lg outline-none"
+                            className="absolute z-50 resize-none rounded-lg border border-primary/50 p-2 shadow-lg outline-none"
                             style={{
                               left: element.x * zoom,
                               top: element.y * zoom,
                               width: element.width * zoom,
                               minHeight: element.height * zoom,
                               fontSize: 16 * zoom,
+                              background: element.color,
+                              color: readableOn(element.color),
                             }}
                           />
                         );
@@ -1570,7 +1597,7 @@ function NotebookEditorPage() {
                             background: element.color,
                             fontSize: 16 * zoom,
                             lineHeight: 1.35,
-                            color: "#28303f",
+                            color: readableOn(element.color),
                           }}
                         >
                           <span className="whitespace-pre-wrap break-words">{element.text}</span>
@@ -1590,7 +1617,7 @@ function NotebookEditorPage() {
                             minHeight: element.height * zoom,
                             background: element.color,
                             opacity: element.revealed ? 0.28 : 0.94,
-                            color: "#334155",
+                            color: readableOn(element.color),
                             fontSize: 12 * zoom,
                             fontWeight: 600,
                           }}
@@ -1604,7 +1631,7 @@ function NotebookEditorPage() {
                       return (
                         <div
                           key={element.id}
-                          className="absolute z-40 rounded-xl border border-indigo-200 bg-indigo-50 p-2 shadow-sm"
+                          className="absolute z-40 rounded-xl border border-border bg-card p-2 shadow-sm"
                           style={{
                             left: element.x * zoom,
                             top: element.y * zoom,
@@ -1612,7 +1639,7 @@ function NotebookEditorPage() {
                           }}
                         >
                           <div className="mb-1 flex items-center justify-between gap-1">
-                            <p className="truncate text-[10px] font-medium text-indigo-700">
+                            <p className="truncate text-[10px] font-medium text-primary">
                               {element.label}
                             </p>
                             <button
@@ -1623,7 +1650,7 @@ function NotebookEditorPage() {
                                   currentPage.elements.filter((item) => item.id !== element.id),
                                 )
                               }
-                              className="grid size-5 shrink-0 place-items-center rounded text-indigo-500 hover:bg-indigo-100 hover:text-destructive"
+                              className="grid size-5 shrink-0 place-items-center rounded text-muted-foreground hover:bg-foreground/10 hover:text-destructive"
                             >
                               <X className="size-3" />
                             </button>
@@ -1895,13 +1922,13 @@ function PageStyleDialog({
         </div>
 
         <div className="grid gap-4 rounded-2xl border border-border bg-surface/50 p-3 sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:items-center">
-          <div className="relative mx-auto h-40 w-28 overflow-hidden rounded-xl border border-border bg-[#fffefa] shadow-inner sm:w-full">
+          <div className="relative mx-auto h-40 w-28 overflow-hidden rounded-xl border border-border bg-card shadow-inner sm:w-full">
             <canvas
               ref={previewRef}
               aria-label={`${template} paper preview`}
               className="h-full w-full object-cover object-top"
             />
-            <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-1.5 py-0.5 text-[9px] font-semibold text-white">
+            <span className="absolute bottom-2 right-2 rounded-full bg-foreground/60 px-1.5 py-0.5 text-[9px] font-semibold text-background">
               {pattern}%
             </span>
           </div>
@@ -2003,7 +2030,7 @@ function InkSizeDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="rounded-2xl border border-border bg-[#fffefa] p-4 shadow-inner">
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-inner">
           <svg viewBox="0 0 280 64" className="h-16 w-full" aria-hidden>
             <path
               d="M12 44 C 44 8, 72 58, 102 26 S 156 8, 184 36 S 232 58, 268 18"
@@ -2235,7 +2262,7 @@ function ToolRibbon({
                 style={{
                   height: Math.max(1, Math.min(5, penWidth / 2)),
                   background: color,
-                  boxShadow: "0 0 0 1px rgba(15, 23, 42, 0.12)",
+                  boxShadow: "0 0 0 1px color-mix(in oklab, var(--foreground) 12%, transparent)",
                 }}
               />
               <span className="shrink-0 tabular-nums">{penWidth}px</span>

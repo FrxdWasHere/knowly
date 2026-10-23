@@ -355,7 +355,7 @@ function CourseForgePage() {
           </div>
 
           {totalQuestions > 240 && (
-            <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-5 text-amber-700 dark:text-amber-300">
+            <p className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs leading-5 text-warning">
               This is a large generation. Use a model with a big output limit, or generate the
               blueprint first and expand lessons one at a time.
             </p>

@@ -478,7 +478,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                 collapsed && "justify-center px-3",
               )}
             >
-              <span className="anim-pop grid size-11 shrink-0 place-items-center rounded-[1.1rem] border border-white/10 bg-gradient-to-br from-primary/30 via-primary/10 to-transparent shadow-[0_16px_34px_-18px_var(--primary)] ring-1 ring-primary/25">
+              {" "}
+              <span className="anim-pop grid size-11 shrink-0 place-items-center rounded-[1.1rem] border border-border bg-gradient-to-br from-primary/30 via-primary/10 to-transparent shadow-[0_16px_34px_-18px_var(--primary)] ring-1 ring-primary/25">
                 <Logo className="size-7 rounded-lg" />
               </span>
               {!collapsed && (
@@ -583,7 +584,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </nav>
 
             <div className="relative space-y-3 border-t border-sidebar-border p-3">
-              <div className="rounded-[1.05rem] border border-white/10 bg-gradient-to-br from-primary/10 via-sidebar-accent/60 to-sidebar-accent/20 p-3 shadow-[0_14px_30px_-24px_rgba(0,0,0,0.9)] backdrop-blur-sm">
+              <div className="rounded-[1.05rem] border border-border bg-gradient-to-br from-primary/10 via-sidebar-accent/60 to-sidebar-accent/20 p-3 shadow-[var(--shadow-panel)] backdrop-blur-sm">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-semibold tracking-tight">Lv {level}</span>
                   {!collapsed && (
@@ -625,12 +626,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"
           />
           <div className="flex items-center gap-2 md:hidden">
-            <span className="grid size-8 place-items-center rounded-xl border border-white/10 bg-gradient-to-br from-primary/25 to-transparent ring-1 ring-primary/20">
+            <span className="grid size-8 place-items-center rounded-xl border border-border bg-gradient-to-br from-primary/25 to-transparent ring-1 ring-primary/20">
               <Logo className="size-5 rounded-md" />
             </span>
             <span className="font-display font-bold">Knowly</span>
           </div>
-          <div className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-muted-foreground backdrop-blur md:flex">
+          <div className="hidden items-center gap-2 rounded-full border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs text-muted-foreground backdrop-blur md:flex">
             <span className="inline-flex size-1.5 animate-pulse rounded-full bg-success shadow-[0_0_8px_var(--success)]" />
             <HardDrive className="size-3.5 text-primary" />
             Saved on this device · export JSON to move it
@@ -640,19 +641,19 @@ export function AppShell({ children }: { children: ReactNode }) {
               type="button"
               onClick={() => palette.setOpen(true)}
               aria-label="Open command palette"
-              className="press inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur transition-colors hover:border-primary/50 hover:text-foreground"
+              className="press inline-flex items-center gap-2 rounded-full border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur transition-colors hover:border-primary/50 hover:text-foreground"
             >
               <Search className="size-3.5" />
               <span className="hidden sm:inline">Jump to…</span>
-              <kbd className="hidden rounded-md border border-white/10 bg-background/40 px-1.5 py-0.5 text-[10px] sm:inline">
+              <kbd className="hidden rounded-md border border-border bg-background/40 px-1.5 py-0.5 text-[10px] sm:inline">
                 Ctrl K
               </kbd>
             </button>
-            <span className="press inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold backdrop-blur transition-colors hover:border-primary/50">
+            <span className="press inline-flex items-center gap-1.5 rounded-full border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs font-semibold backdrop-blur transition-colors hover:border-primary/50">
               <Flame className="size-3.5 text-primary" />
               {state.progress.streak} day
             </span>
-            <span className="press hidden min-[480px]:inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold backdrop-blur transition-colors hover:border-primary/50">
+            <span className="press hidden min-[480px]:inline-flex items-center gap-1.5 rounded-full border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs font-semibold backdrop-blur transition-colors hover:border-primary/50">
               <Zap className="size-3.5 text-primary" />
               <span className="max-w-[20vw] truncate">
                 {state.progress.lifetimeXp.toLocaleString()} XP
@@ -678,7 +679,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     key={item.to}
                     to={item.to}
                     title={item.hint ? `${item.label} — ${item.hint}` : item.label}
-                    className="press inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.02] px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors"
+                    className="press inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors"
                     activeProps={{
                       className:
                         "border-primary/30 bg-primary/12 text-foreground shadow-[0_8px_24px_-18px_var(--primary)]",
@@ -739,7 +740,7 @@ function CourseSidebar({
 
         <div className="mt-4 flex items-start gap-3">
           <span
-            className="grid size-11 shrink-0 place-items-center rounded-2xl text-xl shadow-sm ring-1 ring-black/5"
+            className="grid size-11 shrink-0 place-items-center rounded-2xl text-xl shadow-sm ring-1 ring-border"
             style={{ background: `${course.color}24` }}
           >
             {course.emoji || "📘"}

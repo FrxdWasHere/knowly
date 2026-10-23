@@ -229,13 +229,13 @@ function CourseImportPage() {
               )}
 
               {result.warnings.length > 0 && (
-                <div className="panel border-amber-500/30 p-4">
-                  <p className="flex items-center gap-2 text-sm font-semibold text-amber-600 dark:text-amber-300">
+                <div className="panel border-warning/30 p-4">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-warning">
                     <AlertTriangle className="size-4" /> {result.warnings.length} warnings
                   </p>
                   <ul className="mt-3 max-h-52 space-y-2 overflow-auto text-xs leading-5 text-muted-foreground">
                     {result.warnings.map((warning, index) => (
-                      <li key={index} className="rounded-lg bg-amber-500/10 p-2">
+                      <li key={index} className="rounded-lg bg-warning/10 p-2">
                         {warning}
                       </li>
                     ))}

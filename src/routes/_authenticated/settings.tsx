@@ -84,12 +84,15 @@ export const Route = createFileRoute("/_authenticated/settings")({
 /* ------------------------------------------------------------------ */
 
 function Tile({ icon: Icon, tint }: { icon: LucideIcon; tint: string }) {
+  // `tint` is a theme CSS variable name (e.g. "--primary") so tiles always
+  // recolor with the active theme instead of a fixed palette.
   return (
     <span
-      className={cn(
-        "grid size-8 shrink-0 place-items-center rounded-[9px] text-white shadow-sm",
-        tint,
-      )}
+      className="grid size-8 shrink-0 place-items-center rounded-[9px]"
+      style={{
+        background: `color-mix(in oklab, var(${tint}, var(--primary)) 18%, transparent)`,
+        color: `var(${tint}, var(--primary))`,
+      }}
     >
       <Icon className="size-[18px]" strokeWidth={2.2} />
     </span>
@@ -395,7 +398,7 @@ function SettingsPage() {
             </div>
           </div>
           <div className="flex items-center gap-3 px-4 py-2.5">
-            <Tile icon={UserRound} tint="bg-blue-500" />
+            <Tile icon={UserRound} tint="--primary" />
             <span className="shrink-0 text-[15px]">Name</span>
             <input
               value={s.displayName}
@@ -406,7 +409,7 @@ function SettingsPage() {
             />
           </div>
           <div className="flex items-center gap-3 px-4 py-2.5">
-            <Tile icon={GraduationCap} tint="bg-orange-500" />
+            <Tile icon={GraduationCap} tint="--accent" />
             <span className="shrink-0 text-[15px]">School</span>
             <input
               value={s.school}
@@ -455,7 +458,7 @@ function SettingsPage() {
           </ChipRow>
           <SliderBlock
             icon={Target}
-            tint="bg-green-500"
+            tint="--success"
             label="Daily goal"
             value={`${s.dailyGoal} questions`}
           >
@@ -469,7 +472,7 @@ function SettingsPage() {
           </SliderBlock>
           <ToggleRow
             icon={ShieldCheck}
-            tint="bg-teal-500"
+            tint="--primary"
             label="Confirm before leaving a session"
             checked={s.confirmBeforeExit}
             onChange={(v) => set("confirmBeforeExit", v)}
@@ -481,7 +484,7 @@ function SettingsPage() {
           footer="Upload any image from this device. It is stored locally in this browser, kept separate from your study data."
         >
           <div className="flex items-center gap-3 px-4 py-2.5">
-            <Tile icon={ImagePlus} tint="bg-teal-500" />
+            <Tile icon={ImagePlus} tint="--accent" />
             <span className="flex-1 text-[15px]">
               {s.wallpaper ? "Current image" : "No wallpaper"}
             </span>
@@ -592,7 +595,7 @@ function SettingsPage() {
           />
           <SliderBlock
             icon={Gauge}
-            tint="bg-orange-500"
+            tint="--chart-4"
             label="Animation speed"
             value={`${s.animationSpeed.toFixed(2)}×`}
           >
@@ -606,7 +609,7 @@ function SettingsPage() {
           </SliderBlock>
           <SliderBlock
             icon={Type}
-            tint="bg-blue-500"
+            tint="--chart-3"
             label="Font scale"
             value={`${s.fontScale.toFixed(2)}×`}
           >
@@ -651,7 +654,7 @@ function SettingsPage() {
           />
           <ToggleRow
             icon={BarChart3}
-            tint="bg-green-500"
+            tint="--chart-2"
             label="Show progress bars"
             hint="Dashboard, study sessions and quizzes"
             checked={s.showProgressBars}
@@ -662,7 +665,7 @@ function SettingsPage() {
         <Group title="Accessibility">
           <ToggleRow
             icon={Eye}
-            tint="bg-purple-500"
+            tint="--chart-4"
             label="Reduced motion"
             hint="Disable animations and transitions"
             checked={s.reducedMotion}
@@ -670,14 +673,14 @@ function SettingsPage() {
           />
           <ToggleRow
             icon={Contrast}
-            tint="bg-gray-500"
+            tint="--foreground"
             label="High contrast"
             checked={s.highContrast}
             onChange={(v) => set("highContrast", v)}
           />
           <ToggleRow
             icon={Droplets}
-            tint="bg-blue-500"
+            tint="--accent"
             label="Colorblind-safe palette"
             hint="Higher-contrast light and deep blue pair"
             checked={s.colorblindPalette}
@@ -685,14 +688,14 @@ function SettingsPage() {
           />
           <ToggleRow
             icon={Keyboard}
-            tint="bg-indigo-500"
+            tint="--chart-5"
             label="Strong focus indicators"
             checked={s.focusIndicators}
             onChange={(v) => set("focusIndicators", v)}
           />
           <SliderBlock
             icon={Timer}
-            tint="bg-orange-500"
+            tint="--warning"
             label="Timer multiplier"
             value={`${s.timerMultiplier.toFixed(1)}×`}
           >
@@ -709,21 +712,21 @@ function SettingsPage() {
         <Group title="Study">
           <ToggleRow
             icon={BookOpen}
-            tint="bg-orange-500"
+            tint="--accent"
             label="Auto-reveal answers"
             checked={s.autoReveal}
             onChange={(v) => set("autoReveal", v)}
           />
           <ToggleRow
             icon={Shuffle}
-            tint="bg-teal-500"
+            tint="--chart-3"
             label="Shuffle study order"
             checked={s.shuffleStudy}
             onChange={(v) => set("shuffleStudy", v)}
           />
           <ToggleRow
             icon={Lightbulb}
-            tint="bg-yellow-500"
+            tint="--warning"
             label="Show hints"
             hint="Applies to study sessions and quizzes"
             checked={s.showHints}
@@ -731,7 +734,7 @@ function SettingsPage() {
           />
           <ToggleRow
             icon={ListChecks}
-            tint="bg-blue-500"
+            tint="--chart-4"
             label="Show explanations"
             hint="Applies to study sessions and quizzes"
             checked={s.showExplanations}
@@ -745,7 +748,7 @@ function SettingsPage() {
         >
           <SliderBlock
             icon={RotateCcw}
-            tint="bg-orange-500"
+            tint="--accent"
             label="Relearn step"
             value={`${s.srs.learningStepMinutes} min`}
             hint="How soon a forgotten card comes back."
@@ -760,7 +763,7 @@ function SettingsPage() {
           </SliderBlock>
           <SliderBlock
             icon={SlidersHorizontal}
-            tint="bg-purple-500"
+            tint="--primary"
             label="Interval modifier"
             value={`${s.srs.intervalModifier.toFixed(2)}×`}
             hint="Stretch (or compress) every scheduled interval."
@@ -775,7 +778,7 @@ function SettingsPage() {
           </SliderBlock>
           <SliderBlock
             icon={Zap}
-            tint="bg-yellow-500"
+            tint="--warning"
             label="Easy bonus"
             value={`${s.srs.easyBonus.toFixed(2)}×`}
             hint="Extra spacing when you grade a card “Easy”."
@@ -790,7 +793,7 @@ function SettingsPage() {
           </SliderBlock>
           <SliderBlock
             icon={CalendarCheck}
-            tint="bg-green-500"
+            tint="--chart-5"
             label="Maximum interval"
             value={`${s.srs.maxIntervalDays} d`}
             hint="Never schedule a card further out than this."
@@ -808,14 +811,14 @@ function SettingsPage() {
         <Group title="Gamification">
           <ToggleRow
             icon={Trophy}
-            tint="bg-amber-500"
+            tint="--warning"
             label="Earn XP"
             checked={s.xpEnabled}
             onChange={(v) => set("xpEnabled", v)}
           />
           <ToggleRow
             icon={Bell}
-            tint="bg-red-500"
+            tint="--destructive"
             label="Achievement popups"
             checked={s.achievementPopups}
             onChange={(v) => set("achievementPopups", v)}
@@ -828,14 +831,14 @@ function SettingsPage() {
         >
           <ActionRow
             icon={Download}
-            tint="bg-green-500"
+            tint="--success"
             label="Export backup"
             hint="Decks, courses, progress and settings"
             onClick={download}
           />
           <ActionRow
             icon={Upload}
-            tint="bg-blue-500"
+            tint="--primary"
             label="Import backup"
             hint="Restore from a JSON file"
             onClick={() => fileRef.current?.click()}
@@ -856,7 +859,7 @@ function SettingsPage() {
             }}
           />
           <div className="flex items-center gap-3 px-4 py-2.5">
-            <Tile icon={Trash2} tint="bg-red-500" />
+            <Tile icon={Trash2} tint="--destructive" />
             <button
               type="button"
               onClick={() => {

@@ -508,8 +508,8 @@ function buildUnits(
  * CoursePaper — measured paginator + paper preview + print stylesheet.
  * --------------------------------------------------------------------- */
 
-const INK = "#111827";
-const INK_MUTED = "#6b7280";
+const INK = "var(--foreground)";
+const INK_MUTED = "var(--muted-foreground)";
 
 export function CoursePaper({
   course,
@@ -665,7 +665,7 @@ export function CoursePaper({
               fontFamily={fontFamily}
               lineHeight={lineHeight}
             >
-              <div className="grid h-full place-items-center rounded-lg text-gray-400">
+              <div className="grid h-full place-items-center rounded-lg text-muted-foreground">
                 Preparing print preview…
               </div>
             </SheetShell>
@@ -763,7 +763,7 @@ function SheetShell({
   fullBleed?: boolean;
   children: ReactNode;
 }) {
-  const tone = footer?.light ? "text-white/70" : "text-gray-500";
+  const tone = footer?.light ? "text-white/70" : "text-muted-foreground";
   return (
     <div
       className="preview-scale-wrap"
@@ -774,12 +774,12 @@ function SheetShell({
         style={{ transform: `scale(${scale})`, transformOrigin: "top left" }}
       >
         <div
-          className="print-page course-paper relative overflow-hidden bg-white"
+          className="print-page course-paper relative overflow-hidden bg-card"
           style={{
             width: dims.width,
             height: dims.height,
-            boxShadow: "0 24px 60px -34px rgba(15,23,42,0.65)",
-            border: "1px solid rgba(15,23,42,0.12)",
+            boxShadow: "0 24px 60px -34px color-mix(in oklab, var(--foreground) 42%, transparent)",
+            border: "1px solid color-mix(in oklab, var(--foreground) 12%, transparent)",
           }}
         >
           {fullBleed ? (
@@ -800,7 +800,7 @@ function SheetShell({
           {headerText && (
             <div
               aria-hidden
-              className="absolute inset-x-0 flex items-center justify-center gap-2 text-[9px] font-semibold uppercase tracking-[0.28em] text-gray-400"
+              className="absolute inset-x-0 flex items-center justify-center gap-2 text-[9px] font-semibold uppercase tracking-[0.28em] text-muted-foreground"
               style={{
                 top: Math.round(padding.padTop * 0.24),
                 paddingLeft: padding.padX,
@@ -863,8 +863,8 @@ function UnitView({
   switch (data.kind) {
     case "toc-header":
       return (
-        <header className="border-b-2 border-gray-900 pb-3">
-          <p className="text-[0.72em] font-semibold uppercase tracking-[0.22em] text-gray-500">
+        <header className="border-b-2 border-foreground pb-3">
+          <p className="text-[0.72em] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
             Course overview · modules · assessments
           </p>
           <h2 className="mt-1 text-[1.35em] font-bold">Contents</h2>
@@ -877,18 +877,18 @@ function UnitView({
           <span
             className={cn(
               "min-w-0 truncate",
-              data.row.strong ? "font-semibold text-gray-900" : "text-gray-700",
+              data.row.strong ? "font-semibold text-foreground" : "text-foreground",
             )}
           >
             {data.row.label}
           </span>
-          <span aria-hidden className="min-w-4 flex-1 border-b border-dotted border-gray-300" />
+          <span aria-hidden className="min-w-4 flex-1 border-b border-dotted border-border" />
           {data.row.meta && (
-            <span className="min-w-12 shrink-0 text-right text-[0.8em] text-gray-500">
+            <span className="min-w-12 shrink-0 text-right text-[0.8em] text-muted-foreground">
               {data.row.meta}
             </span>
           )}
-          <span className="w-9 shrink-0 text-right text-[0.9em] font-semibold tabular-nums text-gray-900">
+          <span className="w-9 shrink-0 text-right text-[0.9em] font-semibold tabular-nums text-foreground">
             {pageNum ?? "—"}
           </span>
         </div>
@@ -901,13 +901,13 @@ function UnitView({
         <div>
           <div className="flex items-start gap-3">
             <span
-              className="grid size-9 shrink-0 place-items-center rounded-lg text-[0.95em] font-bold text-white"
+              className="paper-accent grid size-9 shrink-0 place-items-center rounded-lg text-[0.95em] font-bold text-white"
               style={{ background: courseColor }}
             >
               {data.index + 1}
             </span>
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 Module {data.index + 1} · {data.module.lessons.length} lessons
               </p>
               <h2 className="mt-1 text-[1.5em] font-bold leading-snug">{data.module.title}</h2>
@@ -921,7 +921,7 @@ function UnitView({
       const state = data.lesson.summary ?? "";
       return (
         <div>
-          <p className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">
+          <p className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             <span
               aria-hidden
               className="inline-block size-1.5 rounded-full"
@@ -931,14 +931,14 @@ function UnitView({
             {data.lesson.estimatedMinutes ? ` · ${data.lesson.estimatedMinutes} min` : ""}
           </p>
           <h3 className="mt-1 text-[1.25em] font-semibold leading-snug">{data.lesson.title}</h3>
-          {state && <p className="mt-2 text-gray-600">{state}</p>}
+          {state && <p className="mt-2 text-foreground">{state}</p>}
           {data.lesson.objectives.length > 0 && (
-            <ul className="mt-2 space-y-1 text-[0.92em] text-gray-600">
+            <ul className="mt-2 space-y-1 text-[0.92em] text-foreground">
               {data.lesson.objectives.map((objective) => (
                 <li key={objective} className="flex gap-2">
                   <span
                     aria-hidden
-                    className="mt-[0.5em] size-1 shrink-0 rounded-full bg-gray-400"
+                    className="mt-[0.5em] size-1 shrink-0 rounded-full bg-muted-foreground"
                   />
                   <span className="min-w-0">{objective}</span>
                 </li>
@@ -956,18 +956,18 @@ function UnitView({
         <div
           className={cn(
             "rounded-xl border px-4 py-3",
-            tone === "example" && "border-emerald-600/40 bg-emerald-500/10",
-            tone === "warning" && "border-amber-600/45 bg-amber-500/10",
-            tone === "definition" && "border-sky-600/40 bg-sky-500/10",
-            tone === "info" && "border-slate-500/35 bg-slate-500/5",
+            tone === "example" && "border-success/45 bg-success/10",
+            tone === "warning" && "border-warning/45 bg-warning/10",
+            tone === "definition" && "border-primary/45 bg-primary/10",
+            tone === "info" && "border-primary/30 bg-primary/5",
           )}
         >
           <p
             className={cn(
               "text-[0.95em] font-semibold",
-              tone === "example" && "text-emerald-900",
-              tone === "warning" && "text-amber-900",
-              tone === "definition" && "text-sky-900",
+              tone === "example" && "text-success",
+              tone === "warning" && "text-warning",
+              tone === "definition" && "text-primary",
             )}
           >
             {data.block.title || (data.block.type === "example" ? "Example" : "Note")}
@@ -983,22 +983,22 @@ function UnitView({
             <img
               src={data.block.url}
               alt={data.block.alt ?? ""}
-              className="mx-auto max-h-64 rounded-lg border border-gray-300 object-contain"
+              className="mx-auto max-h-64 rounded-lg border border-border object-contain"
             />
           )}
           {data.block.caption && (
-            <figcaption className="mt-1.5 text-[0.85em] text-gray-500">
+            <figcaption className="mt-1.5 text-[0.85em] text-muted-foreground">
               {data.block.caption}
             </figcaption>
           )}
         </figure>
       );
     case "divider":
-      return <hr className="border-gray-300" />;
+      return <hr className="border-border" />;
     case "notes":
       return (
-        <div className="border-l-4 border-gray-300 pl-3">
-          <p className="text-[0.8em] font-semibold uppercase tracking-[0.16em] text-gray-500">
+        <div className="border-l-4 border-border pl-3">
+          <p className="text-[0.8em] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             Lesson notes
           </p>
           <PaperMarkdown markdown={data.text} />
@@ -1006,7 +1006,7 @@ function UnitView({
       );
     case "section-header":
       return (
-        <div className="border-b border-gray-300 pb-2">
+        <div className="border-b border-border pb-2">
           <h4 className="text-[1.05em] font-bold">{data.label}</h4>
         </div>
       );
@@ -1014,34 +1014,34 @@ function UnitView({
       return <QuestionView question={data.question} number={data.number} context={data.context} />;
     case "assessment-header":
       return (
-        <div className="border-b-2 border-gray-900 pb-2">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500">
+        <div className="border-b-2 border-foreground pb-2">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             {data.prefix}
           </p>
           <h2 className="mt-1 text-[1.3em] font-bold">{data.title}</h2>
-          <p className="mt-1 text-[0.9em] text-gray-600">{data.meta}</p>
+          <p className="mt-1 text-[0.9em] text-foreground">{data.meta}</p>
         </div>
       );
     case "deck-header":
       return (
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Practice deck {data.index} · {data.deck.subject}
           </p>
           <h3 className="mt-1 text-[1.2em] font-semibold">{data.deck.title}</h3>
           {data.deck.description && (
-            <p className="mt-1 text-[0.95em] text-gray-600">{data.deck.description}</p>
+            <p className="mt-1 text-[0.95em] text-foreground">{data.deck.description}</p>
           )}
         </div>
       );
     case "answer-header":
       return (
-        <div className="border-b-2 border-gray-900 pb-2">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500">
+        <div className="border-b-2 border-foreground pb-2">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             Answers
           </p>
           <h2 className="mt-1 text-[1.3em] font-bold">Answer key</h2>
-          <p className="mt-1 text-[0.9em] text-gray-600">
+          <p className="mt-1 text-[0.9em] text-foreground">
             Check your checkpoints and practice attempts against these answers.
           </p>
         </div>
@@ -1051,7 +1051,7 @@ function UnitView({
         <p
           className={cn(
             data.tone === "one" ? "text-[1.05em] font-bold" : "text-[0.95em] font-semibold",
-            data.tone === "two" && "text-gray-500",
+            data.tone === "two" && "text-muted-foreground",
           )}
         >
           {data.label}
@@ -1064,7 +1064,7 @@ function UnitView({
           <span className="min-w-0">
             {data.value}
             {data.explanation && (
-              <span className="italic text-gray-500"> — {data.explanation}</span>
+              <span className="italic text-muted-foreground"> — {data.explanation}</span>
             )}
           </span>
         </p>
@@ -1101,7 +1101,7 @@ function CoverBody({
   ];
   return (
     <div
-      className="relative flex size-full flex-col overflow-hidden text-white"
+      className="cover-art relative flex size-full flex-col overflow-hidden text-white"
       style={{
         background: `radial-gradient(140% 100% at 90% -20%, color-mix(in oklab, ${course.color} 45%, #ffffff 6%) 0%, transparent 52%), linear-gradient(158deg, ${course.color} 0%, color-mix(in oklab, ${course.color} 40%, #0a1322) 60%, #091120 100%)`,
       }}
@@ -1229,11 +1229,11 @@ function CoverBodyClassic({
     >
       {/* top rule + imprint */}
       <div aria-hidden className="h-1 w-14" style={{ background: course.color }} />
-      <p className="mt-4 text-[0.78em] font-semibold uppercase tracking-[0.32em] text-gray-500">
+      <p className="mt-4 text-[0.78em] font-semibold uppercase tracking-[0.32em] text-muted-foreground">
         {course.subject}
         {course.level ? ` · ${course.level}` : ""}
       </p>
-      <p className="mt-1 text-[0.78em] uppercase tracking-[0.24em] text-gray-400">
+      <p className="mt-1 text-[0.78em] uppercase tracking-[0.24em] text-muted-foreground">
         Knowly study pack
       </p>
 
@@ -1241,14 +1241,14 @@ function CoverBodyClassic({
       <div className="my-auto flex flex-col items-start py-12">
         <h1 className="text-[2.7em] font-bold leading-[1.06] tracking-tight">{course.title}</h1>
         {course.description && (
-          <p className="mt-5 max-w-md text-[1.05em] leading-[1.6] text-gray-600">
+          <p className="mt-5 max-w-md text-[1.05em] leading-[1.6] text-foreground">
             {course.description}
           </p>
         )}
         {course.objectives.length > 0 && (
           <ul className="mt-6 max-w-md space-y-1.5">
             {course.objectives.slice(0, 5).map((objective) => (
-              <li key={objective} className="flex gap-2 text-[0.95em] text-gray-600">
+              <li key={objective} className="flex gap-2 text-[0.95em] text-foreground">
                 <span
                   aria-hidden
                   className="mt-[0.52em] size-1.5 shrink-0 rounded-full"
@@ -1262,21 +1262,21 @@ function CoverBodyClassic({
       </div>
 
       {/* bottom meta */}
-      <div aria-hidden className="h-px w-full bg-gray-200" />
-      <p className="mt-4 text-[0.85em] font-medium tabular-nums text-gray-600">{statLine}</p>
+      <div aria-hidden className="h-px w-full bg-border" />
+      <p className="mt-4 text-[0.85em] font-medium tabular-nums text-foreground">{statLine}</p>
       {course.tags.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
           {course.tags.map((tag) => (
             <span
               key={tag}
-              className="rounded-full border border-gray-300 px-2.5 py-1 text-[0.8em] text-gray-600"
+              className="rounded-full border border-border px-2.5 py-1 text-[0.8em] text-foreground"
             >
               {tag}
             </span>
           ))}
         </div>
       )}
-      <p className="mt-4 text-[0.78em] uppercase tracking-[0.2em] text-gray-400">
+      <p className="mt-4 text-[0.78em] uppercase tracking-[0.2em] text-muted-foreground">
         Printed study pack · generated with Knowly
       </p>
     </div>
@@ -1298,7 +1298,7 @@ function ObjectivesList({
 }) {
   return (
     <div>
-      <p className="text-[0.8em] font-semibold uppercase tracking-[0.18em] text-gray-500">
+      <p className="text-[0.8em] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
         {title}
       </p>
       <ul className="mt-2 space-y-1">
@@ -1319,7 +1319,7 @@ function ObjectivesList({
 
 function PaperMarkdown({ markdown }: { markdown: string }) {
   return (
-    <div className="paper-markdown text-[0.98em] text-[#1f2937] [&_a]:text-gray-900 [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-gray-400 [&_blockquote]:pl-3 [&_blockquote]:text-gray-600 [&_code]:rounded [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:text-[0.9em] [&_h1]:mb-2 [&_h1]:mt-4 [&_h1]:text-[1.25em] [&_h1]:font-bold [&_h2]:mb-2 [&_h2]:mt-4 [&_h2]:text-[1.15em] [&_h2]:font-bold [&_h3]:mb-2 [&_h3]:mt-3 [&_h3]:font-semibold [&_li]:my-0.5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-2 [&_pre]:my-2 [&_pre]:overflow-auto [&_pre]:rounded-lg [&_pre]:bg-gray-100 [&_pre]:p-3 [&_pre]:text-[0.9em] [&_strong]:font-bold [&_table]:my-3 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-gray-300 [&_td]:p-1.5 [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:p-1.5 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5">
+    <div className="paper-markdown text-[0.98em] text-foreground [&_a]:text-foreground [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-foreground [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:text-[0.9em] [&_h1]:mb-2 [&_h1]:mt-4 [&_h1]:text-[1.25em] [&_h1]:font-bold [&_h2]:mb-2 [&_h2]:mt-4 [&_h2]:text-[1.15em] [&_h2]:font-bold [&_h3]:mb-2 [&_h3]:mt-3 [&_h3]:font-semibold [&_li]:my-0.5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-2 [&_pre]:my-2 [&_pre]:overflow-auto [&_pre]:rounded-lg [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:text-[0.9em] [&_strong]:font-bold [&_table]:my-3 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-border [&_td]:p-1.5 [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:p-1.5 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5">
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
     </div>
   );
@@ -1340,7 +1340,7 @@ function QuestionView({
         <span className="mt-0.5 min-w-0 shrink-0 font-bold">{number}.</span>
         <div className="min-w-0 flex-1">
           <p className="font-medium">{question.question}</p>
-          <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[9.5px] uppercase tracking-[0.14em] text-gray-500">
+          <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground">
             <span style={{ color: INK_MUTED }}>{TYPE_LABELS[question.type]}</span>
             {question.difficulty && <span>{question.difficulty}</span>}
             {question.concept && <span>{question.concept}</span>}
@@ -1368,7 +1368,7 @@ function QuestionBody({ question }: { question: Question }) {
       );
     case "true-false":
       return (
-        <p className="mt-2 text-gray-700">
+        <p className="mt-2 text-foreground">
           <span className="mr-6">☐ True</span>
           <span>☐ False</span>
         </p>
@@ -1378,7 +1378,7 @@ function QuestionBody({ question }: { question: Question }) {
         <div className="mt-2 space-y-1">
           {(question.items ?? []).map((item, index) => (
             <p key={`${item}-${index}`} className="flex gap-3">
-              <span aria-hidden className="inline-block w-6 border-b border-gray-400" />
+              <span aria-hidden className="inline-block w-6 border-b border-border" />
               <span className="min-w-0">{item}</span>
             </p>
           ))}
@@ -1391,7 +1391,7 @@ function QuestionBody({ question }: { question: Question }) {
           <div className="space-y-1">
             {pairs.map((pair, index) => (
               <p key={`${pair.left}-${index}`}>
-                <span aria-hidden className="mr-2 inline-block w-6 border-b border-gray-400" />
+                <span aria-hidden className="mr-2 inline-block w-6 border-b border-border" />
                 <span className="min-w-0">{pair.left}</span>
               </p>
             ))}
@@ -1411,8 +1411,8 @@ function QuestionBody({ question }: { question: Question }) {
       return (
         <div className="mt-2">
           {!!question.wordBank?.length && (
-            <p className="border border-gray-400 px-3 py-1.5 text-[0.9em] text-gray-700">
-              <span className="font-semibold text-gray-900">Word bank: </span>
+            <p className="border border-border px-3 py-1.5 text-[0.9em] text-foreground">
+              <span className="font-semibold text-foreground">Word bank: </span>
               {question.wordBank.join(" · ")}
             </p>
           )}
@@ -1431,7 +1431,7 @@ function PaperLines({ count }: { count: number }) {
   return (
     <div className="mt-2 space-y-4">
       {Array.from({ length: Math.max(1, count) }).map((_, lineIndex) => (
-        <div key={lineIndex} className="border-b border-gray-300" />
+        <div key={lineIndex} className="border-b border-border" />
       ))}
     </div>
   );
@@ -1465,5 +1465,13 @@ function printStylesheet(dims: { width: number; height: number }) {
   .print-page:last-of-type { break-after: auto; page-break-after: auto; }
   .measure-pane { display: none !important; }
   .course-paper { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  /* On paper the sheet is physically white with dark ink regardless of the
+     screen theme — printers cannot render a theme's light "ink". The themed
+     sheet is for the on-screen preview only. */
+  .paper-flow .print-page { background-color: #ffffff !important; }
+  .paper-flow .print-page * { color: #1f2937 !important; border-color: #9ca3af !important; }
+  .paper-flow .print-page .paper-accent { color: #ffffff !important; }
+  .paper-flow .print-page .cover-art,
+  .paper-flow .print-page .cover-art * { color: #ffffff !important; border-color: color-mix(in oklab, #ffffff 45%, transparent) !important; }
 }`;
 }

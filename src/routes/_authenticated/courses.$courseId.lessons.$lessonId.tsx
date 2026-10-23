@@ -503,9 +503,9 @@ function LessonBlock({ block }: { block: CourseBlock }) {
         className={cn(
           "rounded-2xl border p-4 sm:p-5",
           block.type === "example"
-            ? "border-emerald-500/25 bg-emerald-500/8"
+            ? "border-success/25 bg-success/8"
             : block.tone === "warning"
-              ? "border-amber-500/30 bg-amber-500/10"
+              ? "border-warning/30 bg-warning/10"
               : block.tone === "definition"
                 ? "border-primary/25 bg-primary/8"
                 : "border-border bg-surface2/60",

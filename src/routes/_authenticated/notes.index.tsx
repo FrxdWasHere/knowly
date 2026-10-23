@@ -431,17 +431,17 @@ function NotebookCard({
         className="relative block aspect-[4/3] overflow-hidden"
         style={{ background: `linear-gradient(140deg, ${notebook.color}, ${notebook.color}55)` }}
       >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.3),transparent_45%)]" />
-        <div className="absolute inset-x-5 bottom-5 top-8 rounded-xl border border-white/25 bg-white/88 p-4 shadow-xl">
-          <p className="line-clamp-2 font-display text-lg font-semibold text-slate-800">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,color-mix(in_oklab,var(--foreground)_14%,transparent),transparent_45%)]" />
+        <div className="absolute inset-x-5 bottom-5 top-8 rounded-xl border border-border bg-card/90 p-4 shadow-xl">
+          <p className="line-clamp-2 font-display text-lg font-semibold text-foreground">
             {notebook.emoji} {notebook.title}
           </p>
           <div className="mt-3 space-y-1.5">
-            <div className="h-1.5 rounded bg-slate-300/70" />
-            <div className="h-1.5 w-4/5 rounded bg-slate-300/60" />
-            <div className="h-1.5 w-3/5 rounded bg-slate-300/50" />
+            <div className="h-1.5 rounded bg-muted-foreground/30" />
+            <div className="h-1.5 w-4/5 rounded bg-muted-foreground/25" />
+            <div className="h-1.5 w-3/5 rounded bg-muted-foreground/20" />
           </div>
-          <p className="absolute bottom-3 right-3 text-[10px] font-medium uppercase tracking-wide text-slate-400">
+          <p className="absolute bottom-3 right-3 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             {notebook.pageIds.length} pages
           </p>
         </div>
@@ -460,7 +460,7 @@ function NotebookCard({
             onClick={onFavorite}
             className={cn(
               "grid size-8 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-surface2",
-              notebook.favorite && "text-rose-500",
+              notebook.favorite && "text-warning",
             )}
           >
             <Heart className={cn("size-4", notebook.favorite && "fill-current")} />

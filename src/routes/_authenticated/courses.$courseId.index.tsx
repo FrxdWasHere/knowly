@@ -120,7 +120,7 @@ function CourseOverviewPage() {
   return (
     <AppPage>
       <div className="mx-auto w-full max-w-[1500px]">
-        <section className="relative overflow-hidden rounded-[30px] border border-slate-800/70 bg-slate-950 text-white shadow-[0_28px_80px_-36px_rgba(15,23,42,0.8)]">
+        <section className="relative overflow-hidden rounded-[30px] border border-border bg-surface shadow-[0_28px_80px_-36px_color-mix(in_oklab,var(--foreground)_40%,transparent)]">
           <div
             aria-hidden
             className="absolute -right-24 -top-36 size-[32rem] rounded-full opacity-50 blur-3xl"
@@ -128,11 +128,11 @@ function CourseOverviewPage() {
           />
           <div
             aria-hidden
-            className="absolute -bottom-56 left-1/4 size-[26rem] rounded-full bg-cyan-300/20 blur-3xl"
+            className="absolute -bottom-56 left-1/4 size-[26rem] rounded-full bg-primary/20 blur-3xl"
           />
           <div
             aria-hidden
-            className="absolute inset-0 bg-[linear-gradient(120deg,rgba(2,6,23,0.9),rgba(2,6,23,0.55)_52%,rgba(2,6,23,0.85))]"
+            className="absolute inset-0 bg-[linear-gradient(120deg,color-mix(in_oklab,var(--surface)_92%,transparent),transparent_52%,color-mix(in_oklab,var(--background)_85%,transparent))]"
           />
 
           <div className="relative grid gap-7 p-5 sm:p-8 lg:grid-cols-[minmax(0,1fr)_310px] lg:items-end lg:p-10">
@@ -140,27 +140,17 @@ function CourseOverviewPage() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <Link
                   to="/courses"
-                  className="press inline-flex items-center gap-1.5 text-xs font-medium text-white/60 transition-colors hover:text-white"
+                  className="press inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
                 >
                   <ArrowLeft className="size-3.5" /> All courses
                 </Link>
                 <div className="flex items-center gap-2">
-                  <Button
-                    asChild
-                    variant="ghost"
-                    size="sm"
-                    className="text-white/70 hover:bg-white/10 hover:text-white"
-                  >
+                  <Button asChild variant="ghost" size="sm">
                     <Link to="/courses/$courseId/print" params={{ courseId: course.id }}>
                       <Printer className="size-3.5" /> Print course
                     </Link>
                   </Button>
-                  <Button
-                    asChild
-                    variant="ghost"
-                    size="sm"
-                    className="text-white/70 hover:bg-white/10 hover:text-white"
-                  >
+                  <Button asChild variant="ghost" size="sm">
                     <Link to="/courses/$courseId/edit" params={{ courseId: course.id }}>
                       <Pencil className="size-3.5" /> Edit
                     </Link>
@@ -169,7 +159,6 @@ function CourseOverviewPage() {
                     variant="ghost"
                     size="icon"
                     aria-label="Delete course"
-                    className="text-white/60 hover:bg-white/10 hover:text-white"
                     onClick={() => setDeleteOpen(true)}
                   >
                     <Trash2 className="size-4" />
@@ -179,13 +168,15 @@ function CourseOverviewPage() {
 
               <div className="mt-8 flex items-start gap-4">
                 <span
-                  className="grid size-16 shrink-0 place-items-center rounded-3xl border border-white/15 bg-white/10 text-4xl shadow-2xl backdrop-blur"
-                  style={{ boxShadow: `0 18px 45px -22px ${course.color}` }}
+                  className="grid size-16 shrink-0 place-items-center rounded-3xl border border-border bg-foreground/10 text-4xl shadow-2xl backdrop-blur"
+                  style={{
+                    boxShadow: `0 18px 45px -22px color-mix(in oklab, ${course.color} 75%, transparent)`,
+                  }}
                 >
                   {course.emoji || "📘"}
                 </span>
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     <span>{course.subject}</span>
                     {course.level && (
                       <>
@@ -198,7 +189,7 @@ function CourseOverviewPage() {
                     {course.title}
                   </h1>
                   {course.description && (
-                    <p className="mt-3 max-w-2xl text-sm leading-6 text-white/65">
+                    <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
                       {course.description}
                     </p>
                   )}
@@ -207,11 +198,7 @@ function CourseOverviewPage() {
 
               <div className="mt-7 flex flex-wrap gap-2">
                 {continueLesson && continueModule && (
-                  <Button
-                    asChild
-                    size="lg"
-                    className="rounded-xl bg-white text-slate-950 shadow-lg hover:bg-white/90"
-                  >
+                  <Button asChild size="lg" className="rounded-xl">
                     <Link
                       to="/courses/$courseId/lessons/$lessonId"
                       params={{ courseId: course.id, lessonId: continueLesson.id }}
@@ -222,12 +209,7 @@ function CourseOverviewPage() {
                   </Button>
                 )}
                 {featuredAssessment && (
-                  <Button
-                    asChild
-                    size="lg"
-                    variant="outline"
-                    className="rounded-xl border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white"
-                  >
+                  <Button asChild size="lg" variant="outline" className="rounded-xl">
                     <Link
                       to="/courses/$courseId/quiz"
                       params={{ courseId: course.id }}
@@ -240,7 +222,7 @@ function CourseOverviewPage() {
                 )}
               </div>
 
-              <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-white/55">
+              <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5">
                   <Layers className="size-3.5" /> {course.modules.length} modules
                 </span>
@@ -258,7 +240,7 @@ function CourseOverviewPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-white/15 bg-white/[0.07] p-5 shadow-xl backdrop-blur-xl">
+            <div className="rounded-3xl border border-border bg-foreground/[0.06] p-5 shadow-xl backdrop-blur-xl">
               <div className="flex items-center gap-4">
                 <div className="relative size-24 shrink-0">
                   <svg viewBox="0 0 100 100" className="size-full -rotate-90">
@@ -267,7 +249,7 @@ function CourseOverviewPage() {
                       cy="50"
                       r="42"
                       fill="none"
-                      stroke="rgba(255,255,255,0.14)"
+                      style={{ stroke: "var(--border)" }}
                       strokeWidth="8"
                     />
                     <circle
@@ -287,19 +269,19 @@ function CourseOverviewPage() {
                       <p className="font-display text-2xl font-semibold leading-none">
                         {stats.percent}%
                       </p>
-                      <p className="mt-1 text-[9px] uppercase tracking-[0.14em] text-white/50">
+                      <p className="mt-1 text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
                         complete
                       </p>
                     </div>
                   </div>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-white">Your progress</p>
-                  <p className="mt-1 text-xs leading-5 text-white/55">
+                  <p className="text-xs font-semibold text-foreground">Your progress</p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
                     {stats.completedLessons} of {stats.lessons} lessons finished
                   </p>
                   {next && (
-                    <p className="mt-2 line-clamp-2 text-[11px] leading-4 text-white/70">
+                    <p className="mt-2 line-clamp-2 text-[11px] leading-4 text-foreground/70">
                       Next: {next.lesson.title}
                     </p>
                   )}
@@ -701,9 +683,9 @@ function CourseOverviewPage() {
 
 function HeroStat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2">
-      <p className="text-[9px] uppercase tracking-[0.13em] text-white/45">{label}</p>
-      <p className="mt-0.5 font-display text-base font-semibold text-white">{value}</p>
+    <div className="rounded-xl border border-border bg-foreground/[0.05] px-3 py-2">
+      <p className="text-[9px] uppercase tracking-[0.13em] text-muted-foreground">{label}</p>
+      <p className="mt-0.5 font-display text-base font-semibold text-foreground">{value}</p>
     </div>
   );
 }

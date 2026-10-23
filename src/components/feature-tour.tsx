@@ -73,33 +73,33 @@ export function FeatureTour({
     >
       <DialogContent className="max-w-4xl overflow-hidden p-0">
         <div className="grid sm:grid-cols-[0.82fr_1.18fr]">
-          <div className="relative flex min-h-52 flex-col overflow-hidden bg-slate-950 p-6 text-white sm:min-h-[460px] sm:p-7">
+          <div className="relative flex min-h-52 flex-col overflow-hidden bg-surface-2 p-6 text-foreground sm:min-h-[460px] sm:p-7">
             <div
               aria-hidden
               className="absolute -right-24 -top-20 size-72 rounded-full bg-primary/50 blur-3xl"
             />
             <div
               aria-hidden
-              className="absolute -bottom-24 -left-20 size-64 rounded-full bg-cyan-400/30 blur-3xl"
+              className="absolute -bottom-24 -left-20 size-64 rounded-full bg-accent/30 blur-3xl"
             />
-            <div className="relative flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/65">
+            <div className="relative flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
               <Sparkles className="size-3.5" />
               {product}
             </div>
             <div className="relative mt-8 flex flex-1 items-center justify-center sm:mt-0">
-              <div className="relative grid size-32 place-items-center rounded-[2rem] border border-white/20 bg-white/10 shadow-2xl backdrop-blur-xl">
+              <div className="relative grid size-32 place-items-center rounded-[2rem] border border-primary/20 bg-primary/10 shadow-2xl backdrop-blur-xl">
                 <div
                   aria-hidden
-                  className="absolute inset-3 rounded-[1.45rem] border border-white/10"
+                  className="absolute inset-3 rounded-[1.45rem] border border-primary/15"
                 />
                 <Icon className="relative size-14" strokeWidth={1.4} />
               </div>
             </div>
             <div className="relative mt-6 sm:mt-auto">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/55">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/80">
                 Step {index + 1} of {steps.length}
               </p>
-              <p className="mt-2 hidden max-w-[15rem] text-sm leading-6 text-white/70 sm:block">
+              <p className="mt-2 hidden max-w-[15rem] text-sm leading-6 text-muted-foreground sm:block">
                 Small, focused improvements that make studying feel lighter.
               </p>
             </div>
