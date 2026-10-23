@@ -467,6 +467,28 @@
   background-size: 220% 220%;
 }
 
+/* Stronger wash tinted with the primary glow, for the app workspace where a
+ * busy content canvas needs the ambience to read at a glance. */
+@utility app-aurora {
+  background-image:
+    radial-gradient(
+      40% 58% at 28% 32%,
+      color-mix(in oklab, var(--primary) 46%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      36% 52% at 74% 66%,
+      color-mix(in oklab, var(--primary-glow) 26%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      24% 34% at 58% 18%,
+      color-mix(in oklab, var(--accent) 30%, transparent),
+      transparent 74%
+    );
+  background-size: 200% 200%;
+}
+
 @utility shimmer {
   background-image: linear-gradient(
     100deg,

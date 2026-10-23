@@ -432,6 +432,24 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div aria-hidden className="pointer-events-none fixed inset-0 z-0 bg-background/55" />
         </>
       )}
+      {/* Ambient studio backdrop: slow aurora washes and a drifting accent orb
+          over a counter-drifting blueprint grid, anchored by a glowing hairline.
+          Sits beneath the content (z-0), is suppressed when a user wallpaper is
+          set, gets static-ified by .reduce-motion and hidden in print. */}
+      <div aria-hidden className="print-hide pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        {!wallpaper && (
+          <>
+            <div className="anim-aurora app-aurora absolute -inset-[12%] opacity-60 blur-3xl" />
+            <div className="anim-aurora app-aurora absolute -inset-[12%] opacity-35 blur-3xl [animation-delay:-9s] [transform:rotate(120deg)]" />
+            <div className="anim-float absolute -bottom-44 -left-36 size-[36rem] rounded-full bg-[color-mix(in_oklab,var(--primary)_26%,transparent)] blur-3xl opacity-45" />
+            <div className="anim-float absolute -right-40 -top-44 size-[30rem] rounded-full bg-[color-mix(in_oklab,var(--primary-glow)_20%,transparent)] blur-3xl opacity-35 [animation-delay:-2s]" />
+            <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,var(--primary),transparent)] opacity-50" />
+          </>
+        )}
+        <div className="anim-grid-drift grid-forge absolute inset-0 opacity-[0.09] [mask-image:radial-gradient(ellipse_70%_65%_at_50%_30%,black,transparent_78%)]" />
+        <div className="anim-grid-drift-rev grid-forge absolute inset-0 opacity-[0.08] [background-size:88px_88px] [mask-image:radial-gradient(ellipse_60%_55%_at_80%_72%,black,transparent_80%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_80%_at_50%_45%,transparent_72%,var(--background)_100%)] opacity-65" />
+      </div>
       <aside
         className={cn(
           "sticky top-0 z-10 hidden h-screen shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar/90 backdrop-blur-2xl transition-all duration-300 md:flex",
