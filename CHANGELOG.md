@@ -2,12 +2,38 @@
 
 All notable changes to Knowly are documented here. The app is fully offline — no accounts, no syncing, no network calls.
 
-## Unreleased — Sidebar submenus & iOS-style Settings
+## 3.0.0 — 2026-10-23 — The Publishing Release
 
-### Changed
+The headline of v3: **your courses can now leave the screen.** A full print & publishing studio turns any course into a book-quality PDF or a Word document — plus a redesigned sidebar, a living workspace, and a demo profile for newcomers.
 
-- **Sidebar submenus modernized.** Groups now expand with a smooth height animation into an iOS-style grouped list — hairline dividers, compact icon tiles, chevron accessories, and a clean primary-tinted active row. Closed groups with an active page keep a status dot; hidden groups are inert to keyboard focus.
-- **Settings rebuilt iOS-style.** Every section is now a grouped card with a small grey header, colorful icon tiles, toggle rows, segmented controls (theme, density, button size), and right-aligned value rows — with a profile banner on top. No setting was removed; everything moved into the new rows.
+### New: Course Publishing Studio
+
+- **Print any course as a real book.** A dedicated studio (`Courses → a course → Print course`) composes the entire course — modules, lessons, callouts, worked examples, checkpoint quizzes, the final exam, linked deck practice, plus your notes and progress — into paginated sheets with a full-bleed cover, table of contents and a complete answer key, ready for the browser's print/PDF dialog.
+- **Every option is yours.** Paper (A4, Letter, Legal 8.5×13", B5, A5), orientation, margins, font size, typeface (sans/serif), line spacing, break behaviour (flow / by module / by lesson), footer styles, running headers, cover style ("book" or "classic"), TOC and answer-key toggles. Choices persist between visits.
+- **One-click DOCX export.** The same composition is exported as a `.docx` file (via a self-hosted DOCX writer) so you can edit and hand in your coursework in Word. Honors every print option, embeds images, shades callouts and includes the full answer key and page numbering.
+- **Live export progress.** A progress overlay narrates each export stage; if anything fails, a full error log (with copy/retry) is shown instead of a dead dialog.
+
+### Fixes: Multi-page printing
+
+- Printing a course correctly spans **as many pages as it has sheets** — the printed page count now matches the preview sheet-for-sheet (previously only one page made it to paper). Mobile-only chrome no longer leaks into print output, and blank gap strips between sheets are gone.
+
+### New: Sidebar that shows its work
+
+- The whole sidebar is redesigned: flat, always-visible sections — **Home · Study cycle · Courses · Decks & cards · Build & import · Notes · Progress · System** — so every feature is one click away with no buried submenus.
+- Every item carries a **one-line explanation** under its label (e.g. *Cram Mode — last-minute blitz, ignores the schedule*), and Daily Review shows a **live due-count badge** (desktop and mobile) so the next action is never missed.
+- Section headings highlight on the active area and can be collapsed by power users; the collapsed icon rail keeps richer tooltips; the mobile chip rail matches the same grouping.
+
+### New: A workspace that breathes
+
+- The main app gained an ambient backdrop: slow **aurora washes**, gently **floating orbs** and a counter-drifting **blueprint grid**, anchored by a glowing hairline — tuned to stay subtle in dark *and* light themes, respect the animation-speed setting and reduced motion, skip itself when a user wallpaper is set, and disappear entirely in print.
+
+### New: Try Knowly instantly
+
+- Onboarding now offers a **complete "lived-in" sample profile** at the bottom of the wizard: five decks at all stages of study (mastered, mid-schedule, brand-new, plus true leeches), a course at 60% with real lesson/quiz progress, six weeks of history, journal entries, templates and streaks. Timestamps are generated relative to import, so the demo always looks freshly used. Two-click confirm, clearly labelled as an exploring option.
+
+### Maintenance
+
+- Version bumped to **3.0.0** across the app, the Tauri desktop shell and the Rust crate.
 
 ## 2026-10-16 — Reliability & cleanup
 
