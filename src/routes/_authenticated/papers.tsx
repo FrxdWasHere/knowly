@@ -190,9 +190,10 @@ function PaperCard({
             {paper.title}
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            {paper.questions.length} questions · saved{" "}
+            {paper.questions?.length ?? 0}{" "}
+            {(paper.questions?.length ?? 0) === 1 ? "question" : "questions"} · saved{" "}
             {new Date(paper.createdAt).toLocaleDateString()}
-            {paper.options.subject ? ` · ${paper.options.subject}` : ""}
+            {paper.options?.subject ? ` · ${paper.options.subject}` : ""}
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             <LabelChips labels={labels} labelIds={paper.labelIds} />

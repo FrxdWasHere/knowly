@@ -492,7 +492,7 @@ function SlotCard({
         </p>
       )}
       {(deck || course) && (
-        <p className="mt-1 flex flex-wrap gap-1">
+        <div className="mt-1 flex flex-wrap gap-1">
           {deck && (
             <Badge variant="outline" className="px-1.5 py-0 text-[9px]">
               {deck.title}
@@ -504,7 +504,7 @@ function SlotCard({
               {course.title}
             </Badge>
           )}
-        </p>
+        </div>
       )}
       {deck && (
         <Link
