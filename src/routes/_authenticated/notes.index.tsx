@@ -453,6 +453,12 @@ function NotebookCard({
             <p className="truncate text-xs text-muted-foreground">
               {notebook.subject} · edited {new Date(notebook.updatedAt).toLocaleDateString()}
             </p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              {notebook.pageIds.length} pages
+              {notebook.sections && notebook.sections.length > 1
+                ? ` · ${notebook.sections.length} sections`
+                : ""}
+            </p>
           </div>
           <button
             type="button"

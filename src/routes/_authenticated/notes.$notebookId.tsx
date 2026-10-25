@@ -25,6 +25,7 @@ import {
   Palette,
   PenLine,
   Pencil,
+  PencilRuler,
   Plus,
   Redo2,
   RectangleHorizontal,
@@ -88,11 +89,13 @@ import {
   NOTE_COLORS,
   PAGE_TEMPLATES,
   PEN_COLORS,
+  withDefaultSection,
   type AudioElement,
   type NoteElement,
   type NotePage,
   type NoteTool,
   type NotebookMeta,
+  type NotebookSection,
   type PageTemplate,
   type ShapeElement,
   type StrokeElement,
@@ -216,6 +219,13 @@ function NotebookEditorPage() {
   const [studyMode, setStudyMode] = useState<"flashcards" | "summary" | "quiz">("flashcards");
   const [exporting, setExporting] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [activeSectionId, setActiveSectionId] = useState<string>("");
+  const [sectionEditor, setSectionEditor] = useState<{
+    target: NotebookSection | null;
+    name: string;
+    color: string;
+  } | null>(null);
+  const [spaceHeld, setSpaceHeld] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const bgCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -232,6 +242,9 @@ function NotebookEditorPage() {
   const notebookTimer = useRef<number | null>(null);
   const pageRef = useRef<NotePage | null>(null);
   const notebookRef = useRef<NotebookMeta | null>(null);
+  const clipboardRef = useRef<NoteElement[]>([]);
+  const zoomRef = useRef(1);
+  const spaceHeldRef = useRef(false);
   const recorderRef = useRef<{
     recorder: MediaRecorder;
     chunks: Blob[];
@@ -247,6 +260,28 @@ function NotebookEditorPage() {
   const pageSignature = pages.map((page) => page.id).join("|");
   pageRef.current = currentPage;
   notebookRef.current = notebook;
+  zoomRef.current = zoom;
+
+  const sections = notebook?.sections ?? [];
+  const activeSection =
+    sections.find((section) => section.id === activeSectionId) ?? sections[0] ?? null;
+  /** Pages of the active section (unassigned pages live in the first section). */
+  const visiblePages = activeSection
+    ? pages.filter((page) => (page.sectionId ?? sections[0]?.id) === activeSection.id)
+    : pages;
+
+  /** OneNote-style canvas: grow the page down when content pushes past the bottom. */
+  const ensurePageFits = (page: NotePage, elements: NoteElement[]): NotePage => {
+    let maxBottom = 0;
+    for (const element of elements) {
+      const bounds = elementBounds(element);
+      maxBottom = Math.max(maxBottom, bounds.y + bounds.height);
+    }
+    const needed = Math.ceil(maxBottom) + 180;
+    if (needed <= page.height) return page;
+    const grown = Math.min(12000, Math.ceil(needed / 240) * 240);
+    return grown > page.height ? { ...page, height: grown } : page;
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -258,12 +293,18 @@ function NotebookEditorPage() {
         return;
       }
       setNotebook(meta);
+      const repaired = withDefaultSection(meta);
+      if (repaired.changed) {
+        void putNotebook(repaired.meta);
+      }
+      setNotebook(repaired.meta);
       const byId = new Map(loaded.map((page) => [page.id, page]));
       const ordered = [
         ...meta.pageIds.map((id) => byId.get(id)).filter((page): page is NotePage => Boolean(page)),
         ...loaded.filter((page) => !meta.pageIds.includes(page.id)),
       ];
       setPages(ordered);
+      setActiveSectionId(repaired.meta.sections?.[0]?.id ?? "");
       const preferred = pageParam && ordered.some((page) => page.id === pageParam) ? pageParam : "";
       setCurrentId(preferred || ordered[0]?.id || "");
       setLoading(false);
@@ -384,6 +425,84 @@ function NotebookEditorPage() {
     };
   }, [currentPage]);
 
+  /** Copy/cut/paste for selected elements (OneNote-style clipboard keys). */
+  const copySelectedElements = () => {
+    const page = pageRef.current;
+    if (!page || !selectedIds.length) return;
+    const clones = selectedIds
+      .map((id) => page.elements.find((element) => element.id === id))
+      .filter((element): element is NoteElement => Boolean(element))
+      .map((element) => cloneElement(element));
+    if (clones.length) {
+      clipboardRef.current = clones;
+      toast.success(
+        `Copied ${clones.length} item${clones.length === 1 ? "" : "s"} — Ctrl+V to paste`,
+      );
+    }
+  };
+
+  const pasteClipboard = () => {
+    const page = pageRef.current;
+    if (!page || !clipboardRef.current.length) return;
+    const clones = clipboardRef.current.map((element) =>
+      moveElement(cloneElement(element), 24, 24),
+    );
+    commitElements([...page.elements, ...clones], page.elements);
+    setSelectedIds(clones.map((clone) => clone.id));
+  };
+
+  useEffect(() => {
+    // Space temporarily pans the canvas from any tool — OneNote-style grab.
+    const isTyping = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      return target instanceof Element && target.matches("input, textarea, [contenteditable=true]");
+    };
+    const onDown = (event: KeyboardEvent) => {
+      if (event.code !== "Space" || isTyping(event)) return;
+      if (!spaceHeldRef.current) event.preventDefault();
+      spaceHeldRef.current = true;
+      setSpaceHeld(true);
+    };
+    const onUp = () => {
+      spaceHeldRef.current = false;
+      setSpaceHeld(false);
+    };
+    window.addEventListener("keydown", onDown);
+    window.addEventListener("keyup", onUp);
+    window.addEventListener("blur", onUp);
+    return () => {
+      window.removeEventListener("keydown", onDown);
+      window.removeEventListener("keyup", onUp);
+      window.removeEventListener("blur", onUp);
+    };
+  }, []);
+
+  // Ctrl/⌘ + wheel zooms around the cursor (attach natively: React wheel
+  // listeners are passive, and ctrl+wheel must not zoom the browser instead).
+  useEffect(() => {
+    const element = scrollRef.current;
+    if (!element || !currentPage) return;
+    const onWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey && !event.metaKey) return;
+      event.preventDefault();
+      const current = zoomRef.current;
+      const next = Math.min(2.5, Math.max(0.25, current - event.deltaY * 0.0022));
+      if (next === current) return;
+      const rect = element.getBoundingClientRect();
+      const anchorX = event.clientX - rect.left + element.scrollLeft;
+      const anchorY = event.clientY - rect.top + element.scrollTop;
+      const ratio = next / current;
+      setZoom(next);
+      requestAnimationFrame(() => {
+        const after = element.getBoundingClientRect();
+        element.scrollLeft = anchorX * ratio - (event.clientX - after.left);
+        element.scrollTop = anchorY * ratio - (event.clientY - after.top);
+      });
+    };
+    element.addEventListener("wheel", onWheel, { passive: false });
+    return () => element.removeEventListener("wheel", onWheel);
+  }, [Boolean(currentPage)]);
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
@@ -404,6 +523,13 @@ function NotebookEditorPage() {
       } else if (event.key === "Escape") {
         setSelectedIds([]);
         setEditingId(null);
+      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "c") {
+        copySelectedElements();
+      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "x") {
+        copySelectedElements();
+        deleteSelected();
+      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "v") {
+        pasteClipboard();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -484,7 +610,8 @@ function NotebookEditorPage() {
     const page = pageRef.current;
     if (!page) return;
     pushHistory(page.id, base ?? page.elements);
-    const next = { ...page, elements, updatedAt: Date.now() };
+    const fit = ensurePageFits(page, elements);
+    const next = { ...fit, elements, updatedAt: Date.now() };
     replacePage(next);
   };
 
@@ -556,13 +683,29 @@ function NotebookEditorPage() {
     if (!notebook || !currentPage) return;
     const page = {
       ...emptyPage(notebook.id, currentPage.template, currentPage.width, currentPage.height),
+      sectionId: activeSection?.id,
       templateOpacity: clampTemplateOpacity(currentPage.templateOpacity),
     };
     void putPage(page);
-    const nextPages = [...pages, page];
-    setPages(nextPages);
+    const nextPageIndex = visiblePages.findIndex((item) => item.id === currentPage.id);
+    const nextPages = [...pages];
+    const insertAt = pages.findIndex((item) => item.id === currentPage.id) + 1;
+    nextPages.splice(insertAt, 0, page);
+    // Keep insertion right after the current page even when sections interleave.
+    const selectedNeighbor = visiblePages[nextPageIndex + 1];
+    const finalOrder = selectedNeighbor
+      ? [
+          ...pages.slice(
+            0,
+            pages.findIndex((item) => item.id === selectedNeighbor.id),
+          ),
+          page,
+          ...pages.slice(pages.findIndex((item) => item.id === selectedNeighbor.id)),
+        ]
+      : nextPages;
+    setPages(finalOrder);
     setCurrentId(page.id);
-    touchNotebook({ pageIds: nextPages.map((item) => item.id) });
+    touchNotebook({ pageIds: finalOrder.map((item) => item.id) });
     toast.success("Page added");
   };
 
@@ -605,14 +748,94 @@ function NotebookEditorPage() {
     toast.success("Page deleted");
   };
 
+  /** Reorder within the section: swap with the neighbouring section page only. */
   const movePage = (id: string, direction: -1 | 1) => {
-    const index = pages.findIndex((page) => page.id === id);
-    const target = index + direction;
-    if (index < 0 || target < 0 || target >= pages.length) return;
+    const order = visiblePages.map((page) => page.id);
+    const position = order.indexOf(id);
+    const neighbour = position + direction;
+    if (position < 0 || neighbour < 0 || neighbour >= order.length) return;
+    const globalIndex = (pageId: string) => pages.findIndex((page) => page.id === pageId);
     const next = [...pages];
-    [next[index], next[target]] = [next[target], next[index]];
+    [next[globalIndex(order[position])], next[globalIndex(order[neighbour])]] = [
+      next[globalIndex(order[neighbour])],
+      next[globalIndex(order[position])],
+    ];
     setPages(next);
     touchNotebook({ pageIds: next.map((page) => page.id) });
+  };
+
+  /* ------------------------- Sections (OneNote tabs) ------------------------ */
+
+  const openNewSection = () => {
+    setSectionEditor({
+      target: null,
+      name: "",
+      color: NOTE_COLORS[sections.length % NOTE_COLORS.length]!,
+    });
+  };
+
+  const saveSection = () => {
+    if (!notebook || !sectionEditor) return;
+    const name = sectionEditor.name.trim().slice(0, 40) || "Untitled section";
+    if (sectionEditor.target) {
+      const nextSections = notebook.sections!.map((section) =>
+        section.id === sectionEditor.target!.id
+          ? { ...section, name, color: sectionEditor.color }
+          : section,
+      );
+      touchNotebook({ sections: nextSections });
+    } else {
+      const created: NotebookSection = {
+        id: `sc_${Math.random().toString(36).slice(2, 10)}_${Date.now().toString(36)}`,
+        name,
+        color: sectionEditor.color,
+        createdAt: Date.now(),
+      };
+      touchNotebook({ sections: [...(notebook.sections ?? []), created] });
+      setActiveSectionId(created.id);
+    }
+    setSectionEditor(null);
+  };
+
+  const removeSection = (id: string) => {
+    if (!notebook) return;
+    const current = notebook.sections ?? [];
+    if (current.length <= 1) return;
+    const fallback = current.find((section) => section.id !== id)!;
+    const remaining = current.filter((section) => section.id !== id);
+    // Pages of the deleted section slide into the first remaining one.
+    const moved = pages.filter((page) => page.sectionId === id);
+    const nextPages = pages.map((page) =>
+      page.sectionId === id ? { ...page, sectionId: fallback.id, updatedAt: Date.now() } : page,
+    );
+    setPages(nextPages);
+    for (const page of moved) {
+      void putPage({ ...page, sectionId: fallback.id });
+    }
+    touchNotebook({ sections: remaining });
+    setActiveSectionId(remaining[0]!.id);
+    setSectionEditor(null);
+  };
+
+  /** Move a page to a different section tab (OneNote lets you drop pages
+   * across sections; a cycle button keeps the touch surface small). */
+  const movePageToSection = (id: string, direction: 1 | -1) => {
+    if (!notebook) return;
+    const list = notebook.sections ?? [];
+    if (list.length < 2) return;
+    const pageIndex = visiblePages.findIndex((page) => page.id === id);
+    if (pageIndex < 0) return;
+    const nextIndex =
+      (list.findIndex((section) => section.id === activeSection?.id) + direction + list.length) %
+      list.length;
+    const target = list[nextIndex];
+    const page = pages.find((item) => item.id === id);
+    if (!page || !target) return;
+    const updated: NotePage = { ...page, sectionId: target.id, updatedAt: Date.now() };
+    replacePage(updated);
+    void putPage(updated);
+    setActiveSectionId(target.id);
+    toast.success(`Moved to “${target.name}”`);
   };
 
   const toggleBookmark = (id: string) => {
@@ -835,7 +1058,9 @@ function NotebookEditorPage() {
     drag.scrollLeft = scrollRef.current?.scrollLeft ?? 0;
     drag.scrollTop = scrollRef.current?.scrollTop ?? 0;
 
-    if (tool === "pan") {
+    if (tool === "pan" || event.button === 1 || spaceHeldRef.current) {
+      // Middle-drag pan, or Space-held temporary pan from any tool (OneNote-style).
+      if (event.button === 1) event.preventDefault();
       drag.mode = "pan";
       dragRef.current = drag;
       return;
@@ -1326,12 +1551,12 @@ function NotebookEditorPage() {
 
   const linkedCourse = state.courses.find((course) => course.id === notebook.linkedCourseId);
   const linkedDeck = state.decks.find((deck) => deck.id === notebook.linkedDeckId);
-  const currentPageIndex = Math.max(
+  const sectionIndex = Math.max(
     0,
-    pages.findIndex((page) => page.id === currentPage.id),
+    visiblePages.findIndex((page) => page.id === currentPage.id),
   );
   const goToPage = (delta: number) => {
-    const target = pages[currentPageIndex + delta];
+    const target = visiblePages[sectionIndex + delta];
     if (target) setCurrentId(target.id);
   };
 
@@ -1425,14 +1650,84 @@ function NotebookEditorPage() {
         onExport={() => setExportOpen(true)}
         onPageStyle={() => setPageStyleOpen(true)}
         onAddPage={addPage}
-        pageNumber={currentPageIndex + 1}
-        pageCount={pages.length}
+        pageNumber={sectionIndex + 1}
+        pageCount={visiblePages.length}
         onPrevPage={() => goToPage(-1)}
         onNextPage={() => goToPage(1)}
       />
 
       <div className="flex min-h-0 flex-1">
         <aside className="hidden w-40 shrink-0 flex-col border-r border-border bg-surface/50 md:flex">
+          {/* OneNote-style section tabs */}
+          <div className="border-b border-border p-2">
+            <div className="flex items-center justify-between px-1 pb-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Sections
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-6"
+                onClick={openNewSection}
+                aria-label="New section"
+              >
+                <Plus className="size-3" />
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {sections.map((section) => {
+                const active = section.id === activeSection?.id;
+                return (
+                  <button
+                    key={section.id}
+                    type="button"
+                    onClick={() => setActiveSectionId(section.id)}
+                    onDoubleClick={() =>
+                      setSectionEditor({
+                        target: section,
+                        name: section.name,
+                        color: section.color,
+                      })
+                    }
+                    title={`${section.name} — double-click to edit`}
+                    className={cn(
+                      "flex h-8 min-w-0 items-center gap-1 rounded-md border px-1.5 text-[10px] font-medium transition-colors",
+                      active
+                        ? "border-transparent shadow-sm"
+                        : "border-border text-muted-foreground hover:text-foreground",
+                    )}
+                    style={
+                      active
+                        ? { backgroundColor: section.color, color: readableOn(section.color) }
+                        : undefined
+                    }
+                  >
+                    <span
+                      className="size-1.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: section.color }}
+                    />
+                    <span className="truncate">{section.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {activeSection && (
+              <button
+                type="button"
+                onClick={() =>
+                  setSectionEditor({
+                    target: activeSection,
+                    name: activeSection.name,
+                    color: activeSection.color,
+                  })
+                }
+                className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-md py-1 text-[10px] text-muted-foreground hover:bg-surface2 hover:text-foreground"
+                aria-label="Edit current section"
+              >
+                <PencilRuler className="size-3" /> Edit section
+              </button>
+            )}
+          </div>
           <div className="flex items-center justify-between border-b border-border px-3 py-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Pages
@@ -1448,7 +1743,7 @@ function NotebookEditorPage() {
             </Button>
           </div>
           <div className="min-h-0 flex-1 space-y-2 overflow-auto p-2">
-            {pages.map((page, index) => {
+            {visiblePages.map((page, index) => {
               const active = page.id === currentPage.id;
               const bookmarked = notebook.bookmarkedPageIds.includes(page.id);
               return (
@@ -1505,6 +1800,16 @@ function NotebookEditorPage() {
                       >
                         <Copy className="size-3" />
                       </button>
+                      {(notebook.sections?.length ?? 0) > 1 && (
+                        <button
+                          type="button"
+                          className="grid size-6 place-items-center rounded text-muted-foreground hover:bg-surface2 hover:text-foreground"
+                          onClick={() => movePageToSection(page.id, 1)}
+                          aria-label="Send page to next section"
+                        >
+                          <ChevronRight className="size-3" />
+                        </button>
+                      )}
                       <button
                         type="button"
                         className={cn(
@@ -1539,8 +1844,46 @@ function NotebookEditorPage() {
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
+          {/* Sections strip (mobile) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto border-b border-border px-2 py-2 md:hidden">
+            {sections.map((section) => {
+              const active = section.id === activeSection?.id;
+              return (
+                <button
+                  key={section.id}
+                  type="button"
+                  onClick={() => setActiveSectionId(section.id)}
+                  className={cn(
+                    "flex h-8 shrink-0 items-center gap-1 rounded-md border px-2 text-xs font-medium transition-colors",
+                    active ? "border-transparent shadow-sm" : "border-border text-muted-foreground",
+                  )}
+                  style={
+                    active
+                      ? { backgroundColor: section.color, color: readableOn(section.color) }
+                      : undefined
+                  }
+                >
+                  <span
+                    className="size-1.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: section.color }}
+                  />
+                  {section.name}
+                </button>
+              );
+            })}
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-8 shrink-0"
+              onClick={openNewSection}
+              aria-label="New section"
+            >
+              <Plus className="size-3.5" />
+            </Button>
+          </div>
+
           <div className="flex items-center gap-2 overflow-x-auto border-b border-border px-2 py-2 md:hidden">
-            {pages.map((page, index) => (
+            {visiblePages.map((page, index) => (
               <button
                 key={page.id}
                 type="button"
@@ -1780,7 +2123,7 @@ function NotebookEditorPage() {
 
                   <div
                     ref={interactionRef}
-                    className="absolute inset-0 z-40 touch-none"
+                    className={cn("absolute inset-0 z-40 touch-none", spaceHeld && "cursor-grab")}
                     style={{
                       cursor:
                         tool === "pan"
@@ -1807,7 +2150,7 @@ function NotebookEditorPage() {
       <div className="hidden items-center justify-between gap-3 border-t border-border bg-background px-3 py-1.5 text-xs text-muted-foreground md:flex">
         <div className="flex items-center gap-3">
           <span>
-            Page {currentPageIndex + 1} of {pages.length}
+            Page {sectionIndex + 1} of {visiblePages.length}
           </span>
           <span className="capitalize">{currentPage.template} paper</span>
           <span>
@@ -1837,6 +2180,77 @@ function NotebookEditorPage() {
           if (deleteTarget) void removePage(deleteTarget);
         }}
       />
+
+      <Dialog
+        open={Boolean(sectionEditor)}
+        onOpenChange={(open) => !open && setSectionEditor(null)}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{sectionEditor?.target ? "Edit section" : "New section"}</DialogTitle>
+            <DialogDescription>
+              Sections are OneNote-style tabs — group related pages inside this notebook.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="section-name">Name</Label>
+              <Input
+                id="section-name"
+                value={sectionEditor?.name ?? ""}
+                onChange={(event) =>
+                  setSectionEditor((current) =>
+                    current ? { ...current, name: event.target.value } : current,
+                  )
+                }
+                placeholder="e.g. Chapter 3 — optics"
+                autoFocus
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Tab colour</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {NOTE_COLORS.map((swatch) => (
+                  <button
+                    key={swatch}
+                    type="button"
+                    aria-label={`Use tab colour ${swatch}`}
+                    onClick={() =>
+                      setSectionEditor((current) =>
+                        current ? { ...current, color: swatch } : current,
+                      )
+                    }
+                    className={cn(
+                      "size-7 rounded-full border-2 transition-transform",
+                      sectionEditor?.color === swatch
+                        ? "scale-110 border-foreground"
+                        : "border-transparent hover:scale-105",
+                    )}
+                    style={{ backgroundColor: swatch }}
+                  />
+                ))}
+              </div>
+            </div>
+            {sectionEditor?.target && (notebook?.sections?.length ?? 0) > 1 && (
+              <Button
+                variant="outline"
+                className="justify-start text-destructive hover:text-destructive"
+                onClick={() => removeSection(sectionEditor.target!.id)}
+              >
+                <Trash2 className="size-4" /> Delete section (pages move to the first tab)
+              </Button>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setSectionEditor(null)}>
+                Cancel
+              </Button>
+              <Button onClick={saveSection}>
+                {sectionEditor?.target ? "Save section" : "Add section"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={exportOpen} onOpenChange={setExportOpen}>
         <DialogContent className="max-w-md">

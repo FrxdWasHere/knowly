@@ -114,6 +114,8 @@ export interface NotePage {
   width: number;
   height: number;
   elements: NoteElement[];
+  /** section this page lives in (OneNote-style tabs); falls back to the default section */
+  sectionId?: string;
   /** optional PDF/image page background as a data URL */
   background?: string;
   /** strength of the selected paper pattern, 0 (hidden) to 100 (pure black) */
@@ -122,6 +124,13 @@ export interface NotePage {
   searchText?: string;
   createdAt: number;
   updatedAt: number;
+}
+
+export interface NotebookSection {
+  id: string;
+  name: string;
+  color: string;
+  createdAt: number;
 }
 
 export interface NotebookMeta {
@@ -140,9 +149,27 @@ export interface NotebookMeta {
   defaultTemplate: PageTemplate;
   width: number;
   height: number;
+  /** OneNote-style section tabs. Missing on older notebooks — repaired on open. */
+  sections?: NotebookSection[];
   linkedCourseId?: string;
   linkedLessonId?: string;
   linkedDeckId?: string;
+}
+
+export const DEFAULT_SECTION_NAME = "Notes";
+
+/** Guarantee a notebook has at least one section; pages shown there by default. */
+export function withDefaultSection(meta: NotebookMeta): { meta: NotebookMeta; changed: boolean } {
+  if (Array.isArray(meta.sections) && meta.sections.length) {
+    return { meta, changed: false };
+  }
+  const section: NotebookSection = {
+    id: `sc_${Math.random().toString(36).slice(2, 10)}_${Date.now().toString(36)}`,
+    name: DEFAULT_SECTION_NAME,
+    color: meta.color,
+    createdAt: meta.createdAt,
+  };
+  return { meta: { ...meta, sections: [section] }, changed: true };
 }
 
 export interface NotebookBundle {

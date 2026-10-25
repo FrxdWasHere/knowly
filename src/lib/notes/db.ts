@@ -6,6 +6,7 @@ import {
   type NotePage,
   type NotebookBundle,
   type NotebookMeta,
+  type NotebookSection,
   type PageTemplate,
 } from "./types";
 
@@ -170,6 +171,25 @@ export async function importNotebookBundle(raw: string): Promise<NotebookMeta | 
   const rawNotebook = bundle.notebook as Partial<NotebookMeta>;
   if (typeof rawNotebook.title !== "string" || !rawNotebook.title.trim()) return null;
 
+  // Sections carry over; unknown/garbage entries fall back to one default tab.
+  const sections: NotebookSection[] | undefined = Array.isArray(rawNotebook.sections)
+    ? rawNotebook.sections
+        .filter(
+          (s): s is NotebookSection =>
+            Boolean(s) &&
+            typeof s === "object" &&
+            typeof (s as NotebookSection).id === "string" &&
+            typeof (s as NotebookSection).name === "string" &&
+            Boolean((s as NotebookSection).name.trim()),
+        )
+        .map((s) => ({
+          id: s.id,
+          name: s.name.trim().slice(0, 40),
+          color: typeof s.color === "string" ? s.color : (rawNotebook.color ?? "#6d8cff"),
+          createdAt: typeof s.createdAt === "number" ? s.createdAt : now,
+        }))
+    : undefined;
+
   const now = Date.now();
   const notebookId = newId("nb");
   const pageIdMap = new Map<string, string>();
@@ -205,6 +225,10 @@ export async function importNotebookBundle(raw: string): Promise<NotebookMeta | 
                 Boolean(element) && typeof element === "object" && elementTypes.has(element.type),
             )
           : [],
+        sectionId:
+          sections?.some((s) => s.id === page.sectionId) && typeof page.sectionId === "string"
+            ? page.sectionId
+            : undefined,
         background: typeof page.background === "string" ? page.background : undefined,
         searchText: typeof page.searchText === "string" ? page.searchText : undefined,
         createdAt: typeof page.createdAt === "number" ? page.createdAt : now + index,
@@ -237,6 +261,7 @@ export async function importNotebookBundle(raw: string): Promise<NotebookMeta | 
     defaultTemplate: templateIds.has(rawNotebook.defaultTemplate as PageTemplate)
       ? (rawNotebook.defaultTemplate as PageTemplate)
       : "lined",
+    sections,
     width,
     height,
     linkedCourseId:
