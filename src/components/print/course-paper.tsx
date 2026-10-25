@@ -1188,7 +1188,7 @@ function CoverBody({
                   key={tag}
                   className="rounded-full border border-white/25 px-2.5 py-1 text-[0.8em] text-white/80"
                 >
-                  {tag}
+                  <MathText text={tag} />
                 </span>
               ))}
             </div>
@@ -1274,7 +1274,7 @@ function CoverBodyClassic({
               key={tag}
               className="rounded-full border border-border px-2.5 py-1 text-[0.8em] text-foreground"
             >
-              {tag}
+              <MathText text={tag} />
             </span>
           ))}
         </div>
@@ -1350,7 +1350,11 @@ function QuestionView({
           <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground">
             <span style={{ color: INK_MUTED }}>{TYPE_LABELS[question.type]}</span>
             {question.difficulty && <span>{question.difficulty}</span>}
-            {question.concept && <span>{question.concept}</span>}
+            {question.concept && (
+              <span>
+                <MathText text={question.concept} />
+              </span>
+            )}
             {context && <span>{context}</span>}
           </p>
           <QuestionBody question={question} />

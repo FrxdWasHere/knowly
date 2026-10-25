@@ -306,7 +306,9 @@ function CardBrowserPage() {
                       {q.concept && (
                         <>
                           <span>·</span>
-                          <span>{q.concept}</span>
+                          <span>
+                            <MathText text={q.concept} />
+                          </span>
                         </>
                       )}
                     </div>

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
+import { MathText } from "@/components/math/math-text";
 import { Button } from "@/components/ui/button";
 import { SrsDashboardWidget } from "@/components/srs/srs-dashboard-widget";
 import { SrsDueChip } from "@/components/srs/srs-status-badge";
@@ -433,7 +434,9 @@ function Dashboard() {
               <ul className="space-y-2 text-sm">
                 {weak.map((w) => (
                   <li key={w.concept} className="flex items-center justify-between gap-2">
-                    <span className="truncate">{w.concept}</span>
+                    <span className="truncate">
+                      <MathText text={w.concept} />
+                    </span>
                     <span className="shrink-0 text-xs text-destructive">
                       {Math.round(w.acc * 100)}%
                     </span>

@@ -562,7 +562,11 @@ function Checkpoint({
     <div className="rounded-2xl border border-border bg-surface2/40 p-4 sm:p-5">
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="outline">{TYPE_LABELS[question.type]}</Badge>
-        {question.concept && <Badge variant="outline">{question.concept}</Badge>}
+        {question.concept && (
+          <Badge variant="outline">
+            <MathText text={question.concept} />
+          </Badge>
+        )}
         {question.difficulty && <Badge variant="outline">{question.difficulty}</Badge>}
       </div>
       <p className="mt-3 font-medium leading-6">

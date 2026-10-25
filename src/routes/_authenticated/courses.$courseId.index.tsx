@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { MathText } from "@/components/math/math-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -581,7 +582,7 @@ function CourseOverviewPage() {
                 <div className="mt-4 flex flex-wrap gap-1.5">
                   {course.tags.map((tag) => (
                     <Badge key={tag} variant="outline">
-                      {tag}
+                      <MathText text={tag} />
                     </Badge>
                   ))}
                 </div>

@@ -296,7 +296,11 @@ function ReviewSession() {
           <Badge variant="outline" className="capitalize">
             {question.difficulty}
           </Badge>
-          {question.concept && <Badge variant="secondary">{question.concept}</Badge>}
+          {question.concept && (
+            <Badge variant="secondary">
+              <MathText text={question.concept} />
+            </Badge>
+          )}
           <span className="ml-auto font-mono text-[10px] text-muted-foreground">
             {item.card && item.card.reps > 0
               ? `Seen ${item.card.reps}× · difficulty ${item.card.ease} · was ${formatInterval(item.card.interval)}`

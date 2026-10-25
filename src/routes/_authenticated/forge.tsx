@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Plus,
   Trash2,
@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { MathKeypad } from "@/components/math/math-text";
 import {
   questionTypes,
   validateDeckJson,
@@ -472,6 +473,20 @@ function QuestionEditor({
   onMove: (dir: 1 | -1) => void;
 }) {
   const slots = countBlanks(draft.question);
+  const questionField = useRef<HTMLTextAreaElement>(null);
+  const answerField = useRef<HTMLTextAreaElement>(null);
+
+  /** Shared by typing and the math keypad so blanks stay in sync. */
+  const applyQuestion = (question: string) => {
+    if (draft.type === "word-bank") {
+      const n = countBlanks(question);
+      const blanks = Array.from({ length: n }, (_, i) => draft.blanks[i] ?? "");
+      onChange({ question, blanks });
+    } else {
+      onChange({ question });
+    }
+  };
+  const applyAnswer = (answer: string) => onChange({ answer });
 
   const switchType = (type: QuestionType) => {
     const fresh = blankQuestion(type);
@@ -553,17 +568,9 @@ function QuestionEditor({
           {draft.type === "flashcard" ? "Front (the word or question) *" : "Question *"}
         </Label>
         <Textarea
+          ref={questionField}
           value={draft.question}
-          onChange={(e) => {
-            const question = e.target.value;
-            if (draft.type === "word-bank") {
-              const n = countBlanks(question);
-              const blanks = Array.from({ length: n }, (_, i) => draft.blanks[i] ?? "");
-              onChange({ question, blanks });
-            } else {
-              onChange({ question });
-            }
-          }}
+          onChange={(e) => applyQuestion(e.target.value)}
           className="min-h-20"
           placeholder={
             draft.type === "fill-blank" || draft.type === "word-bank"
@@ -571,6 +578,7 @@ function QuestionEditor({
               : "What do you want to ask?"
           }
         />
+        <MathKeypad target={questionField} onValue={applyQuestion} />
         {(draft.type === "fill-blank" || draft.type === "word-bank") && (
           <p className="text-xs text-muted-foreground">
             {slots} blank{slots === 1 ? "" : "s"} detected ({BLANK_TOKEN}).
@@ -652,11 +660,13 @@ function QuestionEditor({
         <div className="space-y-1.5">
           <Label>{draft.type === "flashcard" ? "Back (answer) *" : "Answer *"}</Label>
           <Textarea
+            ref={answerField}
             value={draft.answer}
             onChange={(e) => onChange({ answer: e.target.value })}
             className="min-h-16"
             placeholder="The expected answer."
           />
+          <MathKeypad target={answerField} onValue={applyAnswer} />
         </div>
       )}
 

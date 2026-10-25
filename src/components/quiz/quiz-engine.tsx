@@ -660,7 +660,9 @@ function QuizRun({
             </Badge>
           )}
           {widgets.concept && question.concept && (
-            <Badge variant="secondary">{question.concept}</Badge>
+            <Badge variant="secondary">
+              <MathText text={question.concept} />
+            </Badge>
           )}
         </div>
       </div>

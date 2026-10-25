@@ -21,6 +21,7 @@ import { AppPage } from "@/components/app-page";
 import { FeatureTour, useFeatureTour, type TourStep } from "@/components/feature-tour";
 import { PageHeader } from "@/components/app-shell";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { MathText } from "@/components/math/math-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -468,7 +469,7 @@ function NotebookCard({
         <div className="mt-3 flex flex-wrap gap-1.5">
           {notebook.tags.slice(0, 4).map((tag) => (
             <Badge key={tag} variant="outline">
-              {tag}
+              <MathText text={tag} />
             </Badge>
           ))}
           {notebook.linkedCourseId && <Badge variant="outline">course</Badge>}

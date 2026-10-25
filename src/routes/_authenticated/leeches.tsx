@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
-import { MathText } from "@/components/math/math-text";
+import { MathText, MathKeypad } from "@/components/math/math-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +58,7 @@ function LeechesPage() {
   const [editing, setEditing] = useState<string | null>(null);
   const [draftQ, setDraftQ] = useState("");
   const [draftA, setDraftA] = useState("");
+  const answerField = useRef<HTMLInputElement>(null);
 
   const leeches = useMemo(() => collectLeeches(state.decks, threshold), [state.decks, threshold]);
   const active = leeches.filter((l) => !l.suspended);
@@ -217,10 +218,12 @@ function LeechesPage() {
                       <div>
                         <Label className="text-xs">Answer</Label>
                         <Input
+                          ref={answerField}
                           value={draftA}
                           onChange={(e) => setDraftA(e.target.value)}
                           className="mt-1.5"
                         />
+                        <MathKeypad className="mt-2" target={answerField} onValue={setDraftA} />
                       </div>
                       <div className="flex gap-2">
                         <Button size="sm" onClick={() => saveEdit(item)}>
@@ -252,7 +255,9 @@ function LeechesPage() {
                                 className="size-2 rounded-full"
                                 style={{ background: item.deckColor }}
                               />
-                              {item.deckTitle}
+                              <span>
+                                <MathText text={item.deckTitle} />
+                              </span>
                             </span>
                             <span>·</span>
                             <span>{TYPE_LABELS[item.question.type]}</span>

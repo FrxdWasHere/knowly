@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { checkAnswer, shuffleArray, TYPE_LABELS, formatDuration } from "@/lib/answers";
 import { displayAnswer, isInteractive } from "@/lib/interactive";
 import { InteractiveQuestion } from "@/components/questions/interactive-question";
-import { MathText } from "@/components/math/math-text";
+import { MathText, MathKeypad } from "@/components/math/math-text";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 
 import { xpForAnswer } from "@/lib/gamification";
@@ -67,6 +67,7 @@ function StudySession() {
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [input, setInput] = useState("");
+  const answerInput = useRef<HTMLInputElement>(null);
   const [noteOpen, setNoteOpen] = useState(false);
   const [answers, setAnswers] = useState<AnswerRecord[]>([]);
   const [combo, setCombo] = useState(0);
@@ -253,7 +254,11 @@ function StudySession() {
           <Badge variant="outline" className="capitalize">
             {question.difficulty}
           </Badge>
-          {question.concept && <Badge variant="secondary">{question.concept}</Badge>}
+          {question.concept && (
+            <Badge variant="secondary">
+              <MathText text={question.concept} />
+            </Badge>
+          )}
           <button
             className="ml-auto grid min-h-[44px] min-w-[44px] place-items-center"
             aria-label="Bookmark question"
@@ -298,6 +303,7 @@ function StudySession() {
         {(question.type === "fill-blank" || question.type === "short-answer") && (
           <div className="mt-6 space-y-2">
             <Input
+              ref={answerInput}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type your answer…"
@@ -305,6 +311,9 @@ function StudySession() {
                 if (e.key === "Enter") setRevealed(true);
               }}
             />
+            {(deck.isSTEM || deck.needsEquations) && !revealed && (
+              <MathKeypad target={answerInput} onValue={setInput} />
+            )}
             {revealed && input && (
               <p
                 className={cn(

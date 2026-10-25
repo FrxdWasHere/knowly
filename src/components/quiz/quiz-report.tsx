@@ -341,7 +341,9 @@ export function QuizReport({
             return (
               <div key={concept}>
                 <div className="flex items-center justify-between text-xs">
-                  <span>{concept}</span>
+                  <span>
+                    <MathText text={concept} />
+                  </span>
                   <span className="text-muted-foreground">
                     {s.correct}/{s.total} · {pct}%
                   </span>

@@ -22,7 +22,7 @@ import {
   isInteractiveComplete,
 } from "@/components/questions/interactive-question";
 import { useKnowly } from "@/store/knowly";
-import { MathText } from "@/components/math/math-text";
+import { MathText, MathKeypad } from "@/components/math/math-text";
 import { useCoarsePointer } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import type { Question } from "@/lib/types";
@@ -50,6 +50,7 @@ export function DeckArena({ deckId }: { deckId: string }) {
   const [queue, setQueue] = useState<Question[]>([]);
   const [index, setIndex] = useState(0);
   const [input, setInput] = useState("");
+  const answerInput = useRef<HTMLInputElement>(null);
   const [revealed, setRevealed] = useState(false);
   const [wasCorrect, setWasCorrect] = useState<boolean | null>(null);
   const [roundXp, setRoundXp] = useState(0);
@@ -338,7 +339,11 @@ export function DeckArena({ deckId }: { deckId: string }) {
         <div className="flex flex-wrap gap-2">
           <Badge variant="secondary">{TYPE_LABELS[question.type]}</Badge>
           <Badge variant="outline">{question.difficulty}</Badge>
-          {question.concept && <Badge variant="outline">{question.concept}</Badge>}
+          {question.concept && (
+            <Badge variant="outline">
+              <MathText text={question.concept} />
+            </Badge>
+          )}
         </div>
 
         <h2 className="mt-5 break-words font-display text-2xl font-bold leading-snug">
@@ -416,6 +421,7 @@ export function DeckArena({ deckId }: { deckId: string }) {
             }}
           >
             <Input
+              ref={answerInput}
               autoFocus={!coarsePointer}
               enterKeyHint="go"
               value={input}
@@ -431,6 +437,9 @@ export function DeckArena({ deckId }: { deckId: string }) {
             >
               Lock in
             </Button>
+            {(deck?.isSTEM || deck?.needsEquations) && !revealed && (
+              <MathKeypad className="w-full" target={answerInput} onValue={setInput} />
+            )}
           </form>
         )}
 

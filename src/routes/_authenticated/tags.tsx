@@ -242,7 +242,7 @@ function TagExplorerPage() {
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {active.deckTitles.map((t) => (
                   <Badge key={t} variant="secondary" className="text-[11px]">
-                    {t}
+                    <MathText text={t} />
                   </Badge>
                 ))}
               </div>

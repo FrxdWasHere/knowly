@@ -488,7 +488,11 @@ function CramRun({
           <Badge variant="outline" className="capitalize">
             {q.difficulty}
           </Badge>
-          {q.concept && <Badge variant="secondary">{q.concept}</Badge>}
+          {q.concept && (
+            <Badge variant="secondary">
+              <MathText text={q.concept} />
+            </Badge>
+          )}
         </div>
 
         <h1 className="mt-6 text-2xl font-semibold leading-snug">

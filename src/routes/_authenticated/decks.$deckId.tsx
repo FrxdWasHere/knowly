@@ -305,7 +305,11 @@ function DeckDetail() {
                 <Badge variant="outline" className="capitalize">
                   {q.difficulty}
                 </Badge>
-                {q.concept && <Badge variant="secondary">{q.concept}</Badge>}
+                {q.concept && (
+                  <Badge variant="secondary">
+                    <MathText text={q.concept} />
+                  </Badge>
+                )}
                 {mastered && <Badge className="bg-success text-success-foreground">Mastered</Badge>}
                 <span
                   className="inline-flex items-center gap-1.5 rounded-full border border-border px-2 py-0.5"

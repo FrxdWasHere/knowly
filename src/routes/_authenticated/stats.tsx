@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
+import { MathText } from "@/components/math/math-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useKnowly } from "@/store/knowly";
@@ -145,7 +146,9 @@ function StatsPage() {
               {concepts.map((c) => (
                 <div key={c.name}>
                   <div className="flex justify-between text-xs">
-                    <span>{c.name}</span>
+                    <span>
+                      <MathText text={c.name} />
+                    </span>
                     <span className="text-muted-foreground">
                       {c.correct}/{c.total} · {c.pct}%
                     </span>
