@@ -205,6 +205,7 @@ function NotebookEditorPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+  const [textSize, setTextSize] = useState(18);
   const [saveState, setSaveState] = useState<"saved" | "saving" | "error">("saved");
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -236,6 +237,11 @@ function NotebookEditorPage() {
     chunks: Blob[];
     stream: MediaStream;
   } | null>(null);
+  /** id of an element placed this gesture — editing starts on pointer-up, so the
+   * browser's mousedown focus change can't blur (and instantly delete) it. */
+  const pendingEditRef = useRef<string | null>(null);
+  const moveFrameRef = useRef<number | null>(null);
+  const eraseFrameRef = useRef<number | null>(null);
 
   const currentPage = pages.find((page) => page.id === currentId) ?? pages[0] ?? null;
   const pageSignature = pages.map((page) => page.id).join("|");
@@ -660,6 +666,38 @@ function NotebookEditorPage() {
     setTool(next);
   };
 
+  const editingElement = currentPage
+    ? currentPage.elements.find((element) => element.id === editingId)
+    : undefined;
+  const editingText = editingElement?.type === "text" ? editingElement : undefined;
+
+  /** Ribbon font controls: tweak the text box being composed (or the size
+   * default for the next one). */
+  const updateEditingText = (patch: { fontSize?: number; bold?: boolean; italic?: boolean }) => {
+    if (!currentPage || !editingText) {
+      if (patch.fontSize !== undefined) setTextSize(patch.fontSize);
+      return;
+    }
+    commitElements(
+      currentPage.elements.map((element) =>
+        element.id === editingText.id ? ({ ...element, ...patch } as NoteElement) : element,
+      ),
+    );
+  };
+
+  /** Palette click: sets the ink colour for new elements and re-colours the
+   * text box being edited right away. */
+  const applyColor = (next: string) => {
+    setColor(next);
+    if (currentPage && editingText) {
+      commitElements(
+        currentPage.elements.map((element) =>
+          element.id === editingText.id ? { ...element, color: next } : element,
+        ),
+      );
+    }
+  };
+
   const pointFromEvent = (event: React.PointerEvent) => {
     const rect = interactionRef.current?.getBoundingClientRect();
     if (!rect) return { x: 0, y: 0, pressure: 0.5 };
@@ -840,13 +878,13 @@ function NotebookEditorPage() {
         width: Math.max(60, Math.min(320, page.width - point.x - 20)),
         height: 100,
         text: "",
-        fontSize: 18,
+        fontSize: textSize,
         color,
       };
       commitElements([...page.elements, element]);
       setSelectedIds([element.id]);
-      setEditingId(element.id);
-      setEditText("");
+      pendingEditRef.current = element.id;
+      dragRef.current = drag;
       return;
     }
 
@@ -863,8 +901,8 @@ function NotebookEditorPage() {
       };
       commitElements([...page.elements, element]);
       setSelectedIds([element.id]);
-      setEditingId(element.id);
-      setEditText("");
+      pendingEditRef.current = element.id;
+      dragRef.current = drag;
       return;
     }
 
@@ -941,12 +979,25 @@ function NotebookEditorPage() {
     if (drag.mode === "select-move") {
       const dx = point.x - drag.lastX;
       const dy = point.y - drag.lastY;
+      if (!dx && !dy) return;
       drag.elements = drag.elements.map((element) =>
         drag.selection.includes(element.id) ? moveElement(element, dx, dy) : element,
       );
       drag.lastX = point.x;
       drag.lastY = point.y;
-      replacePage({ ...currentPage, elements: drag.elements, updatedAt: Date.now() }, false);
+      // One React+canvas render per animation frame keeps dragging smooth.
+      if (moveFrameRef.current === null) {
+        moveFrameRef.current = window.requestAnimationFrame(() => {
+          moveFrameRef.current = null;
+          const live = pageRef.current;
+          if (live) {
+            replacePage(
+              { ...live, elements: dragRef.current.elements, updatedAt: Date.now() },
+              false,
+            );
+          }
+        });
+      }
     }
   };
 
@@ -956,7 +1007,12 @@ function NotebookEditorPage() {
     const next = drag.elements.filter((element) => !hitElement(element, x, y, 9));
     if (next.length === drag.elements.length) return;
     drag.elements = next;
-    replacePage({ ...page, elements: next, updatedAt: Date.now() }, false);
+    if (eraseFrameRef.current === null) {
+      eraseFrameRef.current = window.requestAnimationFrame(() => {
+        eraseFrameRef.current = null;
+        replacePage({ ...page, elements: dragRef.current.elements, updatedAt: Date.now() }, false);
+      });
+    }
   };
 
   const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -964,6 +1020,14 @@ function NotebookEditorPage() {
     const page = pageRef.current;
     if (!page || drag.pointerId !== event.pointerId) return;
     const point = pointFromEvent(event);
+    if (moveFrameRef.current !== null) {
+      window.cancelAnimationFrame(moveFrameRef.current);
+      moveFrameRef.current = null;
+    }
+    if (eraseFrameRef.current !== null) {
+      window.cancelAnimationFrame(eraseFrameRef.current);
+      eraseFrameRef.current = null;
+    }
 
     if (drag.mode === "draw" && drag.points.length >= 3) {
       // A quick tap should still leave a dot, not disappear entirely.
@@ -1060,6 +1124,13 @@ function NotebookEditorPage() {
     dragRef.current = emptyDrag();
     if (interactionRef.current?.hasPointerCapture(event.pointerId)) {
       interactionRef.current.releasePointerCapture(event.pointerId);
+    }
+    if (pendingEditRef.current) {
+      const id = pendingEditRef.current;
+      pendingEditRef.current = null;
+      setSelectedIds([id]);
+      setEditingId(id);
+      setEditText("");
     }
   };
 
@@ -1330,7 +1401,7 @@ function NotebookEditorPage() {
         tool={tool}
         setTool={changeTool}
         color={color}
-        setColor={setColor}
+        setColor={applyColor}
         penWidth={penWidth}
         shapeKind={shapeKind}
         setShapeKind={setShapeKind}
@@ -1340,6 +1411,11 @@ function NotebookEditorPage() {
         deleteSelected={deleteSelected}
         duplicateSelected={duplicateSelected}
         selectedCount={selectedIds.length}
+        showTextOptions={tool === "text" || Boolean(editingText)}
+        textFontSize={editingText?.fontSize ?? textSize}
+        textBold={Boolean(editingText?.bold)}
+        textItalic={Boolean(editingText?.italic)}
+        onTextFont={updateEditingText}
         onOpenSize={() => setInkOpen(true)}
         onUndo={undo}
         onRedo={redo}
@@ -1545,6 +1621,9 @@ function NotebookEditorPage() {
                               fontSize: element.fontSize * zoom,
                               lineHeight: 1.42,
                               color: element.color,
+                              fontWeight: element.bold ? 700 : 400,
+                              fontStyle: element.italic ? "italic" : "normal",
+                              textAlign: element.align ?? "left",
                             }}
                           />
                         );
@@ -2134,6 +2213,11 @@ function ToolRibbon({
   deleteSelected,
   duplicateSelected,
   selectedCount,
+  showTextOptions,
+  textFontSize,
+  textBold,
+  textItalic,
+  onTextFont,
   onOpenSize,
   onUndo,
   onRedo,
@@ -2161,6 +2245,11 @@ function ToolRibbon({
   deleteSelected: () => void;
   duplicateSelected: () => void;
   selectedCount: number;
+  showTextOptions: boolean;
+  textFontSize: number;
+  textBold: boolean;
+  textItalic: boolean;
+  onTextFont: (patch: { fontSize?: number; bold?: boolean; italic?: boolean }) => void;
   onOpenSize: () => void;
   onUndo: () => void;
   onRedo: () => void;
@@ -2244,6 +2333,62 @@ function ToolRibbon({
               danger
               onClick={deleteSelected}
             />
+          </RibbonGroup>
+        )}
+
+        {showTextOptions && (
+          <RibbonGroup label="Text">
+            <div className="flex flex-col gap-1">
+              <div className="flex gap-0.5">
+                {[14, 18, 24, 32].map((size) => (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => onTextFont({ fontSize: size })}
+                    aria-pressed={textFontSize === size}
+                    title={`${size}px text`}
+                    className={cn(
+                      "h-9 w-9 rounded-md border text-[11px] font-semibold tabular-nums transition-colors",
+                      textFontSize === size
+                        ? "border-primary/30 bg-primary/10 text-primary"
+                        : "border-border bg-background text-muted-foreground hover:border-primary/25 hover:text-foreground",
+                    )}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => onTextFont({ bold: !textBold })}
+                  aria-pressed={textBold}
+                  title="Bold"
+                  className={cn(
+                    "h-7 w-9 rounded-md border text-xs font-bold transition-colors",
+                    textBold
+                      ? "border-primary/30 bg-primary/10 text-primary"
+                      : "border-border bg-background text-muted-foreground hover:border-primary/25 hover:text-foreground",
+                  )}
+                >
+                  B
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onTextFont({ italic: !textItalic })}
+                  aria-pressed={textItalic}
+                  title="Italic"
+                  className={cn(
+                    "h-7 w-9 rounded-md border text-xs italic transition-colors",
+                    textItalic
+                      ? "border-primary/30 bg-primary/10 text-primary"
+                      : "border-border bg-background text-muted-foreground hover:border-primary/25 hover:text-foreground",
+                  )}
+                >
+                  I
+                </button>
+              </div>
+            </div>
           </RibbonGroup>
         )}
 
