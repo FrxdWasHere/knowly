@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import {
   Star,
   Trash2,
@@ -10,6 +11,7 @@ import {
   Plus,
   Brain,
   Sigma,
+  Tag,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
@@ -18,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SrsRing } from "@/components/srs/srs-ring";
 import { MathText } from "@/components/math/math-text";
+import { LabelChips, LabelPickerDialog } from "@/components/binder/label-picker";
 import { TYPE_LABELS } from "@/lib/answers";
 import { cardStage, deckSrs, formatDue, formatInterval, STAGE_META } from "@/lib/srs";
 import { useKnowly } from "@/store/knowly";
@@ -51,6 +54,7 @@ function DeckDetail() {
   const { state, updateDeck, deleteDeck } = useKnowly();
   const navigate = useNavigate();
   const deck = state.decks.find((d) => d.id === deckId);
+  const [labelPickerOpen, setLabelPickerOpen] = useState(false);
 
   if (!deck) {
     return (
@@ -146,13 +150,38 @@ function DeckDetail() {
 
       {deck.description && <p className="mb-6 text-sm text-muted-foreground">{deck.description}</p>}
 
-      <div className="mb-6 flex flex-wrap gap-2">
+      <div className="mb-6 flex flex-wrap items-center gap-2">
         {deck.tags.map((t) => (
           <Badge key={t} variant="secondary">
             #{t}
           </Badge>
         ))}
+        {state.labels.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={() => setLabelPickerOpen(true)}
+          >
+            <Tag className="size-3.5" /> Labels
+            {deck.labelIds?.length ? ` (${deck.labelIds.length})` : ""}
+          </Button>
+        )}
       </div>
+
+      {(deck.labelIds?.length ?? 0) > 0 && (
+        <div className="mb-6">
+          <LabelChips labels={state.labels} labelIds={deck.labelIds} />
+        </div>
+      )}
+
+      <LabelPickerDialog
+        open={labelPickerOpen}
+        onOpenChange={setLabelPickerOpen}
+        labels={state.labels}
+        labelIds={deck.labelIds ?? []}
+        onChange={(labelIds) => updateDeck(deck.id, { labelIds })}
+      />
 
       <details className="panel mb-6 p-5">
         <summary className="cursor-pointer text-sm font-medium">

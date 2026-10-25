@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SrsStatusBadge } from "@/components/srs/srs-status-badge";
+import { LabelChips } from "@/components/binder/label-picker";
 import { deckSrs } from "@/lib/srs";
 import { useKnowly } from "@/store/knowly";
 import { cn } from "@/lib/utils";
@@ -49,6 +50,7 @@ function DeckLibrary() {
   const [q, setQ] = useState(search.q ?? "");
   const [sort, setSort] = useState("recent");
   const [tag, setTag] = useState("all");
+  const [labelFilter, setLabelFilter] = useState("all");
 
   const tags = useMemo(
     () => Array.from(new Set(state.decks.flatMap((d) => d.tags))),
@@ -59,6 +61,7 @@ function DeckLibrary() {
     let list = state.decks.filter(
       (d) =>
         (tag === "all" || d.tags.includes(tag)) &&
+        (labelFilter === "all" || (d.labelIds ?? []).includes(labelFilter)) &&
         (d.title.toLowerCase().includes(q.toLowerCase()) ||
           d.subject.toLowerCase().includes(q.toLowerCase()) ||
           d.tags.some((t) => t.toLowerCase().includes(q.toLowerCase()))),
@@ -82,7 +85,7 @@ function DeckLibrary() {
       }
     });
     return list;
-  }, [state.decks, q, sort, tag]);
+  }, [state.decks, q, sort, tag, labelFilter]);
 
   return (
     <div>
@@ -130,6 +133,22 @@ function DeckLibrary() {
               {tags.map((t) => (
                 <SelectItem key={t} value={t}>
                   #{t}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        {state.labels.length > 0 && (
+          <Select value={labelFilter} onValueChange={setLabelFilter}>
+            <SelectTrigger className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All labels</SelectItem>
+              {state.labels.map((l) => (
+                <SelectItem key={l.id} value={l.id}>
+                  {l.emoji ? `${l.emoji} ` : ""}
+                  {l.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -203,6 +222,11 @@ function DeckLibrary() {
                   <p className="mt-1 text-xs text-muted-foreground">
                     {d.subject} · {d.questions.length} questions
                   </p>
+                  {(d.labelIds?.length ?? 0) > 0 && (
+                    <div className="mt-1.5">
+                      <LabelChips labels={state.labels} labelIds={d.labelIds} />
+                    </div>
+                  )}
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {d.tags.slice(0, 3).map((t) => (
                       <Badge key={t} variant="secondary" className="text-[10px]">

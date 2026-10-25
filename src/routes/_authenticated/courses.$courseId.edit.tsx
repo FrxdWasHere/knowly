@@ -11,6 +11,7 @@ import {
   GripVertical,
   Plus,
   Save,
+  Tag,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -25,6 +26,7 @@ import { createId } from "@/lib/id";
 import { DECK_COLORS } from "@/lib/defaults";
 import { validateQuestionsJson, questionTypes } from "@/lib/schema";
 import { useKnowly } from "@/store/knowly";
+import { LabelChips, LabelPickerDialog } from "@/components/binder/label-picker";
 import type { Course, CourseBlock, CourseLesson, CourseModule, Question } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -67,6 +69,7 @@ function CourseEditorPage() {
   const course = state.courses.find((item) => item.id === courseId);
   const [draft, setDraft] = useState<Course | null>(course ?? null);
   const [dirty, setDirty] = useState(false);
+  const [labelPickerOpen, setLabelPickerOpen] = useState(false);
 
   useEffect(() => {
     setDraft(course ?? null);
@@ -283,6 +286,24 @@ function CourseEditorPage() {
               </div>
             </div>
             <div className="space-y-2">
+              <Label>Binder labels</Label>
+              <div className="flex flex-wrap items-center gap-2">
+                <LabelChips labels={state.labels} labelIds={draft.labelIds} />
+                {state.labels.length > 0 ? (
+                  <Button variant="outline" size="sm" onClick={() => setLabelPickerOpen(true)}>
+                    <Tag className="size-3.5" />
+                    {draft.labelIds?.length ? "Change labels" : "Stick a label"}
+                  </Button>
+                ) : (
+                  <Button asChild variant="outline" size="sm">
+                    <Link to="/labels">
+                      <Tag className="size-3.5" /> Make a label
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            </div>
+            <div className="space-y-2">
               <Label>Objectives (one per line)</Label>{" "}
               <Textarea
                 value={draft.objectives.join("\n")}
@@ -457,6 +478,14 @@ function CourseEditorPage() {
           </div>
         </aside>
       </div>
+
+      <LabelPickerDialog
+        open={labelPickerOpen}
+        onOpenChange={setLabelPickerOpen}
+        labels={state.labels}
+        labelIds={draft.labelIds ?? []}
+        onChange={(labelIds) => patch({ labelIds })}
+      />
     </AppPage>
   );
 }
