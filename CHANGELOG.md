@@ -2,6 +2,44 @@
 
 All notable changes to Knowly are documented here. The app is fully offline — no accounts, no syncing, no network calls.
 
+## 3.1.0 — 2026-10-25 — The Study Week Release
+
+The headline of v3.1: **Knowly now plans your week and files your practice.** A weekly timetable links every class to its deck, colour-coded binder labels keep the library tidy, a paper shelf saves past papers with full sitting histories — and any subject that needs real math gets properly typeset equations.
+
+### New: Math & STEM support
+
+- **Real equations, rendered locally.** Any question, answer, explanation or lesson text containing `$…$`, `$$…$$`, `\[…\]` or `\(…\)` is typeset with KaTeX (e.g. `$2H_2 + O_2 \to 2H_2O$`, `$\binom{n}{k}p^k(1-p)^{n-k}$`) — no toggles, no network, no AI.
+- **STEM flags across the model.** Decks, courses and every Forge (Prompt / Course / Deck) gained `isSTEM`, `needsEquations` and `needsGraphs` switches. Toggling them shapes the generated instructions ("write all equations in LaTeX", "describe graphs in words") and enables a 24-symbol math keypad in review, quiz and lesson check-points.
+- Longest delimiters open first, so `\(...\)` never gets eaten by a shorter `$…$` interpretation, and malformed LaTeX falls back to plain text instead of erroring.
+
+### New: Weekly timetable
+
+- **Your week at a glance** (`/timetable`): a Monday-first grid of repeating class slots with title, subject, room and teacher. A "Next up / Happening now" banner points at the current or next class.
+- **Every slot links its study material** — a deck ("Revise this deck"), a course, or both — so preparing for tomorrow's lesson is one click from the schedule. A footer totals your contact hours per week.
+
+### New: Binder labels
+
+- **Colour-coded labels** (`/labels` — 9 soft colours, optional emoji) can be stuck to decks, courses and papers, with a full count read-out in the manager.
+- Labels appear on deck cards and the deck page, in the course editor, on the paper shelf, and as a **label filter in the deck library**. Deleting a label unsticks it everywhere automatically.
+
+### New: Paper shelf
+
+- **Past exams, shelved** (`/papers`): save any printable exam as a permanent record — the questions are snapshotted verbatim, so a paper reprints identical later via `Print → reprint from shelf` even if the source deck changes.
+- Each paper tracks a **sitting history**: date, score, percentage, minutes and notes, with attempts / most recent / best stats on the card, and labels for colour-coding. "Save to paper shelf" is built into the printable exam studio.
+
+### Improvements
+
+- **Copy pass across the app** — friendlier, consistent wording everywhere (hero typo fixed), plus canonical phrasing for the external-AI workflow: "Knowly writes the instructions — copy them into the AI you already use, then bring the result back."
+- **Hardened rendering** — papers render safely even when older saves are missing print options, and timetable badges no longer trigger React hydration warnings.
+
+### Updated: Demo profile
+
+- The sample profile now exercises **every feature**: two STEM decks with real LaTeX equations, a full 10.5-hour school timetable linked to decks and courses, three binder labels in use, two shelved practice papers with improving sitting histories (Biology 42% → 67% → 83%), a STEM prompt template, and journal entries telling the story.
+
+### Maintenance
+
+- State schema version remains **4** (the timetable/labels/papers migration from v3). Version bumped to **3.1.0** across the app, the Tauri desktop shell and the Rust crate.
+
 ## 3.0.0 — 2026-10-23 — The Publishing Release
 
 The headline of v3: **your courses can now leave the screen.** A full print & publishing studio turns any course into a book-quality PDF or a Word document — plus a redesigned sidebar, a living workspace, and a demo profile for newcomers.
