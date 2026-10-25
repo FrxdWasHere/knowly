@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Hash, Lightbulb, Layers, Search, ChevronDown, ChevronRight } from "lucide-react";
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
+import { MathText } from "@/components/math/math-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -264,7 +265,7 @@ function TagExplorerPage() {
                         )}
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-sm font-medium">
-                            {question.question}
+                            <MathText text={question.question} />
                           </span>
                           <span className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
                             <span className="inline-flex items-center gap-1.5">
@@ -291,10 +292,12 @@ function TagExplorerPage() {
                         <div className="mt-3 space-y-2 border-t border-border pt-3 text-sm">
                           <p>
                             <span className="text-xs text-muted-foreground">Answer: </span>
-                            {question.answer}
+                            <MathText text={question.answer} />
                           </p>
                           {question.explanation && (
-                            <p className="text-xs text-muted-foreground">{question.explanation}</p>
+                            <p className="text-xs text-muted-foreground">
+                              <MathText text={question.explanation} />
+                            </p>
                           )}
                           <Button size="sm" variant="outline" asChild>
                             <Link to="/decks/$deckId" params={{ deckId: deck.id }}>

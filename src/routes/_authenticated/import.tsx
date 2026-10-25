@@ -4,6 +4,7 @@ import { UploadCloud, CheckCircle2, XCircle, AlertTriangle, FileJson, X } from "
 import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
+import { MathText } from "@/components/math/math-text";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -277,7 +278,9 @@ function ImportPage() {
                     <span className="text-muted-foreground">
                       {TYPE_LABELS[q.type]} · {q.difficulty}
                     </span>
-                    <p className="mt-1">{q.question}</p>
+                    <p className="mt-1">
+                      <MathText text={q.question} />
+                    </p>
                   </li>
                 ))}
               </ul>

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
+import { MathText } from "@/components/math/math-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -240,10 +241,10 @@ function LeechesPage() {
                               item.suspended && "text-muted-foreground line-through",
                             )}
                           >
-                            {item.question.question}
+                            <MathText text={item.question.question} />
                           </p>
                           <p className="mt-1 truncate text-xs text-muted-foreground">
-                            {item.question.answer}
+                            <MathText text={item.question.answer} />
                           </p>
                           <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
                             <span className="inline-flex items-center gap-1.5">

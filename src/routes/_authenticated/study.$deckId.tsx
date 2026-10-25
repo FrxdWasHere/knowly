@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { checkAnswer, shuffleArray, TYPE_LABELS, formatDuration } from "@/lib/answers";
 import { displayAnswer, isInteractive } from "@/lib/interactive";
 import { InteractiveQuestion } from "@/components/questions/interactive-question";
+import { MathText } from "@/components/math/math-text";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 
 import { xpForAnswer } from "@/lib/gamification";
@@ -269,11 +270,13 @@ function StudySession() {
         </div>
 
         <h1 className="mt-6 break-words text-2xl font-semibold leading-snug">
-          {question.question}
+          <MathText text={question.question} />
         </h1>
 
         {question.hint && settings.showHints && !revealed && (
-          <p className="mt-3 text-xs text-muted-foreground">Hint: {question.hint}</p>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Hint: <MathText text={question.hint} />
+          </p>
         )}
 
         {question.type === "multiple-choice" && question.options && (
@@ -286,7 +289,7 @@ function StudySession() {
                   revealed && o === question.answer && "border-success bg-success/10 text-success",
                 )}
               >
-                {o}
+                <MathText text={o} />
               </li>
             ))}
           </ul>
@@ -330,10 +333,14 @@ function StudySession() {
         {revealed ? (
           <div className="mt-6 rounded-xl border border-success/40 bg-success/10 p-5">
             <p className="text-xs uppercase tracking-widest text-success">Answer</p>
-            <p className="mt-2 text-lg font-medium">{displayAnswer(question)}</p>
+            <p className="mt-2 text-lg font-medium">
+              <MathText text={displayAnswer(question)} />
+            </p>
 
             {question.explanation && settings.showExplanations && (
-              <p className="mt-2 text-sm text-muted-foreground">{question.explanation}</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                <MathText text={question.explanation} />
+              </p>
             )}
           </div>
         ) : (

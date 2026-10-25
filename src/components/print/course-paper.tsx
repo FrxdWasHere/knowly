@@ -1368,7 +1368,7 @@ function QuestionBody({ question }: { question: Question }) {
           {(question.options ?? []).map((option, index) => (
             <li key={`${option}-${index}`} className="flex gap-2">
               <span className="font-semibold">{LETTERS[index] ?? index + 1}.</span>
-              <span className="min-w-0">{option}</span>
+              <MathText text={option} className="min-w-0" />
             </li>
           ))}
         </ol>
@@ -1386,7 +1386,7 @@ function QuestionBody({ question }: { question: Question }) {
           {(question.items ?? []).map((item, index) => (
             <p key={`${item}-${index}`} className="flex gap-3">
               <span aria-hidden className="inline-block w-6 border-b border-border" />
-              <span className="min-w-0">{item}</span>
+              <MathText text={item} className="min-w-0" />
             </p>
           ))}
         </div>
@@ -1399,7 +1399,7 @@ function QuestionBody({ question }: { question: Question }) {
             {pairs.map((pair, index) => (
               <p key={`${pair.left}-${index}`}>
                 <span aria-hidden className="mr-2 inline-block w-6 border-b border-border" />
-                <span className="min-w-0">{pair.left}</span>
+                <MathText text={pair.left} className="min-w-0" />
               </p>
             ))}
           </div>
@@ -1407,7 +1407,7 @@ function QuestionBody({ question }: { question: Question }) {
             {pairs.map((pair, index) => (
               <p key={`${pair.right}-${index}`}>
                 <span className="mr-2 font-semibold">{LETTERS[index] ?? index + 1}.</span>
-                <span className="min-w-0">{pair.right}</span>
+                <MathText text={pair.right} className="min-w-0" />
               </p>
             ))}
           </div>
@@ -1420,7 +1420,12 @@ function QuestionBody({ question }: { question: Question }) {
           {!!question.wordBank?.length && (
             <p className="border border-border px-3 py-1.5 text-[0.9em] text-foreground">
               <span className="font-semibold text-foreground">Word bank: </span>
-              {question.wordBank.join(" · ")}
+              {(question.wordBank ?? []).map((w, i) => (
+                <span key={`${w}-${i}`}>
+                  {i > 0 && " · "}
+                  <MathText text={w} />
+                </span>
+              ))}
             </p>
           )}
           <PaperLines count={Math.max(1, question.blanks?.length ?? 1)} />

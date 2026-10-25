@@ -27,6 +27,7 @@ import { DECK_COLORS } from "@/lib/defaults";
 import { validateQuestionsJson, questionTypes } from "@/lib/schema";
 import { useKnowly } from "@/store/knowly";
 import { LabelChips, LabelPickerDialog } from "@/components/binder/label-picker";
+import { MathText } from "@/components/math/math-text";
 import type { Course, CourseBlock, CourseLesson, CourseModule, Question } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -667,7 +668,9 @@ function LessonEditor({
                     className="flex items-center gap-2 rounded-lg border border-border bg-background p-2 text-xs"
                   >
                     <Badge variant="outline">{question.type}</Badge>
-                    <span className="min-w-0 flex-1 truncate">{question.question}</span>
+                    <span className="min-w-0 flex-1 truncate">
+                      <MathText text={question.question} />
+                    </span>
                     <button
                       type="button"
                       className="text-muted-foreground hover:text-destructive"

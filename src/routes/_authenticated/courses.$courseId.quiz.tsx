@@ -10,6 +10,7 @@ import {
   InteractiveQuestion,
   isInteractiveComplete,
 } from "@/components/questions/interactive-question";
+import { MathText } from "@/components/math/math-text";
 import { checkAnswer, TYPE_LABELS } from "@/lib/answers";
 import { allCourseQuestions, allLessons } from "@/lib/courses";
 import { createId } from "@/lib/id";
@@ -244,11 +245,11 @@ function CourseQuizPage() {
                   ) : (
                     <X className="mt-0.5 size-4 shrink-0 text-destructive" />
                   )}
-                  {answer.question.question}
+                  <MathText text={answer.question.question} />
                 </p>
                 {!answer.correct && (
                   <p className="mt-1 pl-6 text-xs text-muted-foreground">
-                    Correct answer: {answer.question.answer}
+                    Correct answer: <MathText text={answer.question.answer} />
                   </p>
                 )}
               </div>
@@ -311,7 +312,7 @@ function CourseQuizPage() {
             )}
           </div>
           <h1 className="mt-4 font-display text-2xl font-semibold leading-snug">
-            {current.question}
+            <MathText text={current.question} />
           </h1>
 
           {current.type === "multiple-choice" && (
@@ -328,7 +329,7 @@ function CourseQuizPage() {
                       : "border-border bg-background hover:border-primary/30",
                   )}
                 >
-                  {option}
+                  <MathText text={option} />
                 </button>
               ))}
             </div>
@@ -353,7 +354,9 @@ function CourseQuizPage() {
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Answer
               </p>
-              <p className="mt-2 text-sm leading-6">{current.answer}</p>
+              <p className="mt-2 text-sm leading-6">
+                <MathText text={current.answer} />
+              </p>
               <div className="mt-4 flex gap-2">
                 <Button variant="outline" onClick={() => submit(false)}>
                   <X className="size-4" /> Missed it

@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Bookmark, ChevronDown, Search, Table2 } from "lucide-react";
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
+import { MathText } from "@/components/math/math-text";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -290,7 +291,9 @@ function CardBrowserPage() {
                     onClick={() => setExpanded(isOpen ? null : key)}
                     className="min-w-0 flex-1 text-left"
                   >
-                    <p className="truncate text-sm font-medium">{q.question}</p>
+                    <p className="truncate text-sm font-medium">
+                      <MathText text={q.question} />
+                    </p>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
                       <span className="inline-flex items-center gap-1.5">
                         <span className="size-2 rounded-full" style={{ background: deckColor }} />
@@ -337,18 +340,28 @@ function CardBrowserPage() {
                 {isOpen && (
                   <div className="border-t border-border bg-background/40 px-4 py-4 sm:px-5">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">Answer</p>
-                    <p className="mt-1 text-sm">{displayAnswer(q)}</p>
+                    <p className="mt-1 text-sm">
+                      <MathText text={displayAnswer(q)} />
+                    </p>
                     {q.explanation && (
                       <>
                         <p className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">
                           Explanation
                         </p>
-                        <p className="mt-1 text-sm text-muted-foreground">{q.explanation}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          <MathText text={q.explanation} />
+                        </p>
                       </>
                     )}
                     {q.options && (
                       <p className="mt-3 text-xs text-muted-foreground">
-                        Options: {q.options.join(" · ")}
+                        Options:{" "}
+                        {q.options.map((opt, i) => (
+                          <span key={`${opt}-${i}`}>
+                            {i > 0 && " · "}
+                            <MathText text={opt} />
+                          </span>
+                        ))}
                       </p>
                     )}
                     <div className="mt-4 flex gap-2">

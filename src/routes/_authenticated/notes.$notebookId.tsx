@@ -107,23 +107,6 @@ function themePrimary() {
   return v || "#5aa9f8";
 }
 
-/** Blend a hex theme colour toward transparency for canvas strokes/fills. */
-function withCanvasAlpha(hex: string, alpha: number) {
-  let h = hex.trim();
-  if (h.startsWith("#")) h = h.slice(1);
-  if (h.length === 3)
-    h = h
-      .split("")
-      .map((c) => c + c)
-      .join("");
-  const int = parseInt(h.slice(0, 6), 16);
-  if (Number.isNaN(int)) return hex;
-  const r = (int >> 16) & 255;
-  const g = (int >> 8) & 255;
-  const b = int & 255;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
 export const Route = createFileRoute("/_authenticated/notes/$notebookId")({
   validateSearch: (search: Record<string, unknown>): { page?: string } => ({
     page: typeof search.page === "string" ? search.page : undefined,
@@ -167,6 +150,8 @@ interface DragState {
   points: number[];
   snapshot: NoteElement[];
   elements: NoteElement[];
+  /** ids being moved — captured at pointer-down so React state can't lag behind */
+  selection: string[];
   panStartX: number;
   panStartY: number;
   scrollLeft: number;
@@ -183,6 +168,7 @@ const emptyDrag = (): DragState => ({
   points: [],
   snapshot: [],
   elements: [],
+  selection: [],
   panStartX: 0,
   panStartY: 0,
   scrollLeft: 0,
@@ -394,8 +380,9 @@ function NotebookEditorPage() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
-      if (target.matches("input, textarea, [contenteditable=true]")) return;
+      const target = event.target as HTMLElement | null;
+      if (!(target instanceof Element) || target.matches("input, textarea, [contenteditable=true]"))
+        return;
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
         event.preventDefault();
         if (event.shiftKey) redo();
@@ -658,6 +645,21 @@ function NotebookEditorPage() {
     setEditText("");
   };
 
+  /** Tool switch that keeps the ink colour from the right palette. */
+  const changeTool = (next: NoteTool) => {
+    if (next === "highlighter" && !HIGHLIGHTER_COLORS.includes(color)) {
+      setColor(HIGHLIGHTER_COLORS[0]!);
+    } else if (
+      (next === "pen" || next === "pencil" || next === "text" || next === "shape") &&
+      HIGHLIGHTER_COLORS.includes(color)
+    ) {
+      setColor(PEN_COLORS[0]!);
+    }
+    setSelectedIds([]);
+    setEditingId(null);
+    setTool(next);
+  };
+
   const pointFromEvent = (event: React.PointerEvent) => {
     const rect = interactionRef.current?.getBoundingClientRect();
     if (!rect) return { x: 0, y: 0, pressure: 0.5 };
@@ -745,18 +747,24 @@ function NotebookEditorPage() {
     const ctx = liveContext();
     if (!ctx || points.length < 6) return;
     clearLive();
-    ctx.strokeStyle = withCanvasAlpha(themePrimary(), 0.8);
-    ctx.fillStyle = withCanvasAlpha(themePrimary(), 0.08);
+    ctx.strokeStyle = themePrimary();
     ctx.lineWidth = 1.4;
     ctx.setLineDash([6, 5]);
-    ctx.beginPath();
-    ctx.moveTo(points[0], points[1]);
-    for (let index = 3; index < points.length; index += 3) {
-      ctx.lineTo(points[index], points[index + 1]);
+    for (const [alpha, fill] of [
+      [0.8, false],
+      [0.08, true],
+    ] as const) {
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.moveTo(points[0], points[1]);
+      for (let index = 3; index < points.length; index += 3) {
+        ctx.lineTo(points[index], points[index + 1]);
+      }
+      ctx.closePath();
+      if (fill) ctx.fill();
+      else ctx.stroke();
     }
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    ctx.globalAlpha = 1;
     ctx.setLineDash([]);
   };
 
@@ -773,7 +781,11 @@ function NotebookEditorPage() {
     if (editingId) finishEditing();
     const point = pointFromEvent(event);
     const page = currentPage;
-    event.currentTarget.setPointerCapture(event.pointerId);
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // Some browsers reject synthetic or ended pointers; drawing still works.
+    }
     const drag = emptyDrag();
     drag.pointerId = event.pointerId;
     drag.startX = point.x;
@@ -825,7 +837,7 @@ function NotebookEditorPage() {
         type: "text",
         x: point.x,
         y: point.y,
-        width: Math.min(320, page.width - point.x - 20),
+        width: Math.max(60, Math.min(320, page.width - point.x - 20)),
         height: 100,
         text: "",
         fontSize: 18,
@@ -868,12 +880,15 @@ function NotebookEditorPage() {
         const nextSelection = selectedIds.includes(hit.id) ? selectedIds : [hit.id];
         setSelectedIds(nextSelection);
         drag.mode = "select-move";
+        drag.selection = nextSelection;
         drag.snapshot = page.elements;
         drag.elements = page.elements;
       } else {
         setSelectedIds([]);
         drag.mode = "lasso";
-        drag.points = [point.x, point.y];
+        // Keep the same [x, y, pressure] triple layout the move handler appends,
+        // so the closing polygon lines up with the real drawn path.
+        drag.points = [point.x, point.y, 0.5];
       }
       dragRef.current = drag;
     }
@@ -927,7 +942,7 @@ function NotebookEditorPage() {
       const dx = point.x - drag.lastX;
       const dy = point.y - drag.lastY;
       drag.elements = drag.elements.map((element) =>
-        selectedIds.includes(element.id) ? moveElement(element, dx, dy) : element,
+        drag.selection.includes(element.id) ? moveElement(element, dx, dy) : element,
       );
       drag.lastX = point.x;
       drag.lastY = point.y;
@@ -950,12 +965,15 @@ function NotebookEditorPage() {
     if (!page || drag.pointerId !== event.pointerId) return;
     const point = pointFromEvent(event);
 
-    if (drag.mode === "draw" && drag.points.length >= 6) {
+    if (drag.mode === "draw" && drag.points.length >= 3) {
+      // A quick tap should still leave a dot, not disappear entirely.
+      const points =
+        drag.points.length < 6 ? [...drag.points, drag.points[0], drag.points[1]] : drag.points;
       const stroke: StrokeElement = {
         id: newElementId(),
         type: "stroke",
         tool: tool === "highlighter" ? "highlighter" : tool === "pencil" ? "pencil" : "pen",
-        points: drag.points,
+        points,
         color: tool === "highlighter" ? color : color,
         width: tool === "highlighter" ? penWidth * 6 : penWidth,
         opacity: tool === "highlighter" ? 0.45 : tool === "pencil" ? 0.85 : 1,
@@ -1310,7 +1328,7 @@ function NotebookEditorPage() {
 
       <ToolRibbon
         tool={tool}
-        setTool={setTool}
+        setTool={changeTool}
         color={color}
         setColor={setColor}
         penWidth={penWidth}
@@ -1631,7 +1649,7 @@ function NotebookEditorPage() {
                       return (
                         <div
                           key={element.id}
-                          className="absolute z-40 rounded-xl border border-border bg-card p-2 shadow-sm"
+                          className="absolute z-[45] rounded-xl border border-border bg-card p-2 shadow-sm"
                           style={{
                             left: element.x * zoom,
                             top: element.y * zoom,

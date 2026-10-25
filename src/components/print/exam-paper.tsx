@@ -136,7 +136,9 @@ function QuestionBody({
           {(q.items ?? []).map((item, i) => (
             <li key={`${item}-${i}`} className="flex gap-2">
               <Blank width="w-8" />
-              <span>{item}</span>
+              <span>
+                <MathText text={item} />
+              </span>
             </li>
           ))}
         </ol>
@@ -151,7 +153,7 @@ function QuestionBody({
               <li key={`${p.left}-${i}`} className="flex gap-2">
                 <Blank width="w-8" />
                 <span>
-                  {i + 1}. {p.left}
+                  {i + 1}. <MathText text={p.left} />
                 </span>
               </li>
             ))}
@@ -159,7 +161,7 @@ function QuestionBody({
           <ol className="space-y-1.5">
             {rights.map((r, i) => (
               <li key={`${r}-${i}`}>
-                <span className="font-semibold">{letter(i, options)}.</span> {r}
+                <span className="font-semibold">{letter(i, options)}.</span> <MathText text={r} />
               </li>
             ))}
           </ol>
@@ -172,7 +174,12 @@ function QuestionBody({
           {!!q.wordBank?.length && (
             <p className="border border-foreground/50 px-3 py-2 text-[11px] leading-relaxed print:border-black/50">
               <span className="font-semibold">Word bank: </span>
-              {q.wordBank.join(" · ")}
+              {q.wordBank.map((w, i) => (
+                <span key={`${w}-${i}`}>
+                  {i > 0 && " · "}
+                  <MathText text={w} />
+                </span>
+              ))}
             </p>
           )}
           <Lines count={Math.max(1, q.blanks?.length ?? 1)} />
@@ -356,8 +363,14 @@ export function ExamPaper({
           <ol className="mt-3 space-y-2 text-[0.85em]">
             {questions.map((q, i) => (
               <li key={q.id} className="break-inside-avoid">
-                <span className="font-bold">{numberLabel(i, options)}</span> {printableAnswer(q)}
-                {q.explanation && <span className="italic"> — {q.explanation}</span>}
+                <span className="font-bold">{numberLabel(i, options)}</span>{" "}
+                <MathText text={printableAnswer(q)} />
+                {q.explanation && (
+                  <span className="italic">
+                    {" — "}
+                    <MathText text={q.explanation} />
+                  </span>
+                )}
               </li>
             ))}
           </ol>

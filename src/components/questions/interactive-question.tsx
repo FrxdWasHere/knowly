@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, GripVertical, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MathText } from "@/components/math/math-text";
 import { shuffleArray } from "@/lib/answers";
 import {
   ITEM_SEP,
@@ -165,7 +166,9 @@ function OrderingQuestion({ question, value, onChange, disabled, revealed }: Int
               <span className="w-5 shrink-0 text-xs font-semibold text-muted-foreground">
                 {i + 1}
               </span>
-              <span className="flex-1">{item}</span>
+              <span className="flex-1">
+                <MathText text={item} />
+              </span>
               <span className="flex shrink-0 flex-col">
                 <button
                   type="button"
@@ -276,7 +279,7 @@ function MatchingQuestion({ question, value, onChange, disabled, revealed }: Int
               !disabled && !used.has(r) && "hover:border-primary/60",
             )}
           >
-            {r}
+            <MathText text={r} />
           </button>
         ))}
       </div>
@@ -305,7 +308,9 @@ function MatchingQuestion({ question, value, onChange, disabled, revealed }: Int
                       : "border-destructive/60 bg-destructive/10"),
                 )}
               >
-                <span className="font-medium">{p.left}</span>
+                <span className="font-medium">
+                  <MathText text={p.left} />
+                </span>
                 <span
                   className={cn(
                     "rounded-md border border-dashed border-border px-3 py-1.5 text-xs",
@@ -314,11 +319,13 @@ function MatchingQuestion({ question, value, onChange, disabled, revealed }: Int
                       : "text-muted-foreground",
                   )}
                 >
-                  {chosen ?? "Tap to place an answer"}
+                  {chosen ? <MathText text={chosen} /> : "Tap to place an answer"}
                 </span>
               </button>
               {revealed && !isRight && (
-                <p className="mt-1 text-[11px] text-success">Correct: {p.right}</p>
+                <p className="mt-1 text-[11px] text-success">
+                  Correct: <MathText text={p.right} />
+                </p>
               )}
             </li>
           );
@@ -380,7 +387,7 @@ function WordBankQuestion({ question, value, onChange, disabled, revealed }: Int
       <p className="rounded-xl border border-border bg-surface-2/50 p-4 text-base leading-loose">
         {segments.map((seg, i) => (
           <span key={i}>
-            {seg}
+            <MathText text={seg} />
             {i < segments.length - 1 && (
               <button
                 type="button"
@@ -421,7 +428,7 @@ function WordBankQuestion({ question, value, onChange, disabled, revealed }: Int
               !disabled && available(w) && "hover:border-primary/60",
             )}
           >
-            {w}
+            <MathText text={w} />
           </button>
         ))}
       </div>
@@ -430,7 +437,11 @@ function WordBankQuestion({ question, value, onChange, disabled, revealed }: Int
         {picked ? `Selected “${picked}”. Now choose a blank.` : ""}
       </p>
 
-      {revealed && <p className="text-[11px] text-success">Correct words: {blanks.join(", ")}</p>}
+      {revealed && (
+        <p className="text-[11px] text-success">
+          Correct words: <MathText text={blanks.join(", ")} />
+        </p>
+      )}
     </div>
   );
 }

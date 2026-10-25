@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AlertTriangle, Bug, Target, TrendingDown } from "lucide-react";
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
+import { MathText } from "@/components/math/math-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useKnowly } from "@/store/knowly";
@@ -110,7 +111,9 @@ function WeakSpotsPage() {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">{w.question.question}</p>
+                        <p className="truncate text-sm font-medium">
+                          <MathText text={w.question.question} />
+                        </p>
                         <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
                           <span className="inline-flex items-center gap-1.5">
                             <span

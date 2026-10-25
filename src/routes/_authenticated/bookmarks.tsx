@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Bookmark, ChevronDown, NotebookPen, Star, X } from "lucide-react";
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
+import { MathText } from "@/components/math/math-text";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useKnowly } from "@/store/knowly";
@@ -192,7 +193,9 @@ function BookmarksPage() {
                     onClick={() => setExpanded(isOpen ? null : key)}
                     className="min-w-0 flex-1 text-left"
                   >
-                    <p className="truncate text-sm font-medium">{q.question}</p>
+                    <p className="truncate text-sm font-medium">
+                      <MathText text={q.question} />
+                    </p>
                     {note.trim() && (
                       <p className="mt-0.5 truncate text-xs italic text-muted-foreground">
                         “{note.trim()}”
@@ -220,9 +223,13 @@ function BookmarksPage() {
                 {isOpen && (
                   <div className="border-t border-border bg-background/40 px-4 py-4 sm:px-5">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">Answer</p>
-                    <p className="mt-1 text-sm">{displayAnswer(q)}</p>
+                    <p className="mt-1 text-sm">
+                      <MathText text={displayAnswer(q)} />
+                    </p>
                     {q.explanation && (
-                      <p className="mt-2 text-sm text-muted-foreground">{q.explanation}</p>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        <MathText text={q.explanation} />
+                      </p>
                     )}
                     <div className="mt-4">
                       <p className="text-xs uppercase tracking-wide text-muted-foreground">

@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Check, Eye, Flame, RotateCcw, Timer, X, Zap } from "lucide-react";
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
+import { MathText } from "@/components/math/math-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useKnowly } from "@/store/knowly";
@@ -421,7 +422,7 @@ function CramRun({
                 key={`${m.deckId}-${m.question.id}`}
                 className="truncate rounded-lg border border-border px-3 py-2 text-xs"
               >
-                {m.question.question}
+                <MathText text={m.question.question} />
               </li>
             ))}
           </ul>
@@ -490,13 +491,17 @@ function CramRun({
           {q.concept && <Badge variant="secondary">{q.concept}</Badge>}
         </div>
 
-        <h1 className="mt-6 text-2xl font-semibold leading-snug">{q.question}</h1>
+        <h1 className="mt-6 text-2xl font-semibold leading-snug">
+          <MathText text={q.question} />
+        </h1>
 
         {revealed ? (
           <>
             <div className="mt-6 rounded-xl border border-success/40 bg-success/10 p-5">
               <p className="text-xs uppercase tracking-widest text-success">Answer</p>
-              <p className="mt-2 text-lg font-medium">{displayAnswer(q)}</p>
+              <p className="mt-2 text-lg font-medium">
+                <MathText text={displayAnswer(q)} />
+              </p>
             </div>
             <div className="mt-6 grid grid-cols-2 gap-3">
               <Button
