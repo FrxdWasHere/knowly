@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  startTransition,
   type ReactNode,
 } from "react";
 import { toast } from "sonner";
@@ -231,8 +232,12 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
   stateRef.current = state;
 
   useEffect(() => {
+    // Parse + swap the persisted blob as a transition so the first paint and
+    // the first interactions stay responsive even with a large study history.
     const persisted = loadPersistedState();
-    setInternal(persisted);
+    startTransition(() => {
+      setInternal(persisted);
+    });
     let cancelled = false;
     void (async () => {
       // Migrate a legacy inline wallpaper out of the blob, otherwise hydrate

@@ -33,7 +33,6 @@ import {
 } from "@/components/print/course-paper";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { courseDocxBlob } from "@/lib/course-docx";
 import { decksForCourse } from "@/lib/courses";
 import { cn } from "@/lib/utils";
 import { useKnowly } from "@/store/knowly";
@@ -157,6 +156,9 @@ function CoursePrintPage() {
   const handleExportDocx = async () => {
     setExportState({ kind: "working", message: "Preparing the export…" });
     try {
+      // docx is a ~1 MB library — keep it out of the route chunk and load it
+      // only when a Word export is actually requested.
+      const { courseDocxBlob } = await import("@/lib/course-docx");
       const blob = await courseDocxBlob(course, progress, linkedDecks, options, (message) =>
         setExportState({ kind: "working", message }),
       );

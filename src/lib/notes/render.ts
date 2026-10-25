@@ -1,5 +1,5 @@
 import { getStroke } from "perfect-freehand";
-import { jsPDF } from "jspdf";
+
 import type {
   ImageElement,
   NoteElement,
@@ -424,6 +424,9 @@ export async function renderPageToDataUrl(
 
 export async function exportNotebookPdf(notebookTitle: string, pages: NotePage[]): Promise<void> {
   if (!pages.length) return;
+  // jsPDF (plus html2canvas/canvg) is a large bundle — load it only when a
+  // PDF is actually exported, not when the notebook opens.
+  const { jsPDF } = await import("jspdf");
   const first = pages[0];
   const orientation = first.width > first.height ? "landscape" : "portrait";
   const doc = new jsPDF({

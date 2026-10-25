@@ -97,19 +97,30 @@ export function splitMath(text: string): MathSegment[] {
   return segments;
 }
 
-/** Render a LaTeX snippet to self-contained HTML (KaTeX, no external requests). */
+/** Render a LaTeX snippet to self-contained HTML (KaTeX, no external requests).
+ * Results are cached: study screens typeset the same questions over and over
+ * during store-driven re-renders. */
+const latexCache = new Map<string, string>();
+
 export function latexHtml(source: string, display: boolean): string {
-  try {
-    return katex.renderToString(source, {
-      displayMode: display,
-      throwOnError: false,
-      strict: "ignore",
-      trust: false,
-      output: "html",
-    });
-  } catch {
-    return source.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const key = (display ? "d:" : "i:") + source;
+  let html = latexCache.get(key);
+  if (html === undefined) {
+    try {
+      html = katex.renderToString(source, {
+        displayMode: display,
+        throwOnError: false,
+        strict: "ignore",
+        trust: false,
+        output: "html",
+      });
+    } catch {
+      html = source.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    if (latexCache.size > 4000) latexCache.clear();
+    latexCache.set(key, html);
   }
+  return html;
 }
 
 /* ------------------------------------------------------------------ *

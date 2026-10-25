@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useRef } from "react";
+import { Fragment, memo, useMemo, useRef } from "react";
 import "katex/dist/katex.min.css";
 import { latexHtml, MATH_SYMBOLS, splitMath } from "@/lib/math";
 import { cn } from "@/lib/utils";
@@ -6,8 +6,18 @@ import { cn } from "@/lib/utils";
 /**
  * Renders text with inline LaTeX equations typeset by KaTeX (rendered
  * locally, no network). Plain text stays safe — it is never injected as HTML.
+ *
+ * Memoized: store-wide re-renders (answers, XP, navigation) re-run this
+ * component on every screen that shows a question — skip that cost when the
+ * text hasn't changed.
  */
-export function MathText({ text, className }: { text?: string; className?: string }) {
+export const MathText = memo(function MathText({
+  text,
+  className,
+}: {
+  text?: string;
+  className?: string;
+}) {
   const segments = useMemo(() => splitMath(text ?? ""), [text]);
   const hasMath = segments.some((s) => s.kind === "math");
   if (!hasMath) return <span className={className}>{text}</span>;
@@ -26,7 +36,7 @@ export function MathText({ text, className }: { text?: string; className?: strin
       )}
     </span>
   );
-}
+});
 
 /* ------------------------------------------------------------------ *
  * Symbol keypad for typed math answers
