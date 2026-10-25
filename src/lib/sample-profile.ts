@@ -11,16 +11,23 @@ import type {
   Settings,
 } from "./types";
 import type { SrsCard } from "./srs";
+import { defaultExamOptions } from "./exam-print";
+import type { PaperRecord, PaperSitting } from "./papers";
+import type { BinderLabel } from "./labels";
+import type { TimetableSlot } from "./timetable";
 
 const DAY = 86_400_000;
 const HOUR = 3_600_000;
 
 /**
- * Builds a complete "lived-in" profile: five decks in various states of study
- * (mastered, mid-schedule, fresh), an in-progress course with real progress,
- * a untouched course, six weeks of history, quiz results, journal entries,
- * templates, streaks and achievements. Timestamps are generated relative to
- * `now`, so the profile always looks freshly used on import.
+ * Builds a complete "lived-in" profile that touches every corner of Knowly:
+ * five decks in various states of study (mastered, mid-schedule, fresh —
+ * including STEM decks with real LaTeX equations), an in-progress course with
+ * real progress plus an untouched one, a weekly timetable, colour-coded binder
+ * labels, saved past papers with sitting scores, six weeks of history, quiz
+ * results, journal entries, templates, streaks and achievements. Timestamps
+ * are generated relative to `now`, so the profile always looks freshly used on
+ * import.
  */
 export function buildSampleProfile(now = Date.now()): AppState {
   const yesterday = now - DAY;
@@ -51,6 +58,7 @@ export function buildSampleProfile(now = Date.now()): AppState {
     description: "Everything from the Unit 2 slides: organelles, transport, mitosis.",
     color: "var(--deck-1)",
     tags: ["Biology", "cells", "mitosis"],
+    labelIds: ["label-l1", "label-l2"],
     createdAt: now - 34 * DAY,
     lastStudiedAt: now - DAY,
     favorite: true,
@@ -194,6 +202,10 @@ export function buildSampleProfile(now = Date.now()): AppState {
     description: "Mole conversions, limiting reagents and balancing reactions.",
     color: "var(--deck-2)",
     tags: ["Chemistry", "stoichiometry"],
+    isSTEM: true,
+    needsEquations: true,
+    needsGraphs: true,
+    labelIds: ["label-l2"],
     createdAt: now - 26 * DAY,
     lastStudiedAt: now - 2 * DAY,
     favorite: false,
@@ -215,10 +227,15 @@ export function buildSampleProfile(now = Date.now()): AppState {
         id: "q-chem-01",
         type: "multiple-choice",
         question: "How many particles are in one mole of a substance?",
-        answer: "6.02 × 10²³",
-        options: ["6.02 × 10²³", "3.14 × 10⁸", "1.60 × 10⁻¹⁹", "9.81 × 10⁰"],
+        answer: "$6.02 \\times 10^{23}$",
+        options: [
+          "$6.02 \\times 10^{23}$",
+          "$3.14 \\times 10^{8}$",
+          "$1.60 \\times 10^{-19}$",
+          "$9.81 \\times 10^{0}$",
+        ],
         difficulty: "easy",
-        explanation: "Avogadro's number: 6.02214076 × 10²³ particles per mole.",
+        explanation: "Avogadro's number: $6.02214076 \\times 10^{23}$ particles per mole.",
         concept: "The mole",
       },
       {
@@ -234,7 +251,7 @@ export function buildSampleProfile(now = Date.now()): AppState {
         id: "q-chem-03",
         type: "short-answer",
         question:
-          "In 2H₂ + O₂ → 2H₂O, if you have 5 mol of H₂ and 2 mol of O₂, which is the limiting reagent?",
+          "In $2H_2 + O_2 \\to 2H_2O$, if you have 5 mol of $H_2$ and 2 mol of $O_2$, which is the limiting reagent?",
         answer: "Oxygen (O₂)",
         explanation: "2 mol O₂ can only oxidise 4 mol of H₂, so oxygen runs out first.",
         concept: "Limiting reagents",
@@ -251,11 +268,12 @@ export function buildSampleProfile(now = Date.now()): AppState {
       {
         id: "q-chem-05",
         type: "multiple-choice",
-        question: "What is the molar mass of CuSO₄·5H₂O (copper(II) sulfate pentahydrate)?",
+        question:
+          "What is the molar mass of $\\mathrm{CuSO_4 \\cdot 5H_2O}$ (copper(II) sulfate pentahydrate)?",
         answer: "249.7 g/mol",
         options: ["159.6 g/mol", "249.7 g/mol", "181.2 g/mol", "267.3 g/mol"],
         difficulty: "hard",
-        explanation: "CuSO₄ is 159.6 g/mol; five waters add 5 × 18.0 = 90 g/mol.",
+        explanation: "CuSO₄ is 159.6 g/mol; five waters add $5 \\times 18.0 = 90$ g/mol.",
         concept: "Molar mass",
       },
       {
@@ -286,7 +304,9 @@ export function buildSampleProfile(now = Date.now()): AppState {
         id: "q-chem-08",
         type: "flashcard",
         question: "What is percent yield?",
-        answer: "(actual yield ÷ theoretical yield) × 100%.",
+        answer:
+          "$\\text{Percent yield} = \\frac{\\text{actual yield}}{\\text{theoretical yield}} \\times 100\\%$",
+        explanation: "Divide what you made by what the balanced equation says you could make.",
         concept: "Yield",
         difficulty: "easy",
       },
@@ -534,13 +554,18 @@ export function buildSampleProfile(now = Date.now()): AppState {
     description: "Next term's foundations: events, odds and distributions.",
     color: "var(--deck-5)",
     tags: ["Statistics", "probability"],
+    isSTEM: true,
+    labelIds: ["label-l3"],
     createdAt: now - 4 * DAY,
     lastStudiedAt: now - 3 * DAY,
     favorite: false,
     masteredIds: [],
     bookmarks: [],
     notes: {},
-    srs: { "q-stat-01": { ...tomorrow, lastReviewed: now - 3 * DAY } },
+    srs: {
+      "q-stat-01": { ...tomorrow, lastReviewed: now - 3 * DAY },
+      "q-stat-07": dueSoon,
+    },
     questions: [
       {
         id: "q-stat-01",
@@ -556,7 +581,7 @@ export function buildSampleProfile(now = Date.now()): AppState {
         question: "Two events are mutually exclusive if they can happen at the same time.",
         answer: "false",
         difficulty: "easy",
-        explanation: "Mutually exclusive events cannot happen together — P(A∩B) = 0.",
+        explanation: "Mutually exclusive events cannot happen together — $P(A \\cap B) = 0$.",
         concept: "Events",
       },
       {
@@ -576,8 +601,8 @@ export function buildSampleProfile(now = Date.now()): AppState {
       {
         id: "q-stat-04",
         type: "flashcard",
-        question: "What does P(A∪B) equal when A and B are independent?",
-        answer: "P(A) + P(B) − P(A)·P(B)",
+        question: "What does $P(A \\cup B)$ equal when $A$ and $B$ are independent?",
+        answer: "$P(A) + P(B) - P(A) \\cdot P(B)$",
         concept: "Combinatorics",
         difficulty: "hard",
       },
@@ -597,6 +622,15 @@ export function buildSampleProfile(now = Date.now()): AppState {
         items: ["Two heads", "One head and one tail", "At least one head"],
         concept: "Basic probability",
         difficulty: "easy",
+      },
+      {
+        id: "q-stat-07",
+        type: "flashcard",
+        question: "State the binomial probability of exactly $k$ successes in $n$ trials.",
+        answer: "$P(X = k) = \\binom{n}{k}\\, p^k (1-p)^{n-k}$",
+        explanation: "$\\binom{n}{k}$ counts the ways to arrange the $k$ successes.",
+        concept: "Distributions",
+        difficulty: "hard",
       },
     ],
   };
@@ -620,6 +654,7 @@ export function buildSampleProfile(now = Date.now()): AppState {
     color: "var(--deck-1)",
     emoji: "🔬",
     tags: ["Biology", "cells", "exam prep"],
+    labelIds: ["label-l1"],
     objectives: [
       "Identify every major organelle and its function",
       "Explain membrane transport: diffusion, osmosis, active transport",
@@ -1013,6 +1048,10 @@ export function buildSampleProfile(now = Date.now()): AppState {
     color: "var(--deck-2)",
     emoji: "🧪",
     tags: ["Chemistry"],
+    isSTEM: true,
+    needsEquations: true,
+    needsGraphs: true,
+    labelIds: ["label-l2"],
     objectives: [
       "Describe atomic structure",
       "Balance chemical equations",
@@ -1046,7 +1085,7 @@ export function buildSampleProfile(now = Date.now()): AppState {
                 id: "blk-c1",
                 type: "markdown",
                 markdown:
-                  "Protons (+1, in the nucleus) define the element. Neutrons add mass, not charge. Electrons (−1) orbit in shells and drive bonding.",
+                  "Protons (+1, in the nucleus) define the element. Neutrons add mass, not charge. Electrons (−1) orbit in shells and drive bonding. Isotope notation puts the mass number top-left of the symbol: carbon-14 is $^{14}_{6}\\mathrm{C}$.",
               },
               { id: "blk-c2", type: "checkpoint", questionId: "q-chemx-1", title: "Quick check" },
             ],
@@ -1530,6 +1569,17 @@ export function buildSampleProfile(now = Date.now()): AppState {
       14,
       ["multiple-choice", "true-false", "short-answer", "matching", "fill-blank"],
     ),
+    quizResult(
+      "qr-8",
+      2,
+      16.5,
+      ["deck-chem", "deck-stats"],
+      ["Chemistry — Stoichiometry", "Statistics — Probability Basics"],
+      13,
+      18,
+      11,
+      ["multiple-choice", "short-answer", "flashcard"],
+    ),
   ];
 
   const templates = [
@@ -1542,6 +1592,16 @@ export function buildSampleProfile(now = Date.now()): AppState {
       id: "tpl-2",
       name: "Language vocab pack",
       body: "Create a vocabulary deck for {{LANGUAGE}} at CEFR level {{LEVEL}}, themed on {{THEME}}.\n30 cards: 20 flashcards (target word → translation), 5 matching, 5 fill-with-the-word using the word_bank + blanks fields.\nInclude short sentences as context on every card.\nReturn ONLY a JSON object matching Knowly's deck schema.",
+    },
+    {
+      id: "tpl-3",
+      name: "STEM problem set (equations in LaTeX)",
+      body:
+        "Create a 24-question practice deck on {{TOPIC}} for a {{GRADE}} student.\n" +
+        "This is a maths/science topic: write ALL equations in LaTeX — inline $...$, larger working in $$...$$ (e.g. $v = u + at$, $\\frac{d}{dx}(x^2) = 2x$).\n" +
+        "Describe any graphs in words (axes, shape, key points) — the app shows text and LaTeX, never images.\n" +
+        "Mix: 8 short-answer, 6 multiple-choice, 4 fill-blank, 4 flashcards, 2 ordering. Tag every card with a narrow concept.\n" +
+        "Return ONLY a JSON object matching Knowly's deck schema.",
     },
   ];
 
@@ -1584,6 +1644,209 @@ export function buildSampleProfile(now = Date.now()): AppState {
       tags: ["mitosis", "mnemonics", "cell biology"],
       sessionId: "ses-26",
     },
+    {
+      id: "jrn-5",
+      createdAt: now - 3 * HOUR,
+      updatedAt: now - 3 * HOUR,
+      title: "Week mapped, papers shelved",
+      body: "Put the whole school week into the timetable and linked every class to its deck — revising for tomorrow's lesson is one tap from the schedule now. Shelved the two practice papers too: biology went 42% → 67% → 83% over three sittings, so the spaced reps really are paying off.",
+      mood: "great",
+      tags: ["timetable", "papers", "progress"],
+    },
+  ];
+
+  /* -------------------------------------------- timetable, labels, papers */
+
+  const labels: BinderLabel[] = [
+    { id: "label-l1", name: "Term 1", color: "blue", emoji: "📘" },
+    { id: "label-l2", name: "Exam priority", color: "amber", emoji: "🎯" },
+    { id: "label-l3", name: "Needs practice", color: "rose", emoji: "🧗" },
+  ];
+
+  // Monday-first: day 0 = Monday … day 6 = Sunday.
+  const timetable: TimetableSlot[] = [
+    {
+      id: "slot-mon-1",
+      day: 0,
+      start: "09:00",
+      end: "10:00",
+      title: "Biology",
+      subject: "Biology",
+      room: "B12",
+      teacher: "Ms. Odell",
+      deckId: "deck-bio",
+    },
+    {
+      id: "slot-mon-2",
+      day: 0,
+      start: "13:00",
+      end: "14:15",
+      title: "Chemistry lab",
+      subject: "Chemistry",
+      room: "Lab 2",
+      teacher: "Mr. Chen",
+      deckId: "deck-chem",
+    },
+    {
+      id: "slot-tue-1",
+      day: 1,
+      start: "09:00",
+      end: "10:00",
+      title: "Chemistry",
+      subject: "Chemistry",
+      room: "S3",
+      teacher: "Mr. Chen",
+      deckId: "deck-chem",
+    },
+    {
+      id: "slot-tue-2",
+      day: 1,
+      start: "14:00",
+      end: "15:00",
+      title: "Biology course work",
+      subject: "Study period",
+      room: "Library",
+      courseId: "course-bio",
+    },
+    {
+      id: "slot-wed-1",
+      day: 2,
+      start: "11:30",
+      end: "12:15",
+      title: "Spanish",
+      subject: "Spanish",
+      room: "L7",
+      teacher: "Sra. Vidal",
+      deckId: "deck-span",
+    },
+    {
+      id: "slot-wed-2",
+      day: 2,
+      start: "13:30",
+      end: "14:30",
+      title: "Statistics workshop",
+      subject: "Statistics",
+      room: "M1",
+      teacher: "Mrs. Adeyemi",
+      deckId: "deck-stats",
+    },
+    {
+      id: "slot-thu-1",
+      day: 3,
+      start: "09:00",
+      end: "10:00",
+      title: "History",
+      subject: "History",
+      room: "H2",
+      teacher: "Mr. Brandt",
+      deckId: "deck-hist",
+    },
+    {
+      id: "slot-thu-2",
+      day: 3,
+      start: "15:45",
+      end: "16:45",
+      title: "Biology course review",
+      subject: "Revision",
+      room: "Study hall",
+      courseId: "course-bio",
+    },
+    {
+      id: "slot-fri-1",
+      day: 4,
+      start: "09:00",
+      end: "10:00",
+      title: "Chemistry",
+      subject: "Chemistry",
+      room: "S3",
+      teacher: "Mr. Chen",
+      deckId: "deck-chem",
+    },
+    {
+      id: "slot-sun-1",
+      day: 6,
+      start: "18:00",
+      end: "19:30",
+      title: "Weekly review & planning",
+      subject: "Self-study",
+      room: "Home",
+      deckId: "deck-bio",
+    },
+  ];
+
+  const sitting = (
+    id: string,
+    daysAgo: number,
+    hour: number,
+    score: number,
+    total: number,
+    minutes: number,
+    notes?: string,
+  ): PaperSitting => ({
+    id,
+    takenAt: now - daysAgo * DAY + hour * HOUR,
+    score,
+    total,
+    percentage: Math.round((score / total) * 100),
+    minutes,
+    notes,
+  });
+
+  const papers: PaperRecord[] = [
+    {
+      id: "paper-bio-1",
+      title: "Cell Biology — Practice Paper 1",
+      createdAt: now - 18 * DAY,
+      options: {
+        ...defaultExamOptions("Cell Biology — Practice Paper 1", "Biology"),
+        date: new Date(now).toISOString().slice(0, 10),
+        studentName: "Alex Rivera",
+        studentClass: "Grade 10 · Riverside High School",
+        instructions: "Answer all questions. Show your working where a question says explain.",
+      },
+      questions: deckBio.questions.slice(0, 12),
+      deckIds: ["deck-bio"],
+      labelIds: ["label-l1", "label-l2"],
+      sittings: [
+        sitting(
+          "sit-bio-3",
+          3,
+          17,
+          10,
+          12,
+          31,
+          "Finally beat the mitosis ordering — the mnemonic paid off.",
+        ),
+        sitting("sit-bio-2", 9, 18.5, 8, 12, 38),
+        sitting("sit-bio-1", 16, 19, 5, 12, 45, "Transport and tonicity questions did the damage."),
+      ],
+    },
+    {
+      id: "paper-chem-1",
+      title: "Chemistry — Stoichiometry Mini Paper",
+      createdAt: now - 15 * DAY,
+      options: {
+        ...defaultExamOptions("Chemistry — Stoichiometry Mini Paper", "Chemistry"),
+        date: new Date(now).toISOString().slice(0, 10),
+        studentName: "Alex Rivera",
+        studentClass: "Grade 10 · Riverside High School",
+      },
+      questions: deckChem.questions.slice(0, 8),
+      deckIds: ["deck-chem"],
+      labelIds: ["label-l2"],
+      sittings: [
+        sitting("sit-chem-2", 5, 15.5, 7, 8, 21),
+        sitting(
+          "sit-chem-1",
+          13,
+          20,
+          4,
+          8,
+          24,
+          "Went in cold — worth a retry after the course lessons.",
+        ),
+      ],
+    },
   ];
 
   /* ------------------------------------------------------ settings */
@@ -1604,7 +1867,7 @@ export function buildSampleProfile(now = Date.now()): AppState {
   /* -------------------------------------------------------- bundle */
 
   return {
-    version: 3,
+    version: 4,
     onboardingComplete: true,
     decks: [deckBio, deckChem, deckSpan, deckHist, deckStats],
     courses: [courseBio, courseChem],
@@ -1615,8 +1878,8 @@ export function buildSampleProfile(now = Date.now()): AppState {
     results,
     templates,
     journal,
-    timetable: [],
-    labels: [],
-    papers: [],
+    timetable,
+    labels,
+    papers,
   };
 }

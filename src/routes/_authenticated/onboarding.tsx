@@ -246,7 +246,9 @@ function Onboarding() {
       return;
     }
     completeOnboarding();
-    toast.success("Sample profile loaded — 5 decks, 2 courses, 13-day streak. Explore freely!");
+    toast.success(
+      "Sample profile loaded — 5 decks, 2 courses, a full timetable and two practice papers. Explore freely!",
+    );
     navigate({ to: "/dashboard" });
   };
 
