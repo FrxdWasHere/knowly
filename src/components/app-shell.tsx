@@ -15,6 +15,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   Printer,
+  FileText,
   Rocket,
   GraduationCap,
   CalendarCheck,
@@ -141,6 +142,13 @@ const NAV_GROUPS: NavGroup[] = [
         icon: Printer,
         exact: false,
         hint: "Paper exam + answer key, ready to print",
+      },
+      {
+        to: "/papers",
+        label: "Paper Shelf",
+        icon: FileText,
+        exact: true,
+        hint: "Saved papers with every sitting's score",
       },
       {
         to: "/focus",

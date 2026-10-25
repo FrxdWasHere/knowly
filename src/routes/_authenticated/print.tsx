@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Printer, Library, FileJson, CheckCircle2, XCircle } from "lucide-react";
+import { Printer, Library, FileJson, CheckCircle2, XCircle, FolderPlus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { createId } from "@/lib/id";
 import {
   ALL_DIFFICULTIES,
   ALL_TYPES,
@@ -27,6 +28,9 @@ import { cn } from "@/lib/utils";
 import { useKnowly } from "@/store/knowly";
 
 export const Route = createFileRoute("/_authenticated/print")({
+  validateSearch: (search: Record<string, unknown>): { paper?: string } => ({
+    ...(typeof search["paper"] === "string" ? { paper: search["paper"] as string } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Printable Exam Builder — Knowly" },
@@ -75,24 +79,29 @@ function Chip({
 }
 
 function PrintExamPage() {
-  const { state } = useKnowly();
+  const { state, addPaper } = useKnowly();
+  const search = Route.useSearch();
   const decks = state.decks;
+  const fromPaper = search.paper ? state.papers.find((p) => p.id === search.paper) : undefined;
 
-  const [source, setSource] = useState<"decks" | "json">("decks");
+  const [source, setSource] = useState<"decks" | "json">(fromPaper ? "json" : "decks");
   const [deckIds, setDeckIds] = useState<string[]>(decks[0] ? [decks[0].id] : []);
   const [raw, setRaw] = useState("");
-  const [jsonQuestions, setJsonQuestions] = useState<Question[] | null>(null);
+  const [jsonQuestions, setJsonQuestions] = useState<Question[] | null>(
+    fromPaper ? fromPaper.questions : null,
+  );
   const [jsonErrors, setJsonErrors] = useState<string[]>([]);
 
   const [types, setTypes] = useState<QuestionType[]>(ALL_TYPES);
   const [difficulties, setDifficulties] = useState<Difficulty[]>(ALL_DIFFICULTIES);
-  const [count, setCount] = useState(20);
+  const [count, setCount] = useState(fromPaper ? fromPaper.questions.length : 20);
   const [shuffle, setShuffle] = useState(false);
   const [nonce, setNonce] = useState(0);
   const [options, setOptions] = useState<ExamOptions>(() => ({
     ...defaultExamOptions(),
     studentName: state.settings.displayName,
     studentClass: [state.settings.gradeLevel, state.settings.school].filter(Boolean).join(" · "),
+    ...(fromPaper ? fromPaper.options : {}),
   }));
 
   const set = (patch: Partial<ExamOptions>) => setOptions((o) => ({ ...o, ...patch }));
@@ -102,10 +111,13 @@ function PrintExamPage() {
     return decks.filter((d) => deckIds.includes(d.id)).flatMap((d) => d.questions);
   }, [source, jsonQuestions, decks, deckIds]);
 
-  const questions = useMemo(
-    () => selectQuestions(pool, { types, difficulties, count, shuffle }),
+  const questions = useMemo<Question[]>(
+    () =>
+      fromPaper
+        ? fromPaper.questions
+        : selectQuestions(pool, { types, difficulties, count, shuffle }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [pool, types, difficulties, count, shuffle, nonce],
+    [fromPaper, pool, types, difficulties, count, shuffle, nonce],
   );
 
   const [editing, setEditing] = useState(false);
@@ -172,12 +184,35 @@ function PrintExamPage() {
     <div className="max-w-6xl">
       <div className="print-hide">
         <PageHeader
-          title="Printable exam"
+          title={fromPaper ? "Reprint paper" : "Printable exam"}
           description="Pick a deck or paste in questions, shape the paper, then print it or save it as a PDF."
           action={
-            <Button onClick={() => window.print()} disabled={!questions.length}>
-              <Printer /> Print / Save as PDF
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  addPaper({
+                    id: createId(),
+                    title: options.title || "Practice paper",
+                    createdAt: Date.now(),
+                    options,
+                    questions: paperQuestions,
+                    deckIds: source === "decks" ? deckIds : undefined,
+                    sittings: [],
+                  });
+                  toast.success("Added to your paper shelf", {
+                    description:
+                      "Find it under Paper Shelf — reprint it any time or log a sitting's score.",
+                  });
+                }}
+                disabled={!paperQuestions.length}
+              >
+                <FolderPlus /> Save to paper shelf
+              </Button>
+              <Button onClick={() => window.print()} disabled={!questions.length}>
+                <Printer /> Print / Save as PDF
+              </Button>
+            </div>
           }
         />
       </div>
