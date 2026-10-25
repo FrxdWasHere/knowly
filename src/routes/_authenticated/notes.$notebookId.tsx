@@ -467,7 +467,7 @@ function NotebookEditorPage() {
         .catch(() => {
           setSaveState("error");
           toast.error("Couldn't save this page", {
-            description: "Browser storage may be full. Export a backup and free some space.",
+            description: "Knowly may be out of room to save. Export a backup and free some space.",
           });
         });
     }, 450);
@@ -1202,9 +1202,9 @@ function NotebookEditorPage() {
         bundle,
         `${notebook.title.replace(/[^a-z0-9-_ ]/gi, "").trim() || "notebook"}.json`,
       );
-      toast.success("Notebook archive exported");
+      toast.success("Notebook copy saved");
     } catch {
-      toast.error("Couldn't export the notebook archive");
+      toast.error("Couldn't save the notebook copy");
     } finally {
       setExporting(false);
     }
@@ -1746,7 +1746,7 @@ function NotebookEditorPage() {
           <DialogHeader>
             <DialogTitle>Export notebook</DialogTitle>
             <DialogDescription>
-              Files are generated locally. PDF export uses the page images and includes every note.
+              Files are created on this device. The PDF uses page images and includes every note.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-2">
@@ -1772,7 +1772,7 @@ function NotebookEditorPage() {
               onClick={exportJson}
               disabled={exporting}
             >
-              <FileJson className="size-4" /> Notebook archive (JSON)
+              <FileJson className="size-4" /> Copy of the whole notebook (as a file)
             </Button>
           </div>
         </DialogContent>
@@ -1809,8 +1809,8 @@ function NotebookEditorPage() {
                   : "AI flashcards from your notes"}
             </DialogTitle>
             <DialogDescription>
-              Copy this prompt into your AI, then import the JSON result back into Knowly. The
-              notebook text is included only in the prompt — nothing is uploaded.
+              Copy this into your AI, then bring the result back into Knowly. Your notebook text
+              only goes into the text you copy — nothing is sent anywhere.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-wrap gap-1.5">
@@ -1832,12 +1832,12 @@ function NotebookEditorPage() {
           />
           <div className="flex flex-wrap justify-end gap-2">
             <Button variant="outline" onClick={copyStudyPrompt}>
-              <Copy className="size-4" /> Copy prompt
+              <Copy className="size-4" /> Copy instructions
             </Button>
             {studyMode !== "summary" && (
               <Button asChild>
                 <Link to="/import">
-                  Import result <ChevronRight className="size-4" />
+                  Bring the result in <ChevronRight className="size-4" />
                 </Link>
               </Button>
             )}
@@ -2354,7 +2354,7 @@ function ToolRibbon({
             <RibbonButton
               icon={Download}
               label="Export"
-              title="Export this page, the notebook PDF, or the archive"
+              title="Save this page, the notebook PDF, or a copy of the notebook"
               onClick={onExport}
             />
           </div>

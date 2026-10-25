@@ -122,7 +122,7 @@ function CourseForgePage() {
   const copyPrompt = async () => {
     await navigator.clipboard.writeText(prompt);
     setCopied(true);
-    toast.success("Course prompt copied");
+    toast.success("Course instructions copied");
     window.setTimeout(() => setCopied(false), 1800);
   };
 
@@ -187,12 +187,12 @@ function CourseForgePage() {
     <AppPage>
       <PageHeader
         title="Course Forge"
-        description="Describe a topic or paste reference material. Knowly writes the generation brief; your AI writes the course JSON. Nothing is uploaded."
+        description="Describe a topic or paste your notes. Knowly writes the instructions; your AI writes the course. Nothing is uploaded."
         action={
           <>
             <Button asChild variant="outline">
               <Link to="/courses/import">
-                <FileJson className="size-4" /> Import result
+                <FileJson className="size-4" /> Bring the course in
               </Link>
             </Button>
             <Button variant="outline" onClick={createEmpty}>
@@ -200,7 +200,7 @@ function CourseForgePage() {
             </Button>
             <Button onClick={copyPrompt}>
               {copied ? <Check className="size-4" /> : <ClipboardCopy className="size-4" />}
-              {copied ? "Copied" : "Copy prompt"}
+              {copied ? "Copied" : "Copy instructions"}
             </Button>
           </>
         }
@@ -337,7 +337,7 @@ function CourseForgePage() {
             <span>
               Include module quizzes and a final exam
               <span className="block text-xs text-muted-foreground">
-                Adds assessment questions to the JSON.
+                Adds quiz and exam questions, so they're included in the course your AI writes.
               </span>
             </span>
           </label>
@@ -366,7 +366,7 @@ function CourseForgePage() {
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border p-4">
             <div className="flex items-center gap-2">
               <Sparkles className="size-4 text-primary" />
-              <h2 className="font-display text-lg font-semibold">Generated prompt</h2>
+              <h2 className="font-display text-lg font-semibold">Your course instructions</h2>
             </div>
             <Button size="sm" variant="outline" onClick={copyPrompt}>
               {copied ? <Check className="size-4" /> : <ClipboardCopy className="size-4" />}
@@ -377,12 +377,12 @@ function CourseForgePage() {
             {prompt}
           </pre>
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border p-4 text-xs text-muted-foreground">
-            <span>Run it in ChatGPT, Claude, Gemini or a local model.</span>
+            <span>Paste it into ChatGPT, Claude, Gemini or the AI you already use.</span>
             <Link
               to="/courses/import"
               className="inline-flex items-center gap-1 font-medium text-primary"
             >
-              Paste the JSON <ArrowRight className="size-3.5" />
+              Bring the course in <ArrowRight className="size-3.5" />
             </Link>
           </div>
         </section>

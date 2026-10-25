@@ -26,14 +26,14 @@ function PrivacyPage() {
     <LegalPage
       eyebrow="Your data, clearly explained"
       title="Privacy policy"
-      intro="Knowly is a local study workspace. Your library lives in this browser. Knowly does not run an account service or sync your decks to a server."
+      intro="Knowly runs entirely on your own device. Your library stays with you. Knowly does not run an account service or sync your decks to a server."
     >
       <section>
         <h2>What Knowly stores</h2>
         <p>
           Knowly keeps profile preferences, decks, questions, notes, bookmarks, quiz results, study
-          history, XP, streaks, achievements, settings, and optional wallpaper images in your
-          browser’s persistent storage on this device.
+          history, XP, streaks, achievements, settings, and optional wallpaper images on this
+          device, in the storage space your browser reserves for it.
         </p>
       </section>
       <section>
@@ -47,9 +47,9 @@ function PrivacyPage() {
       <section>
         <h2>AI services</h2>
         <p>
-          Knowly creates prompts for you to copy into an AI service of your choice. Knowly does not
-          send those prompts or your study materials to an AI provider on your behalf. Any service
-          you choose has its own privacy practices.
+          Knowly writes instructions for you to copy into an AI of your choice. Knowly never sends
+          those instructions or your study materials to an AI provider itself. Any service you
+          choose has its own privacy practices.
         </p>
       </section>
       <section>

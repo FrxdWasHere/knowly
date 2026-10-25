@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/import")({
   }),
   head: () => ({
     meta: [
-      { title: "Import a Deck — Validate AI JSON | Knowly" },
+      { title: "Import a Deck — Add an AI-Made Deck | Knowly" },
       {
         name: "description",
         content:
@@ -100,8 +100,8 @@ function ImportPage() {
   return (
     <div className="max-w-5xl">
       <PageHeader
-        title="Import JSON"
-        description="Bring back what your AI produced. Nothing is saved until validation passes and you confirm."
+        title="Bring in a deck"
+        description="Bring back what your AI made for you. Nothing is added until we've checked it and you confirm."
       />
 
       <div className="panel mb-6 flex flex-wrap items-center gap-3 p-4">
@@ -142,8 +142,8 @@ function ImportPage() {
         )}
         <span className="text-xs text-muted-foreground">
           {mode === "deck"
-            ? "Expects a full deck object with title, subject and questions."
-            : 'Expects a question pack: { "questions": [ … ] }'}
+            ? "Paste the whole deck your AI made — it should have a title, a subject and the questions."
+            : "Paste just a batch of extra questions made for an existing deck."}
         </span>
       </div>
 
@@ -165,7 +165,7 @@ function ImportPage() {
         )}
       >
         <UploadCloud className="size-8 text-primary" />
-        <p className="text-sm font-medium">Drag & drop a .json file here</p>
+        <p className="text-sm font-medium">Drag & drop the deck file here</p>
         <p className="text-xs text-muted-foreground">or</p>
         <Button variant="outline" onClick={() => fileRef.current?.click()}>
           <FileJson /> Choose a file
@@ -184,7 +184,7 @@ function ImportPage() {
 
       <section className="panel mt-6 p-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold">Paste JSON</h2>
+          <h2 className="text-sm font-semibold">Paste the deck text</h2>
           <span className="text-xs text-muted-foreground">{raw.length.toLocaleString()} chars</span>
         </div>
         <Textarea
@@ -208,8 +208,8 @@ function ImportPage() {
             >
               {result.ok ? <CheckCircle2 className="size-4" /> : <XCircle className="size-4" />}
               {result.ok
-                ? "Validation passed"
-                : `Validation failed — ${result.errors.length} error(s)`}
+                ? "Looks good — ready to add"
+                : `${result.errors.length} thing${result.errors.length === 1 ? "" : "s"} to fix`}
             </h2>
             <div className="flex gap-2">
               <Button variant="ghost" onClick={() => setRaw("")}>

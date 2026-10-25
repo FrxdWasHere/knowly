@@ -81,10 +81,10 @@ export function SrsDashboardWidget({ decks }: { decks: Deck[] }) {
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {due.length
-                ? `${scheduledPct}% of your library is on a long-term schedule · ${retention}% retention`
+                ? `${scheduledPct}% of your cards are on a long-term plan · you remember ${retention}% of your reviews`
                 : nextUp
-                  ? `Next card ripens ${formatDue(nextUp, now)} · ${retention}% retention`
-                  : "Study a deck to start scheduling cards."}
+                  ? `Next card is ready ${formatDue(nextUp, now)} · you remember ${retention}% of your reviews`
+                  : "Study a deck to get your review plan started."}
             </p>
             <Button size="sm" className="press mt-3 anim-glow" asChild>
               <Link to="/review">
@@ -135,7 +135,9 @@ export function SrsDashboardWidget({ decks }: { decks: Deck[] }) {
           {/* maturity mix */}
           {stages.length > 0 && (
             <div className="min-w-0">
-              <p className="mb-2 text-[11px] font-medium text-muted-foreground">Memory stages</p>
+              <p className="mb-2 text-[11px] font-medium text-muted-foreground">
+                How well you know your cards
+              </p>
               <div className="flex h-2 overflow-hidden rounded-full bg-secondary">
                 {stages.map((s) => (
                   <span

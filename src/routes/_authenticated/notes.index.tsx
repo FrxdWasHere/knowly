@@ -74,12 +74,12 @@ const NOTES_TOUR_STEPS: TourStep[] = [
     eyebrow: "Welcome to Notebooks",
     title: "A paper workspace that lives on your device",
     description:
-      "Notebooks are for thinking on the page: handwriting, highlights, typed notes, PDFs, images and study tape. Everything is stored locally in this browser.",
+      "Notebooks are for thinking on the page: handwriting, highlights, typed notes, PDFs, images and study tape. Everything is saved on this device.",
     icon: NotebookPen,
     bullets: [
       "Unlimited pages with A4, Letter, square and wide sizes",
       "Automatic saving while you write",
-      "Export a page, the whole notebook, or a portable archive",
+      "Save one page, the whole notebook, or a copy you can move to another device",
     ],
   },
   {
@@ -110,12 +110,12 @@ const NOTES_TOUR_STEPS: TourStep[] = [
     eyebrow: "Study from your notes",
     title: "Turn pages into active recall",
     description:
-      "Create AI prompts from the text in a notebook, link notebooks to courses or decks, and keep your handwritten thinking close to your study plan.",
+      "Get ready-made AI instructions from what you've written, and link notebooks to courses or decks — keeping your thinking close to your study plan.",
     icon: Sparkles,
     bullets: [
-      "Summary, flashcard and quiz prompts from notebook text",
+      "Get a summary, flashcards or a quiz from your own notes",
       "Link a notebook to a course lesson or practice deck",
-      "Import notebook archives on any device",
+      "Open notebook copies on any device",
     ],
   },
 ];
@@ -183,15 +183,14 @@ function NotesLibraryPage() {
       const raw = await file.text();
       const notebook = await importNotebookBundle(raw);
       if (!notebook) {
-        toast.error("That file isn't a Knowly notebook archive");
+        toast.error("That file doesn't look like a Knowly notebook");
         return;
       }
       toast.success("Notebook imported");
       navigate({ to: "/notes/$notebookId", params: { notebookId: notebook.id } });
     } catch (error) {
       toast.error("Couldn't import that notebook", {
-        description:
-          error instanceof Error ? error.message : "Browser storage may be full or unavailable.",
+        description: error instanceof Error ? error.message : "Knowly may be out of room to save.",
       });
     }
   };

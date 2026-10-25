@@ -22,7 +22,7 @@ import { useKnowly } from "@/store/knowly";
 export const Route = createFileRoute("/_authenticated/courses/import")({
   head: () => ({
     meta: [
-      { title: "Import a Course — Validate AI Course JSON | Knowly" },
+      { title: "Import a Course — Add an AI-Made Course | Knowly" },
       {
         name: "description",
         content:
@@ -63,7 +63,7 @@ function CourseImportPage() {
     <AppPage>
       <PageHeader
         title="Import a course"
-        description="Paste the JSON from Course Forge, or upload a course file. Nothing is added until every module, lesson and question passes validation."
+        description="Paste the course your AI made with Course Forge, or upload the file. Nothing is added until every module, lesson and question checks out."
         action={
           <>
             <Button asChild variant="outline">
@@ -86,7 +86,7 @@ function CourseImportPage() {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <FileJson className="size-4 text-primary" />
-              <h2 className="font-display text-lg font-semibold">Course JSON</h2>
+              <h2 className="font-display text-lg font-semibold">Course from Course Forge</h2>
             </div>
             <div className="flex gap-2">
               <input
@@ -126,15 +126,15 @@ function CourseImportPage() {
             <Textarea
               value={raw}
               onChange={(event) => setRaw(event.target.value)}
-              placeholder="Paste the course JSON here, or drag a .json file onto this box…"
+              placeholder="Paste the course here, or drag the file onto this box…"
               className="min-h-[480px] font-mono text-xs leading-6"
               spellCheck={false}
             />
           </div>
 
           <p className="mt-3 text-xs leading-5 text-muted-foreground">
-            Schema: course metadata → modules → lessons → markdown blocks and checkpoint questions.
-            Module quizzes and a final exam are optional.
+            Your course is made of: an overview → modules → lessons → written pages and checkpoint
+            questions. Module quizzes and a final exam are optional.
           </p>
         </section>
 
@@ -146,8 +146,8 @@ function CourseImportPage() {
               </span>
               <h2 className="mt-4 font-display text-lg font-semibold">Preview appears here</h2>
               <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-                Paste a generated course to see its modules, lessons, questions and any validation
-                issues before importing.
+                Paste a course to preview its modules, lessons and questions — plus anything that
+                still needs fixing.
               </p>
             </div>
           )}
@@ -165,12 +165,12 @@ function CourseImportPage() {
                   )}
                   <div className="min-w-0">
                     <h2 className="font-display text-lg font-semibold">
-                      {result.ok ? course?.title : "Course needs fixes"}
+                      {result.ok ? course?.title : "A few things need fixing"}
                     </h2>
                     <p className="mt-1 text-sm text-muted-foreground">
                       {result.ok
                         ? `${course?.subject}${course?.level ? ` · ${course.level}` : ""}`
-                        : "Fix the errors below, then validate again."}
+                        : "Fix the items below, then check again."}
                     </p>
                   </div>
                 </div>
@@ -216,7 +216,8 @@ function CourseImportPage() {
               {result.errors.length > 0 && (
                 <div className="panel border-destructive/40 p-4">
                   <p className="flex items-center gap-2 text-sm font-semibold text-destructive">
-                    <XCircle className="size-4" /> {result.errors.length} errors
+                    <XCircle className="size-4" /> {result.errors.length}{" "}
+                    {result.errors.length === 1 ? "thing needs fixing" : "things need fixing"}
                   </p>
                   <ul className="mt-3 max-h-64 space-y-2 overflow-auto text-xs leading-5">
                     {result.errors.map((error, index) => (

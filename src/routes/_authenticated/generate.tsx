@@ -106,7 +106,9 @@ function GeneratePage() {
 
   const copy = async () => {
     await navigator.clipboard.writeText(prompt);
-    toast.success("Prompt copied", { description: "Paste it into your preferred AI model." });
+    toast.success("Instructions copied", {
+      description: "Paste them into the AI you already use.",
+    });
   };
 
   const clear = () => {
@@ -114,21 +116,21 @@ function GeneratePage() {
     setTitle("");
     setSubject("");
     setExtra("");
-    toast("Prompt cleared");
+    toast("Cleared");
   };
 
   return (
     <div>
       <PageHeader
         title="Prompt Forge"
-        description="Knowly never contacts an AI. It builds the prompt — you run it wherever you like, then bring the JSON back."
+        description="Knowly doesn't talk to any AI itself. It writes the instructions — you paste them into the AI you use, then bring the finished deck back here."
         action={
           <div className="flex gap-2">
             <Button variant="outline" onClick={clear}>
               <Eraser /> Clear
             </Button>
             <Button onClick={copy}>
-              <Copy /> Copy prompt
+              <Copy /> Copy instructions
             </Button>
           </div>
         }
@@ -174,8 +176,8 @@ function GeneratePage() {
             )}
             <span className="text-xs text-muted-foreground">
               {mode === "append"
-                ? "Produces a question pack — import it via Import JSON → “Add questions to a deck”."
-                : "Produces a full deck object."}
+                ? "Gives you extra questions for a deck you already have — bring them in via “Bring in a deck → Add questions to a deck”."
+                : "Gives you a whole new deck."}
             </span>
           </section>
 
@@ -205,7 +207,7 @@ function GeneratePage() {
               <div className="flex items-center justify-between">
                 <Label htmlFor="material">Study material</Label>
                 <span className="text-xs text-muted-foreground">
-                  {material.length.toLocaleString()} chars · suggests ~
+                  {material.length.toLocaleString()} characters · suggests ~
                   {estimateQuestions(material.length)} questions
                 </span>
               </div>
@@ -238,7 +240,7 @@ function GeneratePage() {
                 className="max-w-[140px]"
               />
               <p className="text-xs text-muted-foreground">
-                Rounds to the nearest multiple of 5. No upper limit.
+                Numbers are rounded to steps of 5. No upper limit.
               </p>
             </div>
 
@@ -295,7 +297,7 @@ function GeneratePage() {
 
           <section className="panel p-6">
             <h2 className="flex items-center gap-2 text-sm font-semibold">
-              <Save className="size-4 text-primary" /> Prompt templates
+              <Save className="size-4 text-primary" /> Saved templates
             </h2>
             <div className="mt-4 flex gap-2">
               <Button
@@ -304,10 +306,10 @@ function GeneratePage() {
                 onClick={() => {
                   const name = title || `Template ${state.templates.length + 1}`;
                   saveTemplate({ id: createId(), name, body: prompt });
-                  toast.success("Template saved locally");
+                  toast.success("Template saved on this device");
                 }}
               >
-                <Save /> Save current prompt
+                <Save /> Save these instructions
               </Button>
             </div>
             <ul className="mt-4 space-y-2">
@@ -344,10 +346,10 @@ function GeneratePage() {
         <section className="panel flex h-fit flex-col p-6 xl:sticky xl:top-24">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-sm font-semibold">
-              <Wand2 className="size-4 text-primary" /> Prompt preview
+              <Wand2 className="size-4 text-primary" /> Your instructions, ready to copy
             </h2>
             <span className="text-xs text-muted-foreground">
-              {prompt.length.toLocaleString()} chars
+              {prompt.length.toLocaleString()} characters
             </span>
           </div>
           <pre className="max-h-[60vh] overflow-auto whitespace-pre-wrap rounded-xl bg-surface-2/70 p-4 font-mono text-[11px] leading-relaxed text-muted-foreground">
@@ -355,7 +357,7 @@ function GeneratePage() {
           </pre>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button onClick={copy}>
-              <Copy /> Copy prompt
+              <Copy /> Copy instructions
             </Button>
             {[
               { label: "ChatGPT", url: "https://chat.openai.com" },

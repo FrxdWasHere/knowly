@@ -102,12 +102,12 @@ function SnapshotsPage() {
     const list = [snap, ...loadSnapshots()].slice(0, 20);
     persist(list);
     setSnapshots(list);
-    flash("Snapshot saved.");
+    flash("Restore point saved.");
   };
 
   const restore = (snap: Snapshot) => {
     setState(() => snap.data);
-    flash("Snapshot restored.");
+    flash("Library restored.");
   };
 
   const remove = (id: string) => {
@@ -144,7 +144,7 @@ function SnapshotsPage() {
       const list = [snap, ...loadSnapshots()].slice(0, 20);
       persist(list);
       setSnapshots(list);
-      flash("Backup imported.");
+      flash("Backup loaded.");
     } catch {
       flash("That file could not be read.");
     }

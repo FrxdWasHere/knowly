@@ -91,7 +91,7 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
         <p className="font-medium">No decks yet</p>
         <p className="mt-1 text-sm text-muted-foreground">Import a deck to start quizzing.</p>
         <Button className="mt-5" asChild>
-          <Link to="/import">Import JSON</Link>
+          <Link to="/import">Bring in a deck</Link>
         </Button>
       </div>
     );

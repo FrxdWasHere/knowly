@@ -17,7 +17,7 @@ describe("validateDeckJson", () => {
   it("rejects malformed JSON", () => {
     const result = validateDeckJson("{ not json ");
     expect(result.ok).toBe(false);
-    expect(result.errors[0]).toMatch(/Invalid JSON/);
+    expect(result.errors[0]).toMatch(/valid JSON/);
   });
 
   it("wraps a bare question array into a deck", () => {
@@ -26,7 +26,7 @@ describe("validateDeckJson", () => {
     );
     expect(result.ok).toBe(true);
     expect(result.deck?.title).toBe("Imported Deck");
-    expect(result.warnings.join(" ")).toMatch(/bare question array/i);
+    expect(result.warnings.join(" ")).toMatch(/plain list of questions/i);
   });
 
   it("requires options and a matching answer for multiple-choice", () => {
@@ -37,7 +37,7 @@ describe("validateDeckJson", () => {
       }),
     );
     expect(result.ok).toBe(false);
-    expect(result.errors.join(" ")).toMatch(/at least 2 options/);
+    expect(result.errors.join(" ")).toMatch(/at least 2 answer options/);
   });
 
   it("requires 2+ items for ordering", () => {
@@ -59,7 +59,7 @@ describe("validateDeckJson", () => {
       }),
     );
     expect(result.ok).toBe(false);
-    expect(result.errors.join(" ")).toMatch(/placeholder/);
+    expect(result.errors.join(" ")).toMatch(/blank/);
   });
 
   it("always generates floor-of-one questions", () => {

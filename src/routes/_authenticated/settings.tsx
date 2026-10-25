@@ -743,13 +743,13 @@ function SettingsPage() {
         </Group>
 
         <Group
-          title="Spaced Repetition"
-          footer="Tune how aggressively review cards are scheduled. These values affect every study surface."
+          title="Review scheduling"
+          footer="Fine-tune how often forgotten cards come back. These settings change every screen where you review."
         >
           <SliderBlock
             icon={RotateCcw}
             tint="--accent"
-            label="Relearn step"
+            label="Second chance"
             value={`${s.srs.learningStepMinutes} min`}
             hint="How soon a forgotten card comes back."
           >
@@ -764,9 +764,9 @@ function SettingsPage() {
           <SliderBlock
             icon={SlidersHorizontal}
             tint="--primary"
-            label="Interval modifier"
+            label="Review pace"
             value={`${s.srs.intervalModifier.toFixed(2)}×`}
-            hint="Stretch (or compress) every scheduled interval."
+            hint="Make every review come back sooner or later (higher = further apart)."
           >
             <Slider
               value={[s.srs.intervalModifier]}
@@ -779,9 +779,9 @@ function SettingsPage() {
           <SliderBlock
             icon={Zap}
             tint="--warning"
-            label="Easy bonus"
+            label="“Easy” stretch"
             value={`${s.srs.easyBonus.toFixed(2)}×`}
-            hint="Extra spacing when you grade a card “Easy”."
+            hint="When you say a card was “Easy”, its next review moves even further out."
           >
             <Slider
               value={[s.srs.easyBonus]}
@@ -794,9 +794,9 @@ function SettingsPage() {
           <SliderBlock
             icon={CalendarCheck}
             tint="--chart-5"
-            label="Maximum interval"
-            value={`${s.srs.maxIntervalDays} d`}
-            hint="Never schedule a card further out than this."
+            label="Longest gap"
+            value={`${s.srs.maxIntervalDays} days`}
+            hint="No card waits longer than this many days."
           >
             <Slider
               value={[s.srs.maxIntervalDays]}
@@ -827,7 +827,7 @@ function SettingsPage() {
 
         <Group
           title="Data & Storage"
-          footer={`${state.decks.length} decks · ${state.courses.length} courses · ${state.history.length} sessions stored in this browser. Export JSON to back up or move your library. Notebook archives are exported separately from the Notebooks page.`}
+          footer={`${state.decks.length} decks · ${state.courses.length} courses · ${state.history.length} sessions saved on this device. Save a backup file to keep a copy or move your library. Notebooks are exported one at a time from the Notebooks page.`}
         >
           <ActionRow
             icon={Download}
@@ -840,7 +840,7 @@ function SettingsPage() {
             icon={Upload}
             tint="--primary"
             label="Import backup"
-            hint="Restore from a JSON file"
+            hint="Bring back everything from a saved backup file"
             onClick={() => fileRef.current?.click()}
           />
           <input
@@ -882,7 +882,7 @@ function SettingsPage() {
           <div className="space-y-2 px-4 py-3">
             <div className="flex items-center justify-between text-[13px]">
               <span className="flex items-center gap-1.5 text-muted-foreground">
-                <HardDrive className="size-3.5" aria-hidden /> Local storage used
+                <HardDrive className="size-3.5" aria-hidden /> Space Knowly is using
               </span>
               <span className="font-medium tabular-nums">
                 {usage ? formatBytes(usage.usedBytes) : "measuring…"}
@@ -892,7 +892,7 @@ function SettingsPage() {
             <div
               className="h-2 overflow-hidden rounded-full bg-muted"
               role="progressbar"
-              aria-label="Local storage used"
+              aria-label="Space Knowly is using"
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={usage?.percent ?? undefined}
@@ -908,9 +908,8 @@ function SettingsPage() {
               />
             </div>
             <p className="text-[13px] leading-5 text-muted-foreground">
-              If the browser fills up, new saves stop — export a backup now and then to be safe.
-              Notebooks are stored separately; export each one as an archive from the Notebooks
-              page.
+              When Knowly runs out of room, it can't save new work — save a backup now and then to
+              be safe. Notebooks are stored separately; export each one from the Notebooks page.
             </p>
           </div>
         </Group>

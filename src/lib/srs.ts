@@ -159,8 +159,8 @@ export function cardStage(card: SrsCard | undefined): SrsStage {
 export const STAGE_META: Record<SrsStage, { label: string; color: string }> = {
   new: { label: "New", color: "var(--muted-foreground)" },
   learning: { label: "Learning", color: "var(--warning)" },
-  young: { label: "Young", color: "var(--primary)" },
-  mature: { label: "Mature", color: "var(--success)" },
+  young: { label: "Getting there", color: "var(--primary)" },
+  mature: { label: "Solid", color: "var(--success)" },
 };
 
 export function isDue(card: SrsCard | undefined, now = Date.now()) {

@@ -58,8 +58,8 @@ function WeakSpotsPage() {
 
   const cards = [
     { label: "Shaky cards", value: String(weak.length), icon: TrendingDown },
-    { label: "Leeches (3+ lapses)", value: String(leeches.length), icon: Bug },
-    { label: "Average ease", value: weak.length ? avgEase.toFixed(2) : "—", icon: Target },
+    { label: "Missed 3+ times", value: String(leeches.length), icon: Bug },
+    { label: "Average difficulty", value: weak.length ? avgEase.toFixed(2) : "—", icon: Target },
     { label: "Weak concepts", value: String(concepts.length), icon: AlertTriangle },
   ];
 
@@ -138,10 +138,10 @@ function WeakSpotsPage() {
                               : "border-warning/50 text-warning",
                           )}
                         >
-                          {card.lapses} lapse{card.lapses === 1 ? "" : "s"}
+                          missed {card.lapses}×
                         </Badge>
                         <p className="mt-1.5 font-mono text-[10px] text-muted-foreground">
-                          ease {card.ease} · {formatDue(card.due)}
+                          difficulty {card.ease} · due {formatDue(card.due)}
                         </p>
                       </div>
                     </div>

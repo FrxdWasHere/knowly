@@ -29,13 +29,13 @@ import type { Deck } from "@/lib/types";
 export const Route = createFileRoute("/_authenticated/leeches")({
   head: () => ({
     meta: [
-      { title: "Leech Manager — Tame Cards That Keep Lapsing | Knowly" },
+      { title: "Trouble Cards — Fix Cards You Keep Forgetting | Knowly" },
       {
         name: "description",
         content:
           "Find the cards you forget over and over, then pause them, reset their schedule or rewrite them so they finally stick. Works fully offline.",
       },
-      { property: "og:title", content: "Leech Manager — Knowly" },
+      { property: "og:title", content: "Trouble Cards — Knowly" },
       {
         property: "og:description",
         content: "Pause, reset or rewrite the cards that keep lapsing.",
@@ -132,20 +132,20 @@ function LeechesPage() {
         suspended: Array.from(new Set([...(deck.suspended ?? []), ...ids])),
       });
     }
-    toast.success(`Paused ${active.length} leech${active.length === 1 ? "" : "es"}`);
+    toast.success(`Paused ${active.length} trouble card${active.length === 1 ? "" : "s"}`);
   }
 
   const stats = [
-    { label: "Active leeches", value: String(active.length), icon: Bug },
+    { label: "Cards you keep missing", value: String(active.length), icon: Bug },
     { label: "Paused cards", value: String(paused.length), icon: PauseCircle },
-    { label: "Total lapses", value: String(totalLapses), icon: Gauge },
+    { label: "Times missed", value: String(totalLapses), icon: Gauge },
     { label: "Worst deck", value: worstDeck, icon: Layers },
   ];
 
   return (
     <div>
       <PageHeader
-        title="Leech Manager"
+        title="Trouble Cards"
         description="Cards you keep forgetting drain a whole study session. Pause them, reset their schedule, or rewrite them into something memorable."
         action={
           <div className="flex gap-2">
@@ -171,7 +171,7 @@ function LeechesPage() {
 
       <section className="panel mb-6 flex flex-wrap items-center gap-4 p-5">
         <Label className="text-xs text-muted-foreground">
-          Counts as a leech after {threshold} lapse{threshold === 1 ? "" : "s"}
+          Shows up here after you miss it {threshold} time{threshold === 1 ? "" : "s"}
         </Label>
         <Slider
           value={[threshold]}
@@ -184,7 +184,7 @@ function LeechesPage() {
       </section>
 
       <section className="panel p-6">
-        <h2 className="text-sm font-semibold">Leeches</h2>
+        <h2 className="text-sm font-semibold">Trouble cards</h2>
         {leeches.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">
             Nothing is lapsing repeatedly. Keep reviewing — any card you miss {threshold} or more
@@ -257,7 +257,7 @@ function LeechesPage() {
                             <span>{TYPE_LABELS[item.question.type]}</span>
                             <span>·</span>
                             <span className="font-mono">
-                              ease {item.card.ease} · {formatDue(item.card.due)}
+                              difficulty {item.card.ease} · due {formatDue(item.card.due)}
                             </span>
                           </div>
                         </div>
@@ -270,7 +270,7 @@ function LeechesPage() {
                                 : "border-destructive/50 text-destructive"
                             }
                           >
-                            {item.suspended ? "Paused" : `${item.lapses} lapses`}
+                            {item.suspended ? "Paused" : `missed ${item.lapses}×`}
                           </Badge>
                         </div>
                       </div>

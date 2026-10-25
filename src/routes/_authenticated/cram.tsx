@@ -43,7 +43,11 @@ const COUNTS = [10, 20, 50, 100, 0] as const;
 const SECONDS = [0, 5, 10, 20] as const;
 const ORDERS: { id: Order; label: string; hint: string }[] = [
   { id: "random", label: "Shuffled", hint: "Pure random order" },
-  { id: "weakest", label: "Weakest first", hint: "Lapses and low ease lead" },
+  {
+    id: "weakest",
+    label: "Weakest first",
+    hint: "Cards you miss most, plus the tough ones, come first",
+  },
   { id: "unseen", label: "Unseen first", hint: "Cards you have never reviewed" },
 ];
 

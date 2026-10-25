@@ -70,12 +70,12 @@ const FAQ: { q: string; a: string }[] = [
     a: "Take a snapshot on the Snapshots page and download it, then load that file on the other device.",
   },
   {
-    q: "What counts as a leech?",
-    a: "A card you keep forgetting after repeated attempts. The Leech Manager lets you set the miss count and pause, reset or rewrite those cards.",
+    q: "What are trouble cards?",
+    a: "Cards you keep forgetting after repeated attempts. The Trouble Cards page lets you set the miss count and pause, reset or rewrite those cards.",
   },
   {
     q: "Why do some cards never show up in reviews?",
-    a: "They may be paused. Paused cards stay out of reviews and due counts until you unpause them in the Leech Manager.",
+    a: "They may be paused. Paused cards stay out of reviews and due counts until you unpause them on the Trouble Cards page.",
   },
   {
     q: "Can I reorganise decks without re-importing?",

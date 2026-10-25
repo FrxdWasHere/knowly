@@ -139,14 +139,16 @@ export function validateCourseJson(raw: string): CourseValidationResult {
   } catch (e) {
     return {
       ok: false,
-      errors: [`Invalid JSON syntax: ${(e as Error).message}`],
+      errors: [`That text isn't valid JSON — ${(e as Error).message}`],
       warnings,
     };
   }
 
   if (data && typeof data === "object" && "course" in data) {
     data = (data as { course: unknown }).course;
-    warnings.push("Unwrapped the course object.");
+    warnings.push(
+      "Your file had the course wrapped in an extra layer — we fixed it automatically.",
+    );
   }
 
   const parsed = courseSchema.safeParse(data);
@@ -162,7 +164,7 @@ export function validateCourseJson(raw: string): CourseValidationResult {
     const modulePath = `modules[${moduleIndex}]`;
     const lessons: CourseLesson[] = module.lessons.map((lesson, lessonIndex) => {
       const path = `${modulePath}.lessons[${lessonIndex}]`;
-      if (!lesson.blocks.length) warnings.push(`${path}: no lesson content yet.`);
+      if (!lesson.blocks.length) warnings.push(`${path}: this lesson has no writing yet.`);
       const questions = buildQuestions(
         lesson.questions,
         `${path}.questions`,
@@ -221,9 +223,11 @@ export function validateCourseJson(raw: string): CourseValidationResult {
     updatedAt: now,
   };
 
-  if (!course.objectives.length) warnings.push("No course-level objectives were provided.");
+  if (!course.objectives.length) warnings.push("The course overview has no goals listed.");
   if (!course.modules.some((module) => module.lessons.some((lesson) => lesson.blocks.length))) {
-    warnings.push("This is a course shell — add lesson content or generate it with Course Forge.");
+    warnings.push(
+      "This course is just the outline — write the lessons yourself or generate them with Course Forge.",
+    );
   }
 
   return { ok: true, errors, warnings: warnings.slice(0, 20), course };

@@ -103,7 +103,7 @@ const NAV_GROUPS: NavGroup[] = [
         label: "Daily Review",
         icon: Brain,
         exact: false,
-        hint: "Spaced repetition — cards due today",
+        hint: "Cards due today, on a smart schedule",
       },
       {
         to: "/weak-spots",
@@ -170,10 +170,10 @@ const NAV_GROUPS: NavGroup[] = [
       },
       {
         to: "/courses/import",
-        label: "Import Course",
+        label: "Import a course",
         icon: FileJson,
         exact: false,
-        hint: "Paste a course JSON and validate it",
+        hint: "Check and add an AI-made course",
       },
     ],
   },
@@ -233,24 +233,24 @@ const NAV_GROUPS: NavGroup[] = [
       },
       {
         to: "/import",
-        label: "Import JSON",
+        label: "Bring in a deck",
         icon: Download,
         exact: false,
-        hint: "Paste question-bank JSON with validation",
+        hint: "Check and add questions your AI made",
       },
       {
         to: "/generate",
         label: "Prompt Forge",
         icon: Wand2,
         exact: false,
-        hint: "Build an AI prompt — run it outside, import the result",
+        hint: "Get instructions to paste into your AI, then bring the result back",
       },
       {
         to: "/format",
-        label: "JSON Format",
+        label: "Deck file format",
         icon: FileJson,
         exact: false,
-        hint: "Schema reference + sample deck files",
+        hint: "What a deck file looks like, with samples",
       },
     ],
   },
@@ -303,7 +303,7 @@ const NAV_GROUPS: NavGroup[] = [
       },
       {
         to: "/leeches",
-        label: "Leech Manager",
+        label: "Trouble Cards",
         icon: Bug,
         exact: false,
         hint: "Fix the cards you keep forgetting",
@@ -634,7 +634,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="hidden items-center gap-2 rounded-full border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs text-muted-foreground backdrop-blur md:flex">
             <span className="inline-flex size-1.5 animate-pulse rounded-full bg-success shadow-[0_0_8px_var(--success)]" />
             <HardDrive className="size-3.5 text-primary" />
-            Saved on this device · export JSON to move it
+            Everything saved on this device · export a copy to move it
           </div>
           <div className="flex items-center gap-2">
             <button

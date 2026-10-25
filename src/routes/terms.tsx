@@ -38,11 +38,11 @@ function TermsPage() {
         </p>
       </section>
       <section>
-        <h2>Local storage</h2>
+        <h2>Where your data is kept</h2>
         <p>
-          Your library is stored in this browser. It can be lost if that storage is cleared, the
-          browser profile is reset, or the device is replaced. Keep JSON exports of important
-          material.
+          Your library is saved on this device, in the space your browser reserves for Knowly. It
+          can be lost if that storage is cleared, the browser profile is reset, or the device is
+          replaced. Keep saved backup files of important material.
         </p>
       </section>
       <section>
@@ -62,9 +62,9 @@ function TermsPage() {
       <section>
         <h2>AI-generated material</h2>
         <p>
-          You are responsible for reviewing prompts and material produced by third-party AI
-          services. Knowly does not guarantee that imported content is complete, accurate, or
-          suitable for an assessment.
+          You are responsible for reviewing the instructions you give and the material produced by
+          third-party AI services. Knowly does not guarantee that imported content is complete,
+          accurate, or suitable for an assessment.
         </p>
       </section>
       <section>

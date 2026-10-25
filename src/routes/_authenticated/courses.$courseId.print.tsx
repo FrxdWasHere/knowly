@@ -172,7 +172,7 @@ function CoursePrintPage() {
       console.error("DOCX export failed:", error);
       setExportState({ kind: "error", log: buildErrorLog(error) });
       const message = error instanceof Error ? error.message : String(error);
-      toast.error("DOCX export failed", { description: message.slice(0, 200) });
+      toast.error("The Word file didn't download", { description: message.slice(0, 200) });
     }
   };
 
@@ -186,7 +186,7 @@ function CoursePrintPage() {
             action={
               <div className="flex flex-wrap items-center gap-2.5">
                 <Button variant="outline" onClick={handleExportDocx} disabled={docxWorking}>
-                  <ArrowDownToLine /> Export DOCX
+                  <ArrowDownToLine /> Save as Word file
                 </Button>
                 <Button onClick={() => window.print()}>
                   <Printer /> Print / Save as PDF
@@ -200,9 +200,12 @@ function CoursePrintPage() {
           <div className="print-hide mb-4 rounded-2xl border border-destructive/40 bg-destructive/10 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-destructive">DOCX export failed</p>
+                <p className="text-sm font-semibold text-destructive">
+                  The Word file didn't download
+                </p>
                 <p className="text-[11px] text-muted-foreground">
-                  The full error log is below — copy it if you want to report the problem.
+                  The technical details are below — copy them if you want to tell someone what
+                  happened.
                 </p>
               </div>
               <div className="flex gap-2">
@@ -215,10 +218,10 @@ function CoursePrintPage() {
                   onClick={() => {
                     void navigator.clipboard
                       .writeText(exportState.log)
-                      .then(() => toast.success("Error log copied"));
+                      .then(() => toast.success("Details copied"));
                   }}
                 >
-                  <Copy /> Copy log
+                  <Copy /> Copy details
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => setExportState({ kind: "idle" })}>
                   Dismiss
@@ -246,8 +249,7 @@ function CoursePrintPage() {
                 <span className="min-w-0 truncate">{exportState.message}</span>
               </div>
               <p className="mt-3 text-[11px] leading-4 text-muted-foreground">
-                Everything is generated right inside your browser — larger courses take a few
-                seconds.
+                Everything is created on this device — larger courses take a few seconds.
               </p>
             </div>
           </div>

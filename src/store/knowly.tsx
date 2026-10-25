@@ -248,9 +248,10 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
       } catch {
         if (!saveErrorShown.current) {
           saveErrorShown.current = true;
-          toast.error("Couldn't save your data — browser storage is full", {
+          toast.error("Couldn't save your work — Knowly is running out of space", {
             id: "storage-full",
-            description: "Try exporting a backup, then free up space or remove large wallpapers.",
+            description:
+              "Save a backup of your library first, then remove large wallpapers to free up room.",
           });
         }
       }

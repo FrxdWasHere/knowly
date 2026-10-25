@@ -173,7 +173,7 @@ function PrintExamPage() {
       <div className="print-hide">
         <PageHeader
           title="Printable exam"
-          description="Pick a deck or paste JSON, shape the paper, then print it or save it as a PDF."
+          description="Pick a deck or paste in questions, shape the paper, then print it or save it as a PDF."
           action={
             <Button onClick={() => window.print()} disabled={!questions.length}>
               <Printer /> Print / Save as PDF
@@ -198,7 +198,7 @@ function PrintExamPage() {
                 variant={source === "json" ? "default" : "outline"}
                 onClick={() => setSource("json")}
               >
-                <FileJson /> Paste JSON
+                <FileJson /> Paste questions
               </Button>
             </div>
 
@@ -206,7 +206,7 @@ function PrintExamPage() {
               <div className="mt-4 space-y-2">
                 {decks.length === 0 && (
                   <p className="text-xs text-muted-foreground">
-                    No decks yet — import or generate one first, or paste JSON here.
+                    No decks yet — make one or bring one in first, or paste questions here.
                   </p>
                 )}
                 {decks.map((d) => {
@@ -245,12 +245,12 @@ function PrintExamPage() {
                 <Textarea
                   value={raw}
                   onChange={(e) => setRaw(e.target.value)}
-                  placeholder="Paste deck JSON or a questions array…"
+                  placeholder="Paste the questions your AI made, or any question list…"
                   className="min-h-40 font-mono text-xs"
                 />
                 <div className="mt-3 flex items-center gap-2">
                   <Button size="sm" onClick={parseJson} disabled={!raw.trim()}>
-                    Load JSON
+                    Load questions
                   </Button>
                   {jsonQuestions && (
                     <span className="flex items-center gap-1.5 text-xs text-success">
@@ -581,7 +581,7 @@ function PrintExamPage() {
               />
             ) : (
               <p className="p-10 text-center text-sm text-muted-foreground">
-                Choose a deck or load JSON to see the paper.
+                Choose a deck or paste questions to see the paper.
               </p>
             )}
           </div>

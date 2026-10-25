@@ -190,7 +190,7 @@ function ReviewSession() {
         <p className="mt-2 text-sm text-muted-foreground">
           {weakMode
             ? "Nothing in your library is lapsing or shaky right now. Study more cards and any trouble spots will show up here."
-            : "Your spaced repetition schedule is clear. Come back when cards ripen, or study a deck ahead of time."}
+            : "Nothing is due right now. Come back when the next card is ready, or study a deck ahead of time."}
         </p>
         <div className="mt-7 flex justify-center gap-2">
           <Button asChild>
@@ -290,7 +290,7 @@ function ReviewSession() {
           {question.concept && <Badge variant="secondary">{question.concept}</Badge>}
           <span className="ml-auto font-mono text-[10px] text-muted-foreground">
             {item.card && item.card.reps > 0
-              ? `rep ${item.card.reps} · ease ${item.card.ease} · was ${formatInterval(item.card.interval)}`
+              ? `Seen ${item.card.reps}× · difficulty ${item.card.ease} · was ${formatInterval(item.card.interval)}`
               : "new card"}
           </span>
         </div>

@@ -370,10 +370,16 @@ function CourseEditorPage() {
           <div className="panel p-5">
             <h2 className="font-display text-lg font-semibold">Editor tips</h2>
             <ul className="mt-3 space-y-2 text-xs leading-5 text-muted-foreground">
-              <li>• Use markdown for lesson content: headings, lists, tables, code and links.</li>
+              <li>
+                • Write lesson pages with simple formatting: headings, lists, tables, code and
+                links.
+              </li>
               <li>• Keep each lesson to one coherent idea.</li>
-              <li>• Add checkpoint questions in JSON; they are validated before being added.</li>
-              <li>• Imported assessment questions appear in the quiz route automatically.</li>
+              <li>
+                • Add checkpoint questions by pasting what your AI wrote — each one is checked
+                before it's added.
+              </li>
+              <li>• Questions you add show up in this lesson's quizzes automatically.</li>
             </ul>
           </div>
           <div className="panel p-5">
@@ -437,7 +443,9 @@ function LessonEditor({
   const addQuestions = () => {
     const result = validateQuestionsJson(questionJson, lesson.questions);
     if (!result.ok || !result.questions) {
-      setJsonError(result.errors[0] ?? "Could not parse questions.");
+      setJsonError(
+        result.errors[0] ?? "We couldn't read those questions — check they're complete.",
+      );
       return;
     }
     onChange({ questions: [...lesson.questions, ...result.questions] });

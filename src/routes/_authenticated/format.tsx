@@ -17,7 +17,7 @@ import type { ValidationResult } from "@/lib/schema";
 export const Route = createFileRoute("/_authenticated/format")({
   head: () => ({
     meta: [
-      { title: "Deck JSON Format & Sample — Knowly" },
+      { title: "Deck File Format & Sample — Knowly" },
       {
         name: "description",
         content:
@@ -54,15 +54,15 @@ function FormatPage() {
   return (
     <div className="max-w-5xl">
       <PageHeader
-        title="Deck JSON format"
-        description="Anything your AI returns must match this shape. Import validates it before a deck is created."
+        title="What a deck file looks like"
+        description="The deck your AI gives back should look like this. We check it before anything is added to your library."
         action={
           <div className="flex gap-2">
             <Button
               variant="outline"
               onClick={() => {
                 navigator.clipboard.writeText(SAMPLE_DECK_JSON);
-                toast.success("Sample JSON copied");
+                toast.success("Sample copied");
               }}
             >
               <Copy /> Copy sample
@@ -128,9 +128,9 @@ function FormatPage() {
           </Button>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          Use this slimmer shape when expanding a deck you already have. No deck metadata — just a
-          questions array (the same question fields as above). Generate it in Prompt Forge under
-          “Additional questions”, then import it via Import JSON → “Add questions to a deck”.
+          Use this shorter version to add questions to a deck you already have — no title or subject
+          needed, just the questions. Make it in Prompt Forge under “Additional questions”, then
+          bring it in via “Bring in a deck → Add questions to a deck”.
         </p>
         <pre className="mt-4 max-h-80 overflow-auto rounded-xl bg-surface-2/70 p-4 font-mono text-[11px] leading-relaxed text-muted-foreground">
           {SAMPLE_QUESTIONS_JSON}
@@ -138,19 +138,19 @@ function FormatPage() {
       </section>
 
       <section className="panel mt-6 p-6">
-        <h2 className="text-sm font-semibold">Validate JSON</h2>
+        <h2 className="text-sm font-semibold">Check before you import</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Paste any deck JSON to check it without importing.
+          Paste any deck here to check it — nothing gets added yet.
         </p>
         <Textarea
           value={test}
           onChange={(e) => setTest(e.target.value)}
-          placeholder="Paste JSON here…"
+          placeholder="Paste the deck here…"
           className="mt-4 min-h-40 font-mono text-xs"
         />
         <div className="mt-4 flex gap-2">
           <Button onClick={() => setResult(validateDeckJson(test))} disabled={!test.trim()}>
-            Validate
+            Check
           </Button>
           <Button variant="ghost" onClick={() => setTest(SAMPLE_DECK_JSON)}>
             Load sample
@@ -168,8 +168,8 @@ function FormatPage() {
             >
               {result.ok ? <CheckCircle2 className="size-4" /> : <XCircle className="size-4" />}
               {result.ok
-                ? `Valid — ${result.deck?.questions.length} questions ready to import.`
-                : `${result.errors.length} error(s) found.`}
+                ? `Looks good — ${result.deck?.questions.length} questions ready.`
+                : `${result.errors.length} problem${result.errors.length === 1 ? "" : "s"} to fix.`}
             </p>
             {result.errors.map((e) => (
               <p

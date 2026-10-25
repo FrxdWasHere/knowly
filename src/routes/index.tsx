@@ -32,7 +32,7 @@ export const Route = createFileRoute("/")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Knowly — The all-in-one study superapp you never know you needed" },
+      { title: "Knowly — The all-in-one study superapp you never knew you needed" },
       {
         name: "description",
         content:
@@ -40,7 +40,7 @@ export const Route = createFileRoute("/")({
       },
       {
         property: "og:title",
-        content: "Knowly — The all-in-one study superapp you never know you needed",
+        content: "Knowly — The all-in-one study superapp you never knew you needed",
       },
       {
         property: "og:description",
@@ -81,20 +81,22 @@ const FEATURE_GROUPS: {
   {
     icon: Wand2,
     title: "Build & import",
-    blurb: "Turn any source into a validated, editable deck or course — with your own AI.",
+    blurb:
+      "Turn any source into an editable deck or course — checked automatically, with your own AI.",
     items: [
       "Prompt Forge",
       "Deck Forge",
       "Course Forge",
-      "JSON import",
-      "JSON validator",
+      "Bring in a deck",
+      "Automatic checks",
       "Merge & split",
     ],
   },
   {
     icon: BookOpenCheck,
     title: "Study & schedule",
-    blurb: "Let SRS choose the next card, then switch modes when the exam gets close.",
+    blurb:
+      "Let Knowly's review schedule pick the next card, then switch modes when the exam gets close.",
     items: [
       "Daily Review",
       "Spaced repetition",
@@ -131,7 +133,7 @@ const FEATURE_GROUPS: {
       "PDF annotation",
       "Images & audio",
       "Page templates",
-      "PNG / PDF / JSON export",
+      "Save as image, PDF or file",
     ],
   },
   {
@@ -140,7 +142,7 @@ const FEATURE_GROUPS: {
     blurb: "Find the material costing you marks, then close the gap with focused practice.",
     items: [
       "Weak Spots",
-      "Leech manager",
+      "Trouble cards",
       "Card browser",
       "Tag explorer",
       "Bookmarks",
@@ -160,7 +162,7 @@ const FEATURE_GROUPS: {
       "No account",
       "No cloud",
       "Snapshots",
-      "JSON backup",
+      "Backup file",
       "28 themes",
       "Accent colors",
       "Wallpapers",
@@ -174,26 +176,26 @@ const STEPS = [
   {
     icon: Wand2,
     n: "01",
-    title: "Forge the brief",
-    body: "Choose subject, level and question mix. Prompt Forge writes a precise generation brief.",
+    title: "Forge the instructions",
+    body: "Choose subject, level and question mix. Prompt Forge writes clear, exact instructions.",
   },
   {
     icon: Sparkles,
     n: "02",
     title: "Use your own AI",
-    body: "Run it in ChatGPT, Gemini, Claude or a local model. No API keys are stored in Knowly.",
+    body: "Paste them into ChatGPT, Gemini, Claude or the AI you use. Knowly never stores your sign-ins.",
   },
   {
     icon: FileJson,
     n: "03",
-    title: "Validate the import",
-    body: "Paste or upload JSON. Every field is checked before a single card touches your library.",
+    title: "Bring the results back",
+    body: "Paste or upload what your AI made. Every question is checked before anything touches your library.",
   },
   {
     icon: Trophy,
     n: "04",
     title: "Learn, review, master",
-    body: "Courses, notebooks and SRS carry the material until it is recall — not recognition.",
+    body: "Courses, notebooks and daily reviews carry the material until you can recall it — not just recognise it.",
   },
 ];
 
@@ -305,7 +307,7 @@ function HeroPreview() {
                     </p>
                   </div>
                   <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-1 text-[8px] font-semibold text-primary">
-                    SRS due
+                    Due today
                   </span>
                 </div>
                 <div className="mt-4 flex items-center gap-4">
@@ -655,7 +657,7 @@ function Landing() {
 
               <Reveal delay={280}>
                 <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted-foreground">
-                  {["No account", "No cloud", "JSON backup", "Desktop + mobile"].map((item) => (
+                  {["No account", "No cloud", "Backup file", "Desktop + mobile"].map((item) => (
                     <span key={item} className="inline-flex items-center gap-1.5">
                       <CheckCircle2 className="size-3.5 text-primary/80" />
                       {item}
@@ -707,8 +709,8 @@ function Landing() {
                       Forge the raw material.
                     </h3>
                     <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-                      Prompt Forge writes the brief. Deck Forge and Course Forge shape it. JSON
-                      import validates every field before it touches your library.
+                      Prompt Forge writes the instructions. Deck Forge and Course Forge shape them.
+                      Everything is checked before it touches your library.
                     </p>
                     <div className="mt-5 rounded-2xl border border-white/10 bg-background/50 p-3 font-mono text-[10px] leading-5 text-muted-foreground">
                       <div className="flex items-center justify-between text-[9px] uppercase tracking-[0.16em] text-muted-foreground/45">
@@ -720,7 +722,7 @@ function Landing() {
                         for a first-year biology exam. Mix ordering, matching and short answer.
                       </p>
                       <div className="mt-3 flex flex-wrap gap-1.5 font-sans text-[10px]">
-                        {["24 cards", "6 concepts", "JSON safe"].map((tag) => (
+                        {["24 cards", "6 concepts", "Checked automatically"].map((tag) => (
                           <span
                             key={tag}
                             className="rounded-full border border-white/10 bg-white/[0.03] px-2 py-0.5 text-muted-foreground"
@@ -731,7 +733,7 @@ function Landing() {
                       </div>
                     </div>
                     <div className="mt-5 flex flex-wrap gap-1.5">
-                      {["Deck Forge", "Course Forge", "Merge & split", "JSON import"].map((tag) => (
+                      {["Deck Forge", "Course Forge", "Merge & split", "Deck import"].map((tag) => (
                         <span
                           key={tag}
                           className="rounded-full border border-primary/15 bg-primary/5 px-2.5 py-1 text-[10px] font-medium text-primary/90"
@@ -883,12 +885,13 @@ function Landing() {
                       Remember on schedule. Perform under pressure.
                     </h3>
                     <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-                      Daily SRS decides what is due. Cram mode ignores the schedule. Quizzes, timed
-                      finals, print exams and Deck Arena make recall feel like the real thing.
+                      The daily review plan decides what is due first. Cram mode ignores the
+                      schedule. Quizzes, timed finals, print exams and Deck Arena make recall feel
+                      like the real thing.
                     </p>
                     <div className="mt-5 grid gap-2 sm:grid-cols-3">
                       {[
-                        { icon: Brain, label: "SRS due", value: "24", hint: "spaced review" },
+                        { icon: Brain, label: "Due today", value: "24", hint: "review plan" },
                         { icon: Timer, label: "Focus", value: "25:00", hint: "timer" },
                         { icon: Trophy, label: "Arena", value: "Lv 7", hint: "deck battles" },
                       ].map((item) => (
@@ -937,8 +940,8 @@ function Landing() {
                     Fix what is costing you marks.
                   </h3>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    Weak Spots, leech cards, concept accuracy and a card browser show exactly where
-                    recall breaks — then send you back with a focused queue.
+                    Weak Spots, trouble cards, concept accuracy and a card browser show exactly
+                    where recall breaks — then send you back with a focused queue.
                   </p>
                   <div className="mt-5 space-y-2.5">
                     {[
@@ -1070,7 +1073,7 @@ function Landing() {
               </Reveal>
               <Reveal delay={80}>
                 <div className="flex flex-wrap gap-2 lg:justify-end">
-                  {["Bring your own AI", "No API keys stored", "Validate before import"].map(
+                  {["Bring your own AI", "No sign-ins stored", "Checked before import"].map(
                     (tag) => (
                       <span
                         key={tag}
@@ -1133,10 +1136,10 @@ function Landing() {
                   </p>
                   <ul className="mt-6 grid gap-3 sm:grid-cols-2">
                     {[
-                      "Lives in this browser",
-                      "One JSON file moves everything",
+                      "Lives on this device",
+                      "One small file moves everything",
                       "Snapshots let you roll back",
-                      "No account, cloud or telemetry",
+                      "No account, no cloud, no tracking",
                     ].map((point) => (
                       <li key={point} className="flex items-start gap-2 text-xs text-foreground/75">
                         <span className="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
@@ -1188,7 +1191,7 @@ function Landing() {
                     </div>
                     <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-[10px] font-medium text-emerald-200">
                       <ShieldCheck className="size-3.5" />
-                      Validated before restore
+                      Checked before restore
                     </div>
                   </div>
                 </div>
@@ -1395,7 +1398,7 @@ function Landing() {
         <div className="border-t border-white/5 px-5 py-5 sm:px-8">
           <div className="mx-auto flex max-w-7xl flex-col gap-2 text-[10px] text-muted-foreground/55 sm:flex-row sm:items-center sm:justify-between">
             <span>© {new Date().getFullYear()} Knowly. Built local-first.</span>
-            <span>No account. No cloud. No telemetry.</span>
+            <span>No account. No cloud. Your data stays with you.</span>
           </div>
         </div>
       </footer>

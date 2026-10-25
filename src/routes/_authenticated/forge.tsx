@@ -222,7 +222,7 @@ function ForgePage() {
     <div className="max-w-5xl">
       <PageHeader
         title="Deck Forge"
-        description="Write your own questions by hand — every type, every field. Nothing saves until it validates."
+        description="Write your own questions by hand — every type, every detail. Nothing is saved until every question is complete."
       />
 
       <div className="panel mb-6 flex flex-wrap items-center gap-3 p-4">
@@ -549,7 +549,9 @@ function QuestionEditor({
       </div>
 
       <div className="space-y-1.5">
-        <Label>{draft.type === "flashcard" ? "Front (term or prompt) *" : "Question *"}</Label>
+        <Label>
+          {draft.type === "flashcard" ? "Front (the word or question) *" : "Question *"}
+        </Label>
         <Textarea
           value={draft.question}
           onChange={(e) => {

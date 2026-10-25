@@ -57,22 +57,22 @@ function buildQuestion(
   switch (q.type) {
     case "multiple-choice": {
       if (!q.options || q.options.length < 2) {
-        errors.push(`questions[${i}]: multiple-choice questions need at least 2 options.`);
+        errors.push(`questions[${i}]: multiple-choice questions need at least 2 answer options.`);
       } else if (!q.options.includes(answer)) {
-        errors.push(`questions[${i}]: answer "${answer}" is not one of the provided options.`);
+        errors.push(`questions[${i}]: the correct answer isn't one of the options you listed.`);
       }
       break;
     }
     case "true-false": {
       if (!["true", "false"].includes(answer.toLowerCase())) {
-        errors.push(`questions[${i}]: true-false answers must be "true" or "false".`);
+        errors.push(`questions[${i}]: a true/false answer must be exactly "true" or "false".`);
       }
       break;
     }
     case "ordering": {
       if (!q.items || q.items.length < 2) {
         errors.push(
-          `questions[${i}]: ordering questions need an "items" array with 2+ entries in the correct order.`,
+          `questions[${i}]: ordering questions need at least 2 items, listed in the correct order.`,
         );
       } else {
         answer = serializeOrdering(q.items);
@@ -82,10 +82,12 @@ function buildQuestion(
     case "matching": {
       if (!q.pairs || q.pairs.length < 2) {
         errors.push(
-          `questions[${i}]: matching questions need a "pairs" array with 2+ {left, right} entries.`,
+          `questions[${i}]: matching questions need at least 2 pairs — each with a question side and an answer side.`,
         );
       } else if (q.pairs.some((p) => !p.left.trim() || !p.right.trim())) {
-        errors.push(`questions[${i}]: every matching pair needs a non-empty "left" and "right".`);
+        errors.push(
+          `questions[${i}]: every pair needs both the question side and the answer side filled in.`,
+        );
       } else {
         answer = serializeMatching(q.pairs);
       }
@@ -95,21 +97,21 @@ function buildQuestion(
       const slots = countBlanks(q.question);
       if (!q.blanks || !q.blanks.length) {
         errors.push(
-          `questions[${i}]: word-bank questions need a "blanks" array with the correct word for each ${BLANK_TOKEN}.`,
+          `questions[${i}]: word-bank questions need the correct word for each ${BLANK_TOKEN} blank.`,
         );
       } else if (slots === 0) {
         errors.push(
-          `questions[${i}]: word-bank questions must contain at least one ${BLANK_TOKEN} placeholder in the question text.`,
+          `questions[${i}]: word-bank questions must include at least one ${BLANK_TOKEN} placeholder in the question text.`,
         );
       } else if (slots !== q.blanks.length) {
         errors.push(
-          `questions[${i}]: found ${slots} ${BLANK_TOKEN} placeholder(s) but ${q.blanks.length} blank answer(s).`,
+          `questions[${i}]: there are ${slots} ${BLANK_TOKEN} blank(s) in the question but ${q.blanks.length} answer word(s).`,
         );
       } else {
         answer = serializeWordBank(q.blanks);
         if (!q.wordBank || q.wordBank.length <= q.blanks.length) {
           warnings.push(
-            `questions[${i}]: no distractor words in "wordBank" — the blanks will be easy to guess.`,
+            `questions[${i}]: no extra wrong words in "wordBank" — the blanks will be easy to guess.`,
           );
         }
       }
@@ -120,7 +122,7 @@ function buildQuestion(
   }
 
   if (!answer && q.type !== "ordering" && q.type !== "matching" && q.type !== "word-bank") {
-    errors.push(`questions[${i}]: an "answer" is required for ${q.type} questions.`);
+    errors.push(`questions[${i}]: this ${q.type} question is missing its correct answer.`);
   }
 
   const built: Question = {
@@ -170,14 +172,16 @@ export function validateDeckJson(raw: string): ValidationResult {
   } catch (e) {
     return {
       ok: false,
-      errors: [`Invalid JSON syntax: ${(e as Error).message}`],
+      errors: [`That text isn't valid JSON — ${(e as Error).message}`],
       warnings,
     };
   }
 
   if (Array.isArray(data)) {
     data = { title: "Imported Deck", subject: "General", questions: data };
-    warnings.push("Received a bare question array — wrapped it into a deck named “Imported Deck”.");
+    warnings.push(
+      "You pasted a plain list of questions — we made a new deck named “Imported Deck” for them.",
+    );
   }
 
   const parsed = deckSchema.safeParse(data);
@@ -189,9 +193,10 @@ export function validateDeckJson(raw: string): ValidationResult {
   }
 
   const questions: Question[] = parsed.data.questions.map((q, i) => {
-    if (!q.explanation) warnings.push(`questions[${i}]: no explanation provided.`);
+    if (!q.explanation)
+      warnings.push(`questions[${i}]: no explanation given — adding one makes review stronger.`);
     if (!q.concept)
-      warnings.push(`questions[${i}]: no concept tag — topic analytics will be thin.`);
+      warnings.push(`questions[${i}]: no topic tag — your weak-topic page has less to work with.`);
     return buildQuestion(q, i, errors, warnings, q.id || uid());
   });
 
@@ -403,12 +408,16 @@ export function validateQuestionsJson(
   try {
     data = JSON.parse(raw);
   } catch (e) {
-    return { ok: false, errors: [`Invalid JSON syntax: ${(e as Error).message}`], warnings };
+    return {
+      ok: false,
+      errors: [`That text isn't valid JSON — ${(e as Error).message}`],
+      warnings,
+    };
   }
 
   if (Array.isArray(data)) data = { questions: data };
   if (data && typeof data === "object" && !("questions" in data)) {
-    warnings.push("No “questions” array found at the top level.");
+    warnings.push("We couldn't find the list of questions — check the paste starts with them.");
   }
 
   const parsed = questionPackSchema.safeParse(data);
@@ -425,7 +434,8 @@ export function validateQuestionsJson(
     if (existingText.has(q.question.trim().toLowerCase())) {
       warnings.push(`questions[${i}]: looks like a duplicate of a question already in this deck.`);
     }
-    if (!q.explanation) warnings.push(`questions[${i}]: no explanation provided.`);
+    if (!q.explanation)
+      warnings.push(`questions[${i}]: no explanation given — adding one makes review stronger.`);
     return buildQuestion(q, i, errors, warnings, uid());
   });
 

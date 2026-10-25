@@ -48,7 +48,7 @@ export function SrsStatusBadge({
             : "border-primary/45 text-primary hover:border-primary",
         className,
       )}
-      title={`${s.total} cards · ${s.fresh} new · ${s.learning} learning · ${s.young} young · ${s.mature} mature · ease ${s.ease}`}
+      title={`${s.total} cards · ${s.fresh} new · ${s.learning} learning · ${s.young} getting there · ${s.mature} solid · difficulty ${s.ease}`}
     >
       <SrsRing value={caughtUp ? 100 : s.health} size={26} stroke={3} color={tone}>
         {caughtUp ? (

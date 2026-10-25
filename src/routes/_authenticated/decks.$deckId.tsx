@@ -192,8 +192,8 @@ function DeckDetail() {
             })}
           </div>
           <p className="mt-2 text-[11px] text-muted-foreground">
-            {srs.fresh} new · {srs.learning} learning · {srs.young} young · {srs.mature} mature ·
-            ease {srs.ease} · {srs.retention}% retention
+            {srs.fresh} new · {srs.learning} learning · {srs.young} getting there · {srs.mature}{" "}
+            solid · difficulty {srs.ease} · you remember {srs.retention}% of your reviews
           </p>
         </div>
       </section>
@@ -216,7 +216,9 @@ function DeckDetail() {
                 {mastered && <Badge className="bg-success text-success-foreground">Mastered</Badge>}
                 <span
                   className="inline-flex items-center gap-1.5 rounded-full border border-border px-2 py-0.5"
-                  title={card ? `Interval ${formatInterval(card.interval)}` : "Never reviewed"}
+                  title={
+                    card ? `Shows up again in ${formatInterval(card.interval)}` : "Not reviewed yet"
+                  }
                 >
                   <span
                     className="size-1.5 rounded-full"

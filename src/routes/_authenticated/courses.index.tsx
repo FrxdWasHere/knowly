@@ -78,11 +78,11 @@ const COURSE_TOUR_STEPS: TourStep[] = [
     eyebrow: "Make it yours",
     title: "Start with a topic or your own material",
     description:
-      "Generate a complete course with AI, import a structured JSON course, or hand-build one lesson at a time. Your first course is a few clicks away.",
+      "Generate a full course with AI, add one your AI already made, or build lessons by hand. Your first course is a few clicks away.",
     icon: Sparkles,
     bullets: [
       "Course Forge turns a topic into modules and lessons",
-      "Import generated JSON when you already have a plan",
+      "Add a course your AI already wrote",
       "Link course lessons to handwritten notebooks",
     ],
   },
@@ -252,7 +252,7 @@ function EmptyCourses({ hasCourses }: { hasCourses: boolean }) {
       <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
         {hasCourses
           ? "Try a different title, subject or tag."
-          : "Generate a full course from a topic or reference notes, import AI JSON, or build the structure by hand."}
+          : "Generate a full course from a topic or reference notes, add one your AI wrote, or build the structure by hand."}
       </p>
       {!hasCourses && (
         <div className="mt-6 flex flex-wrap justify-center gap-2">
@@ -263,7 +263,7 @@ function EmptyCourses({ hasCourses }: { hasCourses: boolean }) {
           </Button>
           <Button asChild variant="outline">
             <Link to="/courses/import">
-              <Layers className="size-4" /> Import JSON
+              <Layers className="size-4" /> Add a course file
             </Link>
           </Button>
         </div>

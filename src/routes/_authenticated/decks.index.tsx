@@ -163,7 +163,7 @@ function DeckLibrary() {
           <Layers className="size-8 text-muted-foreground" />
           <p className="mt-4 font-medium">No decks found</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Generate a prompt, run it in your AI, then import the JSON.
+            Copy Knowly's instructions into your AI, then bring the finished cards back here.
           </p>
           <Button className="mt-5" asChild>
             <Link to="/generate">Open Prompt Forge</Link>
@@ -222,8 +222,8 @@ function DeckLibrary() {
                       />
                     </div>
                     <p className="mt-2 text-[11px] text-muted-foreground">
-                      {srs.fresh} new · {srs.learning} learning · {srs.young} young · {srs.mature}{" "}
-                      mature
+                      {srs.fresh} new · {srs.learning} learning · {srs.young} getting there ·{" "}
+                      {srs.mature} solid
                     </p>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2">

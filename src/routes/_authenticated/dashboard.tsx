@@ -138,8 +138,8 @@ function Dashboard() {
           title={hello}
           description={
             settings.focusSubjects.length
-              ? `Your forge is empty. Start with ${settings.focusSubjects.slice(0, 3).join(", ")} — generate a prompt, run it in any AI, then import the JSON.`
-              : "Your forge is empty. Generate a prompt, run it in any AI, then import the JSON to create your first deck."
+              ? `Your forge is empty. Start with ${settings.focusSubjects.slice(0, 3).join(", ")} — copy Knowly's instructions into the AI you already use, then bring the finished questions back here.`
+              : "Your forge is empty. Knowly writes the instructions for you — copy them into any AI you use, then bring the finished cards back here to make your first deck."
           }
         />
         <div className="panel grid gap-4 p-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -148,19 +148,19 @@ function Dashboard() {
               to: "/generate",
               icon: Wand2,
               title: "Prompt Forge",
-              body: "Build a strict prompt from your material.",
+              body: "Turn your notes into ready-to-use instructions for an AI.",
             },
             {
               to: "/import",
               icon: Download,
-              title: "Import JSON",
-              body: "Validate and load an AI-generated deck.",
+              title: "Bring in a deck",
+              body: "Check the deck your AI made, then add it to your library.",
             },
             {
               to: "/format",
               icon: Library,
-              title: "JSON Format",
-              body: "See the schema and a sample deck.",
+              title: "Deck file format",
+              body: "See what a finished deck looks like.",
             },
             {
               to: "/courses/forge",
@@ -232,7 +232,7 @@ function Dashboard() {
         {show("srs") && decks.length > 0 && (
           <Widget
             id="srs"
-            title="Spaced repetition"
+            title="Review schedule"
             icon={Brain}
             onHide={hide}
             className="md:col-span-2 xl:col-span-12"

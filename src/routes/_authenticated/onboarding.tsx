@@ -53,7 +53,7 @@ export const Route = createFileRoute("/_authenticated/onboarding")({
       {
         name: "description",
         content:
-          "Set up your Knowly profile, learn the AI-free workflow and bring your library — import a deck or restore a full backup. Everything stays in this browser until you export it as JSON.",
+          "Set up your Knowly profile, learn the AI-free workflow and bring your library — add a deck or restore a full backup. Everything stays on this device until you save a backup copy.",
       },
       { property: "og:title", content: "Welcome to Knowly" },
       {
@@ -80,8 +80,8 @@ const STEP_META = [
 ] as const;
 
 const STEP_TIPS = [
-  "Knowly keeps the library in this browser. Export a JSON backup whenever you want a portable copy.",
-  "Use whichever AI you already trust — Knowly only prepares the prompt and validates the JSON it returns.",
+  "Knowly keeps your library on this device. Save a backup file whenever you want a copy you can move.",
+  "Use whichever AI you already trust — Knowly only writes the instructions and checks what comes back.",
   "Start with one deck, then let the analytics point you to the concepts that need another pass.",
   "A name and avatar make your dashboard, reports and arena results feel like yours.",
   "These choices tune your daily goal, subject hints and weak-topic suggestions. Nothing is locked in.",
@@ -129,7 +129,7 @@ function previewBackup(
   try {
     parsed = JSON.parse(text);
   } catch {
-    return { ok: false, error: "That file isn't valid JSON." };
+    return { ok: false, error: "We can't read that file — is it the right backup file?" };
   }
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
     return { ok: false, error: "That file doesn't look like a Knowly backup." };
@@ -333,7 +333,7 @@ function Onboarding() {
                     Local-first
                   </span>
                   <span className="absolute -right-14 bottom-1 hidden rounded-full border border-accent/30 bg-accent/15 px-2.5 py-1 text-[10px] font-medium text-foreground/80 shadow-lg backdrop-blur sm:block">
-                    JSON backup
+                    Backup file
                   </span>
                   <span className="absolute -right-10 -top-5 hidden rounded-full border border-border bg-foreground/5 px-2.5 py-1 text-[10px] font-medium text-foreground/80 shadow-lg backdrop-blur sm:block">
                     8-step setup
@@ -437,8 +437,8 @@ function Onboarding() {
               <div className="relative mt-3 hidden items-start gap-2 text-[11px] leading-5 text-muted-foreground sm:flex lg:mt-auto">
                 <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-muted-foreground/60" />
                 <span>
-                  Decks, notes, courses and progress live in this browser. Export a JSON backup
-                  whenever you want a portable copy.
+                  Decks, notes, courses and progress live on this device. Save a backup file
+                  whenever you want a copy you can move.
                 </span>
               </div>
             </aside>
@@ -508,14 +508,14 @@ function Onboarding() {
                           : "Welcome to your study forge."}
                       </h1>
                       <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-                        Knowly keeps decks, questions, XP, streaks, notes and quiz history in this
-                        browser. Nothing is uploaded. Use JSON export when you want a backup or to
-                        move a library to another machine.
+                        Knowly keeps everything — decks, questions, XP, streaks, notes and quiz
+                        history — on this device. Nothing is uploaded anywhere. Save a backup file
+                        whenever you want a copy or to move your library.
                       </p>
                       <ul className="stagger mt-8 grid gap-3 text-sm sm:grid-cols-3">
                         {[
-                          "No account — this browser holds the library",
-                          "JSON backups, deck imports and snapshots",
+                          "No account — everything stays on this device",
+                          "Backups, deck files and restore points",
                           "Built to feel like a desktop app",
                         ].map((p) => (
                           <li
@@ -536,15 +536,15 @@ function Onboarding() {
                         There's no AI inside Knowly
                       </h1>
                       <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-                        It never calls an AI service. Instead it writes a precise prompt for you to
-                        run in whichever model you already use — so you control cost, privacy and
-                        quality.
+                        Knowly never talks to an AI itself. It writes the instructions for you — you
+                        paste them into the AI you already use. You stay in control of cost, privacy
+                        and quality.
                       </p>
                       <div className="stagger mt-8 grid gap-3 sm:grid-cols-4">
                         {[
-                          { icon: Wand2, label: "Forge a prompt" },
-                          { icon: ClipboardCopy, label: "Run it in your AI" },
-                          { icon: FileJson, label: "Import the JSON" },
+                          { icon: Wand2, label: "Get instructions" },
+                          { icon: ClipboardCopy, label: "Paste into your AI" },
+                          { icon: FileJson, label: "Bring the deck back" },
                           { icon: GraduationCap, label: "Study & quiz" },
                         ].map((s, i) => (
                           <div
@@ -561,9 +561,9 @@ function Onboarding() {
                       </div>
                       <ul className="mt-6 space-y-2.5 text-sm text-muted-foreground">
                         {[
-                          "Gemini, ChatGPT, Claude, OpenRouter, Ollama — your choice",
-                          "No API keys are ever stored here",
-                          "Import validates every field and flags problems",
+                          "ChatGPT, Claude, Gemini and more — your choice",
+                          "No sign-ins or keys are stored here",
+                          "Bringing a deck in checks every question and flags anything wrong",
                         ].map((p) => (
                           <li key={p} className="flex items-start gap-3">
                             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" />
@@ -957,9 +957,9 @@ function Onboarding() {
                           Bring your library
                         </h1>
                         <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-                          Import a single deck from AI-generated JSON — or restore a full Knowly
-                          backup with decks, progress, settings, and history. Otherwise skip; you
-                          can do either at any time.
+                          Add a single deck your AI made — or restore a full Knowly backup with your
+                          decks, progress, settings and history. Or skip; you can always do this
+                          later.
                         </p>
                       </div>
 
@@ -979,7 +979,7 @@ function Onboarding() {
                           <span>
                             <span className="block text-sm font-semibold">Import a deck</span>
                             <span className="block text-xs text-muted-foreground">
-                              Single AI-generated deck
+                              One deck your AI made
                             </span>
                           </span>
                         </button>
@@ -1011,7 +1011,7 @@ function Onboarding() {
                             className="press"
                             onClick={() => fileRef.current?.click()}
                           >
-                            <Upload /> Choose a .json file
+                            <Upload /> Choose a deck file
                           </Button>
                           <input
                             ref={fileRef}
@@ -1029,9 +1029,7 @@ function Onboarding() {
                           <Textarea
                             value={raw}
                             onChange={(e) => evaluate(e.target.value)}
-                            placeholder={
-                              'Or paste deck JSON here — { "title": "…", "questions": [ … ] }'
-                            }
+                            placeholder={"Or paste the deck text here…"}
                             className="min-h-40 font-mono text-xs"
                           />
 
@@ -1051,8 +1049,8 @@ function Onboarding() {
                                   <AlertTriangle className="size-4 text-destructive" />
                                 )}
                                 {result.ok
-                                  ? `Valid deck — ${result.deck?.questions.length} questions`
-                                  : "This JSON can't be imported yet"}
+                                  ? `Looks good — ${result.deck?.questions.length} questions ready`
+                                  : "This deck isn't ready to bring in yet"}
                               </p>
                               <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
                                 {[...result.errors, ...result.warnings].slice(0, 6).map((m) => (
@@ -1074,9 +1072,8 @@ function Onboarding() {
                       ) : (
                         <div className="space-y-4 rounded-xl border border-border bg-surface/60 p-5">
                           <p className="text-sm text-muted-foreground">
-                            Choose the backup file exported from Settings or Snapshots (for example,{" "}
-                            <span className="font-mono">knowly-backup-2026-10-16.json</span>
-                            ). Restoring replaces everything currently in this browser.
+                            Choose the backup file you saved in Settings or Snapshots. Restoring
+                            replaces everything currently on this device.
                           </p>
                           <Button
                             variant="outline"
@@ -1111,7 +1108,7 @@ function Onboarding() {
                             <div className="anim-fade-up rounded-xl border border-success/50 bg-success/10 p-4 text-sm">
                               <p className="flex items-center gap-2 font-medium">
                                 <CheckCircle2 className="size-4 text-success" />
-                                Valid backup
+                                Backup file looks good
                                 {backupPreview.owner ? ` — ${backupPreview.owner}` : ""}
                               </p>
                               <dl className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
@@ -1167,7 +1164,7 @@ function Onboarding() {
                           ? "Your backup is restored. Jump back into your dashboard and keep studying."
                           : imported
                             ? "Your first deck is in. Jump into your library and start a session."
-                            : "Head to the Prompt Forge to build your first deck — it stays on this device, and you can export it as JSON any time."}
+                            : "Head to Prompt Forge to build your first deck — it stays on this device, and you can save a backup any time."}
                       </p>
                       <div className="anim-fade-up mt-6 flex flex-wrap justify-center gap-2 text-xs">
                         <span className="rounded-full border border-border bg-surface/60 px-3 py-1.5 text-muted-foreground">
@@ -1278,7 +1275,7 @@ function Onboarding() {
             className="underline-offset-4 transition-colors hover:text-foreground hover:underline"
             onClick={() => finish("/format")}
           >
-            Show me the JSON format first
+            Show me what a deck file looks like first
           </button>
           <button
             type="button"
@@ -1289,7 +1286,7 @@ function Onboarding() {
           </button>
           <button
             type="button"
-            title="Replaces whatever is in this browser with a fully-used demo profile: decks mid-schedule, a course halfway through, 6 weeks of history. Great for exploring."
+            title="Replaces everything on this device with a fully-used demo: decks mid-review, a course halfway through and 6 weeks of history. Great for exploring."
             onClick={applySampleProfile}
             className={cn(
               "underline-offset-4 transition-colors hover:underline",

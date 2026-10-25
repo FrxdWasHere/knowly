@@ -102,7 +102,7 @@ describe("validateCourseJson", () => {
   it("rejects malformed JSON syntax", () => {
     const result = validateCourseJson("{ not a course");
     expect(result.ok).toBe(false);
-    expect(result.errors[0]).toMatch(/Invalid JSON/);
+    expect(result.errors[0]).toMatch(/isn't valid JSON/);
   });
 });
 

@@ -270,7 +270,7 @@ export function QuizReport({
             {copied ? "Copied!" : "Copy report"}
           </Button>
           <Button variant="outline" onClick={onBackToSetup}>
-            <SlidersHorizontal /> Change setup
+            <SlidersHorizontal /> Change quiz settings
           </Button>
           <Button variant="ghost" onClick={onHome}>
             <Home /> Dashboard
