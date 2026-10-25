@@ -169,7 +169,7 @@ function CourseOverviewPage() {
 
               <div className="mt-8 flex items-start gap-4">
                 <span
-                  className="grid size-16 shrink-0 place-items-center rounded-3xl border border-border bg-foreground/10 text-4xl shadow-2xl backdrop-blur"
+                  className="grid size-16 shrink-0 place-items-center rounded-3xl border border-border bg-foreground/10 text-4xl shadow-sm"
                   style={{
                     boxShadow: `0 18px 45px -22px color-mix(in oklab, ${course.color} 75%, transparent)`,
                   }}
@@ -241,7 +241,7 @@ function CourseOverviewPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-border bg-foreground/[0.06] p-5 shadow-xl backdrop-blur-xl">
+            <div className="rounded-3xl border border-border bg-card/85 p-5 shadow-sm">
               <div className="flex items-center gap-4">
                 <div className="relative size-24 shrink-0">
                   <svg viewBox="0 0 100 100" className="size-full -rotate-90">

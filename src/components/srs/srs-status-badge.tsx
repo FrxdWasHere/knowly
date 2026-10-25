@@ -40,7 +40,7 @@ export function SrsStatusBadge({
   const body = (
     <span
       className={cn(
-        "press flex items-center gap-2 rounded-full border bg-background/80 py-1 pl-1 pr-3 text-[11px] font-semibold shadow-sm backdrop-blur transition-colors",
+        "press flex items-center gap-2 rounded-full border bg-background/80 py-1 pl-1 pr-3 text-[11px] font-semibold shadow-sm transition-colors",
         caughtUp
           ? "border-success/40 text-success hover:border-success"
           : untouched

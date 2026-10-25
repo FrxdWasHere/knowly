@@ -214,7 +214,7 @@ function Dashboard() {
               <RotateCcw /> Reset layout
             </Button>
           ) : dueNow ? (
-            <Button className="anim-glow" asChild>
+            <Button className="press" asChild>
               <Link to="/review">
                 <Brain /> Review {dueNow} due
               </Link>

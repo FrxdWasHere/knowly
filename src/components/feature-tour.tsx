@@ -87,7 +87,7 @@ export function FeatureTour({
               {product}
             </div>
             <div className="relative mt-8 flex flex-1 items-center justify-center sm:mt-0">
-              <div className="relative grid size-32 place-items-center rounded-[2rem] border border-primary/20 bg-primary/10 shadow-2xl backdrop-blur-xl">
+              <div className="relative grid size-32 place-items-center rounded-[2rem] border border-primary/20 bg-primary/10 shadow-xl">
                 <div
                   aria-hidden
                   className="absolute inset-3 rounded-[1.45rem] border border-primary/15"

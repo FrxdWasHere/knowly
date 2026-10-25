@@ -520,7 +520,7 @@ export function themeCssVars(c: ThemeColors): Record<string, string> {
     "--destructive-foreground": "#ffffff",
     "--warning": mix("#f0a020", 78, c.primary),
     "--warning-foreground": "#1a1204",
-    "--shadow-panel": `0 10px 40px -22px ${mix(c.foreground, 28, "transparent")}`,
+    "--shadow-panel": `0 8px 22px -16px ${mix(c.foreground, 20, "transparent")}`,
     "--deck-1": c.primary,
     "--deck-2": c.accent,
     "--deck-3": mix(c.primary, 55, c.accent),

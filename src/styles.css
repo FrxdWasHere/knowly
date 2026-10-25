@@ -133,8 +133,8 @@
     color-mix(in oklab, var(--surface) 90%, var(--primary) 10%),
     var(--surface)
   );
-  --shadow-forge: 0 30px 90px -40px color-mix(in oklab, var(--primary) 56%, transparent);
-  --shadow-panel: 0 24px 60px -34px oklch(0 0 0 / 78%);
+  --shadow-forge: 0 22px 64px -44px color-mix(in oklab, var(--primary) 34%, transparent);
+  --shadow-panel: 0 14px 34px -28px oklch(0 0 0 / 42%);
   --speed: 1;
 }
 
@@ -165,7 +165,7 @@
   --sidebar-accent: oklch(0.92 0.022 220);
   --sidebar-accent-foreground: oklch(0.22 0.02 265);
   --sidebar-border: oklch(0.22 0.02 265 / 10%);
-  --shadow-panel: 0 10px 40px -24px oklch(0.2 0.02 265 / 30%);
+  --shadow-panel: 0 8px 26px -22px oklch(0.2 0.02 265 / 26%);
 }
 
 .contrast-high {

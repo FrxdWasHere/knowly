@@ -459,11 +459,11 @@ function HeroPreview() {
         </div>
       </div>
 
-      <div className="absolute -top-5 left-10 hidden items-center gap-2 rounded-full border border-white/10 bg-background/85 px-3 py-1.5 text-[10px] font-medium shadow-xl backdrop-blur-xl sm:flex">
+      <div className="absolute -top-5 left-10 hidden items-center gap-2 rounded-full border border-white/10 bg-background px-3 py-1.5 text-[10px] font-medium shadow-sm sm:flex">
         <Wand2 className="size-3 text-primary" />
         Prompt Forge
       </div>
-      <div className="absolute -bottom-6 right-10 hidden items-center gap-2 rounded-full border border-white/10 bg-background/85 px-3 py-1.5 text-[10px] font-medium shadow-xl backdrop-blur-xl lg:flex">
+      <div className="absolute -bottom-6 right-10 hidden items-center gap-2 rounded-full border border-white/10 bg-background px-3 py-1.5 text-[10px] font-medium shadow-sm lg:flex">
         <CheckCircle2 className="size-3 text-emerald-300" />
         Notebook saved
       </div>
@@ -538,7 +538,7 @@ function Landing() {
 
   return (
     <div className="min-h-screen overflow-hidden bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-white/5 bg-background/65 backdrop-blur-2xl">
+      <header className="sticky top-0 z-40 border-b border-white/5 bg-background/90">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 sm:h-18 sm:px-8">
           <Link to="/" className="group flex items-center gap-3">
             <span className="grid size-10 place-items-center rounded-[1.1rem] border border-white/10 bg-gradient-to-br from-primary/30 via-primary/10 to-transparent shadow-[0_14px_30px_-18px_var(--primary)] ring-1 ring-primary/25">
@@ -554,7 +554,7 @@ function Landing() {
 
           <nav
             aria-label="Primary navigation"
-            className="hidden items-center gap-1 rounded-full border border-white/5 bg-white/[0.025] p-1 text-sm text-muted-foreground backdrop-blur md:flex"
+            className="hidden items-center gap-1 rounded-full border border-white/5 bg-white/[0.025] p-1 text-sm text-muted-foreground md:flex"
           >
             {NAV_LINKS.map(([href, label]) => (
               <a
@@ -1162,7 +1162,7 @@ function Landing() {
                     aria-hidden
                     className="absolute -inset-4 rounded-[2rem] bg-primary/10 blur-2xl"
                   />
-                  <div className="relative rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5 backdrop-blur">
+                  <div className="relative rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5">
                     <div className="flex items-center gap-3">
                       <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
                         <FileJson className="size-5" />

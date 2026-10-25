@@ -456,41 +456,24 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div aria-hidden className="pointer-events-none fixed inset-0 z-0 bg-background/55" />
         </>
       )}
-      {/* Ambient studio backdrop: slow aurora washes and a drifting accent orb
-          over a counter-drifting blueprint grid, anchored by a glowing hairline.
+      {/* Ambient backdrop: one static aurora wash plus a faint blueprint grid.
           Sits beneath the content (z-0), is suppressed when a user wallpaper is
-          set, gets static-ified by .reduce-motion and hidden in print. */}
+          set, gets static-ified by .reduce-motion and hidden in print.
+          Kept static (no blur filters, no animations) so scrolling stays snappy. */}
       <div aria-hidden className="print-hide pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        {!wallpaper && (
-          <>
-            <div className="anim-aurora app-aurora absolute -inset-[12%] opacity-60 blur-3xl" />
-            <div className="anim-aurora app-aurora absolute -inset-[12%] opacity-35 blur-3xl [animation-delay:-9s] [transform:rotate(120deg)]" />
-            <div className="anim-float absolute -bottom-44 -left-36 size-[36rem] rounded-full bg-[color-mix(in_oklab,var(--primary)_26%,transparent)] blur-3xl opacity-45" />
-            <div className="anim-float absolute -right-40 -top-44 size-[30rem] rounded-full bg-[color-mix(in_oklab,var(--primary-glow)_20%,transparent)] blur-3xl opacity-35 [animation-delay:-2s]" />
-            <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,var(--primary),transparent)] opacity-50" />
-          </>
-        )}
-        <div className="anim-grid-drift grid-forge absolute inset-0 opacity-[0.09] [mask-image:radial-gradient(ellipse_70%_65%_at_50%_30%,black,transparent_78%)]" />
-        <div className="anim-grid-drift-rev grid-forge absolute inset-0 opacity-[0.08] [background-size:88px_88px] [mask-image:radial-gradient(ellipse_60%_55%_at_80%_72%,black,transparent_80%)]" />
+        {!wallpaper && <div className="app-aurora absolute -inset-[12%] opacity-40" />}
+        <div className="grid-forge absolute inset-0 opacity-[0.07]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_80%_at_50%_45%,transparent_72%,var(--background)_100%)] opacity-65" />
       </div>
       <aside
         className={cn(
-          "sticky top-0 z-10 hidden h-screen shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar/90 backdrop-blur-2xl transition-all duration-300 md:flex",
+          "sticky top-0 z-10 hidden h-screen shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar transition-[width] duration-200 md:flex",
           courseMode ? "w-[304px]" : collapsed ? "w-[76px]" : "w-64",
         )}
       >
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,var(--primary),transparent_45%)] opacity-[0.14]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.035] [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:20px_20px] [mask-image:linear-gradient(to_bottom,black,transparent_82%)]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-primary/30 to-transparent"
         />
         {activeCourse ? (
           <CourseSidebar course={activeCourse} pathname={pathname} search={search} />
@@ -608,7 +591,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </nav>
 
             <div className="relative space-y-3 border-t border-sidebar-border p-3">
-              <div className="rounded-[1.05rem] border border-border bg-gradient-to-br from-primary/10 via-sidebar-accent/60 to-sidebar-accent/20 p-3 shadow-[var(--shadow-panel)] backdrop-blur-sm">
+              <div className="rounded-[1.05rem] border border-border bg-gradient-to-br from-primary/10 via-sidebar-accent/60 to-sidebar-accent/20 p-3 shadow-sm">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-semibold tracking-tight">Lv {level}</span>
                   {!collapsed && (
@@ -644,7 +627,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-background/70 px-4 py-3 backdrop-blur-xl md:px-8">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-background px-4 py-3 md:px-8">
           <div
             aria-hidden
             className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"
@@ -655,7 +638,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
             <span className="font-display font-bold">Knowly</span>
           </div>
-          <div className="hidden items-center gap-2 rounded-full border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs text-muted-foreground backdrop-blur md:flex">
+          <div className="hidden items-center gap-2 rounded-full border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs text-muted-foreground md:flex">
             <span className="inline-flex size-1.5 animate-pulse rounded-full bg-success shadow-[0_0_8px_var(--success)]" />
             <HardDrive className="size-3.5 text-primary" />
             Everything saved on this device · export a copy to move it
@@ -665,7 +648,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               type="button"
               onClick={() => palette.setOpen(true)}
               aria-label="Open command palette"
-              className="press inline-flex items-center gap-2 rounded-full border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur transition-colors hover:border-primary/50 hover:text-foreground"
+              className="press inline-flex items-center gap-2 rounded-full border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
             >
               <Search className="size-3.5" />
               <span className="hidden sm:inline">Jump to…</span>
@@ -673,11 +656,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                 Ctrl K
               </kbd>
             </button>
-            <span className="press inline-flex items-center gap-1.5 rounded-full border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs font-semibold backdrop-blur transition-colors hover:border-primary/50">
+            <span className="press inline-flex items-center gap-1.5 rounded-full border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs font-semibold transition-colors hover:border-primary/50">
               <Flame className="size-3.5 text-primary" />
               {state.progress.streak} day
             </span>
-            <span className="press hidden min-[480px]:inline-flex items-center gap-1.5 rounded-full border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs font-semibold backdrop-blur transition-colors hover:border-primary/50">
+            <span className="press hidden min-[480px]:inline-flex items-center gap-1.5 rounded-full border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs font-semibold transition-colors hover:border-primary/50">
               <Zap className="size-3.5 text-primary" />
               <span className="max-w-[20vw] truncate">
                 {state.progress.lifetimeXp.toLocaleString()} XP
@@ -691,7 +674,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         ) : (
           <nav
             aria-label="Main navigation"
-            className="flex gap-1.5 overflow-x-auto border-b border-border bg-surface/30 px-3 py-2 backdrop-blur md:hidden"
+            className="flex gap-1.5 overflow-x-auto border-b border-border bg-surface/60 px-3 py-2 md:hidden"
           >
             {NAV_GROUPS.map((group, groupIndex) => (
               <div key={group.label} className="flex items-center gap-1.5">

@@ -86,7 +86,7 @@ export function SrsDashboardWidget({ decks }: { decks: Deck[] }) {
                   ? `Next card is ready ${formatDue(nextUp, now)} · you remember ${retention}% of your reviews`
                   : "Study a deck to get your review plan started."}
             </p>
-            <Button size="sm" className="press mt-3 anim-glow" asChild>
+            <Button size="sm" className="press mt-3" asChild>
               <Link to="/review">
                 <Play /> {due.length ? "Start review" : "Review ahead"}
               </Link>

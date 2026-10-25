@@ -202,7 +202,7 @@ function DeckLibrary() {
                 <button
                   aria-label="Toggle favorite"
                   onClick={() => updateDeck(d.id, { favorite: !d.favorite })}
-                  className="absolute right-3 top-3 grid min-h-[44px] min-w-[44px] place-items-center rounded-full bg-background/70 backdrop-blur"
+                  className="absolute right-3 top-3 grid min-h-[44px] min-w-[44px] place-items-center rounded-full bg-background/85"
                 >
                   <Star
                     className={cn(
@@ -252,7 +252,7 @@ function DeckLibrary() {
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2">
                     {srs.due > 0 && (
-                      <Button size="sm" className="anim-glow" asChild>
+                      <Button size="sm" className="press" asChild>
                         <Link to="/review" search={{ deck: d.id }}>
                           Review {srs.due}
                         </Link>

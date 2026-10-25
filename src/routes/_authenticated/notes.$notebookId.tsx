@@ -1574,7 +1574,7 @@ function NotebookEditorPage() {
         }}
       />
 
-      <header className="flex flex-wrap items-center gap-2 border-b border-border bg-background/95 px-2 py-2 backdrop-blur sm:px-3">
+      <header className="flex flex-wrap items-center gap-2 border-b border-border bg-background px-2 py-2 sm:px-3">
         <Button asChild variant="ghost" size="sm" aria-label="Back to notebooks">
           <Link to="/notes">
             <ArrowLeft className="size-4" />

@@ -118,7 +118,7 @@ function DeckDetail() {
               <Trash2 /> Delete
             </Button>
             {srs.due > 0 && (
-              <Button className="press anim-glow" asChild>
+              <Button className="press" asChild>
                 <Link to="/review" search={{ deck: deck.id }}>
                   <Brain /> Review {srs.due} due
                 </Link>

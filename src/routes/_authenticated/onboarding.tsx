@@ -286,7 +286,7 @@ function Onboarding() {
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-background">
       {/* Soft forge backdrop behind the setup frame. */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="anim-aurora landing-aurora absolute -top-40 left-1/2 h-[30rem] w-[60rem] max-w-none -translate-x-1/2 opacity-40 blur-3xl" />
+        <div className="landing-aurora absolute -top-40 left-1/2 h-[30rem] w-[60rem] max-w-none -translate-x-1/2 opacity-40" />
         <div className="grid-forge absolute inset-0 opacity-[0.035] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_40%,black,transparent_75%)]" />
         <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,var(--primary),transparent)] opacity-60" />
       </div>
@@ -324,20 +324,20 @@ function Onboarding() {
                     aria-hidden
                     className="absolute inset-0 scale-125 rounded-full bg-primary/25 blur-2xl"
                   />
-                  <div className="relative grid size-24 place-items-center rounded-[1.75rem] border border-primary/20 bg-primary/10 shadow-2xl backdrop-blur-xl lg:size-32 lg:rounded-[2rem]">
+                  <div className="relative grid size-24 place-items-center rounded-[1.75rem] border border-primary/20 bg-primary/10 shadow-lg lg:size-32 lg:rounded-[2rem]">
                     <div
                       aria-hidden
                       className="absolute inset-3 rounded-[1.35rem] border border-primary/15 lg:rounded-[1.45rem]"
                     />
                     <StepIcon className="relative size-10 lg:size-14" strokeWidth={1.4} />
                   </div>
-                  <span className="absolute -left-16 top-1 hidden rounded-full border border-border bg-foreground/5 px-2.5 py-1 text-[10px] font-medium text-foreground/80 shadow-lg backdrop-blur sm:block">
+                  <span className="absolute -left-16 top-1 hidden rounded-full border border-border bg-foreground/5 px-2.5 py-1 text-[10px] font-medium text-foreground/80 shadow-sm sm:block">
                     Local-first
                   </span>
-                  <span className="absolute -right-14 bottom-1 hidden rounded-full border border-accent/30 bg-accent/15 px-2.5 py-1 text-[10px] font-medium text-foreground/80 shadow-lg backdrop-blur sm:block">
+                  <span className="absolute -right-14 bottom-1 hidden rounded-full border border-accent/30 bg-accent/15 px-2.5 py-1 text-[10px] font-medium text-foreground/80 shadow-sm sm:block">
                     Backup file
                   </span>
-                  <span className="absolute -right-10 -top-5 hidden rounded-full border border-border bg-foreground/5 px-2.5 py-1 text-[10px] font-medium text-foreground/80 shadow-lg backdrop-blur sm:block">
+                  <span className="absolute -right-10 -top-5 hidden rounded-full border border-border bg-foreground/5 px-2.5 py-1 text-[10px] font-medium text-foreground/80 shadow-sm sm:block">
                     8-step setup
                   </span>
                 </div>
@@ -1183,7 +1183,7 @@ function Onboarding() {
                       </div>
                       <div className="anim-fade-up mt-8 flex flex-wrap justify-center gap-3 [animation-delay:120ms]">
                         <Button
-                          className="press anim-glow"
+                          className="press"
                           onClick={() =>
                             finish(
                               backupRestored ? "/dashboard" : imported ? "/decks" : "/generate",

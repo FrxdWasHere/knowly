@@ -202,7 +202,7 @@ export function DeckArena({ deckId }: { deckId: string }) {
     return (
       <div className="panel anim-fade-up mx-auto max-w-2xl overflow-hidden p-0">
         <div className="relative grid place-items-center bg-primary/10 px-8 py-12 text-center">
-          <Swords className="anim-float size-10 text-primary" />
+          <Swords className="size-10 text-primary" />
           <h1 className="mt-4 font-display text-3xl font-bold">Arena · {deck.title}</h1>
           <p className="mt-2 max-w-md text-sm text-muted-foreground">
             A fast XP duel against your own deck. Answer correctly to bank XP and build a combo
@@ -218,7 +218,7 @@ export function DeckArena({ deckId }: { deckId: string }) {
           <Stat icon={Trophy} label="Questions" value={`${deck.questions.length}`} />
         </div>
         <div className="flex flex-wrap gap-2 border-t border-border p-6">
-          <Button size="lg" className="press anim-glow" onClick={start}>
+          <Button size="lg" className="press" onClick={start}>
             <Swords /> Enter the arena
           </Button>
           <Button size="lg" variant="ghost" asChild>
@@ -236,7 +236,7 @@ export function DeckArena({ deckId }: { deckId: string }) {
     const survived = Math.max(0, roundXp);
     return (
       <div className="panel anim-pop mx-auto max-w-2xl p-8 text-center">
-        <Trophy className="anim-float mx-auto size-10 text-primary" />
+        <Trophy className="mx-auto size-10 text-primary" />
         <h1 className="mt-4 font-display text-3xl font-bold">
           {lives > 0 ? "Round complete" : "Out of lives"}
         </h1>
