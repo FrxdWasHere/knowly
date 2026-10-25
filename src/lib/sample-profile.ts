@@ -1615,5 +1615,8 @@ export function buildSampleProfile(now = Date.now()): AppState {
     results,
     templates,
     journal,
+    timetable: [],
+    labels: [],
+    papers: [],
   };
 }

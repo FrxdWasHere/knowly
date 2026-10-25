@@ -49,6 +49,8 @@ export interface Deck {
   needsEquations?: boolean;
   /** questions may reference graphs and diagrams */
   needsGraphs?: boolean;
+  /** binder labels stuck on this deck */
+  labelIds?: string[];
   createdAt: number;
   lastStudiedAt?: number;
   favorite: boolean;
@@ -137,6 +139,8 @@ export interface Course {
   needsEquations?: boolean;
   /** lessons and questions may reference graphs and diagrams */
   needsGraphs?: boolean;
+  /** binder labels stuck on this course */
+  labelIds?: string[];
   objectives: string[];
   estimatedMinutes?: number;
   sources: CourseSource[];
@@ -364,6 +368,10 @@ export interface JournalEntry {
   sessionId?: string;
 }
 
+import { TimetableSlot } from "./timetable";
+
+export type { TimetableSlot };
+
 export interface AppState {
   version: number;
   onboardingComplete: boolean;
@@ -376,4 +384,10 @@ export interface AppState {
   results: QuizResult[];
   templates: PromptTemplate[];
   journal: JournalEntry[];
+  /** weekly class schedule */
+  timetable: TimetableSlot[];
+  /** binder labels: colour-coded tags shared by decks, courses and papers */
+  labels: import("./labels").BinderLabel[];
+  /** printed exam papers and their sittings */
+  papers: import("./papers").PaperRecord[];
 }

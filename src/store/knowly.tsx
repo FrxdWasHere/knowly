@@ -36,7 +36,10 @@ import type {
   SessionSummary,
   Settings,
   PromptTemplate,
+  TimetableSlot,
 } from "@/lib/types";
+import type { BinderLabel } from "@/lib/labels";
+import type { PaperRecord } from "@/lib/papers";
 
 const STORAGE_KEY = "studyforge.state.v1";
 const HISTORY_LIMIT = 200;
@@ -78,6 +81,13 @@ const MIGRATIONS: Partial<Record<number, Migration>> = {
     courses: state.courses ?? [],
     courseProgress: state.courseProgress ?? {},
   }),
+  // v3 → v4: timetable, binder labels and the past-paper shelf.
+  3: (state) => ({
+    ...state,
+    timetable: state.timetable ?? [],
+    labels: state.labels ?? [],
+    papers: state.papers ?? [],
+  }),
 };
 
 /** Applies every migration needed to bring `parsed` up to `STATE_VERSION`. */
@@ -118,6 +128,9 @@ function normalizeState(parsed: Partial<AppState>): AppState {
     decks: (state.decks ?? []).map((deck) => ({ ...deck, color: oceanDeckColor(deck.color) })),
     courses: state.courses ?? [],
     courseProgress: state.courseProgress ?? {},
+    timetable: state.timetable ?? [],
+    labels: state.labels ?? [],
+    papers: state.papers ?? [],
     progress: normalizeProgress({ ...DEFAULT_PROGRESS, ...state.progress }),
   };
 }
@@ -171,6 +184,17 @@ interface Ctx {
   saveTemplate: (t: PromptTemplate) => void;
   deleteTemplate: (id: string) => void;
   completeOnboarding: () => void;
+  /** weekly timetable */
+  upsertSlot: (slot: TimetableSlot) => void;
+  deleteSlot: (id: string) => void;
+  /** binder labels */
+  upsertLabel: (label: BinderLabel) => void;
+  deleteLabel: (id: string) => void;
+  /** past-paper shelf */
+  addPaper: (paper: PaperRecord) => void;
+  updatePaper: (id: string, patch: Partial<PaperRecord>) => void;
+  deletePaper: (id: string) => void;
+  addPaperSitting: (paperId: string, sitting: PaperRecord["sittings"][number]) => void;
   resetAll: () => void;
   exportState: () => string;
   importState: (json: string) => boolean;
@@ -407,6 +431,99 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
         ...s,
         courses: s.courses.map((course) =>
           course.id === id ? { ...course, ...patch, updatedAt: Date.now() } : course,
+        ),
+      }));
+    },
+    [setState],
+  );
+
+  const upsertSlot = useCallback(
+    (slot: TimetableSlot) => {
+      setState((s) => ({
+        ...s,
+        timetable: s.timetable.some((x) => x.id === slot.id)
+          ? s.timetable.map((x) => (x.id === slot.id ? slot : x))
+          : [...s.timetable, slot],
+      }));
+    },
+    [setState],
+  );
+
+  const deleteSlot = useCallback(
+    (id: string) => {
+      setState((s) => ({ ...s, timetable: s.timetable.filter((x) => x.id !== id) }));
+    },
+    [setState],
+  );
+
+  const upsertLabel = useCallback(
+    (label: BinderLabel) => {
+      setState((s) => ({
+        ...s,
+        labels: s.labels.some((x) => x.id === label.id)
+          ? s.labels.map((x) => (x.id === label.id ? label : x))
+          : [...s.labels, label],
+      }));
+    },
+    [setState],
+  );
+
+  const deleteLabel = useCallback(
+    (id: string) => {
+      setState((s) => ({
+        ...s,
+        labels: s.labels.filter((x) => x.id !== id),
+        // peel the label off everything it was stuck to
+        decks: s.decks.map((d) => ({
+          ...d,
+          labelIds: (d.labelIds ?? []).filter((x) => x !== id),
+        })),
+        courses: s.courses.map((c) => ({
+          ...c,
+          labelIds: (c.labelIds ?? []).filter((x) => x !== id),
+        })),
+        papers: s.papers.map((p) => ({
+          ...p,
+          labelIds: (p.labelIds ?? []).filter((x) => x !== id),
+        })),
+      }));
+    },
+    [setState],
+  );
+
+  const addPaper = useCallback(
+    (paper: PaperRecord) => {
+      setState((s) => ({
+        ...s,
+        papers: [paper, ...s.papers.filter((p) => p.id !== paper.id)],
+      }));
+    },
+    [setState],
+  );
+
+  const updatePaper = useCallback(
+    (id: string, patch: Partial<PaperRecord>) => {
+      setState((s) => ({
+        ...s,
+        papers: s.papers.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+      }));
+    },
+    [setState],
+  );
+
+  const deletePaper = useCallback(
+    (id: string) => {
+      setState((s) => ({ ...s, papers: s.papers.filter((p) => p.id !== id) }));
+    },
+    [setState],
+  );
+
+  const addPaperSitting = useCallback(
+    (paperId: string, sitting: PaperRecord["sittings"][number]) => {
+      setState((s) => ({
+        ...s,
+        papers: s.papers.map((p) =>
+          p.id === paperId ? { ...p, sittings: [sitting, ...p.sittings] } : p,
         ),
       }));
     },
@@ -665,6 +782,14 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
       deleteTemplate: (id) =>
         setState((s) => ({ ...s, templates: s.templates.filter((t) => t.id !== id) })),
       completeOnboarding: () => setState((s) => ({ ...s, onboardingComplete: true })),
+      upsertSlot,
+      deleteSlot,
+      upsertLabel,
+      deleteLabel,
+      addPaper,
+      updatePaper,
+      deletePaper,
+      addPaperSitting,
       resetAll: () => {
         setState(() => ({ ...DEFAULT_STATE, onboardingComplete: true }));
         void saveWallpaper(null);
@@ -700,6 +825,14 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
       recordCourseAssessment,
       reviewQuestion,
       recordSession,
+      upsertSlot,
+      deleteSlot,
+      upsertLabel,
+      deleteLabel,
+      addPaper,
+      updatePaper,
+      deletePaper,
+      addPaperSitting,
     ],
   );
 

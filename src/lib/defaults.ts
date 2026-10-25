@@ -1,4 +1,6 @@
-import type { AppState, Progress, QuizConfig, Settings } from "./types";
+import type { AppState, Progress, QuizConfig, Settings, TimetableSlot } from "./types";
+import type { BinderLabel } from "./labels";
+import type { PaperRecord } from "./papers";
 import { DEFAULT_CUSTOM_THEME } from "./themes";
 import { DEFAULT_SRS_CONFIG } from "./srs";
 
@@ -134,7 +136,7 @@ export const DEFAULT_PROGRESS: Progress = {
  * in a way that older saves need repair; add a matching entry to the migration
  * table in `src/store/knowly.tsx`.
  */
-export const STATE_VERSION = 3;
+export const STATE_VERSION = 4;
 
 export const DEFAULT_STATE: AppState = {
   version: STATE_VERSION,
@@ -148,6 +150,9 @@ export const DEFAULT_STATE: AppState = {
   results: [],
   templates: [],
   journal: [],
+  timetable: [],
+  labels: [],
+  papers: [],
 };
 
 export const GRADE_LEVELS = [

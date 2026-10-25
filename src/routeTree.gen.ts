@@ -38,6 +38,7 @@ import { Route as AuthenticatedShortcutsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedSnapshotsRouteImport } from './routes/_authenticated/snapshots'
 import { Route as AuthenticatedStatsRouteImport } from './routes/_authenticated/stats'
 import { Route as AuthenticatedTagsRouteImport } from './routes/_authenticated/tags'
+import { Route as AuthenticatedTimetableRouteImport } from './routes/_authenticated/timetable'
 import { Route as AuthenticatedWeakSpotsRouteImport } from './routes/_authenticated/weak-spots'
 import { Route as AuthenticatedArenaDeckIdRouteImport } from './routes/_authenticated/arena.$deckId'
 import { Route as AuthenticatedCoursesIndexRouteImport } from './routes/_authenticated/courses.index'
@@ -200,6 +201,11 @@ const AuthenticatedTagsRoute = AuthenticatedTagsRouteImport.update({
   path: '/tags',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTimetableRoute = AuthenticatedTimetableRouteImport.update({
+  id: '/timetable',
+  path: '/timetable',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedWeakSpotsRoute = AuthenticatedWeakSpotsRouteImport.update({
   id: '/weak-spots',
   path: '/weak-spots',
@@ -323,6 +329,7 @@ export interface FileRoutesByFullPath {
   '/snapshots': typeof AuthenticatedSnapshotsRoute
   '/stats': typeof AuthenticatedStatsRoute
   '/tags': typeof AuthenticatedTagsRoute
+  '/timetable': typeof AuthenticatedTimetableRoute
   '/weak-spots': typeof AuthenticatedWeakSpotsRoute
   '/arena/$deckId': typeof AuthenticatedArenaDeckIdRoute
   '/courses/$courseId': typeof AuthenticatedCoursesCourseIdRouteWithChildren
@@ -369,6 +376,7 @@ export interface FileRoutesByTo {
   '/snapshots': typeof AuthenticatedSnapshotsRoute
   '/stats': typeof AuthenticatedStatsRoute
   '/tags': typeof AuthenticatedTagsRoute
+  '/timetable': typeof AuthenticatedTimetableRoute
   '/weak-spots': typeof AuthenticatedWeakSpotsRoute
   '/arena/$deckId': typeof AuthenticatedArenaDeckIdRoute
   '/courses/forge': typeof AuthenticatedCoursesForgeRoute
@@ -416,6 +424,7 @@ export interface FileRoutesById {
   '/_authenticated/snapshots': typeof AuthenticatedSnapshotsRoute
   '/_authenticated/stats': typeof AuthenticatedStatsRoute
   '/_authenticated/tags': typeof AuthenticatedTagsRoute
+  '/_authenticated/timetable': typeof AuthenticatedTimetableRoute
   '/_authenticated/weak-spots': typeof AuthenticatedWeakSpotsRoute
   '/_authenticated/arena/$deckId': typeof AuthenticatedArenaDeckIdRoute
   '/_authenticated/courses/$courseId': typeof AuthenticatedCoursesCourseIdRouteWithChildren
@@ -464,6 +473,7 @@ export interface FileRouteTypes {
     | '/snapshots'
     | '/stats'
     | '/tags'
+    | '/timetable'
     | '/weak-spots'
     | '/arena/$deckId'
     | '/courses/$courseId'
@@ -510,6 +520,7 @@ export interface FileRouteTypes {
     | '/snapshots'
     | '/stats'
     | '/tags'
+    | '/timetable'
     | '/weak-spots'
     | '/arena/$deckId'
     | '/courses/forge'
@@ -556,6 +567,7 @@ export interface FileRouteTypes {
     | '/_authenticated/snapshots'
     | '/_authenticated/stats'
     | '/_authenticated/tags'
+    | '/_authenticated/timetable'
     | '/_authenticated/weak-spots'
     | '/_authenticated/arena/$deckId'
     | '/_authenticated/courses/$courseId'
@@ -786,6 +798,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTagsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/timetable': {
+      id: '/_authenticated/timetable'
+      path: '/timetable'
+      fullPath: '/timetable'
+      preLoaderRoute: typeof AuthenticatedTimetableRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/weak-spots': {
       id: '/_authenticated/weak-spots'
       path: '/weak-spots'
@@ -954,6 +973,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSnapshotsRoute: typeof AuthenticatedSnapshotsRoute
   AuthenticatedStatsRoute: typeof AuthenticatedStatsRoute
   AuthenticatedTagsRoute: typeof AuthenticatedTagsRoute
+  AuthenticatedTimetableRoute: typeof AuthenticatedTimetableRoute
   AuthenticatedWeakSpotsRoute: typeof AuthenticatedWeakSpotsRoute
   AuthenticatedArenaDeckIdRoute: typeof AuthenticatedArenaDeckIdRoute
   AuthenticatedCoursesCourseIdRoute: typeof AuthenticatedCoursesCourseIdRouteWithChildren
@@ -993,6 +1013,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSnapshotsRoute: AuthenticatedSnapshotsRoute,
   AuthenticatedStatsRoute: AuthenticatedStatsRoute,
   AuthenticatedTagsRoute: AuthenticatedTagsRoute,
+  AuthenticatedTimetableRoute: AuthenticatedTimetableRoute,
   AuthenticatedWeakSpotsRoute: AuthenticatedWeakSpotsRoute,
   AuthenticatedArenaDeckIdRoute: AuthenticatedArenaDeckIdRoute,
   AuthenticatedCoursesCourseIdRoute:
