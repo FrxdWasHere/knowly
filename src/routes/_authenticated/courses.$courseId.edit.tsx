@@ -236,7 +236,54 @@ function CourseEditorPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Objectives (one per line)</Label>
+              <Label>Math &amp; science</Label>
+              <div className="grid gap-2">
+                <label className="flex items-center gap-3 rounded-xl border border-border bg-surface-2/60 p-3 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={draft.isSTEM ?? false}
+                    onChange={(event) => patch({ isSTEM: event.target.checked })}
+                    className="size-4 accent-[var(--primary)]"
+                  />
+                  <span>
+                    Math or science subject
+                    <span className="block text-xs text-muted-foreground">
+                      Adds a symbol keypad to checkpoints and typed answers.
+                    </span>
+                  </span>
+                </label>
+                <label className="flex items-center gap-3 rounded-xl border border-border bg-surface-2/60 p-3 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={draft.needsEquations ?? false}
+                    onChange={(event) => patch({ needsEquations: event.target.checked })}
+                    className="size-4 accent-[var(--primary)]"
+                  />
+                  <span>
+                    Uses equations (LaTeX)
+                    <span className="block text-xs text-muted-foreground">
+                      Equations like $x^2+1$ show properly typeset in lessons and checks.
+                    </span>
+                  </span>
+                </label>
+                <label className="flex items-center gap-3 rounded-xl border border-border bg-surface-2/60 p-3 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={draft.needsGraphs ?? false}
+                    onChange={(event) => patch({ needsGraphs: event.target.checked })}
+                    className="size-4 accent-[var(--primary)]"
+                  />
+                  <span>
+                    References graphs &amp; diagrams
+                    <span className="block text-xs text-muted-foreground">
+                      Guides your AI to describe graphs in words.
+                    </span>
+                  </span>
+                </label>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Objectives (one per line)</Label>{" "}
               <Textarea
                 value={draft.objectives.join("\n")}
                 onChange={(event) =>

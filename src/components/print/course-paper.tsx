@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import { MathText } from "@/components/math/math-text";
 import { LETTERS, printableAnswer } from "@/lib/exam-print";
 import { courseStats, decksForCourse, lessonProgress, type CourseStats } from "@/lib/courses";
 import { TYPE_LABELS } from "@/lib/answers";
@@ -1320,7 +1323,9 @@ function ObjectivesList({
 function PaperMarkdown({ markdown }: { markdown: string }) {
   return (
     <div className="paper-markdown text-[0.98em] text-foreground [&_a]:text-foreground [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-foreground [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:text-[0.9em] [&_h1]:mb-2 [&_h1]:mt-4 [&_h1]:text-[1.25em] [&_h1]:font-bold [&_h2]:mb-2 [&_h2]:mt-4 [&_h2]:text-[1.15em] [&_h2]:font-bold [&_h3]:mb-2 [&_h3]:mt-3 [&_h3]:font-semibold [&_li]:my-0.5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-2 [&_pre]:my-2 [&_pre]:overflow-auto [&_pre]:rounded-lg [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:text-[0.9em] [&_strong]:font-bold [&_table]:my-3 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-border [&_td]:p-1.5 [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:p-1.5 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5">
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+        {markdown}
+      </ReactMarkdown>
     </div>
   );
 }
@@ -1339,7 +1344,9 @@ function QuestionView({
       <div className="flex gap-3">
         <span className="mt-0.5 min-w-0 shrink-0 font-bold">{number}.</span>
         <div className="min-w-0 flex-1">
-          <p className="font-medium">{question.question}</p>
+          <p className="font-medium">
+            <MathText text={question.question} />
+          </p>
           <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground">
             <span style={{ color: INK_MUTED }}>{TYPE_LABELS[question.type]}</span>
             {question.difficulty && <span>{question.difficulty}</span>}

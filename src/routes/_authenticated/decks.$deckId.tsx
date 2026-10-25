@@ -9,6 +9,7 @@ import {
   Swords,
   Plus,
   Brain,
+  Sigma,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
@@ -16,6 +17,7 @@ import { PageHeader } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SrsRing } from "@/components/srs/srs-ring";
+import { MathText } from "@/components/math/math-text";
 import { TYPE_LABELS } from "@/lib/answers";
 import { cardStage, deckSrs, formatDue, formatInterval, STAGE_META } from "@/lib/srs";
 import { useKnowly } from "@/store/knowly";
@@ -70,6 +72,9 @@ function DeckDetail() {
       subject: deck.subject,
       description: deck.description,
       tags: deck.tags,
+      isSTEM: deck.isSTEM,
+      needsEquations: deck.needsEquations,
+      needsGraphs: deck.needsGraphs,
       questions: deck.questions,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -148,6 +153,65 @@ function DeckDetail() {
           </Badge>
         ))}
       </div>
+
+      <details className="panel mb-6 p-5">
+        <summary className="cursor-pointer text-sm font-medium">
+          <span className="inline-flex items-center gap-2">
+            <Sigma className="size-4 text-primary" />
+            Math &amp; science
+            {(deck.isSTEM || deck.needsEquations || deck.needsGraphs) && (
+              <Badge variant="secondary" className="text-[10px]">
+                on
+              </Badge>
+            )}
+          </span>
+        </summary>
+        <div className="mt-4 grid gap-2">
+          <label className="flex items-center gap-3 rounded-xl border border-border bg-surface-2/60 p-3 text-sm">
+            <input
+              type="checkbox"
+              checked={deck.isSTEM ?? false}
+              onChange={(e) => updateDeck(deck.id, { isSTEM: e.target.checked })}
+              className="size-4 accent-[var(--primary)]"
+            />
+            <span>
+              This is a math or science subject
+              <span className="block text-xs text-muted-foreground">
+                Adds a symbol keypad when typing answers.
+              </span>
+            </span>
+          </label>
+          <label className="flex items-center gap-3 rounded-xl border border-border bg-surface-2/60 p-3 text-sm">
+            <input
+              type="checkbox"
+              checked={deck.needsEquations ?? false}
+              onChange={(e) => updateDeck(deck.id, { needsEquations: e.target.checked })}
+              className="size-4 accent-[var(--primary)]"
+            />
+            <span>
+              Uses equations (LaTeX)
+              <span className="block text-xs text-muted-foreground">
+                Ask for LaTeX when adding questions with Prompt Forge. Equations like $x^2$ typeset
+                automatically either way.
+              </span>
+            </span>
+          </label>
+          <label className="flex items-center gap-3 rounded-xl border border-border bg-surface-2/60 p-3 text-sm">
+            <input
+              type="checkbox"
+              checked={deck.needsGraphs ?? false}
+              onChange={(e) => updateDeck(deck.id, { needsGraphs: e.target.checked })}
+              className="size-4 accent-[var(--primary)]"
+            />
+            <span>
+              References graphs &amp; diagrams
+              <span className="block text-xs text-muted-foreground">
+                Your AI will describe graphs in words instead of pointing at pictures.
+              </span>
+            </span>
+          </label>
+        </div>
+      </details>
 
       <section className="panel mb-6 flex flex-wrap items-center gap-6 p-5">
         <SrsRing
@@ -243,7 +307,9 @@ function DeckDetail() {
                   />
                 </button>
               </div>
-              <p className="mt-3 break-words font-medium">{q.question}</p>
+              <p className="mt-3 break-words font-medium">
+                <MathText text={q.question} />
+              </p>
               {q.options && (
                 <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
                   {q.options.map((o) => (
@@ -254,17 +320,21 @@ function DeckDetail() {
                         o === q.answer && "border-success/60 text-success",
                       )}
                     >
-                      {o}
+                      <MathText text={o} />
                     </li>
                   ))}
                 </ul>
               )}
               <p className="mt-3 text-sm">
                 <span className="text-muted-foreground">Answer: </span>
-                <span className="text-success">{q.answer}</span>
+                <span className="text-success">
+                  <MathText text={q.answer} />
+                </span>
               </p>
               {q.explanation && (
-                <p className="mt-2 text-xs text-muted-foreground">{q.explanation}</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  <MathText text={q.explanation} />
+                </p>
               )}
               {deck.notes[q.id] && (
                 <p className="mt-2 rounded-md bg-surface-2/60 px-3 py-2 text-xs">

@@ -43,6 +43,12 @@ export interface Deck {
   description?: string;
   color: string;
   tags: string[];
+  /** math or science subject: shows math helpers and STEM-tuned instructions */
+  isSTEM?: boolean;
+  /** questions contain LaTeX equations ($…$), rendered locally by KaTeX */
+  needsEquations?: boolean;
+  /** questions may reference graphs and diagrams */
+  needsGraphs?: boolean;
   createdAt: number;
   lastStudiedAt?: number;
   favorite: boolean;
@@ -125,6 +131,12 @@ export interface Course {
   color: string;
   emoji?: string;
   tags: string[];
+  /** math or science subject: shows math helpers and STEM-tuned instructions */
+  isSTEM?: boolean;
+  /** lesson text and questions contain LaTeX equations ($…$ / $$…$$) */
+  needsEquations?: boolean;
+  /** lessons and questions may reference graphs and diagrams */
+  needsGraphs?: boolean;
   objectives: string[];
   estimatedMinutes?: number;
   sources: CourseSource[];

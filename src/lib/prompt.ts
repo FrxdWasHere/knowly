@@ -12,6 +12,37 @@ export interface PromptOptions {
   audience?: string;
   /** why the learner is studying, from the profile */
   purpose?: string;
+  /** math & science subject: write questions with real math notation */
+  isSTEM?: boolean;
+  /** questions should use LaTeX ($…$) for equations */
+  needsEquations?: boolean;
+  /** questions may reference graphs and diagrams */
+  needsGraphs?: boolean;
+}
+
+export function mathPromptSection(o: {
+  isSTEM?: boolean;
+  needsEquations?: boolean;
+  needsGraphs?: boolean;
+}) {
+  const lines: string[] = [];
+  if (o.needsEquations) {
+    lines.push(
+      "- Write ALL mathematical notation in LaTeX: inline math in $…$ (e.g. $x^2 + y^2 = r^2$, $\\frac{a}{b}$, $\\int_0^\\infty e^{-x}\\,dx$) and larger equations in $$…$$.",
+      "- Keep ordinary words outside the math delimiters. Never use code blocks for equations.",
+      "- Escape backslashes for valid JSON (e.g. \\\\frac in the raw file).",
+    );
+  } else if (o.isSTEM) {
+    lines.push(
+      "- This is a math/science subject: use clean plain notation (×, ÷, √, ², π, θ, ≤, ∑) that reads well as plain text.",
+    );
+  }
+  if (o.needsGraphs) {
+    lines.push(
+      "- For graph or diagram questions, describe the graph clearly in words (axes, shape, key points, labels) — do NOT reference or invent images. The app can only show text and LaTeX.",
+    );
+  }
+  return lines.length ? `\nMATH & SCIENCE NOTATION\n${lines.join("\n")}\n` : "";
 }
 
 export function buildPrompt(o: PromptOptions) {
@@ -61,6 +92,7 @@ DECK SETTINGS
 - difficulty mix: ~${pct(o.distribution.easy)}% easy, ~${pct(o.distribution.medium)}% medium, ~${pct(o.distribution.hard)}% hard
 ${o.audience ? `- learner level: ${o.audience} — pitch wording and depth accordingly` : ""}
 ${o.purpose ? `- study goal: ${o.purpose} — bias the questions toward this goal` : ""}
+${mathPromptSection(o)}
 
 QUALITY BAR
 - Test understanding, not trivia phrasing. Avoid duplicate questions.
@@ -91,6 +123,10 @@ export interface AppendPromptOptions {
   existingConcepts: string[];
   audience?: string;
   purpose?: string;
+  /** math & science subject flags */
+  isSTEM?: boolean;
+  needsEquations?: boolean;
+  needsGraphs?: boolean;
 }
 
 export function buildAppendPrompt(o: AppendPromptOptions) {
@@ -138,6 +174,7 @@ DECK CONTEXT
 ${o.existingConcepts.length ? `- concepts already covered (reuse these exact labels where relevant): ${o.existingConcepts.join(", ")}` : ""}
 ${o.audience ? `- learner level: ${o.audience} — pitch wording and depth accordingly` : ""}
 ${o.purpose ? `- study goal: ${o.purpose} — bias the questions toward this goal` : ""}
+${mathPromptSection(o)}
 
 EXISTING QUESTIONS — DO NOT REPEAT OR REPHRASE
 ${sample.length ? sample.map((q, i) => `${i + 1}. ${q}`).join("\n") : "(none)"}

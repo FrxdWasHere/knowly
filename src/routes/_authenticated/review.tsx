@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { GradeButtons } from "@/components/srs/grade-buttons";
 import { InteractiveQuestion } from "@/components/questions/interactive-question";
+import { MathKeypad, MathText } from "@/components/math/math-text";
 import { displayAnswer, isInteractive } from "@/lib/interactive";
 import { TYPE_LABELS, formatDuration } from "@/lib/answers";
 import { xpForAnswer } from "@/lib/gamification";
@@ -68,6 +69,7 @@ function ReviewSession() {
   const questionStart = useRef(Date.now());
   const stateRef = useRef(state);
   stateRef.current = state;
+  const mathInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const decks = deckFilter
@@ -81,6 +83,13 @@ function ReviewSession() {
 
   const item = queue[index];
   const total = queue.length;
+
+  // symbol keypad for typed answers on math/science decks
+  const mathInputMode = useMemo(() => {
+    if (!item) return false;
+    const deck = state.decks.find((d) => d.id === item.deckId);
+    return Boolean(deck?.isSTEM || deck?.needsEquations);
+  }, [item, state.decks]);
 
   // live card (post-grade) for interval previews
   const liveCard = useMemo(() => {
@@ -296,11 +305,13 @@ function ReviewSession() {
         </div>
 
         <h1 className="mt-6 break-words text-2xl font-semibold leading-snug">
-          {question.question}
+          <MathText text={question.question} />
         </h1>
 
         {question.hint && settings.showHints && !revealed && (
-          <p className="mt-3 text-xs text-muted-foreground">Hint: {question.hint}</p>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Hint: <MathText text={question.hint} />
+          </p>
         )}
 
         {question.type === "multiple-choice" && question.options && (
@@ -313,22 +324,28 @@ function ReviewSession() {
                   revealed && o === question.answer && "border-success bg-success/10 text-success",
                 )}
               >
-                {o}
+                <MathText text={o} />
               </li>
             ))}
           </ul>
         )}
 
         {(question.type === "fill-blank" || question.type === "short-answer") && (
-          <Input
-            className="mt-6"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your answer…"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") setRevealed(true);
-            }}
-          />
+          <>
+            <Input
+              className="mt-6"
+              ref={mathInput}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Type your answer…"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") setRevealed(true);
+              }}
+            />
+            {mathInputMode && !revealed && (
+              <MathKeypad className="mt-2" target={mathInput} onValue={setInput} />
+            )}
+          </>
         )}
 
         {isInteractive(question.type) && (
@@ -345,9 +362,13 @@ function ReviewSession() {
           <>
             <div className="mt-6 rounded-xl border border-success/40 bg-success/10 p-5">
               <p className="text-xs uppercase tracking-widest text-success">Answer</p>
-              <p className="mt-2 text-lg font-medium">{displayAnswer(question)}</p>
+              <p className="mt-2 text-lg font-medium">
+                <MathText text={displayAnswer(question)} />
+              </p>
               {question.explanation && settings.showExplanations && (
-                <p className="mt-2 text-sm text-muted-foreground">{question.explanation}</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  <MathText text={question.explanation} />
+                </p>
               )}
             </div>
             <p className="mt-6 text-xs text-muted-foreground">

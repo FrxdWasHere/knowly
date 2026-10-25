@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDuration, TYPE_LABELS } from "@/lib/answers";
+import { MathText } from "@/components/math/math-text";
 import { gradeFor } from "@/lib/gamification";
 import { cn } from "@/lib/utils";
 import type { AnswerRecord, QuizResult } from "@/lib/types";
@@ -439,7 +440,11 @@ function ReviewRow({
         {a.concept && <Badge variant="secondary">{a.concept}</Badge>}
         <span className="ml-auto text-muted-foreground">{(a.timeMs / 1000).toFixed(1)}s</span>
       </div>
-      {q && <p className="mt-2 break-words font-medium">{q.question}</p>}
+      {q && (
+        <p className="mt-2 break-words font-medium">
+          <MathText text={q.question} />
+        </p>
+      )}
       <p className="mt-1 break-words text-muted-foreground">
         {a.skipped ? "Skipped" : a.correct ? "Correct" : "Incorrect"}
         {a.overridden ? " (marked as right)" : ""}
@@ -448,7 +453,7 @@ function ReviewRow({
       {q && !a.correct && q.answer && (
         <p className="mt-1 text-xs">
           <span className="text-muted-foreground">Answer: </span>
-          {q.answer}
+          <MathText text={q.answer} />
         </p>
       )}
       {!a.correct && !a.skipped && (

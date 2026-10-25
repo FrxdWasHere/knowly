@@ -22,6 +22,7 @@ import {
   isInteractiveComplete,
 } from "@/components/questions/interactive-question";
 import { useKnowly } from "@/store/knowly";
+import { MathText } from "@/components/math/math-text";
 import { useCoarsePointer } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import type { Question } from "@/lib/types";
@@ -341,7 +342,7 @@ export function DeckArena({ deckId }: { deckId: string }) {
         </div>
 
         <h2 className="mt-5 break-words font-display text-2xl font-bold leading-snug">
-          {question.question}
+          <MathText text={question.question} />
         </h2>
 
         {question.type === "multiple-choice" || question.type === "true-false" ? (
@@ -363,7 +364,7 @@ export function DeckArena({ deckId }: { deckId: string }) {
                     revealed && chosen && !isAnswer && "border-destructive bg-destructive/15",
                   )}
                 >
-                  {opt}
+                  <MathText text={opt} />
                 </button>
               );
             })}
@@ -372,7 +373,7 @@ export function DeckArena({ deckId }: { deckId: string }) {
           <div className="mt-6">
             {revealed ? (
               <p className="anim-fade-up rounded-xl border border-border bg-surface-2/60 p-4 text-sm">
-                {question.answer}
+                <MathText text={question.answer} />
               </p>
             ) : (
               <div className="flex flex-wrap gap-2">
@@ -444,7 +445,9 @@ export function DeckArena({ deckId }: { deckId: string }) {
               {wasCorrect ? "Correct" : `Answer: ${displayAnswer(question)}`}
             </p>
             {question.explanation && (
-              <p className="mt-2 text-sm text-muted-foreground">{question.explanation}</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                <MathText text={question.explanation} />
+              </p>
             )}
             <Button className="press anim-pop mt-5" onClick={next}>
               {lives <= 0 || index + 1 >= queue.length ? "See results" : "Next"} <ArrowRight />

@@ -1,7 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import {
   ArrowLeft,
   ArrowRight,
@@ -33,6 +35,7 @@ import { createId } from "@/lib/id";
 import { emptyPage, NOTE_COLORS } from "@/lib/notes/types";
 import { listNotebooks, putNotebook, putPage } from "@/lib/notes/db";
 import { useKnowly } from "@/store/knowly";
+import { MathKeypad, MathText } from "@/components/math/math-text";
 import type { CourseBlock, Question } from "@/lib/types";
 import type { NotebookMeta } from "@/lib/notes/types";
 import { cn } from "@/lib/utils";
@@ -345,6 +348,7 @@ function CourseLessonPage() {
                       <Checkpoint
                         key={question.id}
                         question={question}
+                        mathMode={Boolean(course.isSTEM || course.needsEquations)}
                         onAnswered={(correct, grade) =>
                           recordCourseQuestion(course.id, lesson.id, question.id, correct, grade)
                         }
@@ -526,21 +530,26 @@ function LessonBlock({ block }: { block: CourseBlock }) {
 function Markdown({ markdown }: { markdown: string }) {
   return (
     <div className="text-sm leading-7 text-foreground/90 [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-4 [&_blockquote]:text-muted-foreground [&_code]:rounded [&_code]:bg-surface2 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-xs [&_h1]:mb-3 [&_h1]:mt-6 [&_h1]:font-display [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:mb-2 [&_h2]:mt-6 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:mb-2 [&_h3]:mt-5 [&_h3]:font-semibold [&_li]:my-1 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-3 [&_pre]:my-3 [&_pre]:overflow-auto [&_pre]:rounded-xl [&_pre]:bg-surface2 [&_pre]:p-4 [&_pre]:text-xs [&_strong]:font-semibold [&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-border [&_td]:p-2 [&_th]:border [&_th]:border-border [&_th]:bg-surface2 [&_th]:p-2 [&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6">
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+        {markdown}
+      </ReactMarkdown>
     </div>
   );
 }
 
 function Checkpoint({
   question,
+  mathMode = false,
   onAnswered,
 }: {
   question: Question;
+  mathMode?: boolean;
   onAnswered: (correct: boolean, grade: "again" | "hard" | "good" | "easy") => void;
 }) {
   const [value, setValue] = useState("");
   const [result, setResult] = useState<boolean | null>(null);
   const [revealed, setRevealed] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const interactive = ["ordering", "matching", "word-bank"].includes(question.type);
 
   const submit = (given: string, forced?: boolean) => {
@@ -556,7 +565,9 @@ function Checkpoint({
         {question.concept && <Badge variant="outline">{question.concept}</Badge>}
         {question.difficulty && <Badge variant="outline">{question.difficulty}</Badge>}
       </div>
-      <p className="mt-3 font-medium leading-6">{question.question}</p>
+      <p className="mt-3 font-medium leading-6">
+        <MathText text={question.question} />
+      </p>
 
       {question.type === "multiple-choice" && (
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -578,7 +589,7 @@ function Checkpoint({
                     : "border-border bg-background hover:border-primary/40",
               )}
             >
-              {option}
+              <MathText text={option} />
             </button>
           ))}
         </div>
@@ -615,7 +626,9 @@ function Checkpoint({
             </Button>
           ) : (
             <div className="rounded-xl border border-primary/25 bg-primary/8 p-3 text-sm leading-6">
-              <p>{question.answer}</p>
+              <p>
+                <MathText text={question.answer} />
+              </p>
               <div className="mt-3 flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => submit("", false)}>
                   <X className="size-4" /> Missed it
@@ -633,6 +646,7 @@ function Checkpoint({
         <div className="mt-3 flex flex-wrap gap-2">
           <input
             value={value}
+            ref={inputRef}
             onChange={(event) => setValue(event.target.value)}
             disabled={result !== null}
             placeholder="Your answer…"
@@ -645,6 +659,10 @@ function Checkpoint({
             Check
           </Button>
         </div>
+      )}
+
+      {mathMode && !interactive && result === null && (
+        <MathKeypad className="mt-2" target={inputRef} onValue={setValue} />
       )}
 
       {interactive && (
@@ -675,10 +693,15 @@ function Checkpoint({
         >
           <p className="font-medium">{result ? "Correct" : "Not quite"}</p>
           <p className="mt-1 text-muted-foreground">
-            Answer: <span className="font-medium text-foreground">{question.answer}</span>
+            Answer:{" "}
+            <span className="font-medium text-foreground">
+              <MathText text={question.answer} />
+            </span>
           </p>
           {question.explanation && (
-            <p className="mt-1 text-muted-foreground">{question.explanation}</p>
+            <p className="mt-1 text-muted-foreground">
+              <MathText text={question.explanation} />
+            </p>
           )}
           <Button
             size="sm"

@@ -150,6 +150,9 @@ export const deckSchema = z.object({
   subject: z.string().default("General"),
   description: z.string().optional(),
   tags: z.array(z.string()).default([]),
+  isSTEM: z.boolean().optional(),
+  needsEquations: z.boolean().optional(),
+  needsGraphs: z.boolean().optional(),
   questions: z.array(questionSchema).min(1, "A deck needs at least one question"),
 });
 
@@ -209,6 +212,9 @@ export function validateDeckJson(raw: string): ValidationResult {
     description: parsed.data.description,
     color: DECK_COLORS[Math.floor(Math.random() * DECK_COLORS.length)],
     tags: parsed.data.tags,
+    isSTEM: parsed.data.isSTEM,
+    needsEquations: parsed.data.needsEquations,
+    needsGraphs: parsed.data.needsGraphs,
     createdAt: Date.now(),
     favorite: false,
     questions,

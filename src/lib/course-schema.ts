@@ -53,6 +53,9 @@ export const courseSchema = z.object({
   emoji: z.string().optional(),
   color: z.string().optional(),
   tags: z.array(z.string()).default([]),
+  isSTEM: z.boolean().optional(),
+  needsEquations: z.boolean().optional(),
+  needsGraphs: z.boolean().optional(),
   objectives: z.array(z.string()).default([]),
   estimatedMinutes: z.number().positive().optional(),
   sources: z
@@ -209,6 +212,9 @@ export function validateCourseJson(raw: string): CourseValidationResult {
     color: parsed.data.color || DECK_COLORS[Math.floor(Math.random() * DECK_COLORS.length)],
     emoji: parsed.data.emoji || "📘",
     tags: parsed.data.tags,
+    isSTEM: parsed.data.isSTEM,
+    needsEquations: parsed.data.needsEquations,
+    needsGraphs: parsed.data.needsGraphs,
     objectives: parsed.data.objectives,
     estimatedMinutes: parsed.data.estimatedMinutes,
     sources: parsed.data.sources.map((source) => ({

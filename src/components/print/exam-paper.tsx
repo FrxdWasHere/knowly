@@ -7,6 +7,7 @@ import {
 } from "@/lib/exam-print";
 import { X } from "lucide-react";
 import type { Question } from "@/lib/types";
+import { MathText } from "@/components/math/math-text";
 import { cn } from "@/lib/utils";
 
 function Lines({ count }: { count: number }) {
@@ -37,14 +38,22 @@ function Editable({
   onCommit,
   className,
   placeholder,
+  math,
 }: {
   value: string;
   enabled: boolean;
   onCommit?: (v: string) => void;
   className?: string;
   placeholder?: string;
+  /** typeset LaTeX ($…$) when not editing */
+  math?: boolean;
 }) {
-  if (!enabled || !onCommit) return <span className={className}>{value}</span>;
+  if (!enabled || !onCommit)
+    return math ? (
+      <MathText text={value} className={className} />
+    ) : (
+      <span className={className}>{value}</span>
+    );
   return (
     <span
       key={value}
@@ -108,6 +117,7 @@ function QuestionBody({
                 enabled={editing}
                 onCommit={onEditOption ? (v) => onEditOption(i, v) : undefined}
                 placeholder={`Option ${letter(i, options)}`}
+                math
               />
             </li>
           ))}
@@ -303,6 +313,7 @@ export function ExamPaper({
                       onEditQuestion ? (v) => onEditQuestion(q.id, { question: v }) : undefined
                     }
                     placeholder="Question"
+                    math
                   />
                   {options.showPoints && (
                     <span className="ml-2 text-[0.85em] font-normal">

@@ -14,6 +14,7 @@ import {
   InteractiveQuestion,
   isInteractiveComplete,
 } from "@/components/questions/interactive-question";
+import { MathKeypad, MathText } from "@/components/math/math-text";
 import { useKnowly } from "@/store/knowly";
 import { useCoarsePointer } from "@/hooks/use-mobile";
 import { checkAnswer, shuffleArray, TYPE_LABELS } from "@/lib/answers";
@@ -150,6 +151,15 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
         widgets={widgets}
         settings={state.settings}
         exam={exam}
+        mathMode={(() => {
+          const selected = config.deckIds.length
+            ? decks.filter((d) => config.deckIds.includes(d.id))
+            : decks;
+          const poolIds = new Set(pool.map((q) => (q as { deckId?: string }).deckId));
+          return selected.some(
+            (d) => (d.isSTEM || d.needsEquations) && (!poolIds.size || poolIds.has(d.id)),
+          );
+        })()}
         onQuit={() => setPhase("setup")}
         onFinish={(answers, durationMs, bestCombo, xpEarned) => {
           const answered = answers.filter((a) => !a.skipped).length;
@@ -444,6 +454,7 @@ function QuizRun({
   widgets,
   settings,
   exam = false,
+  mathMode = false,
   onFinish,
   onQuit,
 }: {
@@ -453,6 +464,8 @@ function QuizRun({
   settings: Settings;
   /** exam mode: no hints, exam-styled quit prompt */
   exam?: boolean;
+  /** the quiz covers a math/science deck: show the symbol keypad */
+  mathMode?: boolean;
   onFinish: (
     answers: AnswerRecord[],
     durationMs: number,
@@ -677,11 +690,13 @@ function QuizRun({
           {TYPE_LABELS[question.type]}
         </Badge>
         <h1 className="mt-4 break-words text-2xl font-semibold leading-snug">
-          {question.question}
+          <MathText text={question.question} />
         </h1>
 
         {question.hint && settings.showHints && !exam && !feedback && (
-          <p className="mt-3 text-xs text-muted-foreground">Hint: {question.hint}</p>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Hint: <MathText text={question.hint} />
+          </p>
         )}
 
         {question.type === "multiple-choice" && question.options && (
@@ -706,7 +721,7 @@ function QuizRun({
                       "border-destructive bg-destructive/10 text-destructive",
                   )}
                 >
-                  {o}
+                  <MathText text={o} />
                 </button>
               </li>
             ))}
@@ -753,6 +768,7 @@ function QuizRun({
               }}
               placeholder="Type your answer and press Enter…"
             />
+            {mathMode && !feedback && <MathKeypad target={answerInput} onValue={setInput} />}
             <Button
               className="min-h-[44px]"
               disabled={!input.trim() || !!feedback}
@@ -797,10 +813,13 @@ function QuizRun({
                 feedback.correct ? "text-success" : "text-destructive",
               )}
             >
-              {feedback.correct ? "Correct" : `Answer: ${displayAnswer(question)}`}
+              {feedback.correct ? "Correct" : <span>Answer: </span>}
+              {feedback.correct ? null : <MathText text={displayAnswer(question)} />}
             </p>
             {question.explanation && settings.showExplanations && (
-              <p className="mt-1 text-xs text-muted-foreground">{question.explanation}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                <MathText text={question.explanation} />
+              </p>
             )}
           </div>
         )}

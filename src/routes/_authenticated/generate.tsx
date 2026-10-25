@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Copy, Eraser, Save, Wand2, Trash2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
@@ -55,8 +55,21 @@ function GeneratePage() {
     "true-false",
     "short-answer",
   ]);
+  const [isSTEM, setIsSTEM] = useState(false);
+  const [needsEquations, setNeedsEquations] = useState(false);
+  const [needsGraphs, setNeedsGraphs] = useState(false);
 
   const target = state.decks.find((d) => d.id === targetId);
+
+  // keep the math toggles in step with the deck being expanded
+  useEffect(() => {
+    if (mode === "append" && target) {
+      setIsSTEM(target.isSTEM ?? false);
+      setNeedsEquations(target.needsEquations ?? false);
+      setNeedsGraphs(target.needsGraphs ?? false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, targetId]);
 
   const prompt = useMemo(() => {
     if (mode === "append" && target) {
@@ -74,6 +87,9 @@ function GeneratePage() {
         ),
         audience: state.settings.gradeLevel,
         purpose: state.settings.studyReason,
+        isSTEM,
+        needsEquations,
+        needsGraphs,
       });
     }
     return buildPrompt({
@@ -86,6 +102,9 @@ function GeneratePage() {
       extra,
       audience: state.settings.gradeLevel,
       purpose: state.settings.studyReason,
+      isSTEM,
+      needsEquations,
+      needsGraphs,
     });
   }, [
     mode,
@@ -97,6 +116,9 @@ function GeneratePage() {
     dist,
     types,
     extra,
+    isSTEM,
+    needsEquations,
+    needsGraphs,
     state.settings.gradeLevel,
     state.settings.studyReason,
   ]);
@@ -281,6 +303,39 @@ function GeneratePage() {
                   />
                 </div>
               ))}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Math &amp; science</Label>
+              <div className="grid gap-2">
+                <label className="flex items-center gap-3 rounded-xl border border-border bg-surface-2/60 p-3 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={isSTEM}
+                    onChange={(e) => setIsSTEM(e.target.checked)}
+                    className="size-4 accent-[var(--primary)]"
+                  />
+                  <span>This is a math or science subject — use clean math notation</span>
+                </label>
+                <label className="flex items-center gap-3 rounded-xl border border-border bg-surface-2/60 p-3 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={needsEquations}
+                    onChange={(e) => setNeedsEquations(e.target.checked)}
+                    className="size-4 accent-[var(--primary)]"
+                  />
+                  <span>Write equations in LaTeX — Knowly typesets them everywhere</span>
+                </label>
+                <label className="flex items-center gap-3 rounded-xl border border-border bg-surface-2/60 p-3 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={needsGraphs}
+                    onChange={(e) => setNeedsGraphs(e.target.checked)}
+                    className="size-4 accent-[var(--primary)]"
+                  />
+                  <span>May reference graphs &amp; diagrams — describe them in words</span>
+                </label>
+              </div>
             </div>
 
             <div className="space-y-2">

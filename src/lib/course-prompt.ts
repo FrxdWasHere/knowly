@@ -1,3 +1,4 @@
+import { mathPromptSection } from "./prompt";
 import type { Difficulty, QuestionType } from "./types";
 
 export interface CoursePromptOptions {
@@ -15,6 +16,10 @@ export interface CoursePromptOptions {
   purpose?: string;
   extra: string;
   includeAssessments: boolean;
+  /** math & science subject flags */
+  isSTEM?: boolean;
+  needsEquations?: boolean;
+  needsGraphs?: boolean;
 }
 
 export function estimateCourseQuestions(o: CoursePromptOptions): number {
@@ -74,6 +79,7 @@ PEDAGOGY
 - Do not duplicate questions across lessons.
 - When reference material is supplied, it is the source of truth. Do not invent facts that contradict it.
 - If a fact is uncertain, phrase the question conservatively or omit it.
+${mathPromptSection(o).trim()}
 
 OUTPUT RULES
 - Respond with ONE valid JSON object and nothing else. No markdown fences, no commentary.

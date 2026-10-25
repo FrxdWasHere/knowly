@@ -64,6 +64,9 @@ function CourseForgePage() {
   const [hard, setHard] = useState(25);
   const [extra, setExtra] = useState("");
   const [includeAssessments, setIncludeAssessments] = useState(true);
+  const [isSTEM, setIsSTEM] = useState(false);
+  const [needsEquations, setNeedsEquations] = useState(false);
+  const [needsGraphs, setNeedsGraphs] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const prompt = useMemo(
@@ -83,6 +86,9 @@ function CourseForgePage() {
         purpose: state.settings.studyReason,
         extra,
         includeAssessments,
+        isSTEM,
+        needsEquations,
+        needsGraphs,
       }),
     [
       topic,
@@ -99,6 +105,9 @@ function CourseForgePage() {
       hard,
       extra,
       includeAssessments,
+      isSTEM,
+      needsEquations,
+      needsGraphs,
       state.settings.gradeLevel,
       state.settings.studyReason,
     ],
@@ -140,6 +149,9 @@ function CourseForgePage() {
       color: "var(--deck-1)",
       emoji: "📘",
       tags: [],
+      isSTEM: isSTEM,
+      needsEquations: needsEquations,
+      needsGraphs: needsGraphs,
       objectives: [],
       sources: material.trim()
         ? [{ id: createId(), title: "Reference notes", content: material.trim() }]
@@ -326,6 +338,52 @@ function CourseForgePage() {
           <DifficultyRow label="Easy" value={easy} onChange={setEasy} />
           <DifficultyRow label="Medium" value={medium} onChange={setMedium} />
           <DifficultyRow label="Hard" value={hard} onChange={setHard} />
+
+          <div className="space-y-2">
+            <Label>Math & science</Label>
+            <label className="flex items-center gap-3 rounded-xl border border-border bg-surface2/60 p-3 text-sm">
+              <input
+                type="checkbox"
+                checked={isSTEM}
+                onChange={(event) => setIsSTEM(event.target.checked)}
+                className="size-4 accent-[var(--primary)]"
+              />
+              <span>
+                This is a math or science subject
+                <span className="block text-xs text-muted-foreground">
+                  Your AI will use clean math notation, and typed answers get a symbol keypad.
+                </span>
+              </span>
+            </label>
+            <label className="flex items-center gap-3 rounded-xl border border-border bg-surface2/60 p-3 text-sm">
+              <input
+                type="checkbox"
+                checked={needsEquations}
+                onChange={(event) => setNeedsEquations(event.target.checked)}
+                className="size-4 accent-[var(--primary)]"
+              />
+              <span>
+                Needs equations (LaTeX)
+                <span className="block text-xs text-muted-foreground">
+                  Equations like $x^2+1$ get typeset properly across lessons, checks and exams.
+                </span>
+              </span>
+            </label>
+            <label className="flex items-center gap-3 rounded-xl border border-border bg-surface2/60 p-3 text-sm">
+              <input
+                type="checkbox"
+                checked={needsGraphs}
+                onChange={(event) => setNeedsGraphs(event.target.checked)}
+                className="size-4 accent-[var(--primary)]"
+              />
+              <span>
+                Will mention graphs & diagrams
+                <span className="block text-xs text-muted-foreground">
+                  Your AI describes graphs in words so they stay readable without images.
+                </span>
+              </span>
+            </label>
+          </div>
 
           <label className="flex items-center gap-3 rounded-xl border border-border bg-surface2/60 p-3 text-sm">
             <input
