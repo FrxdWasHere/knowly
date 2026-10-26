@@ -61,6 +61,7 @@ import { Route as AuthenticatedCoursesCourseIdIndexRouteImport } from './routes/
 import { Route as AuthenticatedCoursesCourseIdEditRouteImport } from './routes/_authenticated/courses.$courseId.edit'
 import { Route as AuthenticatedCoursesCourseIdPrintRouteImport } from './routes/_authenticated/courses.$courseId.print'
 import { Route as AuthenticatedCoursesCourseIdQuizRouteImport } from './routes/_authenticated/courses.$courseId.quiz'
+import { Route as AuthenticatedModulesModuleIdIndexRouteImport } from './routes/_authenticated/modules.$moduleId.index'
 import { Route as AuthenticatedModulesModuleIdPrintRouteImport } from './routes/_authenticated/modules.$moduleId.print'
 import { Route as AuthenticatedCoursesCourseIdLessonsLessonIdRouteImport } from './routes/_authenticated/courses.$courseId.lessons.$lessonId'
 
@@ -341,6 +342,12 @@ const AuthenticatedCoursesCourseIdQuizRoute =
     path: '/quiz',
     getParentRoute: () => AuthenticatedCoursesCourseIdRoute,
   } as any)
+const AuthenticatedModulesModuleIdIndexRoute =
+  AuthenticatedModulesModuleIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedModulesModuleIdRoute,
+  } as any)
 const AuthenticatedModulesModuleIdPrintRoute =
   AuthenticatedModulesModuleIdPrintRouteImport.update({
     id: '/print',
@@ -407,6 +414,7 @@ export interface FileRoutesByFullPath {
   '/courses/$courseId/quiz': typeof AuthenticatedCoursesCourseIdQuizRoute
   '/modules/$moduleId/print': typeof AuthenticatedModulesModuleIdPrintRoute
   '/courses/$courseId/': typeof AuthenticatedCoursesCourseIdIndexRoute
+  '/modules/$moduleId/': typeof AuthenticatedModulesModuleIdIndexRoute
   '/courses/$courseId/lessons/$lessonId': typeof AuthenticatedCoursesCourseIdLessonsLessonIdRoute
 }
 export interface FileRoutesByTo {
@@ -446,7 +454,6 @@ export interface FileRoutesByTo {
   '/courses/forge': typeof AuthenticatedCoursesForgeRoute
   '/courses/import': typeof AuthenticatedCoursesImportRoute
   '/decks/$deckId': typeof AuthenticatedDecksDeckIdRoute
-  '/modules/$moduleId': typeof AuthenticatedModulesModuleIdRouteWithChildren
   '/modules/forge': typeof AuthenticatedModulesForgeRoute
   '/modules/import': typeof AuthenticatedModulesImportRoute
   '/modules/prompter': typeof AuthenticatedModulesPrompterRoute
@@ -461,6 +468,7 @@ export interface FileRoutesByTo {
   '/courses/$courseId/quiz': typeof AuthenticatedCoursesCourseIdQuizRoute
   '/modules/$moduleId/print': typeof AuthenticatedModulesModuleIdPrintRoute
   '/courses/$courseId': typeof AuthenticatedCoursesCourseIdIndexRoute
+  '/modules/$moduleId': typeof AuthenticatedModulesModuleIdIndexRoute
   '/courses/$courseId/lessons/$lessonId': typeof AuthenticatedCoursesCourseIdLessonsLessonIdRoute
 }
 export interface FileRoutesById {
@@ -518,6 +526,7 @@ export interface FileRoutesById {
   '/_authenticated/courses/$courseId/quiz': typeof AuthenticatedCoursesCourseIdQuizRoute
   '/_authenticated/modules/$moduleId/print': typeof AuthenticatedModulesModuleIdPrintRoute
   '/_authenticated/courses/$courseId/': typeof AuthenticatedCoursesCourseIdIndexRoute
+  '/_authenticated/modules/$moduleId/': typeof AuthenticatedModulesModuleIdIndexRoute
   '/_authenticated/courses/$courseId/lessons/$lessonId': typeof AuthenticatedCoursesCourseIdLessonsLessonIdRoute
 }
 export interface FileRouteTypes {
@@ -575,6 +584,7 @@ export interface FileRouteTypes {
     | '/courses/$courseId/quiz'
     | '/modules/$moduleId/print'
     | '/courses/$courseId/'
+    | '/modules/$moduleId/'
     | '/courses/$courseId/lessons/$lessonId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -614,7 +624,6 @@ export interface FileRouteTypes {
     | '/courses/forge'
     | '/courses/import'
     | '/decks/$deckId'
-    | '/modules/$moduleId'
     | '/modules/forge'
     | '/modules/import'
     | '/modules/prompter'
@@ -629,6 +638,7 @@ export interface FileRouteTypes {
     | '/courses/$courseId/quiz'
     | '/modules/$moduleId/print'
     | '/courses/$courseId'
+    | '/modules/$moduleId'
     | '/courses/$courseId/lessons/$lessonId'
   id:
     | '__root__'
@@ -685,6 +695,7 @@ export interface FileRouteTypes {
     | '/_authenticated/courses/$courseId/quiz'
     | '/_authenticated/modules/$moduleId/print'
     | '/_authenticated/courses/$courseId/'
+    | '/_authenticated/modules/$moduleId/'
     | '/_authenticated/courses/$courseId/lessons/$lessonId'
   fileRoutesById: FileRoutesById
 }
@@ -1061,6 +1072,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCoursesCourseIdQuizRouteImport
       parentRoute: typeof AuthenticatedCoursesCourseIdRoute
     }
+    '/_authenticated/modules/$moduleId/': {
+      id: '/_authenticated/modules/$moduleId/'
+      path: '/'
+      fullPath: '/modules/$moduleId/'
+      preLoaderRoute: typeof AuthenticatedModulesModuleIdIndexRouteImport
+      parentRoute: typeof AuthenticatedModulesModuleIdRoute
+    }
     '/_authenticated/modules/$moduleId/print': {
       id: '/_authenticated/modules/$moduleId/print'
       path: '/print'
@@ -1107,12 +1125,15 @@ const AuthenticatedCoursesCourseIdRouteWithChildren =
 
 interface AuthenticatedModulesModuleIdRouteChildren {
   AuthenticatedModulesModuleIdPrintRoute: typeof AuthenticatedModulesModuleIdPrintRoute
+  AuthenticatedModulesModuleIdIndexRoute: typeof AuthenticatedModulesModuleIdIndexRoute
 }
 
 const AuthenticatedModulesModuleIdRouteChildren: AuthenticatedModulesModuleIdRouteChildren =
   {
     AuthenticatedModulesModuleIdPrintRoute:
       AuthenticatedModulesModuleIdPrintRoute,
+    AuthenticatedModulesModuleIdIndexRoute:
+      AuthenticatedModulesModuleIdIndexRoute,
   }
 
 const AuthenticatedModulesModuleIdRouteWithChildren =

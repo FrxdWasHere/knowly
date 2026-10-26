@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
 import { MathText } from "@/components/math/math-text";
+import { ModuleMarkdownText } from "@/components/module-markdown";
 import { LETTERS, printableAnswer } from "@/lib/exam-print";
 import { TYPE_LABELS } from "@/lib/answers";
 import {
@@ -76,8 +73,6 @@ const SPACING_FACTORS: Record<PaperSpacing, number> = {
 
 type ModuleUnitData =
   | { kind: "hero" }
-  | { kind: "meta-chips" }
-  | { kind: "description-divider" }
   | { kind: "objectives"; items: string[] }
   | { kind: "markdown"; text: string }
   | { kind: "callout"; block: CourseBlock }
@@ -97,19 +92,17 @@ interface ModuleUnit {
 
 const UNIT_SPACE: Partial<Record<ModuleUnitData["kind"], number>> = {
   hero: 0,
-  "meta-chips": 0,
-  "description-divider": 14,
-  objectives: 12,
-  markdown: 8,
-  callout: 10,
-  example: 10,
+  objectives: 16,
+  markdown: 10,
+  callout: 12,
+  example: 12,
   image: 10,
-  divider: 14,
-  checkpoint: 14,
+  divider: 16,
+  checkpoint: 16,
   activity: 12,
   notes: 18,
-  "answer-header": 28,
-  "answer-item": 6,
+  "answer-header": 26,
+  "answer-item": 7,
 };
 
 const DIFFICULTY_LABEL = ["", "Intro", "Core", "Advanced"] as const;
@@ -147,9 +140,6 @@ const TONE_BG: Record<string, { border: string; bg: string; text: string; label:
   },
 };
 
-// fallback accent palette for modules with default colors
-const ACCENT_TONES = ["#3b5bdb", "#127a4a", "#b0610d", "#7048c8", "#0d7c93", "#bd3f6b"];
-
 function buildUnits(module: Module, decks: Deck[], options: ModulePrintOptions): ModuleUnit[] {
   const units: ModuleUnit[] = [];
   let uid = 0;
@@ -158,9 +148,7 @@ function buildUnits(module: Module, decks: Deck[], options: ModulePrintOptions):
   };
 
   push({ kind: "hero" });
-  push({ kind: "meta-chips" });
   if (module.objectives.length) push({ kind: "objectives", items: module.objectives });
-  push({ kind: "description-divider" });
 
   // number checkpoints in printed order
   let checkpointNumber = 0;
@@ -402,99 +390,117 @@ function UnitSpace({ unit, module, decks }: { unit: ModuleUnit; module: Module; 
 
 function UnitView({ unit, module, decks }: { unit: ModuleUnit; module: Module; decks: Deck[] }) {
   const data = unit.data;
-  const accentText = ACCENT_TONES[0];
+  const accent = module.color || "#3b5bdb";
+  const accentInk = `color-mix(in oklab, ${accent} 78%, #171c26 22%)`;
 
   switch (data.kind) {
     case "hero":
       return (
         <div
-          className="module-hero overflow-hidden rounded-2xl px-6 pb-5 pt-6 text-white"
+          className="module-hero relative overflow-hidden rounded-2xl px-6 pb-5 pt-6 text-white"
           style={{
-            background: `radial-gradient(120% 130% at 85% -20%, color-mix(in oklab, ${module.color} 75%, #ffffff 22%) 0%, transparent 55%), linear-gradient(150deg, ${module.color} 0%, color-mix(in oklab, ${module.color} 55%, #10151c) 78%, #10151c 100%)`,
+            background: `radial-gradient(120% 130% at 85% -20%, color-mix(in oklab, ${accent} 75%, #ffffff 22%) 0%, transparent 55%), linear-gradient(150deg, ${accent} 0%, color-mix(in oklab, ${accent} 55%, #10151c) 78%, #10151c 100%)`,
           }}
         >
-          <div className="flex items-start gap-4">
+          {/* faint oversized emoji ornament, top-right */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -right-3 -top-4 select-none text-[4.6em] leading-none opacity-[0.13]"
+          >
+            {module.emoji || "📘"}
+          </span>
+
+          <div className="relative flex items-start gap-4">
             <span className="grid size-14 shrink-0 place-items-center rounded-xl border border-white/25 bg-white/15 text-2xl">
               {module.emoji || "📘"}
             </span>
-            <div className="min-w-0">
-              <p className="text-[0.72em] font-semibold uppercase tracking-[0.3em] text-white/75">
-                Knowly module · {module.subject}
+            <div className="min-w-0 flex-1">
+              <p className="flex items-baseline justify-between gap-3 text-[0.66em] font-semibold uppercase tracking-[0.32em] text-white/70">
+                <span className="min-w-0 truncate">Knowly module · {module.subject}</span>
+                <span className="shrink-0 tracking-[0.26em]">KNOWLY</span>
               </p>
-              <h1 className="mt-1.5 text-[1.65em] font-bold leading-snug">{module.title}</h1>
+              <h1 className="mt-1.5 text-[1.68em] font-bold leading-[1.18] tracking-tight text-white">
+                {module.title}
+              </h1>
             </div>
           </div>
-        </div>
-      );
-    case "meta-chips":
-      return (
-        <div className="flex flex-wrap items-center gap-1.5 pt-3">
-          {[
-            `${module.estimatedMinutes} min`,
-            DIFFICULTY_LABEL[module.difficulty],
-            `${module.questions.length} checkpoints`,
-          ].map(
-            (chip, index) =>
-              chip && (
+
+          <div aria-hidden className="mt-4 flex items-center gap-2">
+            <span className="h-px w-7 bg-white/45" />
+            <span className="size-1.5 rotate-45 rounded-[0.1em] bg-white/60" />
+            <span className="h-px w-4 bg-white/30" />
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            {[
+              `${module.estimatedMinutes} min`,
+              DIFFICULTY_LABEL[module.difficulty],
+              module.questions.length ? `${module.questions.length} checkpoints` : null,
+            ]
+              .filter(Boolean)
+              .map((chip, index) => (
                 <span
                   key={index}
-                  className="rounded-full px-2.5 py-1 text-[0.78em] font-semibold uppercase tracking-[0.08em]"
-                  style={{
-                    color: accentText,
-                    background: `${module.color}1a`,
-                    borderTop: `2px solid ${module.color}55`,
-                  }}
+                  className="rounded-full border border-white/25 bg-white/12 px-2.5 py-1 text-[0.7em] font-semibold uppercase tracking-[0.12em] text-white/90"
                 >
                   {chip}
                 </span>
-              ),
-          )}
+              ))}
+          </div>
         </div>
       );
-    case "description-divider":
-      return <hr />;
     case "objectives":
       return (
         <div
-          className="rounded-xl px-4 py-3"
-          style={{ borderLeft: `3px solid ${module.color}`, background: `${module.color}0d` }}
+          className="rounded-xl px-4 py-3.5"
+          style={{ borderLeft: `3px solid ${accent}`, background: `${accent}0d` }}
         >
           <p
-            className="text-[0.78em] font-semibold uppercase tracking-[0.18em]"
-            style={{ color: accentText }}
+            className="text-[0.74em] font-bold uppercase tracking-[0.2em]"
+            style={{ color: accentInk }}
           >
             What you'll learn
           </p>
-          <ul className="mt-2 space-y-1">
+          <ul className="mt-2.5 space-y-[0.45em]">
             {data.items.map((objective) => (
-              <li key={objective} className="flex gap-2">
+              <li key={objective} className="flex gap-2.5">
                 <span
                   aria-hidden
-                  className="mt-[0.55em] size-1.5 shrink-0 rounded-full"
-                  style={{ background: module.color }}
+                  className="mt-[0.52em] size-1.5 shrink-0 rotate-45 rounded-[0.08em]"
+                  style={{ background: accent }}
                 />
-                <span className="min-w-0">{objective}</span>
+                <span className="min-w-0 text-pretty">{objective}</span>
               </li>
             ))}
           </ul>
         </div>
       );
     case "markdown":
-      return <PaperMarkdown markdown={data.text} />;
+      return <ModuleMarkdownText variant="paper" accent={accent} markdown={data.text} />;
     case "callout": {
       const tone = TONE_BG[data.block.tone ?? "info"] ?? TONE_BG.info;
       return (
         <div
-          className="rounded-xl border px-4 py-3"
-          style={{ borderColor: tone.border, background: tone.bg }}
+          className="rounded-xl px-4 py-3.5"
+          style={{
+            borderLeft: `3px solid ${tone.border}`,
+            background: tone.bg,
+            borderWidth: 0,
+            borderLeftWidth: 3,
+          }}
         >
           <p
-            className="text-[0.8em] font-bold uppercase tracking-[0.16em]"
+            className="text-[0.74em] font-bold uppercase tracking-[0.18em]"
             style={{ color: tone.text }}
           >
             {data.block.title || tone.label}
           </p>
-          <PaperMarkdown markdown={data.block.markdown ?? ""} />
+          <div className="mt-1">
+            <ModuleMarkdownText
+              variant="paper"
+              accent={accent}
+              markdown={data.block.markdown ?? ""}
+            />
+          </div>
         </div>
       );
     }
@@ -502,65 +508,90 @@ function UnitView({ unit, module, decks }: { unit: ModuleUnit; module: Module; d
       const tone = TONE_BG.example;
       return (
         <div
-          className="rounded-xl border px-4 py-3"
-          style={{ borderColor: tone.border, background: tone.bg }}
+          className="rounded-xl px-4 py-3.5"
+          style={{
+            borderLeft: `3px solid ${tone.border}`,
+            background: tone.bg,
+            borderWidth: 0,
+            borderLeftWidth: 3,
+          }}
         >
           <p
-            className="text-[0.8em] font-bold uppercase tracking-[0.16em]"
+            className="text-[0.74em] font-bold uppercase tracking-[0.18em]"
             style={{ color: tone.text }}
           >
             {data.block.title || "Worked example"}
           </p>
-          <PaperMarkdown markdown={data.block.markdown ?? ""} />
+          <div className="mt-1">
+            <ModuleMarkdownText
+              variant="paper"
+              accent={accent}
+              markdown={data.block.markdown ?? ""}
+            />
+          </div>
         </div>
       );
     }
     case "image":
       return (
-        <figure className="text-center">
+        <figure className="break-inside-avoid text-center">
           {data.block.url && (
             <img
               src={data.block.url}
               alt={data.block.alt ?? ""}
-              className="mx-auto max-h-64 rounded-lg border border-border object-contain"
+              className="mx-auto max-h-64 rounded-xl object-contain"
+              style={{ border: `1px solid ${accent}44` }}
             />
           )}
           {data.block.caption && (
-            <figcaption className="mt-1.5 text-[0.85em] text-muted-foreground">
+            <figcaption className="mt-1.5 text-[0.84em] italic text-muted-foreground">
               {data.block.caption}
             </figcaption>
           )}
         </figure>
       );
     case "divider":
-      return <hr />;
+      return (
+        <div aria-hidden className="flex items-center justify-center gap-2">
+          <span className="h-px flex-1 bg-foreground/25" />
+          <span className="size-[0.5em] rotate-45 rounded-[0.1em]" style={{ background: accent }} />
+          <span className="h-px flex-1 bg-foreground/25" />
+        </div>
+      );
     case "checkpoint": {
       const question = module.questions.find((q) => q.id === data.questionId);
       if (!question) return null;
       return (
         <div
-          className="rounded-xl px-4 py-3"
-          style={{ borderLeft: `3px solid ${module.color}`, background: `${module.color}0f` }}
+          className="rounded-xl px-4 py-3.5"
+          style={{ borderLeft: `3px solid ${accent}`, background: `${accent}0f` }}
         >
-          <p className="flex items-center gap-2">
+          <p className="flex items-center gap-2.5">
             <span
-              className="grid size-6 shrink-0 place-items-center rounded-full text-[0.8em] font-bold text-white"
-              style={{ background: module.color }}
+              className="grid size-[1.5em] shrink-0 place-items-center rounded-full text-[0.82em] font-bold text-white"
+              style={{ background: accent }}
             >
               {data.number}
             </span>
             <span
-              className="text-[0.78em] font-bold uppercase tracking-[0.18em]"
-              style={{ color: accentText }}
+              className="text-[0.72em] font-bold uppercase tracking-[0.22em]"
+              style={{ color: accentInk }}
             >
-              Checkpoint
+              Checkpoint {data.number}
             </span>
+            <span
+              aria-hidden
+              className="ml-auto inline-block h-2 w-8 shrink-0 rounded-full"
+              style={{
+                background: `repeating-linear-gradient(90deg, ${accent}66 0 3px, transparent 3px 6px)`,
+              }}
+            />
           </p>
-          <p className="mt-2 font-medium">
+          <p className="mt-2.5 font-medium leading-relaxed text-pretty">
             <MathText text={question.question} />
           </p>
-          <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[0.72em] uppercase tracking-[0.14em] text-muted-foreground">
-            <span>{TYPE_LABELS[question.type]}</span>
+          <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[0.68em] uppercase tracking-[0.16em] text-muted-foreground">
+            <span style={{ color: accentInk }}>{TYPE_LABELS[question.type]}</span>
             {question.difficulty && <span>{question.difficulty}</span>}
             {question.concept && (
               <span>
@@ -568,7 +599,9 @@ function UnitView({ unit, module, decks }: { unit: ModuleUnit; module: Module; d
               </span>
             )}
           </p>
-          <QuestionBody question={question} />
+          <div className="mt-1">
+            <QuestionBody question={question} />
+          </div>
         </div>
       );
     }
@@ -576,24 +609,24 @@ function UnitView({ unit, module, decks }: { unit: ModuleUnit; module: Module; d
       const deck = decks.find((d) => d.id === data.block.markdown);
       return (
         <div
-          className="rounded-xl border border-dashed px-4 py-3"
-          style={{ borderColor: `${module.color}88`, background: `${module.color}08` }}
+          className="rounded-xl border border-dashed px-4 py-3.5"
+          style={{ borderColor: `${accent}88`, background: `${accent}08` }}
         >
-          <p className="flex items-center gap-2">
+          <p className="flex items-center gap-2.5">
             <span
-              className="grid size-5 shrink-0 place-items-center rounded-md text-[0.7em] font-bold text-white"
-              style={{ background: module.color }}
+              className="grid size-[1.35em] shrink-0 place-items-center rounded-md text-[0.78em] font-bold text-white"
+              style={{ background: accent }}
             >
               {data.index}
             </span>
             <span
-              className="text-[0.78em] font-bold uppercase tracking-[0.18em]"
-              style={{ color: accentText }}
+              className="text-[0.72em] font-bold uppercase tracking-[0.22em]"
+              style={{ color: accentInk }}
             >
               Practice · on this device
             </span>
           </p>
-          <p className="mt-1.5 font-semibold">{data.block.title || deck?.title || "Linked deck"}</p>
+          <p className="mt-2 font-semibold">{data.block.title || deck?.title || "Linked deck"}</p>
           {deck && (
             <p className="mt-0.5 text-[0.88em] text-muted-foreground">
               {deck.subject} · {deck.questions.length} cards ready to study
@@ -609,24 +642,29 @@ function UnitView({ unit, module, decks }: { unit: ModuleUnit; module: Module; d
     }
     case "notes":
       return (
-        <div className="border-l-4 pl-3" style={{ borderColor: `${module.color}55` }}>
-          <p className="text-[0.78em] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        <div className="pl-3.5" style={{ borderLeft: `3px solid ${accent}55` }}>
+          <p
+            className="text-[0.72em] font-bold uppercase tracking-[0.2em]"
+            style={{ color: accentInk }}
+          >
             My notes
           </p>
-          <PaperMarkdown markdown={data.text} />
+          <ModuleMarkdownText variant="paper" accent={accent} markdown={data.text} />
         </div>
       );
     case "answer-header":
       return (
-        <div className="border-b-2 border-foreground pb-2">
-          <p
-            className="text-[0.75em] font-bold uppercase tracking-[0.2em]"
-            style={{ color: accentText }}
-          >
-            Check yourself
-          </p>
-          <h2 className="mt-1 text-[1.3em] font-bold">Answer key</h2>
-          <p className="mt-1 text-[0.9em] text-foreground">
+        <div className="flex items-end justify-between gap-4 border-b-2 border-foreground pb-2.5">
+          <div>
+            <p
+              className="text-[0.72em] font-bold uppercase tracking-[0.24em]"
+              style={{ color: accentInk }}
+            >
+              Check yourself
+            </p>
+            <h2 className="mt-1 text-[1.32em] font-bold tracking-tight">Answer key</h2>
+          </div>
+          <p className="pb-0.5 text-[0.8em] italic text-muted-foreground">
             Score your checkpoints against these answers.
           </p>
         </div>
@@ -637,17 +675,20 @@ function UnitView({ unit, module, decks }: { unit: ModuleUnit; module: Module; d
       return (
         <div className="flex gap-2.5">
           <span
-            className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full text-[0.72em] font-bold text-white"
-            style={{ background: module.color }}
+            className="mt-[0.1em] grid size-[1.2em] shrink-0 place-items-center rounded-full text-[0.7em] font-bold text-white"
+            style={{ background: accent }}
           >
             {data.number}
           </span>
-          <p className="min-w-0 text-[0.95em]">
-            <span className="font-semibold">Q{data.number}:</span>{" "}
+          <p className="min-w-0 text-[0.95em] leading-relaxed text-pretty">
+            <span className="font-semibold">Q{data.number}.</span>{" "}
             <MathText text={question.question} /> <span className="text-muted-foreground">—</span>{" "}
             <span className="font-medium">{printableAnswer(question)}</span>
             {question.explanation && (
-              <span className="italic text-muted-foreground"> — {question.explanation}</span>
+              <span className="text-muted-foreground">
+                {" "}
+                <span className="italic">({question.explanation})</span>
+              </span>
             )}
           </p>
         </div>
@@ -747,16 +788,6 @@ function PaperLines({ count }: { count: number }) {
       {Array.from({ length: Math.max(1, count) }).map((_, lineIndex) => (
         <div key={lineIndex} className="border-b border-border" />
       ))}
-    </div>
-  );
-}
-
-function PaperMarkdown({ markdown }: { markdown: string }) {
-  return (
-    <div className="paper-markdown text-[0.98em] text-foreground [&_a]:text-foreground [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:text-[0.9em] [&_h1]:mb-2 [&_h1]:mt-4 [&_h1]:text-[1.25em] [&_h1]:font-bold [&_h2]:mb-2 [&_h2]:mt-4 [&_h2]:text-[1.15em] [&_h2]:font-bold [&_h3]:mb-2 [&_h3]:mt-3 [&_h3]:font-semibold [&_li]:my-0.5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-2 [&_pre]:my-2 [&_pre]:overflow-auto [&_pre]:rounded-lg [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:text-[0.9em] [&_strong]:font-bold [&_table]:my-3 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-border [&_td]:p-1.5 [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:p-1.5 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5">
-      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
-        {markdown}
-      </ReactMarkdown>
     </div>
   );
 }
