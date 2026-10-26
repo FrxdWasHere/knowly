@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronUp,
   Clock3,
+  Download,
   Lightbulb,
   Pencil,
   Plus,
@@ -37,6 +38,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useKnowly } from "@/store/knowly";
 import { cn } from "@/lib/utils";
+import { serializeModuleJson } from "@/lib/module-schema";
 import type { CourseBlock, Module } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/modules/$moduleId")({
@@ -185,6 +187,23 @@ function ModuleEditor() {
           <ArrowLeft className="size-4" /> Modules
         </Button>
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              const json = serializeModuleJson(module);
+              const blob = new Blob([json], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const anchor = document.createElement("a");
+              anchor.href = url;
+              anchor.download = `${module.title.replace(/[\\/:*?"<>|]+/g, "-").trim() || "module"} — knowly module.json`;
+              anchor.click();
+              URL.revokeObjectURL(url);
+              toast.success("Module file downloaded");
+            }}
+          >
+            <Download className="size-4" /> <span className="hidden sm:inline">Export JSON</span>
+          </Button>
           <Label className="text-xs text-muted-foreground">Edit</Label>
           <Switch checked={editing} onCheckedChange={setEditing} />
         </div>

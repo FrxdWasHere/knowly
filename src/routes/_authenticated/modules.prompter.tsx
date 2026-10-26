@@ -1,6 +1,6 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { Copy, Plus, Trash2, Wand2 } from "lucide-react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { Download, Plus, Trash2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useKnowly } from "@/store/knowly";
-import { cn } from "@/lib/utils";
 import type { Module } from "@/lib/types";
 
 interface Blurb {
@@ -23,16 +22,20 @@ interface Blurb {
 const BLURB_COLORS = ["#6d8cff", "#f2a65a", "#5fd38a", "#f06292", "#9575cd", "#4dd0e1"];
 
 export const Route = createFileRoute("/_authenticated/modules/prompter")({
-  head: () => ({ meta: [{ title: "Module Prompter — Knowly" }] }),
-  component: () => (
-    <AppPage>
-      <ModulePrompter />
-    </AppPage>
-  ),
+  head: () => ({
+    meta: [
+      { title: "Module Prompter — Generate a Module Prompt | Knowly" },
+      {
+        name: "description",
+        content:
+          "Turn a topic into a strict AI prompt for a standalone module: writing blocks, colored blurbs and checkpoint questions. Copy the instructions, bring the JSON back, import it.",
+      },
+    ],
+  }),
+  component: ModulePrompter,
 });
 
 function ModulePrompter() {
-  const { addModule } = useKnowly();
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("");
@@ -40,12 +43,19 @@ function ModulePrompter() {
   const [minutes, setMinutes] = useState("15");
   const [objectives, setObjectives] = useState("");
   const [topics, setTopics] = useState("");
+  const [extra, setExtra] = useState("");
   const [blurbs, setBlurbs] = useState<Blurb[]>([
     {
       id: "b1",
       title: "Key idea",
       color: "#6d8cff",
       body: "A one-sentence takeaway the learner must remember.",
+    },
+    {
+      id: "b2",
+      title: "Common mistake",
+      color: "#f2a65a",
+      body: "Something learners often get wrong here.",
     },
   ]);
 
@@ -60,61 +70,39 @@ function ModulePrompter() {
     setBlurbs((bs) => bs.map((b) => (b.id === id ? { ...b, ...patch } : b)));
   const removeBlurb = (id: string) => setBlurbs((bs) => bs.filter((b) => b.id !== id));
 
-  const prompt = useMemoPrompt({ title, subject, difficulty, minutes, objectives, topics, blurbs });
+  const prompt = useMemo(
+    () =>
+      buildModulePrompt({ title, subject, difficulty, minutes, objectives, topics, extra, blurbs }),
+    [title, subject, difficulty, minutes, objectives, topics, extra, blurbs],
+  );
 
-  const copy = async () => {
+  const copyPrompt = async () => {
     await navigator.clipboard.writeText(prompt);
     toast.success("Module instructions copied — paste into your AI");
-  };
-
-  const forgeFromPrompt = () => {
-    const now = Date.now();
-    const mod: Module = {
-      id: `mod_${Math.random().toString(36).slice(2, 10)}_${now.toString(36)}`,
-      title: title.trim() || "Untitled module",
-      subject: subject.trim() || "General",
-      color: "#6d8cff",
-      emoji: "📘",
-      tags: [],
-      isSTEM: false,
-      needsEquations: false,
-      needsGraphs: false,
-      objectives: objectives
-        .split("\n")
-        .map((x) => x.trim())
-        .filter(Boolean),
-      blocks: [
-        { id: `b_${now}`, type: "markdown", markdown: `# ${title.trim() || "New module"}\n\n` },
-        ...blurbs.map((bl) => ({
-          id: `bl_${bl.id}`,
-          type: "callout" as const,
-          tone: "info" as const,
-          title: bl.title,
-          markdown: bl.body || "Fill in this blurb.",
-        })),
-      ],
-      questions: [],
-      linkedDeckIds: [],
-      estimatedMinutes: Number(minutes) || 15,
-      difficulty: Number(difficulty) as 1 | 2 | 3,
-      createdAt: now,
-      updatedAt: now,
-    };
-    addModule(mod);
-    navigate({ to: "/modules/$moduleId", params: { moduleId: mod.id } } as never);
-    toast.success("Module scaffold created — refine it in the editor");
   };
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <PageHeader
         title="Module Prompter"
-        description="Build instructions for your AI to forge a module. Add as many colored title blurbs as you like — they become reusable callout blocks."
+        description="Knowly doesn't talk to any AI itself. It writes the instructions — you paste them into the AI you use, then bring the finished module back through Import a module."
+        action={
+          <>
+            <Button variant="outline" onClick={copyPrompt}>
+              <Wand2 className="size-4" /> Copy instructions
+            </Button>
+            <Button asChild variant="outline">
+              <a href="/modules/import">
+                <Download className="size-4" /> Import a module
+              </a>
+            </Button>
+          </>
+        }
       />
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="space-y-4">
-          <div className="panel space-y-3 p-4">
+          <div className="panel space-y-3 p-5">
             <h3 className="font-display text-sm font-semibold">Module brief</h3>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
@@ -151,7 +139,7 @@ function ModulePrompter() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Objectives (one per line)</Label>
+              <Label>Goals (one per line)</Label>
               <Textarea
                 value={objectives}
                 onChange={(e) => setObjectives(e.target.value)}
@@ -165,31 +153,39 @@ function ModulePrompter() {
                 value={topics}
                 onChange={(e) => setTopics(e.target.value)}
                 className="min-h-20"
-                placeholder="Chloroplast structure\nLight-dependent reactions"
+                placeholder={"Chloroplast structure\nLight-dependent reactions"}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Extra instructions</Label>
+              <Textarea
+                value={extra}
+                onChange={(e) => setExtra(e.target.value)}
+                className="min-h-16"
+                placeholder="Aim it at a Grade 11 class, use metric units…"
               />
             </div>
           </div>
 
-          <div className="panel space-y-3 p-4">
+          <div className="panel space-y-3 p-5">
             <div className="flex items-center justify-between">
-              <h3 className="font-display text-sm font-semibold">Blurbs (rectangle callouts)</h3>
+              <h3 className="font-display text-sm font-semibold">Blurb toolkit</h3>
               <Button size="sm" variant="outline" onClick={addBlurb}>
                 <Plus className="size-4" /> Add blurb
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Each blurb becomes a colored, titled rectangle block. Add as many as you like —
-              practically infinite.
+              Each blurb becomes a titled callout block. Add as many as you like — and the prompt
+              tells the AI to invent its own blurbs on top of these whenever the content calls for
+              one.
             </p>
             <div className="space-y-3">
               {blurbs.map((b) => (
-                <div key={b.id} className="rounded-lg border border-border p-3 space-y-2">
+                <div key={b.id} className="space-y-2 rounded-lg border border-border p-3">
                   <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={b.color}
-                      onChange={(e) => updateBlurb(b.id, { color: e.target.value })}
-                      className="h-8 w-10 cursor-pointer rounded border border-border bg-transparent"
+                    <span
+                      className="size-6 shrink-0 rounded-md ring-1 ring-border"
+                      style={{ background: b.color }}
                     />
                     <Input
                       value={b.title}
@@ -219,34 +215,47 @@ function ModulePrompter() {
         </div>
 
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-display text-sm font-semibold">Generated instructions</h3>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={copy}>
-                <Copy className="size-4" /> Copy
-              </Button>
-              <Button size="sm" onClick={forgeFromPrompt}>
-                <Wand2 className="size-4" /> Forge module
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="font-display text-sm font-semibold">Your instructions, ready to copy</h3>
+            <Badge variant="outline">Outputs one JSON file</Badge>
+          </div>
+          <div className="panel p-4">
+            <Textarea
+              value={prompt}
+              readOnly
+              className="min-h-[34rem] font-mono text-xs leading-6"
+              spellCheck={false}
+            />
+            <div className="mt-3 flex justify-end">
+              <Button onClick={copyPrompt}>
+                <Wand2 className="size-4" /> Copy instructions
               </Button>
             </div>
           </div>
-          <Textarea value={prompt} readOnly className="min-h-[28rem] font-mono text-xs" />
+          <p className="text-xs leading-5 text-muted-foreground">
+            Save the JSON the AI writes as a file, then bring it back through{" "}
+            <a href="/modules/import" className="text-primary underline">
+              Import a module
+            </a>
+            . Knowly checks every block and checkpoint before it joins your library.
+          </p>
         </div>
       </div>
     </div>
   );
 }
 
-function useMemoPrompt(input: {
+function buildModulePrompt(input: {
   title: string;
   subject: string;
   difficulty: string;
   minutes: string;
   objectives: string;
   topics: string;
+  extra: string;
   blurbs: Blurb[];
 }) {
-  const { title, subject, difficulty, minutes, objectives, topics, blurbs } = input;
+  const { title, subject, difficulty, minutes, objectives, topics, extra, blurbs } = input;
   const diffLabel = difficulty === "1" ? "Intro" : difficulty === "3" ? "Advanced" : "Core";
   const objList = objectives
     .split("\n")
@@ -258,40 +267,57 @@ function useMemoPrompt(input: {
     .filter(Boolean);
   const blurbSpec = blurbs
     .map(
-      (b, i) => `  ${i + 1}. "${b.title}" (color ${b.color}) — ${b.body || "a focused takeaway"}`,
+      (b, i) =>
+        `  ${i + 1}. "${b.title}" — ${b.body || "a focused takeaway"} (suggest tone: ${
+          ["info", "tip", "warning", "definition"][i % 4]
+        })`,
     )
     .join("\n");
 
-  return `You are helping build a Knowly module — a standalone, one-off lesson on a single idea.
+  return `You are building a Knowly module — a standalone, one-off lesson on a single idea.
 
 MODULE BRIEF
-- Title: ${title || "Untitled module"}
+- Title: ${title || "(choose a fitting title)"}
 - Subject: ${subject || "General"}
 - Difficulty: ${diffLabel}
 - Estimated time: ${minutes || 15} minutes
-- Objectives:
-${objList.length ? objList.map((o) => "  - " + o).join("\n") : "  - (define 2-4 measurable objectives)"}
+- Goals:
+${objList.length ? objList.map((o) => "  - " + o).join("\n") : "  - (define 2-4 measurable goals)"}
 - Topics to cover:
-${topicList.length ? topicList.map((t) => "  - " + t).join("\n") : "  - (list the key topics)"}
-
+${topicList.length ? topicList.map((t) => "  - " + t).join("\n") : "  - (choose the key topics yourself)"}
+${extra ? `- Extra instructions: ${extra}\n` : ""}
 HOW TO WRITE THE MODULE
-Write the module as Markdown. Use these block types, in this order, and keep each block focused:
+Write short, focused blocks. Use these types:
 
-1. A short intro paragraph (2-4 sentences) setting up the idea.
-2. "## " headings for each topic.
-3. Regular paragraphs + bullet lists for explanation.
-4. Callouts using the BLURB rectangles below — these are the module's signature tool. Treat each blurb as a colored, titled rectangle the learner can scan. Use them liberally for key ideas, warnings, tips and definitions. You may also INVENT brand-new blurbs (new title, new body, new color) whenever the content calls for a concept that none of the listed blurbs cover — the blurb system is open-ended, so create as many AI-authored blurbs as the lesson needs. A module is BETTER when it uses blurbs to chunk information; never dump a wall of text.
-5. At least one "Checkpoint" per major topic: a question followed by a hidden answer the learner reveals.
-6. End with a 3-bullet "Takeaway" summary.
+1. {"type":"markdown","markdown":"…"} — the lesson writing (markdown, "## " headings per topic, LaTeX as $…$ in text).
+2. {"type":"callout","tone":"info|tip|warning|definition","title":"…","markdown":"…"} — a BLURB: a colored titled rectangle the learner can scan. Blurbs are the module's signature tool — use them generously for key ideas, warnings, tips and definitions. A module is BETTER when blurbs chunk the information; never write a wall of text.
+3. {"type":"example","title":"…","markdown":"…"} — a worked example.
+4. {"type":"checkpoint","questionId":"q1"} — an inline question, matched by id to the questions array.
+5. {"type":"divider"} — a section break.
 
-BLURBS (colored rectangle callouts — use all of them, and reuse freely)
-${blurbSpec || "  (add blurbs in the panel to define your toolkit)"}
+You are NOT limited to the blurbs listed below — invent your OWN blurbs whenever the content calls for one: choose the title, the body, and the tone that fits the meaning (warning for pitfalls, tip for shortcuts, definition for terms, info for key ideas). The blurb toolkit is effectively infinite, so lean on it as your primary structuring tool and add as many authored blurbs as the lesson needs.
 
-OUTPUT FORMAT
-Return the entire module as a single Markdown FILE (a .md document). Output ONLY the raw Markdown file contents — no code fences, no surrounding commentary, no "here is your file" preamble. Suggested filename: module-<slug>.md. Use "$...$" for inline math and "$$...$$" for display math. Each blurb must appear as a Markdown blockquote of the form:
+BLURBS REQUESTED (include all of these)
+${blurbSpec || "  (none requested — blur your own)"}
 
-> **${blurbs[0]?.title ?? "Blurb"}** (color: ${blurbs[0]?.color ?? "#6d8cff"})
-> <blurb body>
+QUESTIONS
+Add 3-6 checkpoint questions for a ${minutes || 15}-minute module. Types: "short-answer" (question + answer text) or "multiple-choice" (question + options + answer = the exact correct option text, no letter). Every checkpoint block's questionId must match a question's id.
 
-Repeat for every blurb you use. You are NOT limited to the blurbs listed above — create your OWN blurbs whenever the content calls for it: choose the title, the body text, and a hex color that fits the meaning (warm colors for warnings, cool colors for key ideas, green for tips). The blurb system is effectively infinite, so lean on it as your primary structuring tool and add as many AI-authored blurbs as the lesson needs.`;
+OUTPUT RULES
+- Respond with ONE valid JSON object and nothing else. No markdown fences, no filename, no commentary.
+- Every string must be valid JSON (escape quotes and newlines).
+- Shape:
+{
+  "title": string,
+  "subject": string,
+  "difficulty": ${difficulty},
+  "emoji": string,
+  "tags": string[],
+  "objectives": string[],
+  "estimatedMinutes": number,
+  "blocks": (the blocks, in order),
+  "questions": (the checkpoint questions),
+  "linkedDeckIds": []
+}
+- Do not set "blocks" to null; always give an array, even if it only holds writing so far.`;
 }
