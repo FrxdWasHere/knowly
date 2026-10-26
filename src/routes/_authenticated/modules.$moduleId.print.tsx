@@ -3,6 +3,7 @@ import {
   ArrowDownToLine,
   BookOpen,
   Columns2,
+  Heading1,
   Printer,
   RotateCcw,
   Ruler,
@@ -230,6 +231,15 @@ function ModulePrintPage() {
               </div>
             </OptionGroup>
 
+            <OptionGroup icon={<Heading1 className="size-4 text-primary" />} label="Header">
+              <ToggleRow
+                label="Page header"
+                description="Quick switch: module name in small caps on page 2 and above."
+                checked={options.runningHeader}
+                onChange={(value) => patch({ runningHeader: value })}
+              />
+            </OptionGroup>
+
             <OptionGroup icon={<Columns2 className="size-4 text-primary" />} label="Page furniture">
               <div className="flex flex-wrap gap-1.5">
                 {FOOTER_OPTIONS.map((footer) => (
@@ -241,14 +251,6 @@ function ModulePrintPage() {
                     sub={footer.sub}
                   />
                 ))}
-              </div>
-              <div className="mt-3">
-                <ToggleRow
-                  label="Running header"
-                  description="Module name in small caps on page 2 and above."
-                  checked={options.runningHeader}
-                  onChange={(value) => patch({ runningHeader: value })}
-                />
               </div>
             </OptionGroup>
 

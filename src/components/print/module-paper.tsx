@@ -67,6 +67,18 @@ const SPACING_FACTORS: Record<PaperSpacing, number> = {
   relaxed: 1.14,
 };
 
+/**
+ * Split a markdown block into paragraph-level chunks so text flows edge-to-edge:
+ * when a blurb jumps to the next page the text around it still fills the page
+ * precisely instead of being dragged along.
+ */
+function markdownChunks(text: string): string[] {
+  return text
+    .split(/\n{2,}/)
+    .map((chunk) => chunk.trim())
+    .filter(Boolean);
+}
+
 /* --------------------------------------------------------------------- *
  * Content units
  * --------------------------------------------------------------------- */
@@ -92,17 +104,17 @@ interface ModuleUnit {
 
 const UNIT_SPACE: Partial<Record<ModuleUnitData["kind"], number>> = {
   hero: 0,
-  objectives: 16,
-  markdown: 10,
-  callout: 12,
-  example: 12,
-  image: 10,
-  divider: 16,
-  checkpoint: 16,
-  activity: 12,
-  notes: 18,
-  "answer-header": 26,
-  "answer-item": 7,
+  objectives: 14,
+  markdown: 8,
+  callout: 10,
+  example: 10,
+  image: 8,
+  divider: 12,
+  checkpoint: 14,
+  activity: 10,
+  notes: 16,
+  "answer-header": 22,
+  "answer-item": 6,
 };
 
 const DIFFICULTY_LABEL = ["", "Intro", "Core", "Advanced"] as const;
@@ -171,7 +183,9 @@ function buildUnits(module: Module, decks: Deck[], options: ModulePrintOptions):
   for (const block of module.blocks) {
     switch (block.type) {
       case "markdown":
-        if (block.markdown?.trim()) push({ kind: "markdown", text: block.markdown });
+        for (const chunk of markdownChunks(block.markdown ?? "")) {
+          push({ kind: "markdown", text: chunk });
+        }
         break;
       case "callout":
         push({ kind: "callout", block });
