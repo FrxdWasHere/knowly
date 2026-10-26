@@ -16,6 +16,7 @@ import {
   Lightbulb,
   Pencil,
   Plus,
+  Printer,
   Sparkles,
   Trash2,
   X,
@@ -203,6 +204,11 @@ function ModuleEditor() {
             }}
           >
             <Download className="size-4" /> <span className="hidden sm:inline">Export JSON</span>
+          </Button>
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/modules/$moduleId/print" params={{ moduleId: module.id }}>
+              <Printer className="size-4" /> <span className="hidden sm:inline">Print</span>
+            </Link>
           </Button>
           <Label className="text-xs text-muted-foreground">Edit</Label>
           <Switch checked={editing} onCheckedChange={setEditing} />

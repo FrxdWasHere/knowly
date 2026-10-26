@@ -61,6 +61,7 @@ import { Route as AuthenticatedCoursesCourseIdIndexRouteImport } from './routes/
 import { Route as AuthenticatedCoursesCourseIdEditRouteImport } from './routes/_authenticated/courses.$courseId.edit'
 import { Route as AuthenticatedCoursesCourseIdPrintRouteImport } from './routes/_authenticated/courses.$courseId.print'
 import { Route as AuthenticatedCoursesCourseIdQuizRouteImport } from './routes/_authenticated/courses.$courseId.quiz'
+import { Route as AuthenticatedModulesModuleIdPrintRouteImport } from './routes/_authenticated/modules.$moduleId.print'
 import { Route as AuthenticatedCoursesCourseIdLessonsLessonIdRouteImport } from './routes/_authenticated/courses.$courseId.lessons.$lessonId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -340,6 +341,12 @@ const AuthenticatedCoursesCourseIdQuizRoute =
     path: '/quiz',
     getParentRoute: () => AuthenticatedCoursesCourseIdRoute,
   } as any)
+const AuthenticatedModulesModuleIdPrintRoute =
+  AuthenticatedModulesModuleIdPrintRouteImport.update({
+    id: '/print',
+    path: '/print',
+    getParentRoute: () => AuthenticatedModulesModuleIdRoute,
+  } as any)
 const AuthenticatedCoursesCourseIdLessonsLessonIdRoute =
   AuthenticatedCoursesCourseIdLessonsLessonIdRouteImport.update({
     id: '/lessons/$lessonId',
@@ -385,7 +392,7 @@ export interface FileRoutesByFullPath {
   '/courses/forge': typeof AuthenticatedCoursesForgeRoute
   '/courses/import': typeof AuthenticatedCoursesImportRoute
   '/decks/$deckId': typeof AuthenticatedDecksDeckIdRoute
-  '/modules/$moduleId': typeof AuthenticatedModulesModuleIdRoute
+  '/modules/$moduleId': typeof AuthenticatedModulesModuleIdRouteWithChildren
   '/modules/forge': typeof AuthenticatedModulesForgeRoute
   '/modules/import': typeof AuthenticatedModulesImportRoute
   '/modules/prompter': typeof AuthenticatedModulesPrompterRoute
@@ -398,6 +405,7 @@ export interface FileRoutesByFullPath {
   '/courses/$courseId/edit': typeof AuthenticatedCoursesCourseIdEditRoute
   '/courses/$courseId/print': typeof AuthenticatedCoursesCourseIdPrintRoute
   '/courses/$courseId/quiz': typeof AuthenticatedCoursesCourseIdQuizRoute
+  '/modules/$moduleId/print': typeof AuthenticatedModulesModuleIdPrintRoute
   '/courses/$courseId/': typeof AuthenticatedCoursesCourseIdIndexRoute
   '/courses/$courseId/lessons/$lessonId': typeof AuthenticatedCoursesCourseIdLessonsLessonIdRoute
 }
@@ -438,7 +446,7 @@ export interface FileRoutesByTo {
   '/courses/forge': typeof AuthenticatedCoursesForgeRoute
   '/courses/import': typeof AuthenticatedCoursesImportRoute
   '/decks/$deckId': typeof AuthenticatedDecksDeckIdRoute
-  '/modules/$moduleId': typeof AuthenticatedModulesModuleIdRoute
+  '/modules/$moduleId': typeof AuthenticatedModulesModuleIdRouteWithChildren
   '/modules/forge': typeof AuthenticatedModulesForgeRoute
   '/modules/import': typeof AuthenticatedModulesImportRoute
   '/modules/prompter': typeof AuthenticatedModulesPrompterRoute
@@ -451,6 +459,7 @@ export interface FileRoutesByTo {
   '/courses/$courseId/edit': typeof AuthenticatedCoursesCourseIdEditRoute
   '/courses/$courseId/print': typeof AuthenticatedCoursesCourseIdPrintRoute
   '/courses/$courseId/quiz': typeof AuthenticatedCoursesCourseIdQuizRoute
+  '/modules/$moduleId/print': typeof AuthenticatedModulesModuleIdPrintRoute
   '/courses/$courseId': typeof AuthenticatedCoursesCourseIdIndexRoute
   '/courses/$courseId/lessons/$lessonId': typeof AuthenticatedCoursesCourseIdLessonsLessonIdRoute
 }
@@ -494,7 +503,7 @@ export interface FileRoutesById {
   '/_authenticated/courses/forge': typeof AuthenticatedCoursesForgeRoute
   '/_authenticated/courses/import': typeof AuthenticatedCoursesImportRoute
   '/_authenticated/decks/$deckId': typeof AuthenticatedDecksDeckIdRoute
-  '/_authenticated/modules/$moduleId': typeof AuthenticatedModulesModuleIdRoute
+  '/_authenticated/modules/$moduleId': typeof AuthenticatedModulesModuleIdRouteWithChildren
   '/_authenticated/modules/forge': typeof AuthenticatedModulesForgeRoute
   '/_authenticated/modules/import': typeof AuthenticatedModulesImportRoute
   '/_authenticated/modules/prompter': typeof AuthenticatedModulesPrompterRoute
@@ -507,6 +516,7 @@ export interface FileRoutesById {
   '/_authenticated/courses/$courseId/edit': typeof AuthenticatedCoursesCourseIdEditRoute
   '/_authenticated/courses/$courseId/print': typeof AuthenticatedCoursesCourseIdPrintRoute
   '/_authenticated/courses/$courseId/quiz': typeof AuthenticatedCoursesCourseIdQuizRoute
+  '/_authenticated/modules/$moduleId/print': typeof AuthenticatedModulesModuleIdPrintRoute
   '/_authenticated/courses/$courseId/': typeof AuthenticatedCoursesCourseIdIndexRoute
   '/_authenticated/courses/$courseId/lessons/$lessonId': typeof AuthenticatedCoursesCourseIdLessonsLessonIdRoute
 }
@@ -563,6 +573,7 @@ export interface FileRouteTypes {
     | '/courses/$courseId/edit'
     | '/courses/$courseId/print'
     | '/courses/$courseId/quiz'
+    | '/modules/$moduleId/print'
     | '/courses/$courseId/'
     | '/courses/$courseId/lessons/$lessonId'
   fileRoutesByTo: FileRoutesByTo
@@ -616,6 +627,7 @@ export interface FileRouteTypes {
     | '/courses/$courseId/edit'
     | '/courses/$courseId/print'
     | '/courses/$courseId/quiz'
+    | '/modules/$moduleId/print'
     | '/courses/$courseId'
     | '/courses/$courseId/lessons/$lessonId'
   id:
@@ -671,6 +683,7 @@ export interface FileRouteTypes {
     | '/_authenticated/courses/$courseId/edit'
     | '/_authenticated/courses/$courseId/print'
     | '/_authenticated/courses/$courseId/quiz'
+    | '/_authenticated/modules/$moduleId/print'
     | '/_authenticated/courses/$courseId/'
     | '/_authenticated/courses/$courseId/lessons/$lessonId'
   fileRoutesById: FileRoutesById
@@ -1048,6 +1061,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCoursesCourseIdQuizRouteImport
       parentRoute: typeof AuthenticatedCoursesCourseIdRoute
     }
+    '/_authenticated/modules/$moduleId/print': {
+      id: '/_authenticated/modules/$moduleId/print'
+      path: '/print'
+      fullPath: '/modules/$moduleId/print'
+      preLoaderRoute: typeof AuthenticatedModulesModuleIdPrintRouteImport
+      parentRoute: typeof AuthenticatedModulesModuleIdRoute
+    }
     '/_authenticated/courses/$courseId/lessons/$lessonId': {
       id: '/_authenticated/courses/$courseId/lessons/$lessonId'
       path: '/lessons/$lessonId'
@@ -1085,6 +1105,21 @@ const AuthenticatedCoursesCourseIdRouteWithChildren =
     AuthenticatedCoursesCourseIdRouteChildren,
   )
 
+interface AuthenticatedModulesModuleIdRouteChildren {
+  AuthenticatedModulesModuleIdPrintRoute: typeof AuthenticatedModulesModuleIdPrintRoute
+}
+
+const AuthenticatedModulesModuleIdRouteChildren: AuthenticatedModulesModuleIdRouteChildren =
+  {
+    AuthenticatedModulesModuleIdPrintRoute:
+      AuthenticatedModulesModuleIdPrintRoute,
+  }
+
+const AuthenticatedModulesModuleIdRouteWithChildren =
+  AuthenticatedModulesModuleIdRoute._addFileChildren(
+    AuthenticatedModulesModuleIdRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAchievementsRoute: typeof AuthenticatedAchievementsRoute
   AuthenticatedBookmarksRoute: typeof AuthenticatedBookmarksRoute
@@ -1120,7 +1155,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCoursesForgeRoute: typeof AuthenticatedCoursesForgeRoute
   AuthenticatedCoursesImportRoute: typeof AuthenticatedCoursesImportRoute
   AuthenticatedDecksDeckIdRoute: typeof AuthenticatedDecksDeckIdRoute
-  AuthenticatedModulesModuleIdRoute: typeof AuthenticatedModulesModuleIdRoute
+  AuthenticatedModulesModuleIdRoute: typeof AuthenticatedModulesModuleIdRouteWithChildren
   AuthenticatedModulesForgeRoute: typeof AuthenticatedModulesForgeRoute
   AuthenticatedModulesImportRoute: typeof AuthenticatedModulesImportRoute
   AuthenticatedModulesPrompterRoute: typeof AuthenticatedModulesPrompterRoute
@@ -1168,7 +1203,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCoursesForgeRoute: AuthenticatedCoursesForgeRoute,
   AuthenticatedCoursesImportRoute: AuthenticatedCoursesImportRoute,
   AuthenticatedDecksDeckIdRoute: AuthenticatedDecksDeckIdRoute,
-  AuthenticatedModulesModuleIdRoute: AuthenticatedModulesModuleIdRoute,
+  AuthenticatedModulesModuleIdRoute:
+    AuthenticatedModulesModuleIdRouteWithChildren,
   AuthenticatedModulesForgeRoute: AuthenticatedModulesForgeRoute,
   AuthenticatedModulesImportRoute: AuthenticatedModulesImportRoute,
   AuthenticatedModulesPrompterRoute: AuthenticatedModulesPrompterRoute,
