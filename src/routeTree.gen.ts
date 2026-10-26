@@ -52,6 +52,7 @@ import { Route as AuthenticatedDecksDeckIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedModulesIndexRouteImport } from './routes/_authenticated/modules.index'
 import { Route as AuthenticatedModulesModuleIdRouteImport } from './routes/_authenticated/modules.$moduleId'
 import { Route as AuthenticatedModulesForgeRouteImport } from './routes/_authenticated/modules.forge'
+import { Route as AuthenticatedModulesImportRouteImport } from './routes/_authenticated/modules.import'
 import { Route as AuthenticatedModulesPrompterRouteImport } from './routes/_authenticated/modules.prompter'
 import { Route as AuthenticatedNotesIndexRouteImport } from './routes/_authenticated/notes.index'
 import { Route as AuthenticatedNotesNotebookIdRouteImport } from './routes/_authenticated/notes.$notebookId'
@@ -286,6 +287,12 @@ const AuthenticatedModulesForgeRoute =
     path: '/modules/forge',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedModulesImportRoute =
+  AuthenticatedModulesImportRouteImport.update({
+    id: '/modules/import',
+    path: '/modules/import',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedModulesPrompterRoute =
   AuthenticatedModulesPrompterRouteImport.update({
     id: '/modules/prompter',
@@ -380,6 +387,7 @@ export interface FileRoutesByFullPath {
   '/decks/$deckId': typeof AuthenticatedDecksDeckIdRoute
   '/modules/$moduleId': typeof AuthenticatedModulesModuleIdRoute
   '/modules/forge': typeof AuthenticatedModulesForgeRoute
+  '/modules/import': typeof AuthenticatedModulesImportRoute
   '/modules/prompter': typeof AuthenticatedModulesPrompterRoute
   '/notes/$notebookId': typeof AuthenticatedNotesNotebookIdRoute
   '/study/$deckId': typeof AuthenticatedStudyDeckIdRoute
@@ -432,6 +440,7 @@ export interface FileRoutesByTo {
   '/decks/$deckId': typeof AuthenticatedDecksDeckIdRoute
   '/modules/$moduleId': typeof AuthenticatedModulesModuleIdRoute
   '/modules/forge': typeof AuthenticatedModulesForgeRoute
+  '/modules/import': typeof AuthenticatedModulesImportRoute
   '/modules/prompter': typeof AuthenticatedModulesPrompterRoute
   '/notes/$notebookId': typeof AuthenticatedNotesNotebookIdRoute
   '/study/$deckId': typeof AuthenticatedStudyDeckIdRoute
@@ -487,6 +496,7 @@ export interface FileRoutesById {
   '/_authenticated/decks/$deckId': typeof AuthenticatedDecksDeckIdRoute
   '/_authenticated/modules/$moduleId': typeof AuthenticatedModulesModuleIdRoute
   '/_authenticated/modules/forge': typeof AuthenticatedModulesForgeRoute
+  '/_authenticated/modules/import': typeof AuthenticatedModulesImportRoute
   '/_authenticated/modules/prompter': typeof AuthenticatedModulesPrompterRoute
   '/_authenticated/notes/$notebookId': typeof AuthenticatedNotesNotebookIdRoute
   '/_authenticated/study/$deckId': typeof AuthenticatedStudyDeckIdRoute
@@ -542,6 +552,7 @@ export interface FileRouteTypes {
     | '/decks/$deckId'
     | '/modules/$moduleId'
     | '/modules/forge'
+    | '/modules/import'
     | '/modules/prompter'
     | '/notes/$notebookId'
     | '/study/$deckId'
@@ -594,6 +605,7 @@ export interface FileRouteTypes {
     | '/decks/$deckId'
     | '/modules/$moduleId'
     | '/modules/forge'
+    | '/modules/import'
     | '/modules/prompter'
     | '/notes/$notebookId'
     | '/study/$deckId'
@@ -648,6 +660,7 @@ export interface FileRouteTypes {
     | '/_authenticated/decks/$deckId'
     | '/_authenticated/modules/$moduleId'
     | '/_authenticated/modules/forge'
+    | '/_authenticated/modules/import'
     | '/_authenticated/modules/prompter'
     | '/_authenticated/notes/$notebookId'
     | '/_authenticated/study/$deckId'
@@ -972,6 +985,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedModulesForgeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/modules/import': {
+      id: '/_authenticated/modules/import'
+      path: '/modules/import'
+      fullPath: '/modules/import'
+      preLoaderRoute: typeof AuthenticatedModulesImportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/modules/prompter': {
       id: '/_authenticated/modules/prompter'
       path: '/modules/prompter'
@@ -1102,6 +1122,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDecksDeckIdRoute: typeof AuthenticatedDecksDeckIdRoute
   AuthenticatedModulesModuleIdRoute: typeof AuthenticatedModulesModuleIdRoute
   AuthenticatedModulesForgeRoute: typeof AuthenticatedModulesForgeRoute
+  AuthenticatedModulesImportRoute: typeof AuthenticatedModulesImportRoute
   AuthenticatedModulesPrompterRoute: typeof AuthenticatedModulesPrompterRoute
   AuthenticatedNotesNotebookIdRoute: typeof AuthenticatedNotesNotebookIdRoute
   AuthenticatedStudyDeckIdRoute: typeof AuthenticatedStudyDeckIdRoute
@@ -1149,6 +1170,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDecksDeckIdRoute: AuthenticatedDecksDeckIdRoute,
   AuthenticatedModulesModuleIdRoute: AuthenticatedModulesModuleIdRoute,
   AuthenticatedModulesForgeRoute: AuthenticatedModulesForgeRoute,
+  AuthenticatedModulesImportRoute: AuthenticatedModulesImportRoute,
   AuthenticatedModulesPrompterRoute: AuthenticatedModulesPrompterRoute,
   AuthenticatedNotesNotebookIdRoute: AuthenticatedNotesNotebookIdRoute,
   AuthenticatedStudyDeckIdRoute: AuthenticatedStudyDeckIdRoute,

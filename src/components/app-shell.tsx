@@ -220,6 +220,13 @@ const NAV_GROUPS: NavGroup[] = [
         exact: false,
         hint: "Hand-build a module block by block",
       },
+      {
+        to: "/modules/import",
+        label: "Import a module",
+        icon: Download,
+        exact: false,
+        hint: "Bring in a module your AI made",
+      },
     ],
   },
   {

@@ -88,6 +88,9 @@ function ModulesIndex() {
         <Button onClick={() => setCreating(true)}>
           <Plus className="size-4" /> New module
         </Button>
+        <Button variant="outline" asChild>
+          <a href="/modules/import">Import a module</a>
+        </Button>
       </div>
 
       {creating && (
