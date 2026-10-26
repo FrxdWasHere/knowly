@@ -151,6 +151,10 @@ export interface NotebookMeta {
   height: number;
   /** OneNote-style section tabs. Missing on older notebooks — repaired on open. */
   sections?: NotebookSection[];
+  /** Textbook notebooks host modules alongside canvas pages. */
+  type?: "notebook" | "textbook";
+  /** Module ids living inside this textbook. */
+  moduleIds?: string[];
   linkedCourseId?: string;
   linkedLessonId?: string;
   linkedDeckId?: string;

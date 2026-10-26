@@ -63,6 +63,8 @@ export interface Deck {
   srs?: Record<string, import("./srs").SrsCard>;
   /** ids of questions paused: excluded from reviews and due counts */
   suspended?: string[];
+  /** modules that imported this deck as an activity */
+  linkedModuleIds?: string[];
 }
 
 /* ------------------------------------------------------------------ *
@@ -70,7 +72,7 @@ export interface Deck {
  * ------------------------------------------------------------------ */
 
 export type CourseBlockType =
-  "markdown" | "callout" | "example" | "image" | "checkpoint" | "divider";
+  "markdown" | "callout" | "example" | "image" | "checkpoint" | "divider" | "activity";
 
 export interface CourseBlock {
   id: string;
@@ -162,6 +164,39 @@ export interface CourseLessonProgress {
   bookmarks?: string[];
 }
 
+export interface Module {
+  id: string;
+  title: string;
+  subject: string;
+  color: string;
+  emoji: string;
+  tags: string[];
+  isSTEM: boolean;
+  needsEquations: boolean;
+  needsGraphs: boolean;
+  objectives: string[];
+  blocks: CourseBlock[];
+  questions: Question[];
+  linkedDeckIds: string[];
+  estimatedMinutes: number;
+  difficulty: 1 | 2 | 3;
+  notes?: string;
+  /** home textbook notebook id, if this module lives inside one */
+  notebookId?: string;
+  createdAt: number;
+  updatedAt: number;
+  archived?: boolean;
+}
+
+export interface ModuleProgress {
+  moduleId: string;
+  status: "not-started" | "in-progress" | "completed";
+  openedAt: number;
+  completedAt?: number;
+  questionStats: Record<string, { attempts: number; correct: number; lastAnsweredAt: number }>;
+  notes?: string;
+  bookmarks?: string[];
+}
 export interface CourseAssessmentResult {
   id: string;
   assessmentId: string;
@@ -378,6 +413,8 @@ export interface AppState {
   decks: Deck[];
   courses: Course[];
   courseProgress: Record<string, CourseProgress>;
+  modules: Module[];
+  moduleProgress: Record<string, ModuleProgress>;
   settings: Settings;
   progress: Progress;
   history: SessionSummary[];

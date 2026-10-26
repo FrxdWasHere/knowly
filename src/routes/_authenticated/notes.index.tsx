@@ -542,6 +542,7 @@ function NewNotebookPanel({
   const [courseId, setCourseId] = useState("");
   const [lessonId, setLessonId] = useState("");
   const [deckId, setDeckId] = useState("");
+  const [notebookType, setNotebookType] = useState<"notebook" | "textbook">("notebook");
 
   const selectedCourse = state.courses.find((course) => course.id === courseId);
   const lessons = selectedCourse?.modules.flatMap((module) => module.lessons) ?? [];
@@ -568,6 +569,7 @@ function NewNotebookPanel({
       linkedCourseId: courseId || undefined,
       linkedLessonId: lessonId || undefined,
       linkedDeckId: deckId || undefined,
+      type: notebookType,
     });
   };
 
@@ -600,6 +602,21 @@ function NewNotebookPanel({
             onChange={(event) => setSubject(event.target.value)}
             placeholder="Biology"
           />
+        </div>
+        <div className="space-y-2">
+          <Label>Type</Label>
+          <Select
+            value={notebookType}
+            onValueChange={(v) => setNotebookType(v as "notebook" | "textbook")}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="notebook">Notebook (canvas pages)</SelectItem>
+              <SelectItem value="textbook">Textbook (modules + pages)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label>Paper</Label>

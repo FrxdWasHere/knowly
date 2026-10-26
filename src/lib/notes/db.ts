@@ -262,6 +262,10 @@ export async function importNotebookBundle(raw: string): Promise<NotebookMeta | 
       ? (rawNotebook.defaultTemplate as PageTemplate)
       : "lined",
     sections,
+    type: rawNotebook.type === "textbook" ? "textbook" : "notebook",
+    moduleIds: Array.isArray(rawNotebook.moduleIds)
+      ? rawNotebook.moduleIds.filter((x): x is string => typeof x === "string")
+      : undefined,
     width,
     height,
     linkedCourseId:

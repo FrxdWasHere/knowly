@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
@@ -38,6 +38,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import type { Module } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -194,7 +195,8 @@ function fileToDataUrl(file: Blob): Promise<string> {
 function NotebookEditorPage() {
   const { notebookId } = Route.useParams();
   const { page: pageParam } = Route.useSearch();
-  const { state } = useKnowly();
+  const { state, addModule } = useKnowly();
+  const navigate = useNavigate();
 
   const [notebook, setNotebook] = useState<NotebookMeta | null>(null);
   const [pages, setPages] = useState<NotePage[]>([]);
@@ -263,6 +265,8 @@ function NotebookEditorPage() {
   zoomRef.current = zoom;
 
   const sections = notebook?.sections ?? [];
+  const textbookModules =
+    notebook?.type === "textbook" ? state.modules.filter((m) => m.notebookId === notebook.id) : [];
   const activeSection =
     sections.find((section) => section.id === activeSectionId) ?? sections[0] ?? null;
   /** Pages of the active section (unassigned pages live in the first section). */
@@ -1728,6 +1732,75 @@ function NotebookEditorPage() {
               </button>
             )}
           </div>
+          {notebook?.type === "textbook" && (
+            <div className="border-b border-border p-2">
+              <div className="flex items-center justify-between px-1 pb-1.5">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Modules
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-6"
+                  onClick={() => {
+                    if (!notebook) return;
+                    const now = Date.now();
+                    const mod: Module = {
+                      id: `mod_${Math.random().toString(36).slice(2, 10)}_${now.toString(36)}`,
+                      title: "Untitled module",
+                      subject: notebook.subject,
+                      color: notebook.color,
+                      emoji: "📘",
+                      tags: [],
+                      isSTEM: false,
+                      needsEquations: false,
+                      needsGraphs: false,
+                      objectives: [],
+                      blocks: [
+                        {
+                          id: `b_${now}`,
+                          type: "markdown",
+                          markdown: "# New module\n\nStart writing…",
+                        },
+                      ],
+                      questions: [],
+                      linkedDeckIds: [],
+                      estimatedMinutes: 15,
+                      difficulty: 2,
+                      notebookId: notebook.id,
+                      createdAt: now,
+                      updatedAt: now,
+                    };
+                    addModule(mod);
+                    navigate({ to: "/modules/$moduleId", params: { moduleId: mod.id } } as never);
+                  }}
+                  aria-label="Add module"
+                >
+                  <Plus className="size-3" />
+                </Button>
+              </div>
+              <div className="space-y-1">
+                {textbookModules.length === 0 && (
+                  <p className="px-1 text-[10px] text-muted-foreground">
+                    No modules yet — add one.
+                  </p>
+                )}
+                {textbookModules.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() =>
+                      navigate({ to: "/modules/$moduleId", params: { moduleId: m.id } } as never)
+                    }
+                    className="flex w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-[11px] text-muted-foreground hover:bg-surface2 hover:text-foreground"
+                  >
+                    <span className="text-sm">{m.emoji}</span>
+                    <span className="truncate">{m.title}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="flex items-center justify-between border-b border-border px-3 py-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Pages

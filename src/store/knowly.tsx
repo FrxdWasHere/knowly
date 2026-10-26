@@ -31,6 +31,8 @@ import type {
   CourseAssessmentResult,
   CourseProgress,
   Deck,
+  Module,
+  ModuleProgress,
   Progress,
   Question,
   QuizResult,
@@ -89,6 +91,12 @@ const MIGRATIONS: Partial<Record<number, Migration>> = {
     labels: state.labels ?? [],
     papers: state.papers ?? [],
   }),
+  // v4 → v5: standalone modules and their progress.
+  4: (state) => ({
+    ...state,
+    modules: state.modules ?? [],
+    moduleProgress: state.moduleProgress ?? {},
+  }),
 };
 
 /** Applies every migration needed to bring `parsed` up to `STATE_VERSION`. */
@@ -129,6 +137,8 @@ function normalizeState(parsed: Partial<AppState>): AppState {
     decks: (state.decks ?? []).map((deck) => ({ ...deck, color: oceanDeckColor(deck.color) })),
     courses: state.courses ?? [],
     courseProgress: state.courseProgress ?? {},
+    modules: state.modules ?? [],
+    moduleProgress: state.moduleProgress ?? {},
     timetable: state.timetable ?? [],
     labels: state.labels ?? [],
     papers: state.papers ?? [],
@@ -166,6 +176,11 @@ interface Ctx {
     courseId: string,
     updater: (progress: CourseProgress) => CourseProgress,
   ) => void;
+  addModule: (module: Module) => void;
+  updateModule: (id: string, patch: Partial<Module>) => void;
+  deleteModule: (id: string) => void;
+  updateModuleProgress: (moduleId: string, updater: (p: ModuleProgress) => ModuleProgress) => void;
+  recordModuleQuestion: (moduleId: string, questionId: string, correct: boolean) => void;
   markCourseLesson: (
     courseId: string,
     lessonId: string,
@@ -401,6 +416,10 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
             })),
           })),
         })),
+        modules: s.modules.map((m) => ({
+          ...m,
+          linkedDeckIds: m.linkedDeckIds.filter((deckId) => deckId !== id),
+        })),
       }));
     },
     [setState],
@@ -438,6 +457,103 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
           course.id === id ? { ...course, ...patch, updatedAt: Date.now() } : course,
         ),
       }));
+    },
+    [setState],
+  );
+
+  const addModule = useCallback(
+    (module: Module) => {
+      setState((s) => ({
+        ...s,
+        modules: [module, ...s.modules.filter((m) => m.id !== module.id)],
+        moduleProgress: {
+          ...s.moduleProgress,
+          [module.id]: s.moduleProgress[module.id] ?? {
+            moduleId: module.id,
+            status: "not-started",
+            openedAt: Date.now(),
+            questionStats: {},
+          },
+        },
+      }));
+    },
+    [setState],
+  );
+
+  const updateModule = useCallback(
+    (id: string, patch: Partial<Module>) => {
+      setState((s) => ({
+        ...s,
+        modules: s.modules.map((m) =>
+          m.id === id ? { ...m, ...patch, updatedAt: Date.now() } : m,
+        ),
+      }));
+    },
+    [setState],
+  );
+
+  const deleteModule = useCallback(
+    (id: string) => {
+      setState((s) => {
+        const { [id]: _removed, ...rest } = s.moduleProgress;
+        return {
+          ...s,
+          modules: s.modules.filter((m) => m.id !== id),
+          moduleProgress: rest,
+          // peel from decks that linked to it
+          decks: s.decks.map((d) => ({
+            ...d,
+            linkedModuleIds: (d.linkedModuleIds ?? []).filter((x) => x !== id),
+          })),
+        };
+      });
+    },
+    [setState],
+  );
+
+  const updateModuleProgress = useCallback(
+    (moduleId: string, updater: (p: ModuleProgress) => ModuleProgress) => {
+      setState((s) => {
+        const current = s.moduleProgress[moduleId] ?? {
+          moduleId,
+          status: "not-started",
+          openedAt: Date.now(),
+          questionStats: {},
+        };
+        const next = updater(current);
+        return { ...s, moduleProgress: { ...s.moduleProgress, [moduleId]: next } };
+      });
+    },
+    [setState],
+  );
+
+  const recordModuleQuestion = useCallback(
+    (moduleId: string, questionId: string, correct: boolean) => {
+      setState((s) => {
+        const current = s.moduleProgress[moduleId] ?? {
+          moduleId,
+          status: "not-started",
+          openedAt: Date.now(),
+          questionStats: {},
+        };
+        const prev = current.questionStats[questionId] ?? {
+          attempts: 0,
+          correct: 0,
+          lastAnsweredAt: 0,
+        };
+        const next: ModuleProgress = {
+          ...current,
+          questionStats: {
+            ...current.questionStats,
+            [questionId]: {
+              attempts: prev.attempts + 1,
+              correct: prev.correct + (correct ? 1 : 0),
+              lastAnsweredAt: Date.now(),
+            },
+          },
+        };
+        return { ...s, moduleProgress: { ...s.moduleProgress, [moduleId]: next } };
+      });
     },
     [setState],
   );
@@ -774,6 +890,11 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
       updateCourse,
       deleteCourse,
       updateCourseProgress,
+      addModule,
+      updateModule,
+      deleteModule,
+      updateModuleProgress,
+      recordModuleQuestion,
       markCourseLesson,
       recordCourseQuestion,
       recordCourseAssessment,
@@ -825,6 +946,11 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
       updateCourse,
       deleteCourse,
       updateCourseProgress,
+      addModule,
+      updateModule,
+      deleteModule,
+      updateModuleProgress,
+      recordModuleQuestion,
       markCourseLesson,
       recordCourseQuestion,
       recordCourseAssessment,

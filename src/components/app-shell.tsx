@@ -186,6 +186,13 @@ const NAV_GROUPS: NavGroup[] = [
         hint: "Check and add an AI-made course",
       },
       {
+        to: "/modules",
+        label: "Modules",
+        icon: BookOpen,
+        exact: false,
+        hint: "Standalone one-off lessons with checkpoints and activities",
+      },
+      {
         to: "/timetable",
         label: "Timetable",
         icon: CalendarClock,

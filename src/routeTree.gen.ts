@@ -49,6 +49,8 @@ import { Route as AuthenticatedCoursesForgeRouteImport } from './routes/_authent
 import { Route as AuthenticatedCoursesImportRouteImport } from './routes/_authenticated/courses.import'
 import { Route as AuthenticatedDecksIndexRouteImport } from './routes/_authenticated/decks.index'
 import { Route as AuthenticatedDecksDeckIdRouteImport } from './routes/_authenticated/decks.$deckId'
+import { Route as AuthenticatedModulesIndexRouteImport } from './routes/_authenticated/modules.index'
+import { Route as AuthenticatedModulesModuleIdRouteImport } from './routes/_authenticated/modules.$moduleId'
 import { Route as AuthenticatedNotesIndexRouteImport } from './routes/_authenticated/notes.index'
 import { Route as AuthenticatedNotesNotebookIdRouteImport } from './routes/_authenticated/notes.$notebookId'
 import { Route as AuthenticatedStudyDeckIdRouteImport } from './routes/_authenticated/study.$deckId'
@@ -62,255 +64,267 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as never)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as never)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as never)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as never)
 const AuthenticatedAchievementsRoute =
   AuthenticatedAchievementsRouteImport.update({
     id: '/achievements',
     path: '/achievements',
     getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
+  } as never)
 const AuthenticatedBookmarksRoute = AuthenticatedBookmarksRouteImport.update({
   id: '/bookmarks',
   path: '/bookmarks',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedCardsRoute = AuthenticatedCardsRouteImport.update({
   id: '/cards',
   path: '/cards',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedCramRoute = AuthenticatedCramRouteImport.update({
   id: '/cram',
   path: '/cram',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedDeckToolsRoute = AuthenticatedDeckToolsRouteImport.update({
   id: '/deck-tools',
   path: '/deck-tools',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedExamRoute = AuthenticatedExamRouteImport.update({
   id: '/exam',
   path: '/exam',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedFocusRoute = AuthenticatedFocusRouteImport.update({
   id: '/focus',
   path: '/focus',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedForgeRoute = AuthenticatedForgeRouteImport.update({
   id: '/forge',
   path: '/forge',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedFormatRoute = AuthenticatedFormatRouteImport.update({
   id: '/format',
   path: '/format',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedGenerateRoute = AuthenticatedGenerateRouteImport.update({
   id: '/generate',
   path: '/generate',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedGoalsRoute = AuthenticatedGoalsRouteImport.update({
   id: '/goals',
   path: '/goals',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedImportRoute = AuthenticatedImportRouteImport.update({
   id: '/import',
   path: '/import',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedJournalRoute = AuthenticatedJournalRouteImport.update({
   id: '/journal',
   path: '/journal',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedLabelsRoute = AuthenticatedLabelsRouteImport.update({
   id: '/labels',
   path: '/labels',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedLeechesRoute = AuthenticatedLeechesRouteImport.update({
   id: '/leeches',
   path: '/leeches',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedPapersRoute = AuthenticatedPapersRouteImport.update({
   id: '/papers',
   path: '/papers',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedPrintRoute = AuthenticatedPrintRouteImport.update({
   id: '/print',
   path: '/print',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedQuizRoute = AuthenticatedQuizRouteImport.update({
   id: '/quiz',
   path: '/quiz',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedReportRoute = AuthenticatedReportRouteImport.update({
   id: '/report',
   path: '/report',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedReviewRoute = AuthenticatedReviewRouteImport.update({
   id: '/review',
   path: '/review',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedShortcutsRoute = AuthenticatedShortcutsRouteImport.update({
   id: '/shortcuts',
   path: '/shortcuts',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedSnapshotsRoute = AuthenticatedSnapshotsRouteImport.update({
   id: '/snapshots',
   path: '/snapshots',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedStatsRoute = AuthenticatedStatsRouteImport.update({
   id: '/stats',
   path: '/stats',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedTagsRoute = AuthenticatedTagsRouteImport.update({
   id: '/tags',
   path: '/tags',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedTimetableRoute = AuthenticatedTimetableRouteImport.update({
   id: '/timetable',
   path: '/timetable',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedWeakSpotsRoute = AuthenticatedWeakSpotsRouteImport.update({
   id: '/weak-spots',
   path: '/weak-spots',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedArenaDeckIdRoute =
   AuthenticatedArenaDeckIdRouteImport.update({
     id: '/arena/$deckId',
     path: '/arena/$deckId',
     getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
+  } as never)
 const AuthenticatedCoursesIndexRoute =
   AuthenticatedCoursesIndexRouteImport.update({
     id: '/courses/',
     path: '/courses/',
     getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
+  } as never)
 const AuthenticatedCoursesCourseIdRoute =
   AuthenticatedCoursesCourseIdRouteImport.update({
     id: '/courses/$courseId',
     path: '/courses/$courseId',
     getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
+  } as never)
 const AuthenticatedCoursesForgeRoute =
   AuthenticatedCoursesForgeRouteImport.update({
     id: '/courses/forge',
     path: '/courses/forge',
     getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
+  } as never)
 const AuthenticatedCoursesImportRoute =
   AuthenticatedCoursesImportRouteImport.update({
     id: '/courses/import',
     path: '/courses/import',
     getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
+  } as never)
 const AuthenticatedDecksIndexRoute = AuthenticatedDecksIndexRouteImport.update({
   id: '/decks/',
   path: '/decks/',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedDecksDeckIdRoute =
   AuthenticatedDecksDeckIdRouteImport.update({
     id: '/decks/$deckId',
     path: '/decks/$deckId',
     getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
+  } as never)
+const AuthenticatedModulesIndexRoute =
+  AuthenticatedModulesIndexRouteImport.update({
+    id: '/modules/',
+    path: '/modules/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as never)
+const AuthenticatedModulesModuleIdRoute =
+  AuthenticatedModulesModuleIdRouteImport.update({
+    id: '/modules/$moduleId',
+    path: '/modules/$moduleId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as never)
 const AuthenticatedNotesIndexRoute = AuthenticatedNotesIndexRouteImport.update({
   id: '/notes/',
   path: '/notes/',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
+} as never)
 const AuthenticatedNotesNotebookIdRoute =
   AuthenticatedNotesNotebookIdRouteImport.update({
     id: '/notes/$notebookId',
     path: '/notes/$notebookId',
     getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
+  } as never)
 const AuthenticatedStudyDeckIdRoute =
   AuthenticatedStudyDeckIdRouteImport.update({
     id: '/study/$deckId',
     path: '/study/$deckId',
     getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
+  } as never)
 const AuthenticatedCoursesCourseIdIndexRoute =
   AuthenticatedCoursesCourseIdIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedCoursesCourseIdRoute,
-  } as any)
+  } as never)
 const AuthenticatedCoursesCourseIdEditRoute =
   AuthenticatedCoursesCourseIdEditRouteImport.update({
     id: '/edit',
     path: '/edit',
     getParentRoute: () => AuthenticatedCoursesCourseIdRoute,
-  } as any)
+  } as never)
 const AuthenticatedCoursesCourseIdPrintRoute =
   AuthenticatedCoursesCourseIdPrintRouteImport.update({
     id: '/print',
     path: '/print',
     getParentRoute: () => AuthenticatedCoursesCourseIdRoute,
-  } as any)
+  } as never)
 const AuthenticatedCoursesCourseIdQuizRoute =
   AuthenticatedCoursesCourseIdQuizRouteImport.update({
     id: '/quiz',
     path: '/quiz',
     getParentRoute: () => AuthenticatedCoursesCourseIdRoute,
-  } as any)
+  } as never)
 const AuthenticatedCoursesCourseIdLessonsLessonIdRoute =
   AuthenticatedCoursesCourseIdLessonsLessonIdRouteImport.update({
     id: '/lessons/$lessonId',
     path: '/lessons/$lessonId',
     getParentRoute: () => AuthenticatedCoursesCourseIdRoute,
-  } as any)
+  } as never)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -350,10 +364,12 @@ export interface FileRoutesByFullPath {
   '/courses/forge': typeof AuthenticatedCoursesForgeRoute
   '/courses/import': typeof AuthenticatedCoursesImportRoute
   '/decks/$deckId': typeof AuthenticatedDecksDeckIdRoute
+  '/modules/$moduleId': typeof AuthenticatedModulesModuleIdRoute
   '/notes/$notebookId': typeof AuthenticatedNotesNotebookIdRoute
   '/study/$deckId': typeof AuthenticatedStudyDeckIdRoute
   '/courses/': typeof AuthenticatedCoursesIndexRoute
   '/decks/': typeof AuthenticatedDecksIndexRoute
+  '/modules/': typeof AuthenticatedModulesIndexRoute
   '/notes/': typeof AuthenticatedNotesIndexRoute
   '/courses/$courseId/edit': typeof AuthenticatedCoursesCourseIdEditRoute
   '/courses/$courseId/print': typeof AuthenticatedCoursesCourseIdPrintRoute
@@ -398,10 +414,12 @@ export interface FileRoutesByTo {
   '/courses/forge': typeof AuthenticatedCoursesForgeRoute
   '/courses/import': typeof AuthenticatedCoursesImportRoute
   '/decks/$deckId': typeof AuthenticatedDecksDeckIdRoute
+  '/modules/$moduleId': typeof AuthenticatedModulesModuleIdRoute
   '/notes/$notebookId': typeof AuthenticatedNotesNotebookIdRoute
   '/study/$deckId': typeof AuthenticatedStudyDeckIdRoute
   '/courses': typeof AuthenticatedCoursesIndexRoute
   '/decks': typeof AuthenticatedDecksIndexRoute
+  '/modules': typeof AuthenticatedModulesIndexRoute
   '/notes': typeof AuthenticatedNotesIndexRoute
   '/courses/$courseId/edit': typeof AuthenticatedCoursesCourseIdEditRoute
   '/courses/$courseId/print': typeof AuthenticatedCoursesCourseIdPrintRoute
@@ -449,10 +467,12 @@ export interface FileRoutesById {
   '/_authenticated/courses/forge': typeof AuthenticatedCoursesForgeRoute
   '/_authenticated/courses/import': typeof AuthenticatedCoursesImportRoute
   '/_authenticated/decks/$deckId': typeof AuthenticatedDecksDeckIdRoute
+  '/_authenticated/modules/$moduleId': typeof AuthenticatedModulesModuleIdRoute
   '/_authenticated/notes/$notebookId': typeof AuthenticatedNotesNotebookIdRoute
   '/_authenticated/study/$deckId': typeof AuthenticatedStudyDeckIdRoute
   '/_authenticated/courses/': typeof AuthenticatedCoursesIndexRoute
   '/_authenticated/decks/': typeof AuthenticatedDecksIndexRoute
+  '/_authenticated/modules/': typeof AuthenticatedModulesIndexRoute
   '/_authenticated/notes/': typeof AuthenticatedNotesIndexRoute
   '/_authenticated/courses/$courseId/edit': typeof AuthenticatedCoursesCourseIdEditRoute
   '/_authenticated/courses/$courseId/print': typeof AuthenticatedCoursesCourseIdPrintRoute
@@ -500,10 +520,12 @@ export interface FileRouteTypes {
     | '/courses/forge'
     | '/courses/import'
     | '/decks/$deckId'
+    | '/modules/$moduleId'
     | '/notes/$notebookId'
     | '/study/$deckId'
     | '/courses/'
     | '/decks/'
+    | '/modules/'
     | '/notes/'
     | '/courses/$courseId/edit'
     | '/courses/$courseId/print'
@@ -548,10 +570,12 @@ export interface FileRouteTypes {
     | '/courses/forge'
     | '/courses/import'
     | '/decks/$deckId'
+    | '/modules/$moduleId'
     | '/notes/$notebookId'
     | '/study/$deckId'
     | '/courses'
     | '/decks'
+    | '/modules'
     | '/notes'
     | '/courses/$courseId/edit'
     | '/courses/$courseId/print'
@@ -598,10 +622,12 @@ export interface FileRouteTypes {
     | '/_authenticated/courses/forge'
     | '/_authenticated/courses/import'
     | '/_authenticated/decks/$deckId'
+    | '/_authenticated/modules/$moduleId'
     | '/_authenticated/notes/$notebookId'
     | '/_authenticated/study/$deckId'
     | '/_authenticated/courses/'
     | '/_authenticated/decks/'
+    | '/_authenticated/modules/'
     | '/_authenticated/notes/'
     | '/_authenticated/courses/$courseId/edit'
     | '/_authenticated/courses/$courseId/print'
@@ -899,6 +925,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDecksDeckIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/modules/': {
+      id: '/_authenticated/modules/'
+      path: '/modules'
+      fullPath: '/modules/'
+      preLoaderRoute: typeof AuthenticatedModulesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/modules/$moduleId': {
+      id: '/_authenticated/modules/$moduleId'
+      path: '/modules/$moduleId'
+      fullPath: '/modules/$moduleId'
+      preLoaderRoute: typeof AuthenticatedModulesModuleIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/notes/': {
       id: '/_authenticated/notes/'
       path: '/notes'
@@ -1020,10 +1060,12 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCoursesForgeRoute: typeof AuthenticatedCoursesForgeRoute
   AuthenticatedCoursesImportRoute: typeof AuthenticatedCoursesImportRoute
   AuthenticatedDecksDeckIdRoute: typeof AuthenticatedDecksDeckIdRoute
+  AuthenticatedModulesModuleIdRoute: typeof AuthenticatedModulesModuleIdRoute
   AuthenticatedNotesNotebookIdRoute: typeof AuthenticatedNotesNotebookIdRoute
   AuthenticatedStudyDeckIdRoute: typeof AuthenticatedStudyDeckIdRoute
   AuthenticatedCoursesIndexRoute: typeof AuthenticatedCoursesIndexRoute
   AuthenticatedDecksIndexRoute: typeof AuthenticatedDecksIndexRoute
+  AuthenticatedModulesIndexRoute: typeof AuthenticatedModulesIndexRoute
   AuthenticatedNotesIndexRoute: typeof AuthenticatedNotesIndexRoute
 }
 
@@ -1063,10 +1105,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCoursesForgeRoute: AuthenticatedCoursesForgeRoute,
   AuthenticatedCoursesImportRoute: AuthenticatedCoursesImportRoute,
   AuthenticatedDecksDeckIdRoute: AuthenticatedDecksDeckIdRoute,
+  AuthenticatedModulesModuleIdRoute: AuthenticatedModulesModuleIdRoute,
   AuthenticatedNotesNotebookIdRoute: AuthenticatedNotesNotebookIdRoute,
   AuthenticatedStudyDeckIdRoute: AuthenticatedStudyDeckIdRoute,
   AuthenticatedCoursesIndexRoute: AuthenticatedCoursesIndexRoute,
   AuthenticatedDecksIndexRoute: AuthenticatedDecksIndexRoute,
+  AuthenticatedModulesIndexRoute: AuthenticatedModulesIndexRoute,
   AuthenticatedNotesIndexRoute: AuthenticatedNotesIndexRoute,
 }
 

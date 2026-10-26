@@ -1867,11 +1867,13 @@ export function buildSampleProfile(now = Date.now()): AppState {
   /* -------------------------------------------------------- bundle */
 
   return {
-    version: 4,
+    version: 5,
     onboardingComplete: true,
     decks: [deckBio, deckChem, deckSpan, deckHist, deckStats],
     courses: [courseBio, courseChem],
     courseProgress,
+    modules: [],
+    moduleProgress: {},
     settings: settings as Settings,
     progress,
     history,
