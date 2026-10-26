@@ -280,7 +280,7 @@ Write the module as Markdown. Use these block types, in this order, and keep eac
 1. A short intro paragraph (2-4 sentences) setting up the idea.
 2. "## " headings for each topic.
 3. Regular paragraphs + bullet lists for explanation.
-4. Callouts using the BLURB rectangles below — these are the module's signature tool. Treat each blurb as a colored, titled rectangle the learner can scan. Use them liberally for key ideas, warnings, tips and definitions. A module is BETTER when it uses blurbs to chunk information; never dump a wall of text.
+4. Callouts using the BLURB rectangles below — these are the module's signature tool. Treat each blurb as a colored, titled rectangle the learner can scan. Use them liberally for key ideas, warnings, tips and definitions. You may also INVENT brand-new blurbs (new title, new body, new color) whenever the content calls for a concept that none of the listed blurbs cover — the blurb system is open-ended, so create as many AI-authored blurbs as the lesson needs. A module is BETTER when it uses blurbs to chunk information; never dump a wall of text.
 5. At least one "Checkpoint" per major topic: a question followed by a hidden answer the learner reveals.
 6. End with a 3-bullet "Takeaway" summary.
 
@@ -293,5 +293,5 @@ Return ONLY the module Markdown. Use "$...$" for inline math and "$$...$$" for d
 > **${blurbs[0]?.title ?? "Blurb"}** (color: ${blurbs[0]?.color ?? "#6d8cff"})
 > <blurb body>
 
-Repeat for every blurb you use. You may invent additional blurbs with new colors and titles whenever the content calls for it — the blurb system is effectively infinite, so lean on it as your primary structuring tool.`;
+Repeat for every blurb you use. You are NOT limited to the blurbs listed above — create your OWN blurbs whenever the content calls for it: choose the title, the body text, and a hex color that fits the meaning (warm colors for warnings, cool colors for key ideas, green for tips). The blurb system is effectively infinite, so lean on it as your primary structuring tool and add as many AI-authored blurbs as the lesson needs.`;
 }
