@@ -288,7 +288,7 @@ BLURBS (colored rectangle callouts — use all of them, and reuse freely)
 ${blurbSpec || "  (add blurbs in the panel to define your toolkit)"}
 
 OUTPUT FORMAT
-Return ONLY the module Markdown. Use "$...$" for inline math and "$$...$$" for display math. Do not include meta commentary. Each blurb must appear as a Markdown blockquote of the form:
+Return the entire module as a single Markdown FILE (a .md document). Output ONLY the raw Markdown file contents — no code fences, no surrounding commentary, no "here is your file" preamble. Suggested filename: module-<slug>.md. Use "$...$" for inline math and "$$...$$" for display math. Each blurb must appear as a Markdown blockquote of the form:
 
 > **${blurbs[0]?.title ?? "Blurb"}** (color: ${blurbs[0]?.color ?? "#6d8cff"})
 > <blurb body>
