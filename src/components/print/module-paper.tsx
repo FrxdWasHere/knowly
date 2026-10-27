@@ -82,6 +82,79 @@ function markdownChunks(text: string): string[] {
     .filter(Boolean);
 }
 
+/**
+ * Split a paragraph chunk into page-breakable pieces so regular text can fill
+ * pages to the last line. Headings, list items, and quote/table/code/math
+ * bodies become their own pieces; only "blurb-like" bodies (tables, code
+ * fences, display math) stay glued together.
+ */
+function chunkPieces(chunk: string): string[] {
+  const pieces: string[] = [];
+  let current: string[] = [];
+  const flush = () => {
+    if (current.length) {
+      const text = current.join("\n").trim();
+      if (text) pieces.push(text);
+      current = [];
+    }
+  };
+  let fence = false;
+  let math = false;
+  for (const line of chunk.split(/\r?\n/)) {
+    const t = line.trim();
+    if (t.startsWith("```")) {
+      flush();
+      fence = !fence;
+      current.push(line);
+      continue;
+    }
+    if (fence) {
+      current.push(line);
+      continue;
+    }
+    const fullMathLine = t.startsWith("$$") && t.endsWith("$$") && t.length > 4;
+    if (fullMathLine) {
+      flush();
+      pieces.push(t);
+      continue;
+    }
+    if (t.startsWith("$$")) {
+      flush();
+      math = !math;
+      current.push(line);
+      continue;
+    }
+    if (math) {
+      current.push(line);
+      if (t.endsWith("$$")) math = false;
+      continue;
+    }
+    if (!t) {
+      flush();
+      continue;
+    }
+    const isTableStart = t.startsWith("|");
+    if (isTableStart) {
+      // glue consecutive table rows so the table stays one unbreakable blurb
+      if (!current.length || !current[0].trim().startsWith("|")) flush();
+      current.push(line);
+      continue;
+    }
+    const atColumnZero = /^\S/.test(line);
+    if (atColumnZero) {
+      // heading, top-level list marker, blockquote, or fresh paragraph
+      flush();
+      current.push(line);
+      continue;
+    }
+    // indented line — continuation of the previous piece (list item bodies,
+    // nested bullets stay glued to their parent item)
+    current.push(line);
+  }
+  flush();
+  return pieces.length ? pieces : [chunk.trim()];
+}
+
 /* --------------------------------------------------------------------- *
  * Content units
  * --------------------------------------------------------------------- */
@@ -105,6 +178,10 @@ interface ModuleUnit {
   data: ModuleUnitData;
 }
 
+/**
+ * Spacing above each unit between page content; the first unit on a page
+ * drops it (see UnitSpace's `flush`).
+ */
 const UNIT_SPACE: Partial<Record<ModuleUnitData["kind"], number>> = {
   hero: 0,
   objectives: 14,
@@ -119,6 +196,8 @@ const UNIT_SPACE: Partial<Record<ModuleUnitData["kind"], number>> = {
   "answer-header": 22,
   "answer-item": 6,
 };
+
+const unitSpacePad = (unit: ModuleUnit) => UNIT_SPACE[unit.data.kind] ?? 8;
 
 const DIFFICULTY_LABEL = ["", "Intro", "Core", "Advanced"] as const;
 
@@ -189,7 +268,9 @@ function buildUnits(module: Module, decks: Deck[], options: ModulePrintOptions):
     switch (block.type) {
       case "markdown":
         for (const chunk of markdownChunks(block.markdown ?? "")) {
-          push({ kind: "markdown", text: chunk });
+          for (const piece of chunkPieces(chunk)) {
+            push({ kind: "markdown", text: piece });
+          }
         }
         break;
       case "callout":
@@ -290,15 +371,19 @@ export function ModulePaper({
       let current: ModuleUnit[] = [];
       let cursor = 0;
       for (const [index, unit] of units.entries()) {
-        const height = heights[index] ?? 0;
+        const boxHeight = heights[index] ?? 0;
+        const pad = unitSpacePad(unit);
+        const contentHeight2 = Math.max(0, boxHeight - pad);
         const forced = unit.data.kind === "answer-header" || unit.data.kind === "hero";
-        if (current.length > 0 && (forced || cursor + height > contentHeight)) {
+        // a unit jumps only when its real content can't fit; the spacing
+        // above it never forces a break (first unit on a page drops it)
+        if (current.length > 0 && (forced || cursor + contentHeight2 > contentHeight)) {
           built.push(current);
           current = [];
           cursor = 0;
         }
         current.push(unit);
-        cursor += height;
+        cursor += current.length === 1 ? contentHeight2 : boxHeight;
       }
       if (current.length > 0) built.push(current);
       setPages(built);
@@ -402,8 +487,14 @@ export function ModulePaper({
                   : footerPageText(pageIndex + (titlePage ? 2 : 1)),
             }}
           >
-            {pageUnits.map((unit) => (
-              <UnitSpace key={unit.id} unit={unit} module={module} decks={decks} />
+            {pageUnits.map((unit, unitIndex) => (
+              <UnitSpace
+                key={unit.id}
+                unit={unit}
+                module={module}
+                decks={decks}
+                flush={unitIndex === 0}
+              />
             ))}
           </ModuleSheet>
         ))}
@@ -412,9 +503,20 @@ export function ModulePaper({
   );
 }
 
-function UnitSpace({ unit, module, decks }: { unit: ModuleUnit; module: Module; decks: Deck[] }) {
+function UnitSpace({
+  unit,
+  module,
+  decks,
+  flush,
+}: {
+  unit: ModuleUnit;
+  module: Module;
+  decks: Deck[];
+  /** first unit on a page: the inter-unit spacing above is dropped */
+  flush?: boolean;
+}) {
   return (
-    <div style={{ paddingTop: UNIT_SPACE[unit.data.kind] ?? 8 }}>
+    <div style={{ paddingTop: flush ? 0 : unitSpacePad(unit) }}>
       <UnitView unit={unit} module={module} decks={decks} />
     </div>
   );
