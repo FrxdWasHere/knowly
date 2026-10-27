@@ -84,17 +84,23 @@ function markdownChunks(text: string): string[] {
 
 /**
  * Split a paragraph chunk into page-breakable pieces so regular text can fill
- * pages to the last line. Headings, list items, and quote/table/code/math
- * bodies become their own pieces; only "blurb-like" bodies (tables, code
- * fences, display math) stay glued together.
+ * pages to the last line. Headings, list items, and quote bodies become their
+ * own pieces; blurb-like bodies (tables, code fences, display math) stay glued
+ * together and are tagged `blurb` so the paginator gives them clearance.
  */
-function chunkPieces(chunk: string): string[] {
-  const pieces: string[] = [];
+function chunkPieces(chunk: string): Array<{ text: string; blurb: boolean }> {
+  const pieces: Array<{ text: string; blurb: boolean }> = [];
   let current: string[] = [];
   const flush = () => {
     if (current.length) {
       const text = current.join("\n").trim();
-      if (text) pieces.push(text);
+      if (text) {
+        const first = current[0].trim();
+        pieces.push({
+          text,
+          blurb: first.startsWith("|") || first.startsWith("```") || first.startsWith("$$"),
+        });
+      }
       current = [];
     }
   };
@@ -103,9 +109,15 @@ function chunkPieces(chunk: string): string[] {
   for (const line of chunk.split(/\r?\n/)) {
     const t = line.trim();
     if (t.startsWith("```")) {
-      flush();
-      fence = !fence;
-      current.push(line);
+      if (fence) {
+        current.push(line);
+        flush();
+        fence = false;
+      } else {
+        flush();
+        fence = true;
+        current.push(line);
+      }
       continue;
     }
     if (fence) {
@@ -115,7 +127,7 @@ function chunkPieces(chunk: string): string[] {
     const fullMathLine = t.startsWith("$$") && t.endsWith("$$") && t.length > 4;
     if (fullMathLine) {
       flush();
-      pieces.push(t);
+      pieces.push({ text: t, blurb: true });
       continue;
     }
     if (t.startsWith("$$")) {
@@ -152,7 +164,7 @@ function chunkPieces(chunk: string): string[] {
     current.push(line);
   }
   flush();
-  return pieces.length ? pieces : [chunk.trim()];
+  return pieces.length ? pieces : [{ text: chunk.trim(), blurb: false }];
 }
 
 /* --------------------------------------------------------------------- *
@@ -162,7 +174,7 @@ function chunkPieces(chunk: string): string[] {
 type ModuleUnitData =
   | { kind: "hero" }
   | { kind: "objectives"; items: string[] }
-  | { kind: "markdown"; text: string }
+  | { kind: "markdown"; text: string; blurb?: boolean }
   | { kind: "callout"; block: CourseBlock }
   | { kind: "example"; block: CourseBlock }
   | { kind: "image"; block: CourseBlock }
@@ -269,7 +281,7 @@ function buildUnits(module: Module, decks: Deck[], options: ModulePrintOptions):
       case "markdown":
         for (const chunk of markdownChunks(block.markdown ?? "")) {
           for (const piece of chunkPieces(chunk)) {
-            push({ kind: "markdown", text: piece });
+            push({ kind: "markdown", text: piece.text, blurb: piece.blurb });
           }
         }
         break;
@@ -368,16 +380,33 @@ export function ModulePaper({
       }
       const heights = slots.map((slot) => slot.getBoundingClientRect().height);
       const built: ModuleUnit[][] = [];
+      // when a blurb would sit tighter than this above the page floor, it
+      // moves to the next page instead of being forced to fit
+      const clearance = Math.round(contentHeight * 0.075);
+      const blurbish = (unit: ModuleUnit) =>
+        unit.data.kind === "markdown"
+          ? unit.data.blurb === true
+          : [
+              "callout",
+              "example",
+              "image",
+              "objectives",
+              "checkpoint",
+              "activity",
+              "notes",
+            ].includes(unit.data.kind);
       let current: ModuleUnit[] = [];
       let cursor = 0;
       for (const [index, unit] of units.entries()) {
         const boxHeight = heights[index] ?? 0;
         const pad = unitSpacePad(unit);
         const contentHeight2 = Math.max(0, boxHeight - pad);
+        const reserve = blurbish(unit) ? clearance : 0;
         const forced = unit.data.kind === "answer-header" || unit.data.kind === "hero";
-        // a unit jumps only when its real content can't fit; the spacing
-        // above it never forces a break (first unit on a page drops it)
-        if (current.length > 0 && (forced || cursor + contentHeight2 > contentHeight)) {
+        // a unit jumps when its real content can't fit; the spacing above it
+        // never forces a break (first unit on a page drops it), and blurbs
+        // additionally need breathing room above the page floor
+        if (current.length > 0 && (forced || cursor + contentHeight2 + reserve > contentHeight)) {
           built.push(current);
           current = [];
           cursor = 0;
