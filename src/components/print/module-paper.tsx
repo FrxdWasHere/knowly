@@ -35,6 +35,8 @@ export interface ModulePrintOptions {
   spacing: PaperSpacing;
   footerStyle: PaperFooterStyle;
   runningHeader: boolean;
+  /** full-page hero on sheet 1; the lesson proper starts on sheet 2 */
+  includeTitlePage: boolean;
   includeAnswerKey: boolean;
   includeNotes: boolean;
 }
@@ -48,6 +50,7 @@ export const defaultModulePrintOptions: ModulePrintOptions = {
   spacing: "normal",
   footerStyle: "count",
   runningHeader: true,
+  includeTitlePage: true,
   includeAnswerKey: true,
   includeNotes: true,
 };
@@ -159,7 +162,9 @@ function buildUnits(module: Module, decks: Deck[], options: ModulePrintOptions):
     units.push({ id: `munit-${++uid}`, data });
   };
 
-  push({ kind: "hero" });
+  if (!options.includeTitlePage) {
+    push({ kind: "hero" });
+  }
   if (module.objectives.length) push({ kind: "objectives", items: module.objectives });
 
   // number checkpoints in printed order
@@ -316,8 +321,8 @@ export function ModulePaper({
     return () => observer.disconnect();
   }, []);
   const scale = stageWidth ? Math.max(0.05, Math.min(1, stageWidth / dims.width)) : 1;
-
-  const totalPages = pages?.length ?? 0;
+  const titlePage = options.includeTitlePage;
+  const totalPages = (pages?.length ?? 0) + (titlePage ? 1 : 0);
   const footerPageText = (page: number) => {
     if (options.footerStyle === "of") return `Page ${page} of ${totalPages}`;
     if (options.footerStyle === "plain") return String(page);
@@ -365,6 +370,23 @@ export function ModulePaper({
             </ModuleSheet>
           ))}
 
+        {titlePage && (
+          <ModuleSheet
+            key="title-page"
+            dims={dims}
+            scale={scale}
+            padding={{ padX, padTop, padBottom }}
+            footer={{
+              left: module.title,
+              text: options.footerStyle === "none" ? null : footerPageText(1),
+              light: true,
+            }}
+            fullBleed
+          >
+            <TitlePageBody module={module} padX={padX} accent={module.color} />
+          </ModuleSheet>
+        )}
+
         {pages?.map((pageUnits, pageIndex) => (
           <ModuleSheet
             key={`page-${pageIndex}`}
@@ -374,10 +396,15 @@ export function ModulePaper({
             fontSize={fontPx}
             fontFamily={fontFamily}
             lineHeight={lineHeight}
-            headerText={options.runningHeader && pageIndex > 0 ? module.title : null}
+            headerText={
+              options.runningHeader && (!titlePage || pageIndex > 0) ? module.title : null
+            }
             footer={{
               left: module.title,
-              text: options.footerStyle === "none" ? null : footerPageText(pageIndex + 1),
+              text:
+                options.footerStyle === "none"
+                  ? null
+                  : footerPageText(pageIndex + (titlePage ? 2 : 1)),
             }}
           >
             {pageUnits.map((unit) => (
@@ -807,6 +834,97 @@ function PaperLines({ count }: { count: number }) {
 }
 
 /* --------------------------------------------------------------------- *
+ * Title page — the hero takes all of sheet 1
+ * --------------------------------------------------------------------- */
+
+function TitlePageBody({ module, padX, accent }: { module: Module; padX: number; accent: string }) {
+  const objectives = module.objectives.slice(0, 4);
+  return (
+    <div
+      className="module-hero relative flex size-full flex-col overflow-hidden px-[13%] py-[9%] text-white"
+      style={{
+        background: `radial-gradient(130% 120% at 88% -15%, color-mix(in oklab, ${accent} 78%, #ffffff 24%) 0%, transparent 55%), linear-gradient(158deg, ${accent} 0%, color-mix(in oklab, ${accent} 52%, #0d131b) 62%, #0d131b 100%)`,
+      }}
+    >
+      {/* thin frame ornament */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute border border-white/20"
+        style={{ inset: Math.round(padX * 0.55) }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute border border-white/10"
+        style={{ inset: Math.round(padX * 0.55) + 7 }}
+      />
+
+      {/* ghost emoji ornament */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -right-8 top-8 select-none text-[9em] leading-none opacity-[0.12]"
+      >
+        {module.emoji || "📘"}
+      </span>
+
+      {/* head */}
+      <div className="relative flex items-center justify-between text-[0.72em] font-semibold uppercase tracking-[0.3em] text-white/75">
+        <span>KNOWLY</span>
+        <span className="text-white/55">Module · {module.subject}</span>
+      </div>
+
+      {/* centered title block */}
+      <div className="relative my-auto py-8 text-center">
+        <span className="mx-auto grid size-20 place-items-center rounded-[1.1em] border border-white/25 bg-white/12 text-3xl">
+          {module.emoji || "📘"}
+        </span>
+        <h1 className="mx-auto mt-7 max-w-[92%] text-[2.5em] font-bold leading-[1.14] tracking-tight text-white">
+          {module.title}
+        </h1>
+        <div aria-hidden className="mt-7 flex items-center justify-center gap-2.5">
+          <span className="h-px w-12 bg-white/50" />
+          <span className="size-1.5 rotate-45 rounded-[0.1em] bg-white/70" />
+          <span className="h-px w-6 bg-white/40" />
+        </div>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+          {[
+            `${module.estimatedMinutes} min`,
+            DIFFICULTY_LABEL[module.difficulty],
+            module.questions.length ? `${module.questions.length} checkpoints` : null,
+          ]
+            .filter(Boolean)
+            .map((chip, index) => (
+              <span
+                key={index}
+                className="rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-[0.75em] font-semibold uppercase tracking-[0.14em] text-white/90"
+              >
+                {chip}
+              </span>
+            ))}
+        </div>
+        {objectives.length > 0 && (
+          <ul className="mx-auto mt-8 max-w-[80%] space-y-[0.55em] text-left">
+            {objectives.map((objective) => (
+              <li key={objective} className="flex gap-2.5 text-[0.9em] text-white/85">
+                <span
+                  aria-hidden
+                  className="mt-[0.55em] size-1.5 shrink-0 rotate-45 rounded-[0.08em] bg-white/60"
+                />
+                <span className="min-w-0 text-pretty">{objective}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* foot */}
+      <p className="relative text-center text-[0.72em] font-semibold uppercase tracking-[0.28em] text-white/55">
+        The lesson begins on page 2
+      </p>
+    </div>
+  );
+}
+
+/* --------------------------------------------------------------------- *
  * Sheet shell
  * --------------------------------------------------------------------- */
 
@@ -819,6 +937,7 @@ function ModuleSheet({
   lineHeight,
   headerText,
   footer,
+  fullBleed,
   children,
 }: {
   dims: { width: number; height: number };
@@ -828,9 +947,11 @@ function ModuleSheet({
   fontFamily?: string;
   lineHeight?: number;
   headerText?: string | null;
-  footer?: { left: string; text: string | null };
+  footer?: { left: string; text: string | null; light?: boolean };
+  fullBleed?: boolean;
   children: ReactNode;
 }) {
+  const tone = footer?.light ? "text-white/70" : "text-muted-foreground";
   return (
     <div
       className="preview-scale-wrap"
@@ -849,17 +970,21 @@ function ModuleSheet({
             border: "1px solid color-mix(in oklab, var(--foreground) 12%, transparent)",
           }}
         >
-          <div
-            style={{
-              padding: `${padding.padTop}px ${padding.padX}px ${padding.padBottom}px`,
-              fontSize,
-              fontFamily,
-              lineHeight,
-              color: "var(--foreground)",
-            }}
-          >
-            {children}
-          </div>
+          {fullBleed ? (
+            children
+          ) : (
+            <div
+              style={{
+                padding: `${padding.padTop}px ${padding.padX}px ${padding.padBottom}px`,
+                fontSize,
+                fontFamily,
+                lineHeight,
+                color: "var(--foreground)",
+              }}
+            >
+              {children}
+            </div>
+          )}
           {headerText && (
             <div
               aria-hidden
@@ -875,9 +1000,9 @@ function ModuleSheet({
           )}
           {footer && footer.text && (
             <footer
-              className="absolute inset-x-0 flex items-center justify-between gap-5 text-muted-foreground"
+              className={cn("absolute inset-x-0 flex items-center justify-between gap-5", tone)}
               style={{
-                bottom: Math.round(padding.padBottom * 0.32),
+                bottom: fullBleed ? 40 : Math.round(padding.padBottom * 0.32),
                 paddingLeft: padding.padX,
                 paddingRight: padding.padX,
               }}

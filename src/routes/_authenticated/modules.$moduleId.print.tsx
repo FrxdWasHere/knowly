@@ -232,12 +232,20 @@ function ModulePrintPage() {
             </OptionGroup>
 
             <OptionGroup icon={<Heading1 className="size-4 text-primary" />} label="Header">
-              <ToggleRow
-                label="Page header"
-                description="Quick switch: module name in small caps on page 2 and above."
-                checked={options.runningHeader}
-                onChange={(value) => patch({ runningHeader: value })}
-              />
+              <div className="space-y-3">
+                <ToggleRow
+                  label="Title page"
+                  description="Full-page hero on sheet 1; the lesson proper starts on page 2."
+                  checked={options.includeTitlePage}
+                  onChange={(value) => patch({ includeTitlePage: value })}
+                />
+                <ToggleRow
+                  label="Page header"
+                  description="Quick switch: module name in small caps on later pages."
+                  checked={options.runningHeader}
+                  onChange={(value) => patch({ runningHeader: value })}
+                />
+              </div>
             </OptionGroup>
 
             <OptionGroup icon={<Columns2 className="size-4 text-primary" />} label="Page furniture">
