@@ -980,7 +980,7 @@ function ModuleSheet({
               aria-hidden
               className="absolute inset-x-0 flex items-center justify-center gap-2 text-[9px] font-semibold uppercase tracking-[0.28em] text-muted-foreground"
               style={{
-                top: Math.round(padding.padTop * 0.24),
+                top: Math.round(padding.padTop * 0.42),
                 paddingLeft: padding.padX,
                 paddingRight: padding.padX,
               }}
