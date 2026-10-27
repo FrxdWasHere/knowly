@@ -376,11 +376,6 @@ export function ModulePaper({
             dims={dims}
             scale={scale}
             padding={{ padX, padTop, padBottom }}
-            footer={{
-              left: module.title,
-              text: options.footerStyle === "none" ? null : footerPageText(1),
-              light: true,
-            }}
             fullBleed
           >
             <TitlePageBody module={module} padX={padX} accent={module.color} />
@@ -915,11 +910,6 @@ function TitlePageBody({ module, padX, accent }: { module: Module; padX: number;
           </ul>
         )}
       </div>
-
-      {/* foot */}
-      <p className="relative text-center text-[0.72em] font-semibold uppercase tracking-[0.28em] text-white/55">
-        The lesson begins on page 2
-      </p>
     </div>
   );
 }
