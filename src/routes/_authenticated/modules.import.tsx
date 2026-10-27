@@ -194,7 +194,7 @@ function ModuleImportPage() {
                         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                           Goals
                         </p>
-                        <ul className="mt-2 space-y-1 text-sm">
+                        <ul className="mt-2 space-y-1 pl-1.5 text-sm">
                           {module.objectives.map((objective, index) => (
                             <li key={index}>· {objective}</li>
                           ))}

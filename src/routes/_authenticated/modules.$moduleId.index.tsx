@@ -251,7 +251,7 @@ function ModuleEditor() {
             className="min-h-20"
           />
         ) : module.objectives.length ? (
-          <ul className="space-y-1 text-sm">
+          <ul className="space-y-1 pl-1.5 text-sm">
             {module.objectives.map((o, i) => (
               <li key={i} className="flex items-start gap-2">
                 <Check className="mt-0.5 size-4 text-success" />

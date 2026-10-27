@@ -501,7 +501,7 @@ function UnitView({ unit, module, decks }: { unit: ModuleUnit; module: Module; d
           >
             What you'll learn
           </p>
-          <ul className="mt-2.5 space-y-[0.45em]">
+          <ul className="mt-2.5 space-y-[0.45em] pl-[1.1em]">
             {data.items.map((objective) => (
               <li key={objective} className="flex gap-2.5">
                 <span
@@ -748,7 +748,7 @@ function QuestionBody({ question }: { question: Question }) {
   switch (question.type) {
     case "multiple-choice":
       return (
-        <ol className="mt-2 space-y-1">
+        <ol className="mt-2 space-y-1 pl-[1.1em]">
           {(question.options ?? []).map((option, index) => (
             <li key={`${option}-${index}`} className="flex gap-2">
               <span className="font-semibold">{LETTERS[index] ?? index + 1}.</span>
@@ -902,7 +902,7 @@ function TitlePageBody({ module, padX, accent }: { module: Module; padX: number;
             ))}
         </div>
         {objectives.length > 0 && (
-          <ul className="mx-auto mt-8 max-w-[80%] space-y-[0.55em] text-left">
+          <ul className="mx-auto mt-8 max-w-[80%] space-y-[0.55em] pl-[1em] text-left">
             {objectives.map((objective) => (
               <li key={objective} className="flex gap-2.5 text-[0.9em] text-white/85">
                 <span

@@ -28,12 +28,13 @@ const sharedClass = cn(
   // links & emphasis
   "[&_a]:font-medium [&_a]:underline [&_a]:underline-offset-[0.2em] [&_a]:decoration-dotted [&_a]:decoration-[color:var(--md-accent)]",
   "[&_strong]:font-semibold [&_em]:italic",
-  // lists — real indent, spaced items, accent markers
-  "[&_ul]:my-[0.55em] [&_ol]:my-[0.55em]",
-  "[&_ul>li]:list-disc [&_ul>li]:pl-[0.35em] [&_ul>li]:marker:text-[color:var(--md-accent)] [&_ul>li]:marker:text-[0.75em]",
-  "[&_ol>li]:list-decimal [&_ol>li]:pl-[0.35em] [&_ol>li]:marker:font-semibold [&_ol>li]:marker:text-[color:var(--md-accent)]",
+  // lists — real indent (lists only), spaced items, accent markers
+  "[&_ul]:my-[0.55em] [&_ol]:my-[0.55em] [&_ul]:pl-[1.4em] [&_ol]:pl-[1.4em]",
+  "[&_ul>li]:list-disc [&_ul>li]:marker:text-[color:var(--md-accent)] [&_ul>li]:marker:text-[0.75em]",
+  "[&_ol>li]:list-decimal [&_ol>li]:marker:font-semibold [&_ol>li]:marker:text-[color:var(--md-accent)]",
   "[&_li]:my-[0.3em] [&_li]:text-pretty [&_li>p]:my-[0.2em]",
-  "[&_li>ul]:mt-[0.25em] [&_li>ul]:ml-[1em] [&_li>ol]:mt-[0.25em] [&_li>ol]:ml-[1em]",
+  // nested lists double the indent via the root padding + their own hanging markers
+  "[&_li>ul]:mt-[0.25em] [&_li>ol]:mt-[0.25em]",
   // task lists (GFM)
   "[&_li.task-list-item]:list-none [&_li.task-list-item]:pl-0 [&_input[type=checkbox]]:mr-1.5 [&_input[type=checkbox]]:translate-y-[0.15em]",
   // blockquote — accent bar, slightly smaller, calm color
