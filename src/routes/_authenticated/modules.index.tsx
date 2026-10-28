@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
+import { MathText } from "@/components/math/math-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -128,7 +129,9 @@ function ModuleCard({ module, onDelete }: { module: Module; onDelete: (id: strin
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <h2 className="truncate font-display text-lg font-semibold">{module.title}</h2>
+                <h2 className="truncate font-display text-lg font-semibold">
+                  <MathText text={module.title} />
+                </h2>
                 <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
               </div>
               <p className="mt-0.5 truncate text-xs text-muted-foreground">
@@ -152,7 +155,7 @@ function ModuleCard({ module, onDelete }: { module: Module; onDelete: (id: strin
 
         {module.objectives[0] && (
           <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">
-            {module.objectives[0]}
+            <MathText text={module.objectives[0]} />
           </p>
         )}
 

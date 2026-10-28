@@ -105,6 +105,19 @@ const MARGIN_FACTORS: Record<PaperMarginId, { side: number; top: number; bottom:
   wide: { side: 0.115, top: 0.078, bottom: 0.095 },
 };
 
+/** Nothing may sit this close to the bottom footer: 25px above it, the footer's own band, and 25px below it down to the sheet edge. */
+export const FOOTER_KEEPCLEAR = 25;
+/** Height of the footer line itself — 10px text plus its 3px padding each side. */
+const FOOTER_HEIGHT = 20;
+/** Where the footer's bottom edge sits above the sheet edge. */
+export function footerBottomOffset(padBottom: number): number {
+  return Math.max(FOOTER_KEEPCLEAR, Math.round(padBottom * 0.32));
+}
+/** Distance from the sheet bottom to the lowest point content may reach, so the footer band keeps a 25px gap on both sides. */
+export function footerFloor(padBottom: number): number {
+  return footerBottomOffset(padBottom) + FOOTER_HEIGHT + FOOTER_KEEPCLEAR;
+}
+
 export const SPACING_OPTIONS: { id: PaperSpacing; label: string }[] = [
   { id: "compact", label: "Compact" },
   { id: "normal", label: "Normal" },
@@ -534,7 +547,10 @@ export function CoursePaper({
   const padTop = Math.round(dims.height * factors.top);
   const padBottom = Math.round(dims.height * factors.bottom);
   const contentWidth = Math.max(200, dims.width - padX * 2);
-  const contentHeight = Math.max(200, dims.height - padTop - padBottom);
+  const contentHeight = Math.max(
+    200,
+    dims.height - padTop - Math.max(padBottom, footerFloor(padBottom)),
+  );
   const fontPx = options.fontScale === "small" ? 11.5 : options.fontScale === "large" ? 13.5 : 12.5;
   const lineHeight = 1.55 * SPACING_FACTORS[options.spacing];
   const fontFamily = TYPEFACE_OPTIONS.find((t) => t.id === options.typeface)?.stack;
@@ -808,6 +824,8 @@ function SheetShell({
                 top: Math.round(padding.padTop * 0.24),
                 paddingLeft: padding.padX,
                 paddingRight: padding.padX,
+                paddingTop: 25,
+                paddingBottom: 25,
               }}
             >
               {headerText}
@@ -817,9 +835,11 @@ function SheetShell({
             <footer
               className="absolute inset-x-0 flex items-center justify-between gap-5"
               style={{
-                bottom: fullBleed ? 40 : Math.round(padding.padBottom * 0.32),
+                bottom: fullBleed ? 40 : footerBottomOffset(padding.padBottom),
                 paddingLeft: padding.padX,
                 paddingRight: padding.padX,
+                paddingTop: 3,
+                paddingBottom: 3,
               }}
             >
               <span className={cn("min-w-0 truncate text-[10px]", tone)}>{footer.left}</span>
@@ -1132,7 +1152,13 @@ function CoverBody({
 
       <div
         className="relative flex size-full flex-col"
-        style={{ padding: `${padTop}px ${padX}px ${Math.round(padTop * 0.95)}px`, fontFamily }}
+        style={{
+          padding: `${padTop}px ${padX}px ${Math.max(
+            Math.round(padTop * 0.95),
+            footerFloor(40),
+          )}px`,
+          fontFamily,
+        }}
       >
         {/* head */}
         <div className="flex items-center gap-3.5">
@@ -1228,7 +1254,11 @@ function CoverBodyClassic({
   return (
     <div
       className="relative flex size-full flex-col"
-      style={{ padding: `${padTop * 1.1}px ${padX}px ${padTop * 0.95}px`, color: INK, fontFamily }}
+      style={{
+        padding: `${padTop * 1.1}px ${padX}px ${Math.max(padTop * 0.95, footerFloor(40))}px`,
+        color: INK,
+        fontFamily,
+      }}
     >
       {/* top rule + imprint */}
       <div aria-hidden className="h-1 w-14" style={{ background: course.color }} />

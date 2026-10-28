@@ -3,7 +3,9 @@ import {
   ArrowDownToLine,
   BookOpen,
   Columns2,
+  Edit3,
   Heading1,
+  Palette,
   Printer,
   RotateCcw,
   Ruler,
@@ -29,6 +31,7 @@ import {
 import { getPaperDims } from "@/components/print/course-paper";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { COLOR_THEMES, getColorTheme } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 import { useKnowly } from "@/store/knowly";
 
@@ -130,7 +133,6 @@ function ModulePrintPage() {
 
   const patch = (changes: Partial<ModulePrintOptions>) =>
     setOptions((current) => ({ ...current, ...changes }));
-
   const handleSavePdf = () => {
     // Browsers offer "Save as PDF" in the print dialog; title sets the filename.
     const previousTitle = document.title;
@@ -148,7 +150,7 @@ function ModulePrintPage() {
         <div className="print-hide">
           <PageHeader
             title="Module print studio"
-            description="The whole module as one colorful study sheet — no cover page, straight to the content. Print it or save it as a PDF."
+            description="The whole module as one colorful study sheet — a full-page title sheet, then the lesson, notes and answer key."
             action={
               <div className="flex flex-wrap items-center gap-2.5">
                 <Button variant="outline" onClick={handleSavePdf}>
@@ -248,6 +250,55 @@ function ModulePrintPage() {
               </div>
             </OptionGroup>
 
+            <OptionGroup icon={<Palette className="size-4 text-primary" />} label="Cover theme">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  title="Module color"
+                  aria-label="Module color"
+                  onClick={() => patch({ coverTheme: "module" })}
+                  aria-pressed={options.coverTheme === "module"}
+                  className={cn(
+                    "press flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-[11px] font-medium transition-colors",
+                    options.coverTheme === "module"
+                      ? "border-primary bg-primary/15 text-foreground"
+                      : "border-border text-muted-foreground hover:border-primary/40",
+                  )}
+                >
+                  <span
+                    aria-hidden
+                    className="size-3.5 rounded-full"
+                    style={{ background: module.color || "#3b5bdb" }}
+                  />
+                  Module color
+                </button>
+                {COLOR_THEMES.map((theme) => (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    title={`${theme.label} — ${theme.blurb}`}
+                    aria-label={theme.label}
+                    aria-pressed={options.coverTheme === theme.id}
+                    onClick={() => patch({ coverTheme: theme.id })}
+                    className={cn(
+                      "press size-7 rounded-full border-2 transition-transform",
+                      options.coverTheme === theme.id
+                        ? "scale-110 border-foreground"
+                        : "border-transparent hover:scale-105",
+                    )}
+                    style={{
+                      background: `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.accent})`,
+                    }}
+                  />
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
+                {options.coverTheme === "module"
+                  ? "The cover follows the module's own accent color."
+                  : `${getColorTheme(options.coverTheme)?.label ?? "Palette"} — the title sheet takes this Knowly palette.`}
+              </p>
+            </OptionGroup>
+
             <OptionGroup icon={<Columns2 className="size-4 text-primary" />} label="Page furniture">
               <div className="flex flex-wrap gap-1.5">
                 {FOOTER_OPTIONS.map((footer) => (
@@ -279,12 +330,21 @@ function ModulePrintPage() {
               </div>
             </OptionGroup>
 
+            <OptionGroup icon={<Edit3 className="size-4 text-primary" />} label="Edit">
+              <ToggleRow
+                label="Live edit"
+                description="Edit right on the preview. Press Enter to start a new page or Shift+Enter for a line break. Changes are kept in this browser for this module."
+                checked={options.editMode === true}
+                onChange={(value) => patch({ editMode: value })}
+              />
+            </OptionGroup>
+
             <div className="flex items-center justify-between rounded-xl border border-border bg-surface/50 p-3 text-[11px] leading-5 text-muted-foreground">
               <span>
                 {PAPER_SIZE_OPTIONS.find((s) => s.id === options.paper)?.label} ·{" "}
                 {Math.round((dims.width / 96) * 10) / 10}" ×{" "}
-                {Math.round((dims.height / 96) * 10) / 10}" — starts straight at the title, no cover
-                page.
+                {Math.round((dims.height / 96) * 10) / 10}" — full-page title sheet, then the lesson
+                flow.
               </span>
               <Button
                 variant="ghost"

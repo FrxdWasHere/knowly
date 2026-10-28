@@ -202,10 +202,12 @@ function CourseLessonPage() {
                 params={{ courseId: course.id }}
                 className="transition-colors hover:text-foreground"
               >
-                {course.title}
+                <MathText text={course.title} />
               </Link>
               <ChevronRight className="size-3.5 shrink-0" />
-              <span className="truncate">{module.title}</span>
+              <span className="truncate">
+                <MathText text={module.title} />
+              </span>
             </div>
             <div className="mt-3 flex items-start gap-3">
               <span
@@ -216,7 +218,7 @@ function CourseLessonPage() {
               </span>
               <div className="min-w-0">
                 <h1 className="font-display text-2xl font-semibold leading-tight sm:text-3xl">
-                  {lesson.title}
+                  <MathText text={lesson.title} />
                 </h1>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <Badge variant="outline">
@@ -294,7 +296,7 @@ function CourseLessonPage() {
               </div>
               {lesson.summary ? (
                 <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
-                  {lesson.summary}
+                  <MathText text={lesson.summary} />
                 </p>
               ) : (
                 <p className="mt-3 text-sm text-muted-foreground">
@@ -366,7 +368,9 @@ function CourseLessonPage() {
                       params={{ courseId: course.id, lessonId: previous.lesson.id }}
                     >
                       <ArrowLeft className="size-4" />
-                      <span className="max-w-[16rem] truncate">{previous.lesson.title}</span>
+                      <span className="max-w-[16rem] truncate">
+                        <MathText text={previous.lesson.title} />
+                      </span>
                     </Link>
                   </Button>
                 ) : (
@@ -387,11 +391,13 @@ function CourseLessonPage() {
                   <CheckCircle2 className="size-4 text-primary" />
                   <h2 className="font-display text-base font-semibold">In this lesson</h2>
                 </div>
-                <ul className="mt-3 space-y-2.5 text-sm leading-6 text-muted-foreground">
+                <ul className="mt-3 space-y-2.5 pl-1.5 text-sm leading-6 text-muted-foreground">
                   {lesson.objectives.map((objective) => (
                     <li key={objective} className="flex gap-2">
                       <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />
-                      {objective}
+                      <span className="min-w-0">
+                        <MathText text={objective} />
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -468,7 +474,7 @@ function CourseLessonPage() {
                 <div className="flex justify-between gap-3">
                   <span className="text-muted-foreground">Module</span>
                   <span className="max-w-[11rem] truncate text-right font-medium">
-                    {module.title}
+                    <MathText text={module.title} />
                   </span>
                 </div>
               </div>
@@ -494,7 +500,7 @@ function LessonBlock({ block }: { block: CourseBlock }) {
         )}
         {block.caption && (
           <figcaption className="mt-2 text-center text-xs text-muted-foreground">
-            {block.caption}
+            <MathText text={block.caption} />
           </figcaption>
         )}
       </figure>
@@ -517,7 +523,7 @@ function LessonBlock({ block }: { block: CourseBlock }) {
       >
         <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
           <Icon className="size-4 text-primary" />
-          {block.title || (block.type === "example" ? "Example" : "Note")}
+          <MathText text={block.title || (block.type === "example" ? "Example" : "Note")} />
         </div>
         <Markdown markdown={block.markdown ?? ""} />
       </div>
@@ -529,7 +535,7 @@ function LessonBlock({ block }: { block: CourseBlock }) {
 
 function Markdown({ markdown }: { markdown: string }) {
   return (
-    <div className="text-sm leading-7 text-foreground/90 [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-4 [&_blockquote]:text-muted-foreground [&_code]:rounded [&_code]:bg-surface2 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-xs [&_h1]:mb-3 [&_h1]:mt-6 [&_h1]:font-display [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:mb-2 [&_h2]:mt-6 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:mb-2 [&_h3]:mt-5 [&_h3]:font-semibold [&_li]:my-1 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-3 [&_pre]:my-3 [&_pre]:overflow-auto [&_pre]:rounded-xl [&_pre]:bg-surface2 [&_pre]:p-4 [&_pre]:text-xs [&_strong]:font-semibold [&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-border [&_td]:p-2 [&_th]:border [&_th]:border-border [&_th]:bg-surface2 [&_th]:p-2 [&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6">
+    <div className="text-sm leading-7 text-foreground/90 [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-5 [&_blockquote]:text-muted-foreground [&_code]:rounded [&_code]:bg-surface2 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-xs [&_h1]:mb-3 [&_h1]:mt-6 [&_h1]:font-display [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:mb-2 [&_h2]:mt-6 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:mb-2 [&_h3]:mt-5 [&_h3]:font-semibold [&_li]:my-1 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-8 [&_p]:my-3 [&_pre]:my-3 [&_pre]:overflow-auto [&_pre]:rounded-xl [&_pre]:bg-surface2 [&_pre]:p-4 [&_pre]:text-xs [&_strong]:font-semibold [&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-border [&_td]:p-2 [&_th]:border [&_th]:border-border [&_th]:bg-surface2 [&_th]:p-2 [&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-8">
       <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
         {markdown}
       </ReactMarkdown>

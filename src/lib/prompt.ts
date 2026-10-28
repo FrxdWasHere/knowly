@@ -18,25 +18,44 @@ export interface PromptOptions {
   needsEquations?: boolean;
   /** questions may reference graphs and diagrams */
   needsGraphs?: boolean;
+  /** "whatever you see fit": let the AI choose the number of questions */
+  countAuto?: boolean;
+  /** "whatever you see fit": let the AI choose which question types fit */
+  typesAuto?: boolean;
+  /** "whatever you see fit": let the AI choose the difficulty spread */
+  distributionAuto?: boolean;
 }
 
+/**
+ * The notation rules shared by the deck, append and course prompts.
+ *
+ * The app typesets LaTeX on every surface — study and quiz screens, the module
+ * editor and viewer, the answer key, and the printed papers — so every prompt
+ * is allowed to reach for LaTeX whenever it needs an equation. The STEM flags
+ * only sharpen that instruction rather than switching it on.
+ */
 export function mathPromptSection(o: {
   isSTEM?: boolean;
   needsEquations?: boolean;
   needsGraphs?: boolean;
 }) {
-  const lines: string[] = [];
+  const lines: string[] = [
+    "- The app typesets LaTeX everywhere — on screen and on paper, in the question, options, answer key, explanations, hints, concept labels, tags and module content — so use LaTeX any time you need an equation, symbol, unit or formula.",
+    "- Write inline math in $…$ (e.g. $x^2 + y^2 = r^2$, $\\frac{a}{b}$, $\\int_0^\\infty e^{-x}\\,dx$) and put larger equations on their own line in $$…$$.",
+    "- Never fake an equation with plain characters and never put math inside a code block; keep ordinary words outside the math delimiters.",
+    "- Escape backslashes so the JSON stays valid (e.g. \\\\frac in the raw file).",
+  ];
+
   if (o.needsEquations) {
+    lines.push("- Write ALL mathematical notation in LaTeX, not just the tricky parts.");
+  }
+
+  if (o.isSTEM) {
     lines.push(
-      "- Write ALL mathematical notation in LaTeX: inline math in $…$ (e.g. $x^2 + y^2 = r^2$, $\\frac{a}{b}$, $\\int_0^\\infty e^{-x}\\,dx$) and larger equations in $$…$$.",
-      "- Keep ordinary words outside the math delimiters. Never use code blocks for equations.",
-      "- Escape backslashes for valid JSON (e.g. \\\\frac in the raw file).",
-    );
-  } else if (o.isSTEM) {
-    lines.push(
-      "- This is a math/science subject: use clean plain notation (×, ÷, √, ², π, θ, ≤, ∑) that reads well as plain text.",
+      "- This is a math/science subject: prefer real LaTeX over ASCII substitutes like ^, /, sqrt or <=.",
     );
   }
+
   if (o.needsGraphs) {
     lines.push(
       "- For graph or diagram questions, describe the graph clearly in words (axes, shape, key points, labels) — do NOT reference or invent images. The app can only show text and LaTeX.",
@@ -45,9 +64,31 @@ export function mathPromptSection(o: {
   return lines.length ? `\nMATH & SCIENCE NOTATION\n${lines.join("\n")}\n` : "";
 }
 
-export function buildPrompt(o: PromptOptions) {
-  const total = o.distribution.easy + o.distribution.medium + o.distribution.hard || 1;
+const AUTONOMY = "choose whatever you see fit";
+
+/** The output-rule line for the question count, honouring "whatever you see fit". */
+function countLine(auto: boolean | undefined, count: number, what: string) {
+  if (auto) return `- Decide how many ${what} to write — ${AUTONOMY} for the material; do not pad.`;
+  return `- Generate exactly ${count} ${what}.`;
+}
+
+/** The allowed-types line, honouring "whatever you see fit". */
+function typesLine(auto: boolean | undefined, typeList: string, label: string) {
+  if (auto) {
+    return `- ${label}: ${AUTONOMY} — pick the mix that tests this material best.`;
+  }
+  return `- ${label}: ${typeList || "multiple-choice"}`;
+}
+
+/** The difficulty-mix line, honouring "whatever you see fit". */
+function distributionLine(auto: boolean | undefined, dist: Record<Difficulty, number>) {
+  if (auto) return `- difficulty mix: ${AUTONOMY} across easy, medium and hard.`;
+  const total = dist.easy + dist.medium + dist.hard || 1;
   const pct = (n: number) => Math.round((n / total) * 100);
+  return `- difficulty mix: ~${pct(dist.easy)}% easy, ~${pct(dist.medium)}% medium, ~${pct(dist.hard)}% hard`;
+}
+
+export function buildPrompt(o: PromptOptions) {
   const typeList = o.types.join(", ");
 
   return `You are an expert exam writer. Convert the study material below into a Knowly deck.
@@ -55,7 +96,7 @@ export function buildPrompt(o: PromptOptions) {
 OUTPUT RULES
 - Respond with ONE valid JSON object and nothing else. No markdown fences, no commentary.
 - Every string must be valid JSON (escape quotes and newlines).
-- Generate exactly ${o.count} questions.
+${countLine(o.countAuto, o.count, "questions")}
 
 SCHEMA
 {
@@ -88,8 +129,8 @@ INTERACTIVE TYPE RULES
 DECK SETTINGS
 - title: "${o.title || "Untitled Deck"}"
 - subject: "${o.subject || "General"}"
-- allowed question types: ${typeList || "multiple-choice"}
-- difficulty mix: ~${pct(o.distribution.easy)}% easy, ~${pct(o.distribution.medium)}% medium, ~${pct(o.distribution.hard)}% hard
+${typesLine(o.typesAuto, typeList, "allowed question types")}
+${distributionLine(o.distributionAuto, o.distribution)}
 ${o.audience ? `- learner level: ${o.audience} — pitch wording and depth accordingly` : ""}
 ${o.purpose ? `- study goal: ${o.purpose} — bias the questions toward this goal` : ""}
 ${mathPromptSection(o)}
@@ -127,11 +168,15 @@ export interface AppendPromptOptions {
   isSTEM?: boolean;
   needsEquations?: boolean;
   needsGraphs?: boolean;
+  /** "whatever you see fit": let the AI choose the number of questions */
+  countAuto?: boolean;
+  /** "whatever you see fit": let the AI choose which question types fit */
+  typesAuto?: boolean;
+  /** "whatever you see fit": let the AI choose the difficulty spread */
+  distributionAuto?: boolean;
 }
 
 export function buildAppendPrompt(o: AppendPromptOptions) {
-  const total = o.distribution.easy + o.distribution.medium + o.distribution.hard || 1;
-  const pct = (n: number) => Math.round((n / total) * 100);
   const typeList = o.types.join(", ");
   const sample = o.existingQuestions.slice(0, 60);
 
@@ -140,7 +185,7 @@ export function buildAppendPrompt(o: AppendPromptOptions) {
 OUTPUT RULES
 - Respond with ONE valid JSON object and nothing else. No markdown fences, no commentary.
 - Do NOT return deck metadata (no color, tags or description) — only the questions payload below.
-- Generate exactly ${o.count} NEW questions that do not duplicate the existing ones.
+${countLine(o.countAuto, o.count, "NEW questions that do not duplicate the existing ones")}
 
 SCHEMA
 {
@@ -169,8 +214,8 @@ INTERACTIVE TYPE RULES
 
 DECK CONTEXT
 - deck: "${o.deckTitle || "Existing Deck"}" (${o.subject || "General"})
-- allowed question types: ${typeList || "multiple-choice"}
-- difficulty mix: ~${pct(o.distribution.easy)}% easy, ~${pct(o.distribution.medium)}% medium, ~${pct(o.distribution.hard)}% hard
+${typesLine(o.typesAuto, typeList, "allowed question types")}
+${distributionLine(o.distributionAuto, o.distribution)}
 ${o.existingConcepts.length ? `- concepts already covered (reuse these exact labels where relevant): ${o.existingConcepts.join(", ")}` : ""}
 ${o.audience ? `- learner level: ${o.audience} — pitch wording and depth accordingly` : ""}
 ${o.purpose ? `- study goal: ${o.purpose} — bias the questions toward this goal` : ""}

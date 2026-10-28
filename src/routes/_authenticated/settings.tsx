@@ -32,6 +32,8 @@ import {
   X,
   Zap,
   ChevronRight,
+  ArrowUp,
+  ArrowDown,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -55,6 +57,7 @@ import { useWallpaperUrl } from "@/hooks/use-wallpaper-url";
 import { useKnowly } from "@/store/knowly";
 import { cn } from "@/lib/utils";
 import type { Settings } from "@/lib/types";
+import { DEFAULT_SIDEBAR_GROUPS } from "@/lib/sidebar-preferences";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -560,6 +563,82 @@ function SettingsPage() {
               </div>
             </div>
           )}
+        </Group>
+
+        <Group
+          title="Sidebar navigation"
+          footer="Choose which sections appear, rename them, and set their order. Hidden sections remain reachable again from here."
+        >
+          {s.sidebarGroups?.map((group, index, groups) => (
+            <div key={group.id} className="flex items-center gap-2 px-4 py-2.5">
+              <input
+                aria-label={`Rename ${group.label} section`}
+                value={group.label}
+                maxLength={32}
+                onChange={(event) =>
+                  set(
+                    "sidebarGroups",
+                    groups.map((item) =>
+                      item.id === group.id ? { ...item, label: event.target.value } : item,
+                    ),
+                  )
+                }
+                className="min-w-0 flex-1 rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+              />
+              <Switch
+                checked={group.visible}
+                onCheckedChange={(visible) =>
+                  set(
+                    "sidebarGroups",
+                    groups.map((item) => (item.id === group.id ? { ...item, visible } : item)),
+                  )
+                }
+                aria-label={`Show ${group.label} section`}
+              />
+              <button
+                type="button"
+                aria-label={`Move ${group.label} section up`}
+                disabled={index === 0}
+                onClick={() => {
+                  if (index === 0) return;
+                  const next = [...groups];
+                  [next[index - 1], next[index]] = [next[index]!, next[index - 1]!];
+                  set("sidebarGroups", next);
+                }}
+                className="grid size-8 place-items-center rounded-md border border-border text-muted-foreground disabled:opacity-30"
+              >
+                <ArrowUp className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                aria-label={`Move ${group.label} section down`}
+                disabled={index === groups.length - 1}
+                onClick={() => {
+                  if (index === groups.length - 1) return;
+                  const next = [...groups];
+                  [next[index + 1], next[index]] = [next[index]!, next[index + 1]!];
+                  set("sidebarGroups", next);
+                }}
+                className="grid size-8 place-items-center rounded-md border border-border text-muted-foreground disabled:opacity-30"
+              >
+                <ArrowDown className="size-3.5" />
+              </button>
+            </div>
+          ))}
+          <div className="px-4 py-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                set(
+                  "sidebarGroups",
+                  DEFAULT_SIDEBAR_GROUPS.map((group) => ({ ...group })),
+                )
+              }
+            >
+              <RotateCcw className="size-3.5" /> Reset sidebar
+            </Button>
+          </div>
         </Group>
 
         <Group title="Appearance" footer="Pick a preset palette or build your own from hex codes.">

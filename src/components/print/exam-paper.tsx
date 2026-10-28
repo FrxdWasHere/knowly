@@ -1,6 +1,7 @@
 import {
   EXAM_FONTS,
   LETTERS,
+  EXAM_THEMES,
   printableAnswer,
   type ExamOptions,
   type QuestionEdit,
@@ -45,7 +46,7 @@ function Editable({
   onCommit?: (v: string) => void;
   className?: string;
   placeholder?: string;
-  /** typeset LaTeX ($…$) when not editing */
+  /** typeset LaTeX ($…$) and $$…$$ when not editing */
   math?: boolean;
 }) {
   if (!enabled || !onCommit)
@@ -217,6 +218,14 @@ export function ExamPaper({
         ? "text-[15px]"
         : "text-[13px]";
   const centered = options.headerAlign === "center";
+  const theme = EXAM_THEMES.find((item) => item.id === options.theme) ?? EXAM_THEMES[0]!;
+  const themed = options.theme !== "classic";
+  const themeStyle = {
+    fontFamily: font.stack,
+    "--exam-accent": theme.accent,
+    "--exam-soft": theme.soft,
+    "--exam-border": theme.border,
+  } as React.CSSProperties;
   const commit = (key: keyof ExamOptions) =>
     onChange ? (v: string) => onChange({ [key]: v } as Partial<ExamOptions>) : undefined;
 
@@ -224,11 +233,31 @@ export function ExamPaper({
     <div
       className={cn(
         "exam-paper bg-card p-8 leading-relaxed text-card-foreground md:p-10 print:bg-white print:text-black",
+        `exam-theme-${options.theme ?? "classic"}`,
+        themed && "exam-paper-themed",
         size,
       )}
-      style={{ fontFamily: font.stack }}
+      style={themeStyle}
     >
-      <div className="border-b-2 border-foreground pb-4 print:border-black">
+      {options.headerText?.trim() && (
+        <div
+          className={cn(
+            "exam-masthead mb-5 flex items-center justify-between gap-3 border-b-2 pb-2 text-[0.68em] font-bold uppercase tracking-[0.2em]",
+            themed
+              ? "border-[var(--exam-accent)] text-[var(--exam-accent)]"
+              : "border-slate-300 text-slate-500",
+          )}
+        >
+          <span>{options.headerText}</span>
+          <span className="text-right">{options.subject || theme.label}</span>
+        </div>
+      )}
+      <div
+        className={cn(
+          "exam-heading border-b-2 pb-4",
+          themed ? "border-[var(--exam-accent)]" : "border-slate-300",
+        )}
+      >
         <div
           className={cn(
             "flex flex-wrap items-end justify-between gap-3",
@@ -258,7 +287,14 @@ export function ExamPaper({
           <div className={cn("text-[0.85em]", centered ? "text-center" : "text-right")}>
             {options.date && <p>Date: {options.date}</p>}
             {options.showPoints && (
-              <p className="font-semibold">Total: ____ / {totalMarks} marks</p>
+              <p
+                className={cn(
+                  "font-semibold",
+                  themed ? "text-[var(--exam-accent)]" : "text-slate-700",
+                )}
+              >
+                Total: ____ / {totalMarks} marks
+              </p>
             )}
             <p>{questions.length} questions</p>
           </div>
@@ -290,7 +326,14 @@ export function ExamPaper({
       </div>
 
       {options.showInstructions && (options.instructions.trim() || editing) && (
-        <p className="mt-4 border-l-2 border-foreground/70 pl-3 text-[0.85em] italic print:border-black/70">
+        <p
+          className={cn(
+            "exam-instructions mt-4 border-l-2 pl-3 text-[0.85em] italic",
+            themed
+              ? "border-[var(--exam-accent)] bg-[var(--exam-soft)] py-2 pr-3"
+              : "border-foreground/70 print:border-black/70",
+          )}
+        >
           <Editable
             value={options.instructions}
             enabled={editing}
@@ -308,11 +351,25 @@ export function ExamPaper({
         )}
       >
         {questions.map((q, i) => (
-          <li key={q.id} className="exam-question group relative break-inside-avoid">
+          <li
+            key={q.id}
+            className={cn(
+              "exam-question group relative break-inside-avoid",
+              themed &&
+                "rounded-lg border border-[var(--exam-border)] bg-[var(--exam-soft)]/40 p-3",
+            )}
+          >
             <div className="flex gap-2">
-              <span className="shrink-0 font-bold">{numberLabel(i, options)}</span>
+              <span
+                className={cn(
+                  "exam-question-number shrink-0 font-bold",
+                  themed && "text-[var(--exam-accent)]",
+                )}
+              >
+                {numberLabel(i, options)}
+              </span>
               <div className="min-w-0 flex-1">
-                <p className="font-medium">
+                <p className="exam-question-prompt font-medium">
                   <Editable
                     value={q.question}
                     enabled={editing}
@@ -355,8 +412,20 @@ export function ExamPaper({
         ))}
       </ol>
 
+      {options.footerText?.trim() && (
+        <footer className="exam-footer mt-10 flex items-center justify-between gap-3 border-t border-slate-200 pt-3 text-[0.72em] text-slate-500">
+          <span>{options.footerText}</span>
+          <span>{options.title || "Practice Exam"}</span>
+        </footer>
+      )}
+
       {options.includeAnswerKey && (
-        <section className="exam-answer-key mt-10 border-t-2 border-foreground pt-5 print:border-black">
+        <section
+          className={cn(
+            "exam-answer-key mt-10 border-t-2 pt-5",
+            themed ? "border-[var(--exam-accent)]" : "border-foreground print:border-black",
+          )}
+        >
           <h3 className="text-[1.2em] font-bold">
             Answer key — {options.title || "Practice Exam"}
           </h3>

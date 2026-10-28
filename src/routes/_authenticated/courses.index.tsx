@@ -15,6 +15,7 @@ import {
 import { AppPage } from "@/components/app-page";
 import { FeatureTour, useFeatureTour, type TourStep } from "@/components/feature-tour";
 import { PageHeader } from "@/components/app-shell";
+import { MathText } from "@/components/math/math-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -183,11 +184,13 @@ function CourseCard({ course }: { course: Course }) {
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h2 className="truncate font-display text-lg font-semibold">{course.title}</h2>
+              <h2 className="truncate font-display text-lg font-semibold">
+                <MathText text={course.title} />
+              </h2>
               <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
             </div>
             <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              {course.subject}
+              <MathText text={course.subject} />
               {course.level ? ` · ${course.level}` : ""}
             </p>
           </div>
@@ -195,7 +198,7 @@ function CourseCard({ course }: { course: Course }) {
 
         {course.description && (
           <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">
-            {course.description}
+            <MathText text={course.description} />
           </p>
         )}
 
@@ -225,11 +228,15 @@ function CourseCard({ course }: { course: Course }) {
 
         <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3 text-xs">
           <span className="truncate text-muted-foreground">
-            {next
-              ? `Next: ${next.lesson.title}`
-              : stats.lessons
-                ? "All lessons complete"
-                : "No lessons yet"}
+            {next ? (
+              <>
+                Next: <MathText text={next.lesson.title} />
+              </>
+            ) : stats.lessons ? (
+              "All lessons complete"
+            ) : (
+              "No lessons yet"
+            )}
           </span>
           {stats.due > 0 && (
             <Badge className="shrink-0 bg-primary/15 text-primary">{stats.due} due</Badge>

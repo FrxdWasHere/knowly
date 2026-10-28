@@ -57,6 +57,7 @@ import { levelFromXp } from "@/lib/gamification";
 import { collectDue } from "@/lib/srs";
 import { courseStats, lessonProgress, nextLesson } from "@/lib/courses";
 import type { Course } from "@/lib/types";
+import { normalizeSidebarGroups } from "@/lib/sidebar-preferences";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useWallpaperUrl } from "@/hooks/use-wallpaper-url";
@@ -172,13 +173,6 @@ const NAV_GROUPS: NavGroup[] = [
         hint: "Lessons, checkpoints and final exams",
       },
       {
-        to: "/courses/forge",
-        label: "Course Forge",
-        icon: Wand2,
-        exact: false,
-        hint: "Design a course — write it or forge it with AI outside",
-      },
-      {
         to: "/courses/import",
         label: "Import a course",
         icon: FileJson,
@@ -205,13 +199,6 @@ const NAV_GROUPS: NavGroup[] = [
         icon: BookOpen,
         exact: true,
         hint: "Your library of standalone lessons",
-      },
-      {
-        to: "/modules/prompter",
-        label: "Module Prompter",
-        icon: Wand2,
-        exact: false,
-        hint: "Get instructions to forge a module with your AI",
       },
       {
         to: "/modules/forge",
@@ -299,10 +286,10 @@ const NAV_GROUPS: NavGroup[] = [
       },
       {
         to: "/generate",
-        label: "Prompt Forge",
+        label: "Prompt Studio",
         icon: Wand2,
         exact: false,
-        hint: "Get instructions to paste into your AI, then bring the result back",
+        hint: "Create deck, course, or module prompts in one studio",
       },
       {
         to: "/format",
@@ -406,7 +393,21 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-const NAV: NavItem[] = NAV_GROUPS.flatMap((group) => group.items);
+function resolveNavGroups(
+  settings: { id: string; label: string; visible: boolean }[] | undefined,
+): (NavGroup & { visible: boolean })[] {
+  const saved = normalizeSidebarGroups(settings);
+  const byId = new Map(saved.map((item) => [item.id, item]));
+  const orderedIds = saved.map((item) => item.id);
+  return orderedIds.flatMap((id) => {
+    const group = NAV_GROUPS.find((item) => item.label === id);
+    if (!group) return [];
+    const custom = byId.get(id);
+    return [
+      { ...group, label: custom?.label.trim() || group.label, visible: custom?.visible ?? true },
+    ];
+  });
+}
 
 const isNavItemActive = (item: NavItem, pathname: string) =>
   item.exact ? pathname === item.to : pathname.startsWith(item.to);
@@ -458,6 +459,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const search = useRouterState({ select: (r) => r.location.searchStr });
   const collapsed = state.settings.sidebarCollapsed;
+  const navGroups = resolveNavGroups(state.settings.sidebarGroups);
+  const visibleNavGroups = navGroups.filter((group) => group.visible);
+  const navItems = visibleNavGroups.flatMap((group) => group.items);
   const courseMatch = pathname.match(/^\/courses\/([^/]+)/);
   const activeCourse = courseMatch
     ? state.courses.find((course) => course.id === courseMatch[1])
@@ -541,7 +545,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
             <nav className="relative flex-1 overflow-y-auto px-3 pb-2">
               {collapsed ? (
-                NAV_GROUPS.map((group) => (
+                visibleNavGroups.map((group) => (
                   <div key={group.label} className="mt-4 first:mt-1">
                     <div aria-hidden className="mx-3 mb-2 border-t border-sidebar-border" />
                     {group.items.map((item) => {
@@ -563,7 +567,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 ))
               ) : (
                 <>
-                  {NAV_GROUPS.map((group) => {
+                  {visibleNavGroups.map((group) => {
                     const closed = closedGroups.includes(group.label);
                     const hasActive = group.items.some((item) => isNavItemActive(item, pathname));
                     const panelId = `sidebar-section-${group.label.replace(/[^a-z]/gi, "-").toLowerCase()}`;
@@ -711,7 +715,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             aria-label="Main navigation"
             className="flex gap-1.5 overflow-x-auto border-b border-border bg-surface/60 px-3 py-2 md:hidden"
           >
-            {NAV_GROUPS.map((group, groupIndex) => (
+            {visibleNavGroups.map((group, groupIndex) => (
               <div key={group.label} className="flex items-center gap-1.5">
                 {groupIndex > 0 && (
                   <span aria-hidden className="h-5 w-px shrink-0 bg-sidebar-border" />
@@ -750,7 +754,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <CommandPalette
         open={palette.open}
         onOpenChange={palette.setOpen}
-        targets={NAV.map((item) => ({ to: item.to, label: item.label }))}
+        targets={navItems.map((item) => ({ to: item.to, label: item.label }))}
       />
     </div>
   );

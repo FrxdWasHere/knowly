@@ -508,6 +508,19 @@ export function hitElement(element: NoteElement, x: number, y: number, tolerance
     return false;
   }
   const bounds = elementBounds(element);
+  if (element.type === "shape" && (element.shape === "line" || element.shape === "arrow")) {
+    return (
+      distanceToSegment(
+        x,
+        y,
+        element.x,
+        element.y,
+        element.x + element.width,
+        element.y + element.height,
+      ) <=
+      tolerance + element.strokeWidth / 2
+    );
+  }
   return (
     x >= bounds.x - tolerance &&
     x <= bounds.x + bounds.width + tolerance &&
@@ -547,6 +560,43 @@ export function moveElement(element: NoteElement, dx: number, dy: number): NoteE
     return { ...element, points };
   }
   return { ...element, x: element.x + dx, y: element.y + dy };
+}
+
+/** Scale any selected object to a new rectangle, including every point in ink strokes. */
+export function resizeElementToBounds(
+  element: NoteElement,
+  source: Bounds,
+  target: Bounds,
+): NoteElement {
+  const scaleX = target.width / Math.max(1, source.width);
+  const scaleY = target.height / Math.max(1, source.height);
+  if (element.type === "stroke") {
+    const points = [...element.points];
+    for (let i = 0; i < points.length; i += 3) {
+      points[i] = target.x + (points[i]! - source.x) * scaleX;
+      points[i + 1] = target.y + (points[i + 1]! - source.y) * scaleY;
+    }
+    return { ...element, points };
+  }
+  if (element.type === "shape" && (element.shape === "line" || element.shape === "arrow")) {
+    const mapX = (value: number) => target.x + (value - source.x) * scaleX;
+    const mapY = (value: number) => target.y + (value - source.y) * scaleY;
+    return {
+      ...element,
+      x: mapX(element.x),
+      y: mapY(element.y),
+      width: mapX(element.x + element.width) - mapX(element.x),
+      height: mapY(element.y + element.height) - mapY(element.y),
+    };
+  }
+  const bounds = elementBounds(element);
+  return {
+    ...element,
+    x: target.x + (bounds.x - source.x) * scaleX,
+    y: target.y + (bounds.y - source.y) * scaleY,
+    width: bounds.width * scaleX,
+    height: bounds.height * scaleY,
+  };
 }
 
 export function cloneElement(element: NoteElement): NoteElement {

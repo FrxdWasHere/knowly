@@ -5,6 +5,7 @@ import {
   hitElement,
   moveElement,
   pointInPolygon,
+  resizeElementToBounds,
 } from "./notes/render";
 import { collectNotebookText } from "./notes/study";
 import {
@@ -107,8 +108,27 @@ describe("note geometry", () => {
       strokeWidth: 2,
     };
     expect(elementBounds(line)).toEqual({ x: 50, y: 80, width: 70, height: 60 });
-    expect(hitElement(line, 60, 90, 0)).toBe(true);
+    expect(hitElement(line, 60, 90, 2)).toBe(true);
     expect(hitElement(line, 130, 150, 0)).toBe(false);
+    expect(hitElement(line, 85, 110, 0)).toBe(true);
+    expect(hitElement(line, 50, 150, 0)).toBe(false);
+  });
+
+  it("resizes boxes and scales every point in a stroke", () => {
+    const target = { x: 20, y: 30, width: 60, height: 80 };
+    expect(resizeElementToBounds(stroke, elementBounds(stroke), target)).toMatchObject({
+      points: [20, 30, 0.5, 80, 110, 0.5],
+    });
+    const box: NoteElement = {
+      id: "box-1",
+      type: "image",
+      x: 10,
+      y: 20,
+      width: 100,
+      height: 50,
+      src: "data:image/png;base64,",
+    };
+    expect(resizeElementToBounds(box, elementBounds(box), target)).toMatchObject(target);
   });
 
   it("clones an element with a new id and independent stroke points", () => {

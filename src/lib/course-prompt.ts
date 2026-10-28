@@ -15,11 +15,19 @@ export interface CoursePromptOptions {
   audience?: string;
   purpose?: string;
   extra: string;
+  /** how the writing should sound — a paragraph or two in the learner's own words */
+  tone?: string;
   includeAssessments: boolean;
   /** math & science subject flags */
   isSTEM?: boolean;
   needsEquations?: boolean;
   needsGraphs?: boolean;
+  /** "whatever you see fit": let the AI choose the course shape */
+  sizeAuto?: boolean;
+  /** "whatever you see fit": let the AI choose which question types fit */
+  typesAuto?: boolean;
+  /** "whatever you see fit": let the AI choose the difficulty spread */
+  distributionAuto?: boolean;
 }
 
 export function estimateCourseQuestions(o: CoursePromptOptions): number {
@@ -49,6 +57,15 @@ export function buildCoursePrompt(o: CoursePromptOptions): string {
   const material = o.material.trim()
     ? o.material.trim()
     : `(none supplied — build from the topic using accurate, well-established knowledge)`;
+  /* the optional brief sections, each on its own block with one blank line between */
+  const briefExtras = [
+    o.extra.trim() ? `- Extra instructions: ${o.extra.trim()}` : "",
+    o.tone?.trim()
+      ? `TONE & VOICE\nWrite everything — lesson prose, callouts, examples, hints, explanations and questions — in this voice:\n"""\n${o.tone.trim()}\n"""\nThe voice shapes how it reads, never what is true: keep facts exact and keep the structure and JSON rules above intact.`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   return `You are an expert curriculum designer and teacher. Build a complete Knowly course.
 
@@ -64,14 +81,24 @@ COURSE BRIEF
 - Level: ${o.level.trim() || "general learner"}
 - Learner: ${o.audience?.trim() || "a motivated student"}
 - Why they are studying: ${o.purpose?.trim() || "to understand and remember the material"}
-- Modules: exactly ${o.moduleCount}
+${
+  o.sizeAuto
+    ? `- Course size: choose whatever you see fit — as many modules, lessons and checkpoint questions as the material warrants, without padding`
+    : `- Modules: exactly ${o.moduleCount}
 - Lessons per module: exactly ${o.lessonsPerModule}
-- Checkpoint questions per lesson: exactly ${o.questionsPerLesson}
-- Question mix: ${o.types.join(", ") || "multiple-choice, true-false, short-answer"}
-- Difficulty: easy ${pct(o.distribution.easy)}%, medium ${pct(o.distribution.medium)}%, hard ${pct(o.distribution.hard)}%
-${o.extra.trim() ? `- Extra instructions: ${o.extra.trim()}` : ""}
-
-PEDAGOGY
+- Checkpoint questions per lesson: exactly ${o.questionsPerLesson}`
+}
+${
+  o.typesAuto
+    ? `- Question mix: choose whatever you see fit — pick the types that test this material best`
+    : `- Question mix: ${o.types.join(", ") || "multiple-choice, true-false, short-answer"}`
+}
+${
+  o.distributionAuto
+    ? `- Difficulty: choose whatever you see fit — a sensible spread across easy, medium and hard`
+    : `- Difficulty: easy ${pct(o.distribution.easy)}%, medium ${pct(o.distribution.medium)}%, hard ${pct(o.distribution.hard)}%`
+}
+${briefExtras ? `\n${briefExtras}\n` : ""}PEDAGOGY
 - Build a learning arc: foundations → guided practice → application → synthesis.
 - Every lesson must teach one coherent idea and be usable in a 10–25 minute sitting.
 - Objectives must be measurable verbs (identify, explain, compare, solve, evaluate).
@@ -80,6 +107,11 @@ PEDAGOGY
 - When reference material is supplied, it is the source of truth. Do not invent facts that contradict it.
 - If a fact is uncertain, phrase the question conservatively or omit it.
 ${mathPromptSection(o).trim()}
+
+LAYOUT & EQUATIONS
+- Write module summaries, lesson content, callouts, examples and objectives in the same Markdown the editor expects.
+- The module viewer and its printed version both typeset LaTeX, so every equation in a summary, lesson, callout, example, objective, hint, explanation or concept label should be real LaTeX: inline $…$ or display $$…$$.
+- Use LaTeX for units and scientific notation ($3.00 \\times 10^8\\,\\text{m/s}$, $6.626 \\times 10^{-34}\\, \\text{J s}$) and for chemical formulas when you need them ($H_2O$, $CO_2$, $C_6H_{12}O_6$).
 
 OUTPUT RULES
 - Respond with ONE valid JSON object and nothing else. No markdown fences, no commentary.
@@ -166,6 +198,7 @@ ${lessonObjectives.length ? lessonObjectives.map((item) => `- ${item}`).join("\n
 
 LEARNER: ${o.audience?.trim() || "a motivated student"}
 LEVEL: ${o.level.trim() || "general"}
+${o.tone?.trim() ? `TONE & VOICE\n"""\n${o.tone.trim()}\n"""` : ""}
 
 REFERENCE MATERIAL
 ${o.material.trim() || "(use accurate established knowledge)"}
@@ -186,5 +219,7 @@ Write the lesson as ONE valid JSON object and nothing else:
 }
 
 Write ${Math.max(1, o.questionsPerLesson)} checkpoint questions with explanations and concept labels.
-Use markdown in content fields. No markdown fences around the JSON.`;
+Use markdown in content fields. No markdown fences around the JSON.
+Write any equation in the lesson body, hints, explanations or concept labels as real LaTeX — inline $…$ or display $$…$$ — including units and chemical formulas.
+Escape backslashes so the JSON stays valid (e.g. \\\\times in the raw file).`;
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { MathText } from "@/components/math/math-text";
 import { ModuleMarkdownText } from "@/components/module-markdown";
 import { LETTERS, printableAnswer } from "@/lib/exam-print";
@@ -20,6 +20,7 @@ import {
   type PaperTypeface,
 } from "@/components/print/course-paper";
 import type { CourseBlock, Deck, Module, Question } from "@/lib/types";
+import { getColorTheme } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 
 /* --------------------------------------------------------------------- *
@@ -37,8 +38,13 @@ export interface ModulePrintOptions {
   runningHeader: boolean;
   /** full-page hero on sheet 1; the lesson proper starts on sheet 2 */
   includeTitlePage: boolean;
+  /** "module" follows the module accent, otherwise a COLOR_THEMES id */
+  coverTheme: string;
   includeAnswerKey: boolean;
   includeNotes: boolean;
+  /** preview-only: shows the editor for extra pages. The pages themselves are
+   *  always part of the printed flow once they contain text. */
+  editMode?: boolean;
 }
 
 export const defaultModulePrintOptions: ModulePrintOptions = {
@@ -51,18 +57,31 @@ export const defaultModulePrintOptions: ModulePrintOptions = {
   footerStyle: "count",
   runningHeader: true,
   includeTitlePage: true,
+  coverTheme: "module",
   includeAnswerKey: true,
   includeNotes: true,
 };
 
 export const STORAGE_KEY_MODULE_PRINT = "knowly.module-print.v1";
+const STORAGE_KEY_MODULE_PAGES = "knowly.module-print-pages.v1";
 
-/** Padding as a share of the sheet (mirrors the course paper values). */
-const MARGIN_FACTORS: Record<PaperMarginId, { side: number; top: number; bottom: number }> = {
-  narrow: { side: 0.055, top: 0.042, bottom: 0.055 },
-  normal: { side: 0.088, top: 0.06, bottom: 0.075 },
-  wide: { side: 0.115, top: 0.078, bottom: 0.095 },
+const DEFAULT_ACCENT = "#3b5bdb";
+
+/** Real margins in inches (96 CSS px per inch), identical for every paper size
+ *  and orientation. */
+const MARGIN_IN: Record<PaperMarginId, number> = {
+  narrow: 0.5,
+  normal: 0.75,
+  wide: 1,
 };
+const PX_PER_IN = 96;
+
+/** Fixed bands inside the margins. Both are always reserved (even when empty)
+ *  so every page has exactly the same content height as the paginator budgets. */
+const HEADER_H = 28;
+const FOOTER_H = 28;
+/** Breathing room kept below the last line so nothing ever kisses the footer. */
+const CONTENT_BOTTOM_CLEAR = 14;
 
 const SPACING_FACTORS: Record<PaperSpacing, number> = {
   compact: 0.9,
@@ -70,27 +89,88 @@ const SPACING_FACTORS: Record<PaperSpacing, number> = {
   relaxed: 1.14,
 };
 
-/**
- * Split a markdown block into paragraph-level chunks so text flows edge-to-edge:
- * when a blurb jumps to the next page the text around it still fills the page
- * precisely instead of being dragged along.
- */
-function markdownChunks(text: string): string[] {
-  return text
-    .split(/\n{2,}/)
-    .map((chunk) => chunk.trim())
-    .filter(Boolean);
+/** Works for any CSS color (hex of any length, rgb(), hsl(), names). */
+const withAlpha = (color: string, alphaPct: number) =>
+  `color-mix(in srgb, ${color} ${alphaPct}%, transparent)`;
+
+/* --------------------------------------------------------------------- *
+ * Cover palettes
+ * --------------------------------------------------------------------- */
+
+interface CoverTone {
+  start: string;
+  middle: string;
+  deep: string;
+  glow: string;
 }
 
 /**
- * Split a paragraph chunk into page-breakable pieces so regular text can fill
- * pages to the last line. Headings, list items, and quote bodies become their
- * own pieces; blurb-like bodies (tables, code fences, display math) stay glued
- * together and are tagged `blurb` so the paginator gives them clearance.
+ * Cover gradient for the title sheet (and the in-flow hero when the title page
+ * is off). `"module"` keeps the module's own accent; any other id is one of
+ * the built-in Knowly palettes. Light palettes get deepened so the white cover
+ * ink keeps its contrast instead of printing pale-on-pale.
  */
-function chunkPieces(chunk: string): Array<{ text: string; blurb: boolean }> {
-  const pieces: Array<{ text: string; blurb: boolean }> = [];
+function coverTone(moduleColor: string, themeId: string): CoverTone {
+  const accent = moduleColor || DEFAULT_ACCENT;
+  const theme = themeId === "module" ? undefined : getColorTheme(themeId);
+  if (!theme) {
+    return {
+      start: accent,
+      middle: `color-mix(in oklab, ${accent} 52%, #0d131b)`,
+      deep: "#0d131b",
+      glow: `color-mix(in oklab, ${accent} 78%, #ffffff 24%)`,
+    };
+  }
+  const { primary, accent: themeAccent, background } = theme.colors;
+  if (theme.mode === "dark") {
+    return {
+      start: primary,
+      middle: `color-mix(in oklab, ${primary} 52%, ${background})`,
+      deep: background,
+      glow: `color-mix(in oklab, ${themeAccent} 74%, #ffffff 26%)`,
+    };
+  }
+  return {
+    start: `color-mix(in oklab, ${primary} 78%, #10161f 22%)`,
+    middle: `color-mix(in oklab, ${primary} 34%, #0d131b 66%)`,
+    deep: `color-mix(in oklab, ${primary} 30%, #0d131b 70%)`,
+    glow: `color-mix(in oklab, ${themeAccent} 62%, #ffffff 38%)`,
+  };
+}
+
+const coverGradient = (tone: CoverTone) =>
+  [
+    // a whisper of shade at the top keeps the small header ink legible even
+    // when the palette's glow is pale
+    "linear-gradient(180deg, rgba(8, 12, 20, 0.26) 0%, rgba(8, 12, 20, 0) 26%)",
+    `radial-gradient(130% 120% at 88% -15%, ${tone.glow} 0%, transparent 55%)`,
+    `linear-gradient(158deg, ${tone.start} 0%, ${tone.middle} 62%, ${tone.deep} 100%)`,
+  ].join(", ");
+
+/* --------------------------------------------------------------------- *
+ * Markdown splitting
+ * --------------------------------------------------------------------- */
+
+interface Piece {
+  text: string;
+  blurb: boolean;
+  kind: PieceKind;
+}
+
+type PieceKind = "para" | "list" | "quote" | "table" | "block";
+
+function splitPieces(
+  lines: string[],
+  allowFence: boolean,
+  allowMath: boolean,
+): { pieces: Piece[]; fenceOpen: boolean; mathOpen: boolean } {
+  const pieces: Piece[] = [];
   let current: string[] = [];
+  let kind: PieceKind | null = null;
+  let fence = false;
+  let math = false;
+  let orderCounter: number | null = null;
+
   const flush = () => {
     if (current.length) {
       const text = current.join("\n").trim();
@@ -99,72 +179,195 @@ function chunkPieces(chunk: string): Array<{ text: string; blurb: boolean }> {
         pieces.push({
           text,
           blurb: first.startsWith("|") || first.startsWith("```") || first.startsWith("$$"),
+          kind: kind ?? "para",
         });
       }
-      current = [];
     }
+    current = [];
+    kind = null;
   };
-  let fence = false;
-  let math = false;
-  for (const line of chunk.split(/\r?\n/)) {
+  const start = (k: PieceKind, line: string) => {
+    flush();
+    kind = k;
+    current.push(line);
+  };
+
+  for (const line of lines) {
     const t = line.trim();
-    if (t.startsWith("```")) {
+
+    // fenced code: blank lines inside stay inside
+    if (allowFence && t.startsWith("```")) {
       if (fence) {
         current.push(line);
         flush();
         fence = false;
       } else {
-        flush();
+        start("block", line);
         fence = true;
-        current.push(line);
       }
+      orderCounter = null;
       continue;
     }
     if (fence) {
       current.push(line);
       continue;
     }
-    const fullMathLine = t.startsWith("$$") && t.endsWith("$$") && t.length > 4;
-    if (fullMathLine) {
-      flush();
-      pieces.push({ text: t, blurb: true });
-      continue;
+
+    // display math
+    if (allowMath) {
+      if (math) {
+        current.push(line);
+        if (t.endsWith("$$")) {
+          flush();
+          math = false;
+        }
+        continue;
+      }
+      if (t.startsWith("$$")) {
+        orderCounter = null;
+        if (t.endsWith("$$") && t.length > 4) {
+          flush();
+          pieces.push({ text: t, blurb: true, kind: "block" });
+        } else {
+          start("block", line);
+          math = true;
+        }
+        continue;
+      }
     }
-    if (t.startsWith("$$")) {
-      flush();
-      math = !math;
-      current.push(line);
-      continue;
-    }
-    if (math) {
-      current.push(line);
-      if (t.endsWith("$$")) math = false;
-      continue;
-    }
+
     if (!t) {
       flush();
       continue;
     }
-    const isTableStart = t.startsWith("|");
-    if (isTableStart) {
-      // glue consecutive table rows so the table stays one unbreakable blurb
-      if (!current.length || !current[0].trim().startsWith("|")) flush();
-      current.push(line);
+
+    // tables: consecutive rows stay one unbreakable blurb
+    if (t.startsWith("|")) {
+      if (kind !== "table") start("table", line);
+      else current.push(line);
+      orderCounter = null;
       continue;
     }
-    const atColumnZero = /^\S/.test(line);
-    if (atColumnZero) {
-      // heading, top-level list marker, blockquote, or fresh paragraph
+
+    // headings are their own piece
+    if (/^#{1,6}\s/.test(line)) {
       flush();
-      current.push(line);
+      pieces.push({ text: t, blurb: false, kind: "para" });
+      orderCounter = null;
       continue;
     }
-    // indented line — continuation of the previous piece (list item bodies,
-    // nested bullets stay glued to their parent item)
-    current.push(line);
+
+    // list items (column zero) — each is its own breakable piece
+    const ordered = /^(\d+)[.)]\s/.exec(line);
+    if (ordered || /^[-*+]\s/.test(line)) {
+      let out = line;
+      if (ordered) {
+        // keep numbering continuous even though items are split into units
+        orderCounter = orderCounter === null ? Number(ordered[1]) : orderCounter + 1;
+        out = line.replace(/^\d+/, String(orderCounter));
+      } else {
+        orderCounter = null;
+      }
+      start("list", out);
+      continue;
+    }
+
+    // blockquote: consecutive "> " lines are one piece
+    if (t.startsWith(">")) {
+      if (kind !== "quote") start("quote", line);
+      else current.push(line);
+      orderCounter = null;
+      continue;
+    }
+
+    // indented line: continuation of whatever is open
+    if (!/^\S/.test(line)) {
+      if (kind) current.push(line);
+      else start("para", line);
+      continue;
+    }
+
+    // plain column-zero text: hard-wrapped continuation of a paragraph,
+    // list item or quote; otherwise a fresh paragraph
+    if (kind === "para" || kind === "list" || kind === "quote") {
+      current.push(line);
+    } else {
+      start("para", line);
+      orderCounter = null;
+    }
   }
   flush();
-  return pieces.length ? pieces : [{ text: chunk.trim(), blurb: false }];
+  return { pieces, fenceOpen: fence, mathOpen: math };
+}
+
+/**
+ * Split markdown into page-breakable pieces so regular text fills pages to the
+ * last line. Tables, code fences and display math stay glued and are tagged
+ * `blurb` so the paginator gives them clearance. Unclosed ``` or $$ markers
+ * are treated as plain text instead of swallowing the rest of the block.
+ */
+function chunkPieces(source: string): Piece[] {
+  const lines = source.split(/\r?\n/);
+  let result = splitPieces(lines, true, true);
+  if (result.fenceOpen || result.mathOpen) {
+    result = splitPieces(lines, !result.fenceOpen, !result.mathOpen);
+  }
+  const pieces = result.pieces.length
+    ? result.pieces
+    : [{ text: source.trim(), blurb: false, kind: "para" as PieceKind }];
+  // a single table or code block taller than the page would otherwise be
+  // clipped (and, before the content row clipped, paint over the footer):
+  // chop the long ones into page-sized chunks
+  return pieces.flatMap(expandOversizedPiece);
+}
+
+/** Long tables keep their header on every chunk; long code fences re-open. */
+function expandOversizedPiece(piece: Piece): Piece[] {
+  if (piece.text.startsWith("|")) return splitTablePiece(piece);
+  if (piece.text.startsWith("```")) return splitCodePiece(piece);
+  return [piece];
+}
+
+const TABLE_ROWS_PER_CHUNK = 10;
+const CODE_LINES_PER_CHUNK = 38;
+/** Rows a table needs before it is worth chunking (header plus a full run). */
+const TABLE_SPLIT_THRESHOLD = 16;
+
+function splitTablePiece(piece: Piece): Piece[] {
+  const rows = piece.text.split("\n");
+  const separator = rows[1] ?? "";
+  const isTable = rows.length > 2 && /^\s*\|?[\s:|-]*-{2,}[\s:|-]*\|?\s*$/.test(separator);
+  if (!isTable || rows.length - 2 <= TABLE_SPLIT_THRESHOLD) return [piece];
+
+  const header = rows.slice(0, 2);
+  const body = rows.slice(2);
+  const chunks: Piece[] = [];
+  for (let start = 0; start < body.length; start += TABLE_ROWS_PER_CHUNK) {
+    chunks.push({
+      text: [...header, ...body.slice(start, start + TABLE_ROWS_PER_CHUNK)].join("\n"),
+      blurb: true,
+      kind: "table",
+    });
+  }
+  return chunks;
+}
+
+function splitCodePiece(piece: Piece): Piece[] {
+  const lines = piece.text.split("\n");
+  const opening = lines[0];
+  const hasCloser = lines.length > 2 && lines[lines.length - 1].trim().startsWith("```");
+  const body = lines.slice(1, hasCloser ? -1 : undefined);
+  if (body.length <= CODE_LINES_PER_CHUNK) return [piece];
+
+  const chunks: Piece[] = [];
+  for (let start = 0; start < body.length; start += CODE_LINES_PER_CHUNK) {
+    chunks.push({
+      text: [opening, ...body.slice(start, start + CODE_LINES_PER_CHUNK), "```"].join("\n"),
+      blurb: true,
+      kind: "block",
+    });
+  }
+  return chunks;
 }
 
 /* --------------------------------------------------------------------- *
@@ -174,14 +377,21 @@ function chunkPieces(chunk: string): Array<{ text: string; blurb: boolean }> {
 type ModuleUnitData =
   | { kind: "hero" }
   | { kind: "objectives"; items: string[] }
-  | { kind: "markdown"; text: string; blurb?: boolean }
-  | { kind: "callout"; block: CourseBlock }
-  | { kind: "example"; block: CourseBlock }
+  | {
+      kind: "markdown";
+      text: string;
+      blurb?: boolean;
+      list?: boolean;
+      listStart?: boolean;
+      pageBreak?: boolean;
+    }
+  | { kind: "callout"; block: CourseBlock; text?: string; first?: boolean }
+  | { kind: "example"; block: CourseBlock; text?: string; first?: boolean }
   | { kind: "image"; block: CourseBlock }
   | { kind: "divider" }
   | { kind: "checkpoint"; questionId: string; number: number }
   | { kind: "activity"; block: CourseBlock; index: number }
-  | { kind: "notes"; text: string }
+  | { kind: "notes"; text: string; first?: boolean }
   | { kind: "answer-header" }
   | { kind: "answer-item"; number: number; questionId: string };
 
@@ -209,14 +419,25 @@ const UNIT_SPACE: Partial<Record<ModuleUnitData["kind"], number>> = {
   "answer-item": 6,
 };
 
-const unitSpacePad = (unit: ModuleUnit) => UNIT_SPACE[unit.data.kind] ?? 8;
+const unitSpacePad = (unit: ModuleUnit) => {
+  const data = unit.data;
+  // list items are one unit each: inside a list the gap is the line rhythm,
+  // while the first item keeps the normal paragraph gap from the prose above
+  if (data.kind === "markdown" && data.list) return data.listStart ? 8 : 2;
+  // a split callout/example/notes continues on the same rhythm
+  if (data.kind === "callout" || data.kind === "example") {
+    return data.first === false ? 3 : 10;
+  }
+  if (data.kind === "notes") return data.first === false ? 4 : 16;
+  return UNIT_SPACE[data.kind] ?? 8;
+};
 
 const DIFFICULTY_LABEL = ["", "Intro", "Core", "Advanced"] as const;
 
 const TONE_BG: Record<string, { border: string; bg: string; text: string; label: string }> = {
   info: {
-    border: "oklch(0.55 0.17 / 0.35)",
-    bg: "oklch(0.55 0.17 / 0.08)",
+    border: "oklch(0.55 0.17 265 / 0.35)",
+    bg: "oklch(0.55 0.17 265 / 0.08)",
     text: "#3b5bdb",
     label: "Note",
   },
@@ -246,7 +467,11 @@ const TONE_BG: Record<string, { border: string; bg: string; text: string; label:
   },
 };
 
-function buildUnits(module: Module, decks: Deck[], options: ModulePrintOptions): ModuleUnit[] {
+function buildUnits(
+  module: Module,
+  options: ModulePrintOptions,
+  extraPages: string[],
+): ModuleUnit[] {
   const units: ModuleUnit[] = [];
   let uid = 0;
   const push = (data: ModuleUnitData) => {
@@ -278,19 +503,32 @@ function buildUnits(module: Module, decks: Deck[], options: ModulePrintOptions):
   let activityIndex = 0;
   for (const block of module.blocks) {
     switch (block.type) {
-      case "markdown":
-        for (const chunk of markdownChunks(block.markdown ?? "")) {
-          for (const piece of chunkPieces(chunk)) {
-            push({ kind: "markdown", text: piece.text, blurb: piece.blurb });
-          }
+      case "markdown": {
+        let previousKind: PieceKind | null = null;
+        for (const piece of chunkPieces(block.markdown ?? "")) {
+          push({
+            kind: "markdown",
+            text: piece.text,
+            blurb: piece.blurb,
+            list: piece.kind === "list",
+            listStart: piece.kind === "list" && previousKind !== "list",
+          });
+          previousKind = piece.kind;
         }
         break;
-      case "callout":
-        push({ kind: "callout", block });
+      }
+      case "callout": {
+        chunkPieces(block.markdown ?? "").forEach((piece, index) => {
+          push({ kind: "callout", block, text: piece.text, first: index === 0 });
+        });
         break;
-      case "example":
-        push({ kind: "example", block });
+      }
+      case "example": {
+        chunkPieces(block.markdown ?? "").forEach((piece, index) => {
+          push({ kind: "example", block, text: piece.text, first: index === 0 });
+        });
         break;
+      }
       case "image":
         push({ kind: "image", block });
         break;
@@ -315,7 +553,9 @@ function buildUnits(module: Module, decks: Deck[], options: ModulePrintOptions):
   }
 
   if (options.includeNotes && module.notes?.trim()) {
-    push({ kind: "notes", text: module.notes });
+    chunkPieces(module.notes).forEach((piece, index) => {
+      push({ kind: "notes", text: piece.text, first: index === 0 });
+    });
   }
 
   if (options.includeAnswerKey && module.questions.length) {
@@ -329,8 +569,44 @@ function buildUnits(module: Module, decks: Deck[], options: ModulePrintOptions):
     }
   }
 
-  void decks;
+  // user-typed pages: each starts on a fresh sheet and is paginated like
+  // everything else, so long text never gets clipped
+  for (const text of extraPages) {
+    if (!text.trim()) continue;
+    push({ kind: "markdown", text: "", blurb: false, pageBreak: true });
+    let previousKind: PieceKind | null = null;
+    for (const piece of chunkPieces(text)) {
+      push({
+        kind: "markdown",
+        text: piece.text,
+        blurb: piece.blurb,
+        list: piece.kind === "list",
+        listStart: piece.kind === "list" && previousKind !== "list",
+      });
+      previousKind = piece.kind;
+    }
+  }
+
   return units;
+}
+
+const samePages = (a: ModuleUnit[][], b: ModuleUnit[][]) =>
+  a.length === b.length &&
+  a.every((page, i) => page.length === b[i].length && page.every((u, j) => u === b[i][j]));
+
+function loadExtraPages(key: string): string[] {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (raw) {
+      const parsed: unknown = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.every((p) => typeof p === "string") && parsed.length) {
+        return parsed as string[];
+      }
+    }
+  } catch {
+    /* storage unavailable or corrupt — start empty */
+  }
+  return [""];
 }
 
 /* --------------------------------------------------------------------- *
@@ -350,24 +626,58 @@ export function ModulePaper({
     () => getPaperDims(options.paper, options.orientation),
     [options.paper, options.orientation],
   );
-  const factors = MARGIN_FACTORS[options.margins];
-  const padX = Math.round(dims.width * factors.side);
-  const padTop = Math.round(dims.height * factors.top);
-  const padBottom = Math.round(dims.height * factors.bottom);
+  const margin = Math.round(MARGIN_IN[options.margins] * PX_PER_IN);
+  const padX = margin;
+  const padTop = margin;
+  const padBottom = margin;
   const contentWidth = Math.max(200, dims.width - padX * 2);
-  const contentHeight = Math.max(200, dims.height - padTop - padBottom);
+  // header and footer are fixed bands inside the padding, always reserved, so
+  // this is exactly the height of the flex-1 content area on every page
+  const contentHeight = Math.max(
+    200,
+    dims.height - padTop - padBottom - HEADER_H - FOOTER_H - CONTENT_BOTTOM_CLEAR,
+  );
   const fontPx = options.fontScale === "small" ? 11.5 : options.fontScale === "large" ? 13.5 : 12.5;
   const lineHeight = 1.55 * SPACING_FACTORS[options.spacing];
   const fontFamily = TYPEFACE_OPTIONS.find((t) => t.id === options.typeface)?.stack;
 
-  const units = useMemo(() => buildUnits(module, decks, options), [module, decks, options]);
+  const pagesKey = `${STORAGE_KEY_MODULE_PAGES}.${module.id}`;
+  const [editPages, setEditPages] = useState<string[]>(() => loadExtraPages(pagesKey));
+  const [activeTextareaIndex, setActiveTextareaIndex] = useState<number>(0);
+  const deferredEditPages = useDeferredValue(editPages);
+
+  // reload when switching modules
+  const loadedKey = useRef(pagesKey);
+  useEffect(() => {
+    if (loadedKey.current !== pagesKey) {
+      loadedKey.current = pagesKey;
+      setEditPages(loadExtraPages(pagesKey));
+      setActiveTextareaIndex(0);
+    }
+  }, [pagesKey]);
+
+  // persist typed pages so a remount or option change never loses them
+  useEffect(() => {
+    if (loadedKey.current !== pagesKey) return;
+    try {
+      if (editPages.every((p) => !p.trim())) window.localStorage.removeItem(pagesKey);
+      else window.localStorage.setItem(pagesKey, JSON.stringify(editPages));
+    } catch {
+      /* ignore quota / privacy-mode errors */
+    }
+  }, [editPages, pagesKey]);
+
+  const units = useMemo(
+    () => buildUnits(module, options, deferredEditPages),
+    [module, options, deferredEditPages],
+  );
 
   const measureRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const [pages, setPages] = useState<ModuleUnit[][] | null>(null);
   const [stageWidth, setStageWidth] = useState<number | null>(null);
 
-  /* paginate by measuring the hidden flow */
+  /* paginate by measuring the hidden flow (reads the DOM, writes only `pages`) */
   useEffect(() => {
     let cancelled = false;
     const run = () => {
@@ -375,7 +685,7 @@ export function ModulePaper({
       if (!host || cancelled) return;
       const slots = Array.from(host.children) as HTMLElement[];
       if (!slots.length) {
-        setPages([]);
+        setPages((prev) => (prev && prev.length === 0 ? prev : []));
         return;
       }
       const heights = slots.map((slot) => slot.getBoundingClientRect().height);
@@ -383,44 +693,84 @@ export function ModulePaper({
       // when a blurb would sit tighter than this above the page floor, it
       // moves to the next page instead of being forced to fit
       const clearance = Math.round(contentHeight * 0.075);
-      const blurbish = (unit: ModuleUnit) =>
-        unit.data.kind === "markdown"
-          ? unit.data.blurb === true
-          : [
-              "callout",
-              "example",
-              "image",
-              "objectives",
-              "checkpoint",
-              "activity",
-              "notes",
-            ].includes(unit.data.kind);
+      const blurbish = (unit: ModuleUnit) => {
+        const data = unit.data;
+        if (data.kind === "markdown") return data.blurb === true;
+        // split bodies flow like regular text; only the opening card keeps the
+        // whole-blurb bottom clearance
+        if (data.kind === "callout" || data.kind === "example" || data.kind === "notes") {
+          return data.first !== false;
+        }
+        return ["image", "objectives", "checkpoint", "activity"].includes(data.kind);
+      };
+      const isHeading = (unit: ModuleUnit) =>
+        unit.data.kind === "markdown" && /^#{1,6}\s/.test(unit.data.text);
       let current: ModuleUnit[] = [];
       let cursor = 0;
       for (const [index, unit] of units.entries()) {
         const boxHeight = heights[index] ?? 0;
         const pad = unitSpacePad(unit);
-        const contentHeight2 = Math.max(0, boxHeight - pad);
+        const contentOnly = Math.max(0, boxHeight - pad);
         const reserve = blurbish(unit) ? clearance : 0;
-        const forced = unit.data.kind === "answer-header" || unit.data.kind === "hero";
-        // a unit jumps when its real content can't fit; the spacing above it
-        // never forces a break (first unit on a page drops it), and blurbs
-        // additionally need breathing room above the page floor
-        if (current.length > 0 && (forced || cursor + contentHeight2 + reserve > contentHeight)) {
+        const forced =
+          unit.data.kind === "answer-header" ||
+          (unit.data.kind === "markdown" && unit.data.pageBreak === true);
+        // exactly what this unit adds to the page it lands on: the first unit
+        // on a page drops its leading gap, every later one keeps it.
+        const take = current.length === 0 ? contentOnly : boxHeight;
+        // never leave a heading stranded at the page floor: if what follows
+        // would not fit beside it, the heading moves to the next page too
+        const next = units[index + 1];
+        const orphan =
+          current.length > 0 &&
+          isHeading(unit) &&
+          next !== undefined &&
+          cursor + take + (heights[index + 1] ?? 0) + (blurbish(next) ? clearance : 0) >
+            contentHeight;
+        if (current.length > 0 && (forced || orphan || cursor + take + reserve > contentHeight)) {
           built.push(current);
           current = [];
           cursor = 0;
         }
         current.push(unit);
-        cursor += current.length === 1 ? contentHeight2 : boxHeight;
+        cursor += current.length === 1 ? contentOnly : boxHeight;
       }
       if (current.length > 0) built.push(current);
-      setPages(built);
+      // skip no-op updates so observer callbacks don't re-render every page
+      setPages((prev) => (prev && samePages(prev, built) ? prev : built));
     };
+
     run();
-    document.fonts?.ready.then(run).catch(() => undefined);
+    // fonts: a failure in run() itself must not be swallowed
+    document.fonts?.ready.then(run, () => undefined);
+    // images: wait for them so the first measurement is the real one
+    const urls = units.flatMap((u) =>
+      u.data.kind === "image" && u.data.block.url ? [u.data.block.url] : [],
+    );
+    if (urls.length) {
+      Promise.all(
+        urls.map(
+          (src) =>
+            new Promise<void>((resolve) => {
+              const img = new Image();
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
+              img.src = src;
+            }),
+        ),
+      ).then(run);
+    }
+    // late typesetting (KaTeX, fonts) resizes the hidden flow after the first
+    // pass; re-paginate whenever it changes
+    const flow = measureRef.current;
+    let observer: ResizeObserver | null = null;
+    if (flow && typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(() => run());
+      observer.observe(flow);
+    }
     return () => {
       cancelled = true;
+      observer?.disconnect();
     };
   }, [units, contentWidth, contentHeight, fontPx, lineHeight, fontFamily]);
 
@@ -436,6 +786,8 @@ export function ModulePaper({
   }, []);
   const scale = stageWidth ? Math.max(0.05, Math.min(1, stageWidth / dims.width)) : 1;
   const titlePage = options.includeTitlePage;
+  // the title page counts as page 1; typed pages are part of `pages`, so the
+  // total is identical with edit mode on or off
   const totalPages = (pages?.length ?? 0) + (titlePage ? 1 : 0);
   const footerPageText = (page: number) => {
     if (options.footerStyle === "of") return `Page ${page} of ${totalPages}`;
@@ -443,11 +795,16 @@ export function ModulePaper({
     return `${page} / ${totalPages}`;
   };
 
+  const padding = { padX, padTop, padBottom };
+  const accent = module.color || DEFAULT_ACCENT;
+
+  const focusTextarea = (index: number) =>
+    requestAnimationFrame(() => document.getElementById(`edit-textarea-${index}`)?.focus());
+
   return (
     <div className="max-w-full">
-      <style>{modulePrintStylesheet(dims)}</style>
-
-      {/* hidden measuring flow */}
+      <style>{modulePrintStylesheet(dims, contentHeight)}</style>
+      {/* hidden measuring flow */}{" "}
       <div
         ref={measureRef}
         aria-hidden
@@ -461,10 +818,15 @@ export function ModulePaper({
         }}
       >
         {units.map((unit) => (
-          <UnitSpace key={unit.id} unit={unit} module={module} decks={decks} />
+          <UnitSpace
+            key={unit.id}
+            unit={unit}
+            module={module}
+            decks={decks}
+            coverTheme={options.coverTheme}
+          />
         ))}
       </div>
-
       {/* paper stage */}
       <div ref={stageRef} className="paper-flow flex w-full flex-col items-center gap-7">
         {!pages &&
@@ -473,7 +835,7 @@ export function ModulePaper({
               key={`skeleton-${skeletonIndex}`}
               dims={dims}
               scale={scale}
-              padding={{ padX, padTop, padBottom }}
+              padding={padding}
               fontSize={fontPx}
               fontFamily={fontFamily}
               lineHeight={lineHeight}
@@ -485,14 +847,13 @@ export function ModulePaper({
           ))}
 
         {titlePage && (
-          <ModuleSheet
-            key="title-page"
-            dims={dims}
-            scale={scale}
-            padding={{ padX, padTop, padBottom }}
-            fullBleed
-          >
-            <TitlePageBody module={module} padX={padX} accent={module.color} />
+          <ModuleSheet key="title-page" dims={dims} scale={scale} padding={padding} fullBleed>
+            <TitlePageBody
+              module={module}
+              padX={padX}
+              accent={accent}
+              coverTheme={options.coverTheme}
+            />
           </ModuleSheet>
         )}
 
@@ -501,13 +862,12 @@ export function ModulePaper({
             key={`page-${pageIndex}`}
             dims={dims}
             scale={scale}
-            padding={{ padX, padTop, padBottom }}
+            padding={padding}
             fontSize={fontPx}
             fontFamily={fontFamily}
             lineHeight={lineHeight}
-            headerText={
-              options.runningHeader && (!titlePage || pageIndex > 0) ? module.title : null
-            }
+            // no running header over the in-flow hero when there is no title page
+            headerText={options.runningHeader && (titlePage || pageIndex > 0) ? module.title : null}
             footer={{
               left: module.title,
               text:
@@ -522,11 +882,103 @@ export function ModulePaper({
                 unit={unit}
                 module={module}
                 decks={decks}
+                coverTheme={options.coverTheme}
                 flush={unitIndex === 0}
               />
             ))}
           </ModuleSheet>
         ))}
+
+        {options.editMode && (
+          <div className="edit-panel w-full space-y-3">
+            <div className="flex flex-wrap items-center gap-2 pb-2">
+              <span className="text-[0.72em] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                Your pages
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                Each box starts a new sheet; more text continues on additional sheets. Enter starts
+                a new page at the cursor; Shift+Enter inserts a line break.
+              </span>
+              <button
+                type="button"
+                className="ml-auto rounded-md border border-border bg-surface-2/60 px-3 py-1 text-xs text-foreground/70 hover:border-primary/40"
+                onClick={() => {
+                  const target = editPages.length;
+                  setEditPages((prev) => [...prev, ""]);
+                  setActiveTextareaIndex(target);
+                  focusTextarea(target);
+                }}
+              >
+                + Add page
+              </button>
+            </div>
+            {editPages.map((text, i) => (
+              <div key={i} className="edit-page-group flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor={`edit-textarea-${i}`}
+                    className="text-[0.68em] font-medium text-muted-foreground"
+                  >
+                    Your page {i + 1}
+                  </label>
+                  {editPages.length > 1 && (
+                    <button
+                      type="button"
+                      className="text-[11px] text-muted-foreground hover:text-foreground/80"
+                      onClick={() => {
+                        const target = Math.max(0, Math.min(i, editPages.length - 2));
+                        setEditPages((prev) => prev.filter((_, idx) => idx !== i));
+                        setActiveTextareaIndex(target);
+                        focusTextarea(target);
+                      }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <textarea
+                  id={`edit-textarea-${i}`}
+                  aria-label={`Your page ${i + 1} (markdown)`}
+                  className={cn(
+                    "edit-textarea w-full resize-y rounded-md border bg-surface-2/70 px-3 py-2 text-sm leading-relaxed text-foreground outline-none transition-colors",
+                    i === activeTextareaIndex
+                      ? "border-primary/60 bg-surface-2 focus:border-primary/60"
+                      : "border-border hover:border-border/80",
+                  )}
+                  style={{ fontFamily, fontSize: 13, lineHeight: 1.6 }}
+                  value={text}
+                  onFocus={() => setActiveTextareaIndex(i)}
+                  onChange={(e) =>
+                    setEditPages((prev) => {
+                      const next = [...prev];
+                      next[i] = e.target.value;
+                      return next;
+                    })
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      const val = e.currentTarget.value;
+                      const caret = e.currentTarget.selectionStart;
+                      const before = val.slice(0, caret);
+                      const after = val.slice(e.currentTarget.selectionEnd);
+                      setEditPages((prev) => {
+                        const next = [...prev];
+                        next[i] = before;
+                        next.splice(i + 1, 0, after);
+                        return next;
+                      });
+                      setActiveTextareaIndex(i + 1);
+                      focusTextarea(i + 1);
+                    }
+                  }}
+                  placeholder={"Type your markdown here — LaTeX: $E=mc^2$ or $$...$$"}
+                  rows={3}
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -536,17 +988,20 @@ function UnitSpace({
   unit,
   module,
   decks,
+  coverTheme,
   flush,
 }: {
   unit: ModuleUnit;
   module: Module;
   decks: Deck[];
+  coverTheme?: string;
   /** first unit on a page: the inter-unit spacing above is dropped */
   flush?: boolean;
 }) {
+  // flow-root contains children's margins so the measured height is the real one
   return (
-    <div style={{ paddingTop: flush ? 0 : unitSpacePad(unit) }}>
-      <UnitView unit={unit} module={module} decks={decks} />
+    <div style={{ paddingTop: flush ? 0 : unitSpacePad(unit), display: "flow-root" }}>
+      <UnitView unit={unit} module={module} decks={decks} coverTheme={coverTheme} />
     </div>
   );
 }
@@ -555,9 +1010,19 @@ function UnitSpace({
  * Unit renderers — the colorful part
  * --------------------------------------------------------------------- */
 
-function UnitView({ unit, module, decks }: { unit: ModuleUnit; module: Module; decks: Deck[] }) {
+function UnitView({
+  unit,
+  module,
+  decks,
+  coverTheme,
+}: {
+  unit: ModuleUnit;
+  module: Module;
+  decks: Deck[];
+  coverTheme?: string;
+}) {
   const data = unit.data;
-  const accent = module.color || "#3b5bdb";
+  const accent = module.color || DEFAULT_ACCENT;
   const accentInk = `color-mix(in oklab, ${accent} 78%, #171c26 22%)`;
 
   switch (data.kind) {
@@ -565,9 +1030,7 @@ function UnitView({ unit, module, decks }: { unit: ModuleUnit; module: Module; d
       return (
         <div
           className="module-hero relative overflow-hidden rounded-2xl px-6 pb-5 pt-6 text-white"
-          style={{
-            background: `radial-gradient(120% 130% at 85% -20%, color-mix(in oklab, ${accent} 75%, #ffffff 22%) 0%, transparent 55%), linear-gradient(150deg, ${accent} 0%, color-mix(in oklab, ${accent} 55%, #10151c) 78%, #10151c 100%)`,
-          }}
+          style={{ background: coverGradient(coverTone(accent, coverTheme ?? "module")) }}
         >
           {/* faint oversized emoji ornament, top-right */}
           <span
@@ -619,7 +1082,7 @@ function UnitView({ unit, module, decks }: { unit: ModuleUnit; module: Module; d
       return (
         <div
           className="rounded-xl px-4 py-3.5"
-          style={{ borderLeft: `3px solid ${accent}`, background: `${accent}0d` }}
+          style={{ borderLeft: `3px solid ${accent}`, background: withAlpha(accent, 5) }}
         >
           <p
             className="text-[0.74em] font-bold uppercase tracking-[0.2em]"
@@ -642,18 +1105,34 @@ function UnitView({ unit, module, decks }: { unit: ModuleUnit; module: Module; d
         </div>
       );
     case "markdown":
-      return <ModuleMarkdownText variant="paper" accent={accent} markdown={data.text} />;
+      return (
+        <ModuleMarkdownText
+          variant="paper"
+          accent={accent}
+          markdown={data.text}
+          className={
+            data.list
+              ? "[&_ul]:my-0 [&_ol]:my-0 [&_li]:my-[0.12em] [&_li>ul]:mt-[0.15em] [&_li>ol]:mt-[0.15em]"
+              : undefined
+          }
+        />
+      );
     case "callout": {
       const tone = TONE_BG[data.block.tone ?? "info"] ?? TONE_BG.info;
+      const body = data.text ?? data.block.markdown ?? "";
+      if (data.first === false) {
+        // continuation of a callout split across pages: keep the colored rule,
+        // drop the card chrome and the repeated label
+        return (
+          <div className="pl-3.5" style={{ borderLeft: `3px solid ${tone.border}` }}>
+            <ModuleMarkdownText variant="paper" accent={accent} markdown={body} />
+          </div>
+        );
+      }
       return (
         <div
           className="rounded-xl px-4 py-3.5"
-          style={{
-            borderLeft: `3px solid ${tone.border}`,
-            background: tone.bg,
-            borderWidth: 0,
-            borderLeftWidth: 3,
-          }}
+          style={{ borderLeft: `3px solid ${tone.border}`, background: tone.bg }}
         >
           <p
             className="text-[0.74em] font-bold uppercase tracking-[0.18em]"
@@ -662,26 +1141,25 @@ function UnitView({ unit, module, decks }: { unit: ModuleUnit; module: Module; d
             {data.block.title || tone.label}
           </p>
           <div className="mt-1">
-            <ModuleMarkdownText
-              variant="paper"
-              accent={accent}
-              markdown={data.block.markdown ?? ""}
-            />
+            <ModuleMarkdownText variant="paper" accent={accent} markdown={body} />
           </div>
         </div>
       );
     }
     case "example": {
       const tone = TONE_BG.example;
+      const body = data.text ?? data.block.markdown ?? "";
+      if (data.first === false) {
+        return (
+          <div className="pl-3.5" style={{ borderLeft: `3px solid ${tone.border}` }}>
+            <ModuleMarkdownText variant="paper" accent={accent} markdown={body} />
+          </div>
+        );
+      }
       return (
         <div
           className="rounded-xl px-4 py-3.5"
-          style={{
-            borderLeft: `3px solid ${tone.border}`,
-            background: tone.bg,
-            borderWidth: 0,
-            borderLeftWidth: 3,
-          }}
+          style={{ borderLeft: `3px solid ${tone.border}`, background: tone.bg }}
         >
           <p
             className="text-[0.74em] font-bold uppercase tracking-[0.18em]"
@@ -690,11 +1168,7 @@ function UnitView({ unit, module, decks }: { unit: ModuleUnit; module: Module; d
             {data.block.title || "Worked example"}
           </p>
           <div className="mt-1">
-            <ModuleMarkdownText
-              variant="paper"
-              accent={accent}
-              markdown={data.block.markdown ?? ""}
-            />
+            <ModuleMarkdownText variant="paper" accent={accent} markdown={body} />
           </div>
         </div>
       );
@@ -706,8 +1180,10 @@ function UnitView({ unit, module, decks }: { unit: ModuleUnit; module: Module; d
             <img
               src={data.block.url}
               alt={data.block.alt ?? ""}
+              loading="eager"
+              decoding="sync"
               className="mx-auto max-h-64 rounded-xl object-contain"
-              style={{ border: `1px solid ${accent}44` }}
+              style={{ border: `1px solid ${withAlpha(accent, 27)}` }}
             />
           )}
           {data.block.caption && (
@@ -731,7 +1207,7 @@ function UnitView({ unit, module, decks }: { unit: ModuleUnit; module: Module; d
       return (
         <div
           className="rounded-xl px-4 py-3.5"
-          style={{ borderLeft: `3px solid ${accent}`, background: `${accent}0f` }}
+          style={{ borderLeft: `3px solid ${accent}`, background: withAlpha(accent, 6) }}
         >
           <p className="flex items-center gap-2.5">
             <span
@@ -750,7 +1226,7 @@ function UnitView({ unit, module, decks }: { unit: ModuleUnit; module: Module; d
               aria-hidden
               className="ml-auto inline-block h-2 w-8 shrink-0 rounded-full"
               style={{
-                background: `repeating-linear-gradient(90deg, ${accent}66 0 3px, transparent 3px 6px)`,
+                background: `repeating-linear-gradient(90deg, ${withAlpha(accent, 40)} 0 3px, transparent 3px 6px)`,
               }}
             />
           </p>
@@ -777,7 +1253,7 @@ function UnitView({ unit, module, decks }: { unit: ModuleUnit; module: Module; d
       return (
         <div
           className="rounded-xl border border-dashed px-4 py-3.5"
-          style={{ borderColor: `${accent}88`, background: `${accent}08` }}
+          style={{ borderColor: withAlpha(accent, 53), background: withAlpha(accent, 3) }}
         >
           <p className="flex items-center gap-2.5">
             <span
@@ -809,13 +1285,15 @@ function UnitView({ unit, module, decks }: { unit: ModuleUnit; module: Module; d
     }
     case "notes":
       return (
-        <div className="pl-3.5" style={{ borderLeft: `3px solid ${accent}55` }}>
-          <p
-            className="text-[0.72em] font-bold uppercase tracking-[0.2em]"
-            style={{ color: accentInk }}
-          >
-            My notes
-          </p>
+        <div className="pl-3.5" style={{ borderLeft: `3px solid ${withAlpha(accent, 33)}` }}>
+          {data.first !== false && (
+            <p
+              className="text-[0.72em] font-bold uppercase tracking-[0.2em]"
+              style={{ color: accentInk }}
+            >
+              My notes
+            </p>
+          )}
           <ModuleMarkdownText variant="paper" accent={accent} markdown={data.text} />
         </div>
       );
@@ -963,14 +1441,22 @@ function PaperLines({ count }: { count: number }) {
  * Title page — the hero takes all of sheet 1
  * --------------------------------------------------------------------- */
 
-function TitlePageBody({ module, padX, accent }: { module: Module; padX: number; accent: string }) {
+function TitlePageBody({
+  module,
+  padX,
+  accent,
+  coverTheme,
+}: {
+  module: Module;
+  padX: number;
+  accent: string;
+  coverTheme: string;
+}) {
   const objectives = module.objectives.slice(0, 4);
   return (
     <div
       className="module-hero relative flex size-full flex-col overflow-hidden px-[13%] py-[9%] text-white"
-      style={{
-        background: `radial-gradient(130% 120% at 88% -15%, color-mix(in oklab, ${accent} 78%, #ffffff 24%) 0%, transparent 55%), linear-gradient(158deg, ${accent} 0%, color-mix(in oklab, ${accent} 52%, #0d131b) 62%, #0d131b 100%)`,
-      }}
+      style={{ background: coverGradient(coverTone(accent, coverTheme)) }}
     >
       {/* thin frame ornament */}
       <div
@@ -993,9 +1479,9 @@ function TitlePageBody({ module, padX, accent }: { module: Module; padX: number;
       </span>
 
       {/* head */}
-      <div className="relative flex items-center justify-between text-[0.72em] font-semibold uppercase tracking-[0.3em] text-white/75">
+      <div className="relative flex items-center justify-between text-[0.72em] font-semibold uppercase tracking-[0.3em] text-white/80">
         <span>KNOWLY</span>
-        <span className="text-white/55">Module · {module.subject}</span>
+        <span className="text-white/70">Module · {module.subject}</span>
       </div>
 
       {/* centered title block */}
@@ -1047,6 +1533,11 @@ function TitlePageBody({ module, padX, accent }: { module: Module; padX: number;
 
 /* --------------------------------------------------------------------- *
  * Sheet shell
+ *
+ * Layout inside the margins is three fixed/flex rows:
+ *   header band (HEADER_H) · content (flex-1) · footer band (FOOTER_H)
+ * Both bands are always rendered, so content height never depends on which
+ * header/footer options are on.
  * --------------------------------------------------------------------- */
 
 function ModuleSheet({
@@ -1068,11 +1559,10 @@ function ModuleSheet({
   fontFamily?: string;
   lineHeight?: number;
   headerText?: string | null;
-  footer?: { left: string; text: string | null; light?: boolean };
+  footer?: { left: string; text: string | null };
   fullBleed?: boolean;
   children: ReactNode;
 }) {
-  const tone = footer?.light ? "text-white/70" : "text-muted-foreground";
   return (
     <div
       className="preview-scale-wrap"
@@ -1083,54 +1573,56 @@ function ModuleSheet({
         style={{ transform: `scale(${scale})`, transformOrigin: "top left" }}
       >
         <div
-          className="print-page module-paper relative overflow-hidden bg-card"
+          className="print-page module-paper relative flex flex-col overflow-hidden bg-card"
           style={{
             width: dims.width,
             height: dims.height,
-            boxShadow: "0 24px 60px -34px color-mix(in oklab, var(--foreground) 42%, transparent)",
-            border: "1px solid color-mix(in oklab, var(--foreground) 12%, transparent)",
+            boxSizing: "border-box",
+            // ring + shadow instead of a border: the content box is the same
+            // size on screen and in print
+            boxShadow:
+              "0 0 0 1px color-mix(in oklab, var(--foreground) 12%, transparent), 0 24px 60px -34px color-mix(in oklab, var(--foreground) 42%, transparent)",
           }}
         >
           {fullBleed ? (
-            children
+            <div className="h-full">{children}</div>
           ) : (
             <div
+              className="flex h-full flex-col"
               style={{
-                padding: `${padding.padTop}px ${padding.padX}px ${padding.padBottom}px`,
+                boxSizing: "border-box",
+                paddingLeft: padding.padX,
+                paddingRight: padding.padX,
+                paddingTop: padding.padTop,
+                paddingBottom: padding.padBottom,
                 fontSize,
                 fontFamily,
                 lineHeight,
                 color: "var(--foreground)",
               }}
             >
-              {children}
+              <div
+                aria-hidden
+                className="flex shrink-0 items-center justify-center text-[9px] font-semibold uppercase tracking-[0.28em] text-muted-foreground"
+                style={{ height: HEADER_H }}
+              >
+                {headerText}
+              </div>
+              <div className="paper-content min-h-0 flex-1 overflow-hidden">{children}</div>
+              <footer
+                className="flex shrink-0 items-center justify-between gap-5 text-muted-foreground"
+                style={{ height: FOOTER_H, marginTop: "auto" }}
+              >
+                {footer?.text && (
+                  <>
+                    <span className="min-w-0 truncate text-[10px]">{footer.left}</span>
+                    <span className="shrink-0 text-[10px] font-medium tabular-nums">
+                      {footer.text}
+                    </span>
+                  </>
+                )}
+              </footer>
             </div>
-          )}
-          {headerText && (
-            <div
-              aria-hidden
-              className="absolute inset-x-0 flex items-center justify-center gap-2 text-[9px] font-semibold uppercase tracking-[0.28em] text-muted-foreground"
-              style={{
-                top: Math.round(padding.padTop * 0.42),
-                paddingLeft: padding.padX,
-                paddingRight: padding.padX,
-              }}
-            >
-              {headerText}
-            </div>
-          )}
-          {footer && footer.text && (
-            <footer
-              className={cn("absolute inset-x-0 flex items-center justify-between gap-5", tone)}
-              style={{
-                bottom: fullBleed ? 40 : Math.round(padding.padBottom * 0.32),
-                paddingLeft: padding.padX,
-                paddingRight: padding.padX,
-              }}
-            >
-              <span className="min-w-0 truncate text-[10px]">{footer.left}</span>
-              <span className="shrink-0 text-[10px] font-medium tabular-nums">{footer.text}</span>
-            </footer>
           )}
         </div>
       </div>
@@ -1140,9 +1632,14 @@ function ModuleSheet({
 
 /* --------------------------------------------------------------------- *
  * Print stylesheet
+ *
+ * Instead of forcing every element gray, pin the theme variables to a light
+ * palette so theme-colored text/borders print dark on white, while inline
+ * accent colors (labels, callout borders, badges) and white-on-color text
+ * keep their colors.
  * --------------------------------------------------------------------- */
 
-function modulePrintStylesheet(dims: { width: number; height: number }) {
+function modulePrintStylesheet(dims: { width: number; height: number }, contentHeight: number) {
   return `@media print {
   @page { size: ${dims.width}px ${dims.height}px; margin: 0; }
   html, body { overflow: visible !important; height: auto !important; }
@@ -1159,22 +1656,27 @@ function modulePrintStylesheet(dims: { width: number; height: number }) {
     page-break-after: always;
     break-inside: avoid;
     box-shadow: none !important;
-    border: 0 !important;
+    --foreground: #1f2937;
+    --muted: #eef1f5;
+    --muted-foreground: #6b7280;
+    --border: #9ca3af;
+    --card: #ffffff;
   }
   .print-page:last-of-type { break-after: auto; page-break-after: auto; }
   .module-paper { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  .paper-flow .print-page { background-color: #ffffff !important; }
-  .paper-flow .print-page * {
-    color: #1f2937 !important;
-    border-color: #9ca3af !important;
+  /* hard ceiling: content can never spill into the footer band, even if a
+     single unit is taller than a page (it is clipped, never overprinted) */
+  .print-page .paper-content {
+    max-height: ${contentHeight}px !important;
+    overflow: hidden !important;
   }
-  /* the colorful hero keeps its own white-on-color text */
-  .paper-flow .print-page .module-hero,
-  .paper-flow .print-page .module-hero * {
-    color: #ffffff !important;
-    border-color: color-mix(in oklab, #ffffff 45%, transparent) !important;
-  }
+  .paper-flow .print-page { background-color: #ffffff !important; color: #1f2937 !important; }
+  .paper-flow .print-page .text-foreground { color: #1f2937 !important; }
+  .paper-flow .print-page .text-muted-foreground { color: #6b7280 !important; }
+  .paper-flow .print-page .border-border { border-color: #9ca3af !important; }
+  .paper-flow .print-page .border-foreground { border-color: #1f2937 !important; }
   .paper-flow .print-page img { filter: none !important; }
+  .edit-panel { display: none !important; }
 }`;
 }
 

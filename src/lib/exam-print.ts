@@ -4,6 +4,8 @@ import { shuffleArray } from "./answers";
 export interface ExamOptions {
   title: string;
   subject: string;
+  headerText?: string;
+  footerText?: string;
   date: string;
   studentName: string;
   studentClass: string;
@@ -16,6 +18,8 @@ export interface ExamOptions {
   spacing: "compact" | "roomy";
   answerLines: number;
   includeAnswerKey: boolean;
+  /** Visual treatment for the printable document. Missing on older saved papers. */
+  theme?: ExamTheme;
   fontFamily: ExamFont;
   fontSize: "small" | "normal" | "large";
   headerAlign: "left" | "center";
@@ -25,6 +29,58 @@ export interface ExamOptions {
 
 export type ExamFont =
   "default" | "classic" | "serif" | "sans" | "rounded" | "mono" | "handwritten";
+
+export type ExamTheme = "classic" | "module" | "field-notes" | "lab-report" | "workbook";
+
+export const EXAM_THEMES: {
+  id: ExamTheme;
+  label: string;
+  description: string;
+  accent: string;
+  soft: string;
+  border: string;
+}[] = [
+  {
+    id: "classic",
+    label: "Classic exam",
+    description: "Formal, clean black-and-white paper",
+    accent: "#1f2937",
+    soft: "#f3f4f6",
+    border: "#d1d5db",
+  },
+  {
+    id: "module",
+    label: "Study sheet",
+    description: "Knowly module cards, color accents and clear learning sections",
+    accent: "#3b5bdb",
+    soft: "#eef2ff",
+    border: "#c7d2fe",
+  },
+  {
+    id: "field-notes",
+    label: "Field notes",
+    description: "Warm natural paper with observation-book details",
+    accent: "#35735b",
+    soft: "#f1f6ed",
+    border: "#c9d8c3",
+  },
+  {
+    id: "lab-report",
+    label: "Lab report",
+    description: "Technical grid, instrument-style labels and data accents",
+    accent: "#087e8b",
+    soft: "#e8f5f6",
+    border: "#b8dadd",
+  },
+  {
+    id: "workbook",
+    label: "Revision workbook",
+    description: "Friendly lesson workbook with bold prompts and writing space",
+    accent: "#b45309",
+    soft: "#fff7ed",
+    border: "#fed7aa",
+  },
+];
 
 /** Fonts that ship with the computer — no downloads, works fully offline. */
 export const EXAM_FONTS: { id: ExamFont; label: string; stack: string }[] = [
@@ -68,6 +124,8 @@ export function defaultExamOptions(title = "Practice Exam", subject = ""): ExamO
   return {
     title,
     subject,
+    headerText: "KNOWLY · LEARNING PAPER",
+    footerText: "Show your thinking · Check your work",
     date: "",
     studentName: "",
     studentClass: "",
@@ -80,6 +138,7 @@ export function defaultExamOptions(title = "Practice Exam", subject = ""): ExamO
     spacing: "roomy",
     answerLines: 2,
     includeAnswerKey: true,
+    theme: "classic",
     fontFamily: "default",
     fontSize: "normal",
     headerAlign: "left",

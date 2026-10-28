@@ -673,7 +673,7 @@
   .exam-paper {
     width: 100% !important;
     padding: 0 !important;
-    background: #fff !important;
+    background-color: #fff !important;
     color: #000 !important;
     font-size: 11.5pt;
   }
@@ -700,6 +700,87 @@
     print-color-adjust: exact;
   }
 }
+/* Educational document themes for the printable exam builder. */
+.exam-paper {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.exam-theme-classic {
+  border-top: 5px solid var(--exam-accent);
+  background-image: linear-gradient(180deg, #f8fafc 0, #fff 170px);
+}
+.exam-theme-classic .exam-question-number {
+  display: inline-flex;
+  min-width: 1.8em;
+  height: 1.8em;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--exam-border);
+  border-radius: 999px;
+  color: var(--exam-accent);
+  font-size: 0.88em;
+}
+.exam-paper-themed {
+  border-top: 7px solid var(--exam-accent);
+  background-image: linear-gradient(180deg, var(--exam-soft) 0, #fff 190px);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.exam-theme-module {
+  border-radius: 1rem;
+  background-image:
+    radial-gradient(ellipse at 100% 0, color-mix(in srgb, var(--exam-accent) 10%, transparent), transparent 48%),
+    linear-gradient(180deg, var(--exam-soft) 0, #fff 220px);
+}
+.exam-theme-module .exam-masthead {
+  border: 0;
+  border-radius: 0.75rem;
+  background: linear-gradient(
+    135deg,
+    var(--exam-accent),
+    color-mix(in srgb, var(--exam-accent) 55%, #10151c)
+  );
+  padding: 0.75rem 1rem;
+  color: #fff;
+}
+.exam-theme-field-notes {
+  border-top-style: double;
+  border-top-width: 8px;
+  background-image: repeating-linear-gradient(180deg, transparent 0 31px, color-mix(in srgb, var(--exam-border) 38%, transparent) 32px, transparent 33px);
+}
+.exam-theme-lab-report {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--exam-border) 28%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--exam-border) 28%, transparent) 1px, transparent 1px),
+    linear-gradient(180deg, var(--exam-soft), #fff 230px);
+  background-size: 18px 18px, 18px 18px, auto;
+}
+.exam-theme-workbook {
+  border-radius: 0.35rem 1rem 1rem 0.35rem;
+  border-left: 9px solid var(--exam-accent);
+  background-image: linear-gradient(90deg, var(--exam-soft), #fff 25%);
+}
+.exam-paper-themed .exam-question-number {
+  display: inline-flex;
+  min-width: 1.8em;
+  height: 1.8em;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--exam-accent);
+  color: #fff;
+  font-size: 0.88em;
+}
+.exam-theme-field-notes .exam-question {
+  border-style: dashed;
+}
+.exam-theme-lab-report .exam-question {
+  border-radius: 0.15rem;
+}
+.exam-theme-workbook .exam-question-prompt {
+  color: color-mix(in srgb, var(--exam-accent) 86%, #111);
+}
+
 /* Exam paper: headings follow the chosen paper font; empty editable fields show a hint. */
 .exam-paper :is(h1, h2, h3) {
   font-family: inherit !important;
@@ -727,7 +808,7 @@
   --secondary: #f1f1f1;
   --secondary-foreground: #111111;
   --ring: #888888;
-  background: #ffffff;
+  background-color: #ffffff;
   color: #111111;
   color-scheme: light;
 }

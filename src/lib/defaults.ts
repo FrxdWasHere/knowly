@@ -3,6 +3,7 @@ import type { BinderLabel } from "./labels";
 import type { PaperRecord } from "./papers";
 import { DEFAULT_CUSTOM_THEME } from "./themes";
 import { DEFAULT_SRS_CONFIG } from "./srs";
+import { DEFAULT_SIDEBAR_GROUPS } from "./sidebar-preferences";
 
 export const ACCENTS: { id: string; label: string; value: string; glow: string }[] = [
   { id: "ocean", label: "Ocean", value: "oklch(0.72 0.155 238)", glow: "oklch(0.83 0.115 210)" },
@@ -81,6 +82,7 @@ export const DEFAULT_SETTINGS: Settings = {
   animationSpeed: 1,
   showProgressBars: true,
   sidebarCollapsed: false,
+  sidebarGroups: DEFAULT_SIDEBAR_GROUPS.map((group) => ({ ...group })),
   reducedMotion: false,
   highContrast: false,
   colorblindPalette: false,
@@ -204,6 +206,95 @@ export const SUBJECT_SUGGESTIONS = [
   "Music",
   "Sport Science",
 ];
+
+/* ------------------------------------------------------------------ *
+ * Subject → maths flags
+ * ------------------------------------------------------------------ */
+
+export interface StemFlags {
+  isSTEM: boolean;
+  needsEquations: boolean;
+  needsGraphs: boolean;
+}
+
+const NO_STEM_FLAGS: StemFlags = { isSTEM: false, needsEquations: false, needsGraphs: false };
+
+/** Quantitative subjects: they get the maths helpers and STEM-tuned instructions. */
+const STEM_SUBJECTS = [
+  "math",
+  "physic",
+  "chem",
+  "biolog",
+  "statistic",
+  "econom",
+  "engineer",
+  "comput",
+  "data science",
+  "nursing",
+  "medicine",
+  "medical",
+  "accounting",
+  "finance",
+  "astronom",
+  "geolog",
+  "psycholog",
+  "sport science",
+];
+
+/** Subjects that routinely carry real formulas, so notation becomes LaTeX. */
+const EQUATION_SUBJECTS = [
+  "math",
+  "physic",
+  "chem",
+  "statistic",
+  "econom",
+  "engineer",
+  "comput",
+  "data science",
+  "nursing",
+  "medicine",
+  "medical",
+  "accounting",
+  "finance",
+  "astronom",
+];
+
+/** Subjects that routinely plot data or curves for the learner to read. */
+const GRAPH_SUBJECTS = [
+  "math",
+  "physic",
+  "chem",
+  "biolog",
+  "statistic",
+  "econom",
+  "geograph",
+  "psycholog",
+  "business",
+  "accounting",
+  "finance",
+  "data science",
+  "sport science",
+];
+
+const matchesSubject = (subject: string, keywords: string[]) => {
+  const normalized = subject.trim().toLowerCase();
+  return keywords.some((keyword) => normalized.includes(keyword));
+};
+
+/**
+ * Best guess at the maths flags a subject implies, so a module or course forged
+ * from a brief starts out marked correctly instead of fully switched off.
+ * An unrecognised or empty subject stays neutral — the learner can still flip
+ * the switches by hand in the editor.
+ */
+export function stemFlagsForSubject(subject: string | undefined): StemFlags {
+  if (!subject?.trim()) return { ...NO_STEM_FLAGS };
+  return {
+    isSTEM: matchesSubject(subject, STEM_SUBJECTS),
+    needsEquations: matchesSubject(subject, EQUATION_SUBJECTS),
+    needsGraphs: matchesSubject(subject, GRAPH_SUBJECTS),
+  };
+}
 
 export const AVATAR_EMOJIS = [
   "🌊",

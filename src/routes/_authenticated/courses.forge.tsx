@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
+import { PromptStudioNav } from "@/components/prompt-studio-nav";
+import { AutoChoice } from "@/components/auto-choice";
 import { PageHeader } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -63,6 +65,11 @@ function CourseForgePage() {
   const [medium, setMedium] = useState(55);
   const [hard, setHard] = useState(25);
   const [extra, setExtra] = useState("");
+  const [tone, setTone] = useState("");
+  /* "whatever you see fit" for each option — the AI decides instead */
+  const [sizeAuto, setSizeAuto] = useState(false);
+  const [typesAuto, setTypesAuto] = useState(false);
+  const [distAuto, setDistAuto] = useState(false);
   const [includeAssessments, setIncludeAssessments] = useState(true);
   const [isSTEM, setIsSTEM] = useState(false);
   const [needsEquations, setNeedsEquations] = useState(false);
@@ -85,6 +92,10 @@ function CourseForgePage() {
         audience: state.settings.gradeLevel,
         purpose: state.settings.studyReason,
         extra,
+        tone,
+        sizeAuto,
+        typesAuto,
+        distributionAuto: distAuto,
         includeAssessments,
         isSTEM,
         needsEquations,
@@ -104,6 +115,10 @@ function CourseForgePage() {
       medium,
       hard,
       extra,
+      tone,
+      sizeAuto,
+      typesAuto,
+      distAuto,
       includeAssessments,
       isSTEM,
       needsEquations,
@@ -198,8 +213,8 @@ function CourseForgePage() {
   return (
     <AppPage>
       <PageHeader
-        title="Course Forge"
-        description="Describe a topic or paste your notes. Knowly writes the instructions; your AI writes the course. Nothing is uploaded."
+        title="Prompt Studio · Course"
+        description="Describe a topic or paste your notes. Copy the instructions into the AI you use; nothing is uploaded."
         action={
           <>
             <Button asChild variant="outline">
@@ -218,6 +233,9 @@ function CourseForgePage() {
         }
       />
 
+      <div className="mb-6">
+        <PromptStudioNav active="course" />
+      </div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <section className="panel space-y-5 p-5 sm:p-6">
           <div className="flex items-center gap-2">
@@ -288,27 +306,55 @@ function CourseForgePage() {
                 id="course-extra"
                 value={extra}
                 onChange={(event) => setExtra(event.target.value)}
-                placeholder="Exam board, style, constraints…"
+                placeholder="Exam board, constraints…"
               />
             </div>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-3">
-            <Counter label="Modules" value={modules} onChange={setModules} min={1} max={12} />
-            <Counter
-              label="Lessons / module"
-              value={lessons}
-              onChange={setLessons}
-              min={1}
-              max={8}
+          <div className="space-y-2">
+            <Label htmlFor="course-tone">Tone of voice</Label>
+            <Textarea
+              id="course-tone"
+              value={tone}
+              onChange={(event) => setTone(event.target.value)}
+              placeholder="Paste a paragraph or two about how it should sound — e.g. “Write like a patient tutor: warm and direct, short sentences, a little dry humour, second person, no hype.”"
+              className="min-h-28"
             />
-            <Counter
-              label="Questions / lesson"
-              value={questions}
-              onChange={setQuestions}
-              min={0}
-              max={20}
-            />
+            <p className="text-xs text-muted-foreground">
+              Shapes how the course reads, never the facts. Leave it empty for Knowly's neutral
+              teaching voice.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Label>Course size</Label>
+              <AutoChoice active={sizeAuto} onToggle={() => setSizeAuto((v) => !v)} />
+            </div>
+            {sizeAuto ? (
+              <p className="text-xs text-muted-foreground">
+                Your AI sizes the course to the material — as many modules, lessons and checkpoints
+                as it warrants.
+              </p>
+            ) : (
+              <div className="grid gap-5 sm:grid-cols-3">
+                <Counter label="Modules" value={modules} onChange={setModules} min={1} max={12} />
+                <Counter
+                  label="Lessons / module"
+                  value={lessons}
+                  onChange={setLessons}
+                  min={1}
+                  max={8}
+                />
+                <Counter
+                  label="Questions / lesson"
+                  value={questions}
+                  onChange={setQuestions}
+                  min={0}
+                  max={20}
+                />
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -317,16 +363,19 @@ function CourseForgePage() {
               <span className="text-xs text-muted-foreground">{types.length} selected</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
+              <AutoChoice active={typesAuto} onToggle={() => setTypesAuto((v) => !v)} />
               {questionTypes.map((type) => (
                 <button
                   key={type}
                   type="button"
+                  disabled={typesAuto}
                   onClick={() => toggleType(type)}
                   className={cn(
                     "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                    types.includes(type)
+                    types.includes(type) && !typesAuto
                       ? "border-primary/40 bg-primary/15 text-primary"
                       : "border-border bg-surface2 text-muted-foreground hover:text-foreground",
+                    typesAuto && "opacity-40",
                   )}
                 >
                   {TYPE_LABELS[type]}
@@ -335,9 +384,23 @@ function CourseForgePage() {
             </div>
           </div>
 
-          <DifficultyRow label="Easy" value={easy} onChange={setEasy} />
-          <DifficultyRow label="Medium" value={medium} onChange={setMedium} />
-          <DifficultyRow label="Hard" value={hard} onChange={setHard} />
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Label>Difficulty mix</Label>
+              <AutoChoice active={distAuto} onToggle={() => setDistAuto((v) => !v)} />
+            </div>
+            {distAuto ? (
+              <p className="text-xs text-muted-foreground">
+                Your AI sets the easy/medium/hard balance from the material.
+              </p>
+            ) : (
+              <>
+                <DifficultyRow label="Easy" value={easy} onChange={setEasy} />
+                <DifficultyRow label="Medium" value={medium} onChange={setMedium} />
+                <DifficultyRow label="Hard" value={hard} onChange={setHard} />
+              </>
+            )}
+          </div>
 
           <div className="space-y-2">
             <Label>Math & science</Label>
@@ -402,17 +465,25 @@ function CourseForgePage() {
 
           <div className="flex items-center justify-between rounded-xl border border-border bg-surface2/50 px-4 py-3">
             <div>
-              <p className="text-sm font-medium">{totalQuestions} checkpoint questions</p>
+              <p className="text-sm font-medium">
+                {sizeAuto
+                  ? "Course size: your AI decides"
+                  : `${totalQuestions} checkpoint questions`}
+              </p>
               <p className="text-xs text-muted-foreground">
-                {modules} modules × {lessons} lessons × {questions} questions
+                {sizeAuto
+                  ? "No fixed module, lesson or question counts"
+                  : `${modules} modules × ${lessons} lessons × ${questions} questions`}
               </p>
             </div>
             <Badge variant="outline">
-              ~{Math.max(1, Math.round(totalQuestions * 0.35))}k words
+              {sizeAuto
+                ? "Length varies"
+                : `~${Math.max(1, Math.round(totalQuestions * 0.35))}k words`}
             </Badge>
           </div>
 
-          {totalQuestions > 240 && (
+          {!sizeAuto && totalQuestions > 240 && (
             <p className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs leading-5 text-warning">
               This is a large generation. Use a model with a big output limit, or generate the
               blueprint first and expand lessons one at a time.

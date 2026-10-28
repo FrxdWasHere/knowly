@@ -18,6 +18,7 @@ import {
   defaultExamOptions,
   selectQuestions,
   EXAM_FONTS,
+  EXAM_THEMES,
   type ExamOptions,
   type QuestionEdit,
 } from "@/lib/exam-print";
@@ -378,6 +379,36 @@ function PrintExamPage() {
           <section className="panel space-y-4 p-5">
             <h2 className="text-sm font-semibold">Look & style</h2>
             <div className="space-y-2">
+              <Label className="text-xs">Document theme</Label>
+              <div className="grid gap-2">
+                {EXAM_THEMES.map((theme) => (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    onClick={() => set({ theme: theme.id })}
+                    className={cn(
+                      "flex items-start gap-3 rounded-lg border p-3 text-left transition-colors",
+                      options.theme === theme.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/40",
+                    )}
+                  >
+                    <span
+                      aria-hidden
+                      className="mt-0.5 size-4 shrink-0 rounded-full border"
+                      style={{ backgroundColor: theme.accent, borderColor: theme.border }}
+                    />
+                    <span className="min-w-0">
+                      <span className="block text-xs font-semibold">{theme.label}</span>
+                      <span className="mt-0.5 block text-[11px] leading-4 text-muted-foreground">
+                        {theme.description}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
               <Label className="text-xs">Font</Label>
               <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                 {EXAM_FONTS.map((f) => (
@@ -489,6 +520,24 @@ function PrintExamPage() {
                   value={options.date}
                   placeholder="e.g. 14 Sep"
                   onChange={(e) => set({ date: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs">Header label</Label>
+                <Input
+                  value={options.headerText ?? ""}
+                  placeholder="Leave blank to hide"
+                  onChange={(e) => set({ headerText: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Footer note</Label>
+                <Input
+                  value={options.footerText ?? ""}
+                  placeholder="Leave blank to hide"
+                  onChange={(e) => set({ footerText: e.target.value })}
                 />
               </div>
             </div>

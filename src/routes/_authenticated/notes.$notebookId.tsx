@@ -4,6 +4,9 @@ import {
   ArrowLeft,
   ArrowDown,
   ArrowUp,
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
   Bookmark,
   BookmarkCheck,
   Check,
@@ -76,6 +79,7 @@ import {
   pointInPolygon,
   renderPageToCanvas,
   renderPageToDataUrl,
+  resizeElementToBounds,
 } from "@/lib/notes/render";
 import {
   buildNotesFlashcardPrompt,
@@ -142,7 +146,8 @@ const TOOL_SHORT_LABELS: Partial<Record<NoteTool, string>> = {
   tape: "Tape",
 };
 
-type DragMode = "draw" | "erase" | "shape" | "tape" | "select-move" | "lasso" | "pan" | null;
+type DragMode =
+  "draw" | "erase" | "shape" | "tape" | "select-move" | "select-resize" | "lasso" | "pan" | null;
 
 interface DragState {
   mode: DragMode;
@@ -156,6 +161,9 @@ interface DragState {
   elements: NoteElement[];
   /** ids being moved — captured at pointer-down so React state can't lag behind */
   selection: string[];
+  resizeId: string | null;
+  resizeOrigin: { x: number; y: number; width: number; height: number } | null;
+  resizeHandle: "nw" | "ne" | "sw" | "se";
   panStartX: number;
   panStartY: number;
   scrollLeft: number;
@@ -173,6 +181,9 @@ const emptyDrag = (): DragState => ({
   snapshot: [],
   elements: [],
   selection: [],
+  resizeId: null,
+  resizeOrigin: null,
+  resizeHandle: "se",
   panStartX: 0,
   panStartY: 0,
   scrollLeft: 0,
@@ -512,7 +523,10 @@ function NotebookEditorPage() {
       const target = event.target as HTMLElement | null;
       if (!(target instanceof Element) || target.matches("input, textarea, [contenteditable=true]"))
         return;
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "a") {
+        event.preventDefault();
+        setSelectedIds(currentPage?.elements.map((element) => element.id) ?? []);
+      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
         event.preventDefault();
         if (event.shiftKey) redo();
         else undo();
@@ -534,6 +548,23 @@ function NotebookEditorPage() {
         deleteSelected();
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "v") {
         pasteClipboard();
+      } else if (
+        selectedIds.length &&
+        ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)
+      ) {
+        event.preventDefault();
+        const distance = event.shiftKey ? 10 : 1;
+        const dx =
+          event.key === "ArrowLeft" ? -distance : event.key === "ArrowRight" ? distance : 0;
+        const dy = event.key === "ArrowUp" ? -distance : event.key === "ArrowDown" ? distance : 0;
+        const page = pageRef.current;
+        if (page) {
+          commitElements(
+            page.elements.map((element) =>
+              selectedIds.includes(element.id) ? moveElement(element, dx, dy) : element,
+            ),
+          );
+        }
       }
     };
     window.addEventListener("keydown", onKey);
@@ -856,7 +887,7 @@ function NotebookEditorPage() {
     setEditText(element.text);
   };
 
-  const finishEditing = (value = editText) => {
+  const finishEditing = (value = editText, contentHeight?: number) => {
     const page = pageRef.current;
     if (!page || !editingId) return;
     const element = page.elements.find((item) => item.id === editingId);
@@ -864,13 +895,13 @@ function NotebookEditorPage() {
       setEditingId(null);
       return;
     }
-    const text = value.trim();
-    if (!text) {
-      commitElements(page.elements.filter((item) => item.id !== editingId));
-    } else {
+    // Empty text boxes are valid objects too: blur should not make the box vanish.
+    if (value !== element.text) {
       commitElements(
         page.elements.map((item) =>
-          item.id === editingId ? ({ ...item, text: value } as NoteElement) : item,
+          item.id === editingId && (item.type === "text" || item.type === "sticky")
+            ? { ...item, text: value, height: Math.max(item.height, contentHeight ?? item.height) }
+            : item,
         ),
       );
     }
@@ -897,17 +928,28 @@ function NotebookEditorPage() {
     ? currentPage.elements.find((element) => element.id === editingId)
     : undefined;
   const editingText = editingElement?.type === "text" ? editingElement : undefined;
+  const selectedText = currentPage?.elements.find(
+    (element): element is Extract<NoteElement, { type: "text" }> =>
+      selectedIds.length === 1 && element.id === selectedIds[0] && element.type === "text",
+  );
 
   /** Ribbon font controls: tweak the text box being composed (or the size
    * default for the next one). */
-  const updateEditingText = (patch: { fontSize?: number; bold?: boolean; italic?: boolean }) => {
-    if (!currentPage || !editingText) {
+  const updateEditingText = (patch: {
+    fontSize?: number;
+    bold?: boolean;
+    italic?: boolean;
+    align?: "left" | "center" | "right";
+  }) => {
+    if (!currentPage) return;
+    const targetId = editingText?.id ?? selectedText?.id;
+    if (!targetId) {
       if (patch.fontSize !== undefined) setTextSize(patch.fontSize);
       return;
     }
     commitElements(
       currentPage.elements.map((element) =>
-        element.id === editingText.id ? ({ ...element, ...patch } as NoteElement) : element,
+        element.id === targetId && element.type === "text" ? { ...element, ...patch } : element,
       ),
     );
   };
@@ -916,10 +958,13 @@ function NotebookEditorPage() {
    * text box being edited right away. */
   const applyColor = (next: string) => {
     setColor(next);
-    if (currentPage && editingText) {
+    const targetId = editingText?.id ?? selectedText?.id;
+    if (currentPage && targetId) {
       commitElements(
         currentPage.elements.map((element) =>
-          element.id === editingText.id ? { ...element, color: next } : element,
+          element.id === targetId && element.type === "text"
+            ? { ...element, color: next }
+            : element,
         ),
       );
     }
@@ -1043,6 +1088,10 @@ function NotebookEditorPage() {
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!currentPage) return;
+    const target = event.target as HTMLElement;
+    if (target.closest("[data-note-resize-handle]")) return;
+    if (target.closest("[data-note-editable]")) return;
+    if (target.closest("[data-note-audio-control]")) return;
     if (editingId) finishEditing();
     const point = pointFromEvent(event);
     const page = currentPage;
@@ -1144,12 +1193,24 @@ function NotebookEditorPage() {
     if (tool === "select") {
       const hit = topElementAt(page, point.x, point.y);
       if (hit) {
-        const nextSelection = selectedIds.includes(hit.id) ? selectedIds : [hit.id];
+        const additive = event.shiftKey || event.ctrlKey || event.metaKey;
+        const alreadySelected = selectedIds.includes(hit.id);
+        const nextSelection = additive
+          ? alreadySelected
+            ? selectedIds.filter((id) => id !== hit.id)
+            : [...selectedIds, hit.id]
+          : alreadySelected
+            ? selectedIds
+            : [hit.id];
         setSelectedIds(nextSelection);
-        drag.mode = "select-move";
-        drag.selection = nextSelection;
-        drag.snapshot = page.elements;
-        drag.elements = page.elements;
+        if (nextSelection.includes(hit.id)) {
+          drag.mode = "select-move";
+          drag.selection = nextSelection;
+          drag.snapshot = page.elements;
+          drag.elements = page.elements;
+        } else {
+          setSelectedIds(nextSelection);
+        }
       } else {
         setSelectedIds([]);
         drag.mode = "lasso";
@@ -1202,6 +1263,45 @@ function NotebookEditorPage() {
     if (drag.mode === "lasso") {
       drag.points.push(point.x, point.y, 0.5);
       drawLasso(drag.points);
+      return;
+    }
+
+    if (drag.mode === "select-resize" && drag.resizeId && drag.resizeOrigin) {
+      const { x, y, width, height } = drag.resizeOrigin;
+      const source = { x, y, width, height };
+      const resizedElement = drag.elements.find((item) => item.id === drag.resizeId);
+      const minSize = Math.max(
+        24,
+        resizedElement?.type === "text" ? resizedElement.fontSize * 2 : 24,
+      );
+      const handle = drag.resizeHandle;
+      const movingLeft = handle === "nw" || handle === "sw";
+      const movingTop = handle === "nw" || handle === "ne";
+      const rawWidth = width + (movingLeft ? drag.startX - point.x : point.x - drag.startX);
+      const rawHeight = height + (movingTop ? drag.startY - point.y : point.y - drag.startY);
+      const nextWidth = Math.max(minSize, rawWidth);
+      const nextHeight = Math.max(minSize, rawHeight);
+      const target = {
+        x: movingLeft ? x + width - nextWidth : x,
+        y: movingTop ? y + height - nextHeight : y,
+        width: nextWidth,
+        height: nextHeight,
+      };
+      drag.elements = drag.elements.map((element) =>
+        element.id === drag.resizeId ? resizeElementToBounds(element, source, target) : element,
+      );
+      if (moveFrameRef.current === null) {
+        moveFrameRef.current = window.requestAnimationFrame(() => {
+          moveFrameRef.current = null;
+          const live = pageRef.current;
+          if (live) {
+            replacePage(
+              { ...live, elements: dragRef.current.elements, updatedAt: Date.now() },
+              false,
+            );
+          }
+        });
+      }
       return;
     }
 
@@ -1316,9 +1416,10 @@ function NotebookEditorPage() {
           drag.snapshot,
         );
       }
-    } else if (drag.mode === "select-move") {
+    } else if (drag.mode === "select-move" || drag.mode === "select-resize") {
       pushHistory(page.id, drag.snapshot);
-      scheduleSave({ ...page, elements: drag.elements, updatedAt: Date.now() });
+      const fit = ensurePageFits(page, drag.elements);
+      scheduleSave({ ...fit, elements: drag.elements, updatedAt: Date.now() });
     } else if (drag.mode === "lasso") {
       const polygon: { x: number; y: number }[] = [];
       for (let index = 0; index < drag.points.length; index += 3) {
@@ -1360,6 +1461,34 @@ function NotebookEditorPage() {
       setSelectedIds([id]);
       setEditingId(id);
       setEditText("");
+    }
+  };
+
+  const startResize = (
+    event: React.PointerEvent<HTMLButtonElement>,
+    element: NoteElement,
+    handle: DragState["resizeHandle"],
+  ) => {
+    if (!currentPage) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const point = pointFromEvent(event);
+    const drag = emptyDrag();
+    drag.mode = "select-resize";
+    drag.pointerId = event.pointerId;
+    drag.startX = point.x;
+    drag.startY = point.y;
+    drag.snapshot = currentPage.elements;
+    drag.elements = currentPage.elements;
+    drag.resizeId = element.id;
+    drag.resizeOrigin = elementBounds(element);
+    drag.resizeHandle = handle;
+    dragRef.current = drag;
+    setSelectedIds([element.id]);
+    try {
+      interactionRef.current?.setPointerCapture(event.pointerId);
+    } catch {
+      // Continue with pointer events when capture is unavailable.
     }
   };
 
@@ -1640,11 +1769,13 @@ function NotebookEditorPage() {
         deleteSelected={deleteSelected}
         duplicateSelected={duplicateSelected}
         selectedCount={selectedIds.length}
-        showTextOptions={tool === "text" || Boolean(editingText)}
-        textFontSize={editingText?.fontSize ?? textSize}
-        textBold={Boolean(editingText?.bold)}
-        textItalic={Boolean(editingText?.italic)}
+        showTextOptions={tool === "text" || Boolean(editingText) || Boolean(selectedText)}
+        textFontSize={editingText?.fontSize ?? selectedText?.fontSize ?? textSize}
+        textBold={Boolean(editingText?.bold ?? selectedText?.bold)}
+        textItalic={Boolean(editingText?.italic ?? selectedText?.italic)}
         onTextFont={updateEditingText}
+        textAlign={editingText?.align ?? selectedText?.align ?? "left"}
+        onTextAlign={(align) => updateEditingText({ align })}
         onOpenSize={() => setInkOpen(true)}
         onUndo={undo}
         onRedo={redo}
@@ -2013,29 +2144,33 @@ function NotebookEditorPage() {
                       if (editingId === element.id) {
                         return (
                           <textarea
+                            data-note-editable="true"
                             key={element.id}
                             autoFocus
                             value={editText}
                             onChange={(event) => setEditText(event.target.value)}
-                            onBlur={(event) => finishEditing(event.currentTarget.value)}
+                            onBlur={(event) =>
+                              finishEditing(
+                                event.currentTarget.value,
+                                event.currentTarget.scrollHeight / zoom,
+                              )
+                            }
                             onKeyDown={(event) => {
-                              if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
-                                event.preventDefault();
-                                finishEditing(event.currentTarget.value);
-                              }
                               if (event.key === "Escape") {
                                 event.preventDefault();
                                 finishEditing(event.currentTarget.value);
+                                event.currentTarget.blur();
                               }
                             }}
-                            className="absolute z-50 resize-none rounded border border-primary/50 bg-card/95 p-1 text-foreground outline-none"
+                            className="absolute z-50 resize-none overflow-auto rounded border border-primary/50 bg-card/95 p-1 text-foreground outline-none"
                             style={{
                               left: element.x * zoom,
                               top: element.y * zoom,
                               width: element.width * zoom,
-                              minHeight: element.height * zoom,
+                              height: element.height * zoom,
                               fontSize: element.fontSize * zoom,
                               lineHeight: 1.42,
+                              overflow: "hidden",
                               color: element.color,
                               fontWeight: element.bold ? 700 : 400,
                               fontStyle: element.italic ? "italic" : "normal",
@@ -2052,7 +2187,8 @@ function NotebookEditorPage() {
                             left: element.x * zoom,
                             top: element.y * zoom,
                             width: element.width * zoom,
-                            minHeight: element.height * zoom,
+                            height: element.height * zoom,
+                            overflow: "hidden",
                             fontSize: element.fontSize * zoom,
                             lineHeight: 1.42,
                             color: element.color,
@@ -2070,28 +2206,32 @@ function NotebookEditorPage() {
                       if (editingId === element.id) {
                         return (
                           <textarea
+                            data-note-editable="true"
                             key={element.id}
                             autoFocus
                             value={editText}
                             onChange={(event) => setEditText(event.target.value)}
-                            onBlur={(event) => finishEditing(event.currentTarget.value)}
+                            onBlur={(event) =>
+                              finishEditing(
+                                event.currentTarget.value,
+                                event.currentTarget.scrollHeight / zoom,
+                              )
+                            }
                             onKeyDown={(event) => {
-                              if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
-                                event.preventDefault();
-                                finishEditing(event.currentTarget.value);
-                              }
                               if (event.key === "Escape") {
                                 event.preventDefault();
                                 finishEditing(event.currentTarget.value);
+                                event.currentTarget.blur();
                               }
                             }}
-                            className="absolute z-50 resize-none rounded-lg border border-primary/50 p-2 shadow-lg outline-none"
+                            className="absolute z-50 resize-none overflow-auto rounded-lg border border-primary/50 p-2 shadow-lg outline-none"
                             style={{
                               left: element.x * zoom,
                               top: element.y * zoom,
                               width: element.width * zoom,
-                              minHeight: element.height * zoom,
+                              height: element.height * zoom,
                               fontSize: 16 * zoom,
+                              overflow: "hidden",
                               background: element.color,
                               color: readableOn(element.color),
                             }}
@@ -2101,19 +2241,21 @@ function NotebookEditorPage() {
                       return (
                         <div
                           key={element.id}
-                          className="pointer-events-none absolute z-20 rounded-lg p-3 shadow-md"
+                          className="pointer-events-none absolute z-20 overflow-hidden rounded-lg p-3 shadow-md"
                           style={{
                             left: element.x * zoom,
                             top: element.y * zoom,
                             width: element.width * zoom,
-                            minHeight: element.height * zoom,
+                            height: element.height * zoom,
                             background: element.color,
                             fontSize: 16 * zoom,
                             lineHeight: 1.35,
                             color: readableOn(element.color),
                           }}
                         >
-                          <span className="whitespace-pre-wrap break-words">{element.text}</span>
+                          <span className="pointer-events-none whitespace-pre-wrap break-words">
+                            {element.text}
+                          </span>
                         </div>
                       );
                     }
@@ -2127,7 +2269,8 @@ function NotebookEditorPage() {
                             left: element.x * zoom,
                             top: element.y * zoom,
                             width: element.width * zoom,
-                            minHeight: element.height * zoom,
+                            height: element.height * zoom,
+                            overflow: "hidden",
                             background: element.color,
                             opacity: element.revealed ? 0.28 : 0.94,
                             color: readableOn(element.color),
@@ -2144,6 +2287,7 @@ function NotebookEditorPage() {
                       return (
                         <div
                           key={element.id}
+                          data-note-audio-control="true"
                           className="absolute z-[45] rounded-xl border border-border bg-card p-2 shadow-sm"
                           style={{
                             left: element.x * zoom,
@@ -2183,20 +2327,48 @@ function NotebookEditorPage() {
                     return (
                       <div
                         key={`selection-${id}`}
-                        className="pointer-events-none absolute z-40 rounded-sm border-2 border-dashed border-primary/70 bg-primary/5"
+                        className="pointer-events-none absolute z-20 rounded-sm border-2 border-dashed border-primary/70 bg-primary/5"
                         style={{
                           left: (bounds.x - 4) * zoom,
                           top: (bounds.y - 4) * zoom,
                           width: (bounds.width + 8) * zoom,
                           height: (bounds.height + 8) * zoom,
                         }}
-                      />
+                      >
+                        {selectedIds.length === 1 &&
+                          element.type !== "audio" &&
+                          (
+                            [
+                              ["nw", "-left-2 -top-2"],
+                              ["ne", "-right-2 -top-2"],
+                              ["sw", "-left-2 -bottom-2"],
+                              ["se", "-right-2 -bottom-2"],
+                            ] as const
+                          ).map(([handle, position]) => (
+                            <button
+                              key={handle}
+                              type="button"
+                              data-note-resize-handle
+                              aria-label={`Resize selected item from ${handle}`}
+                              title="Drag to resize"
+                              onPointerDown={(event) => startResize(event, element, handle)}
+                              className={cn(
+                                "pointer-events-auto absolute size-3 touch-none rounded-sm border-2 border-background bg-primary shadow",
+                                position,
+                              )}
+                            />
+                          ))}
+                      </div>
                     );
                   })}
 
                   <div
                     ref={interactionRef}
-                    className={cn("absolute inset-0 z-40 touch-none", spaceHeld && "cursor-grab")}
+                    className={cn(
+                      "absolute inset-0 touch-none",
+                      spaceHeld || tool === "pan" ? "z-40" : "z-10",
+                      spaceHeld && "cursor-grab",
+                    )}
                     style={{
                       cursor:
                         tool === "pan"
@@ -2625,7 +2797,7 @@ function InkSizeDialog({
               strokeLinejoin="round"
               opacity={tool === "highlighter" ? 0.45 : tool === "pencil" ? 0.82 : 1}
             />
-          </svg>
+          </svg>{" "}
           <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground">
             <span>Live preview</span>
             <span className="font-semibold text-foreground">
@@ -2705,6 +2877,8 @@ function ToolRibbon({
   textBold,
   textItalic,
   onTextFont,
+  textAlign,
+  onTextAlign,
   onOpenSize,
   onUndo,
   onRedo,
@@ -2736,7 +2910,14 @@ function ToolRibbon({
   textFontSize: number;
   textBold: boolean;
   textItalic: boolean;
-  onTextFont: (patch: { fontSize?: number; bold?: boolean; italic?: boolean }) => void;
+  onTextFont: (patch: {
+    fontSize?: number;
+    bold?: boolean;
+    italic?: boolean;
+    align?: "left" | "center" | "right";
+  }) => void;
+  textAlign: "left" | "center" | "right";
+  onTextAlign: (align: "left" | "center" | "right") => void;
   onOpenSize: () => void;
   onUndo: () => void;
   onRedo: () => void;
@@ -2874,6 +3055,31 @@ function ToolRibbon({
                 >
                   I
                 </button>
+              </div>
+              <div className="flex gap-0.5">
+                {(
+                  [
+                    ["left", AlignLeft],
+                    ["center", AlignCenter],
+                    ["right", AlignRight],
+                  ] as const
+                ).map(([align, Icon]) => (
+                  <button
+                    key={align}
+                    type="button"
+                    onClick={() => onTextAlign(align)}
+                    aria-label={`Align text ${align}`}
+                    aria-pressed={textAlign === align}
+                    className={cn(
+                      "grid size-7 place-items-center rounded-md border transition-colors",
+                      textAlign === align
+                        ? "border-primary/30 bg-primary/10 text-primary"
+                        : "border-border bg-background text-muted-foreground hover:border-primary/25 hover:text-foreground",
+                    )}
+                  >
+                    <Icon className="size-3.5" />
+                  </button>
+                ))}
               </div>
             </div>
           </RibbonGroup>

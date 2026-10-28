@@ -1,7 +1,7 @@
 {
   "name": "knowly",
   "private": true,
-  "version": "3.1.1",
+  "version": "3.2.0",
   "description": "A local-first study workspace for decks, structured courses and handwritten notebooks.",
   "sideEffects": false,
   "type": "module",

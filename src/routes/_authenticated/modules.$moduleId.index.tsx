@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { MathText } from "@/components/math/math-text";
 import { ModuleMarkdownText } from "@/components/module-markdown";
 import {
   ArrowLeft,
@@ -255,7 +256,9 @@ function ModuleEditor() {
             {module.objectives.map((o, i) => (
               <li key={i} className="flex items-start gap-2">
                 <Check className="mt-0.5 size-4 text-success" />
-                <span>{o}</span>
+                <span className="min-w-0">
+                  <MathText text={o} />
+                </span>
               </li>
             ))}
           </ul>
@@ -569,7 +572,7 @@ function BlockView({
       <div className={`rounded-xl border p-4 ${cls}`}>
         {block.title && (
           <p className="mb-2 text-[0.72em] font-bold uppercase tracking-[0.18em] text-foreground/70">
-            {block.title}
+            <MathText text={block.title} />
           </p>
         )}
         <ModuleMarkdownText
@@ -584,7 +587,7 @@ function BlockView({
     return (
       <div className="rounded-xl border border-border bg-surface/40 p-4">
         <p className="mb-2 inline-flex items-center gap-1.5 text-[0.72em] font-bold uppercase tracking-[0.18em] text-foreground/70">
-          <Lightbulb className="size-3.5" /> {block.title || "Example"}
+          <Lightbulb className="size-3.5" /> <MathText text={block.title || "Example"} />
         </p>
         <ModuleMarkdownText
           variant="screen"
@@ -608,7 +611,9 @@ function BlockView({
       <figure className="overflow-hidden rounded-xl border border-border">
         <img src={block.url} alt={block.alt ?? ""} className="w-full" />
         {block.caption && (
-          <figcaption className="p-2 text-xs text-muted-foreground">{block.caption}</figcaption>
+          <figcaption className="p-2 text-xs text-muted-foreground">
+            <MathText text={block.caption} />
+          </figcaption>
         )}
       </figure>
     ) : null;
@@ -620,14 +625,18 @@ function BlockView({
         <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-primary">
           <Sparkles className="size-3.5" /> Checkpoint
         </p>
-        <p className="mb-3 font-medium">{question?.question ?? "Checkpoint"}</p>
+        <p className="mb-3 font-medium">
+          <MathText text={question?.question ?? "Checkpoint"} />
+        </p>
         {!reveal ? (
           <Button size="sm" variant="outline" onClick={onReveal}>
             Reveal answer
           </Button>
         ) : (
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">{q?.answer || q?.explanation}</p>
+            <p className="text-sm text-muted-foreground">
+              <MathText text={q?.answer || q?.explanation} />
+            </p>
             <div className="flex gap-2">
               <Button
                 size="sm"
@@ -662,7 +671,9 @@ function BlockView({
         <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-primary">
           <BookOpenCheck className="size-3.5" /> Activity square
         </p>
-        <p className="mb-3 font-medium">{block.title || "Imported activity"}</p>
+        <p className="mb-3 font-medium">
+          <MathText text={block.title || "Imported activity"} />
+        </p>
         {deck ? (
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline">{deck.title}</Badge>

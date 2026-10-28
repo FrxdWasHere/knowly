@@ -23,6 +23,7 @@ import { evaluateAchievements, ACHIEVEMENTS } from "@/lib/gamification";
 import { dayKey } from "@/lib/answers";
 import { applyThemeToRoot } from "@/lib/theme-dom";
 import { loadWallpaper, saveWallpaper } from "@/lib/wallpaper-store";
+import { normalizeSidebarGroups } from "@/lib/sidebar-preferences";
 import { createId } from "@/lib/id";
 import { schedule, DAY_MS, type SrsGrade } from "@/lib/srs";
 import type {
@@ -126,6 +127,7 @@ function normalizeState(parsed: Partial<AppState>): AppState {
     settings: {
       ...DEFAULT_SETTINGS,
       ...settings,
+      sidebarGroups: normalizeSidebarGroups(settings.sidebarGroups),
       accent,
       avatarEmoji,
       defaultQuizConfig: {

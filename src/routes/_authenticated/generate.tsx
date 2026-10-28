@@ -3,7 +3,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Copy, Eraser, Save, Wand2, Trash2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
+import { PromptStudioNav } from "@/components/prompt-studio-nav";
 import { PageHeader } from "@/components/app-shell";
+import { AutoChoice } from "@/components/auto-choice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,6 +60,10 @@ function GeneratePage() {
   const [isSTEM, setIsSTEM] = useState(false);
   const [needsEquations, setNeedsEquations] = useState(false);
   const [needsGraphs, setNeedsGraphs] = useState(false);
+  /* "whatever you see fit" for each option — the AI decides instead */
+  const [countAuto, setCountAuto] = useState(false);
+  const [typesAuto, setTypesAuto] = useState(false);
+  const [distAuto, setDistAuto] = useState(false);
 
   const target = state.decks.find((d) => d.id === targetId);
 
@@ -90,6 +96,9 @@ function GeneratePage() {
         isSTEM,
         needsEquations,
         needsGraphs,
+        countAuto,
+        typesAuto,
+        distributionAuto: distAuto,
       });
     }
     return buildPrompt({
@@ -105,6 +114,9 @@ function GeneratePage() {
       isSTEM,
       needsEquations,
       needsGraphs,
+      countAuto,
+      typesAuto,
+      distributionAuto: distAuto,
     });
   }, [
     mode,
@@ -119,6 +131,9 @@ function GeneratePage() {
     isSTEM,
     needsEquations,
     needsGraphs,
+    countAuto,
+    typesAuto,
+    distAuto,
     state.settings.gradeLevel,
     state.settings.studyReason,
   ]);
@@ -144,8 +159,8 @@ function GeneratePage() {
   return (
     <div>
       <PageHeader
-        title="Prompt Forge"
-        description="Knowly doesn't talk to any AI itself. It writes the instructions — you paste them into the AI you use, then bring the finished deck back here."
+        title="Prompt Studio · Deck"
+        description="Choose what you want to create above, shape the brief, then copy the instructions into the AI you use. Bring the result back to Knowly."
         action={
           <div className="flex gap-2">
             <Button variant="outline" onClick={clear}>
@@ -158,6 +173,9 @@ function GeneratePage() {
         }
       />
 
+      <div className="mb-6">
+        <PromptStudioNav active="deck" />
+      </div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="space-y-6">
           <section className="panel flex flex-wrap items-center gap-3 p-4">
@@ -243,41 +261,55 @@ function GeneratePage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="question-count">Question count</Label>
-              <Input
-                id="question-count"
-                type="number"
-                min={5}
-                step={5}
-                value={count}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  if (raw === "") {
-                    setCount(5);
-                    return;
-                  }
-                  const n = Math.round(parseInt(raw, 10) / 5) * 5;
-                  setCount(Math.max(5, n));
-                }}
-                className="max-w-[140px]"
-              />
-              <p className="text-xs text-muted-foreground">
-                Numbers are rounded to steps of 5. No upper limit.
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Label htmlFor="question-count">Question count</Label>
+                <AutoChoice active={countAuto} onToggle={() => setCountAuto((v) => !v)} />
+              </div>
+              {countAuto ? (
+                <p className="text-xs text-muted-foreground">
+                  Your AI decides how many questions the material deserves.
+                </p>
+              ) : (
+                <>
+                  <Input
+                    id="question-count"
+                    type="number"
+                    min={5}
+                    step={5}
+                    value={count}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      if (raw === "") {
+                        setCount(5);
+                        return;
+                      }
+                      const n = Math.round(parseInt(raw, 10) / 5) * 5;
+                      setCount(Math.max(5, n));
+                    }}
+                    className="max-w-[140px]"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Numbers are rounded to steps of 5. No upper limit.
+                  </p>
+                </>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label>Question types</Label>
               <div className="flex flex-wrap gap-2">
+                <AutoChoice active={typesAuto} onToggle={() => setTypesAuto((v) => !v)} />
                 {questionTypes.map((t) => (
                   <button
                     key={t}
+                    disabled={typesAuto}
                     onClick={() => toggleType(t)}
                     className={cn(
                       "rounded-full border border-border px-3 py-1.5 text-xs font-medium transition-colors",
-                      types.includes(t)
+                      types.includes(t) && !typesAuto
                         ? "border-primary bg-primary/15 text-primary"
                         : "text-muted-foreground hover:text-foreground",
+                      typesAuto && "opacity-40",
                     )}
                   >
                     {TYPE_LABELS[t]}
@@ -287,22 +319,31 @@ function GeneratePage() {
             </div>
 
             <div className="space-y-3">
-              <Label>Difficulty distribution</Label>
-              {(["easy", "medium", "hard"] as Difficulty[]).map((d) => (
-                <div key={d} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="capitalize text-muted-foreground">{d}</span>
-                    <span>{dist[d]}%</span>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Label>Difficulty distribution</Label>
+                <AutoChoice active={distAuto} onToggle={() => setDistAuto((v) => !v)} />
+              </div>
+              {distAuto ? (
+                <p className="text-xs text-muted-foreground">
+                  Your AI sets the easy/medium/hard balance from the material.
+                </p>
+              ) : (
+                (["easy", "medium", "hard"] as Difficulty[]).map((d) => (
+                  <div key={d} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="capitalize text-muted-foreground">{d}</span>
+                      <span>{dist[d]}%</span>
+                    </div>
+                    <Slider
+                      value={[dist[d]]}
+                      min={0}
+                      max={100}
+                      step={5}
+                      onValueChange={([v]) => setDist((p) => ({ ...p, [d]: v }))}
+                    />
                   </div>
-                  <Slider
-                    value={[dist[d]]}
-                    min={0}
-                    max={100}
-                    step={5}
-                    onValueChange={([v]) => setDist((p) => ({ ...p, [d]: v }))}
-                  />
-                </div>
-              ))}
+                ))
+              )}
             </div>
 
             <div className="space-y-2">

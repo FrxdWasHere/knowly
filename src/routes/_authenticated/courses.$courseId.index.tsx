@@ -178,7 +178,9 @@ function CourseOverviewPage() {
                 </span>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    <span>{course.subject}</span>
+                    <span>
+                      <MathText text={course.subject} />
+                    </span>
                     {course.level && (
                       <>
                         <span aria-hidden>·</span>
@@ -187,11 +189,11 @@ function CourseOverviewPage() {
                     )}
                   </div>
                   <h1 className="mt-2 max-w-3xl font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
-                    {course.title}
+                    <MathText text={course.title} />
                   </h1>
                   {course.description && (
                     <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-                      {course.description}
+                      <MathText text={course.description} />
                     </p>
                   )}
                 </div>
@@ -283,7 +285,7 @@ function CourseOverviewPage() {
                   </p>
                   {next && (
                     <p className="mt-2 line-clamp-2 text-[11px] leading-4 text-foreground/70">
-                      Next: {next.lesson.title}
+                      Next: <MathText text={next.lesson.title} />
                     </p>
                   )}
                 </div>
@@ -352,7 +354,7 @@ function CourseOverviewPage() {
                       <span className="min-w-0 flex-1">
                         <span className="flex flex-wrap items-center gap-2">
                           <span className="font-display text-base font-semibold">
-                            {module.title}
+                            <MathText text={module.title} />
                           </span>
                           {moduleActive && (
                             <Badge className="bg-primary/10 text-primary">Up next</Badge>
@@ -424,7 +426,7 @@ function CourseOverviewPage() {
                                       complete && "text-muted-foreground",
                                     )}
                                   >
-                                    {lesson.title}
+                                    <MathText text={lesson.title} />
                                   </span>
                                   {isNext && (
                                     <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-primary">
@@ -545,11 +547,13 @@ function CourseOverviewPage() {
                   <Target className="size-4 text-primary" />
                   <h2 className="font-display text-base font-semibold">What you'll learn</h2>
                 </div>
-                <ul className="mt-4 space-y-2.5 text-sm leading-6 text-muted-foreground">
+                <ul className="mt-4 space-y-2.5 pl-1.5 text-sm leading-6 text-muted-foreground">
                   {course.objectives.map((objective) => (
                     <li key={objective} className="flex gap-2.5">
                       <CheckCircle2 className="mt-1.5 size-3.5 shrink-0 text-success" />
-                      {objective}
+                      <span className="min-w-0">
+                        <MathText text={objective} />
+                      </span>
                     </li>
                   ))}
                 </ul>

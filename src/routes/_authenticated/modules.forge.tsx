@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Hammer, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useKnowly } from "@/store/knowly";
+import { stemFlagsForSubject } from "@/lib/defaults";
 import type { Module } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/modules/forge")({
@@ -36,6 +37,9 @@ function ModuleForge() {
   const [difficulty, setDifficulty] = useState("2");
   const [minutes, setMinutes] = useState("15");
   const [objectives, setObjectives] = useState("");
+  /* the brief decides whether this is a maths/science module, so the learner
+     does not have to flip three switches after the fact */
+  const stemFlags = useMemo(() => stemFlagsForSubject(subject), [subject]);
 
   const forge = () => {
     if (!title.trim()) return;
@@ -47,9 +51,7 @@ function ModuleForge() {
       color: "#6d8cff",
       emoji: "📘",
       tags: [],
-      isSTEM: false,
-      needsEquations: false,
-      needsGraphs: false,
+      ...stemFlags,
       objectives: objectives
         .split("\n")
         .map((x) => x.trim())
@@ -96,6 +98,13 @@ function ModuleForge() {
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Biology"
             />
+            {stemFlags.isSTEM && (
+              <p className="text-[11px] leading-5 text-muted-foreground">
+                Maths/science subject — the module carries
+                {stemFlags.needsEquations ? " \u00b7 LaTeX equations" : ""}
+                {stemFlags.needsGraphs ? " \u00b7 graph questions" : ""}.
+              </p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label>Difficulty</Label>

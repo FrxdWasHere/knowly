@@ -360,6 +360,8 @@ export interface Settings {
   animationSpeed: number;
   showProgressBars: boolean;
   sidebarCollapsed: boolean;
+  /** User-managed navigation section order, labels, and visibility. */
+  sidebarGroups?: { id: string; label: string; visible: boolean }[];
   // accessibility
   reducedMotion: boolean;
   highContrast: boolean;
