@@ -40,6 +40,10 @@ export interface ModulePrintOptions {
   includeTitlePage: boolean;
   /** "module" follows the module accent, otherwise a COLOR_THEMES id */
   coverTheme: string;
+  /** how far the running header sits below the top margin, in % of sheet height */
+  headerInset: number;
+  /** how far the footer sits above the bottom margin, in % of sheet height */
+  footerInset: number;
   includeAnswerKey: boolean;
   includeNotes: boolean;
   /** preview-only: shows the editor for extra pages. The pages themselves are
@@ -58,6 +62,8 @@ export const defaultModulePrintOptions: ModulePrintOptions = {
   runningHeader: true,
   includeTitlePage: true,
   coverTheme: "module",
+  headerInset: 0,
+  footerInset: 0,
   includeAnswerKey: true,
   includeNotes: true,
 };
@@ -631,11 +637,22 @@ export function ModulePaper({
   const padTop = margin;
   const padBottom = margin;
   const contentWidth = Math.max(200, dims.width - padX * 2);
+  // header/footer can be nudged inwards from their margin; the content area
+  // gives up exactly that much room so the bands never overlap the flow
+  const headerInset = Math.round((options.headerInset ?? 0) * dims.height * 0.01);
+  const footerInset = Math.round((options.footerInset ?? 0) * dims.height * 0.01);
   // header and footer are fixed bands inside the padding, always reserved, so
   // this is exactly the height of the flex-1 content area on every page
   const contentHeight = Math.max(
     200,
-    dims.height - padTop - padBottom - HEADER_H - FOOTER_H - CONTENT_BOTTOM_CLEAR,
+    dims.height -
+      padTop -
+      padBottom -
+      HEADER_H -
+      FOOTER_H -
+      headerInset -
+      footerInset -
+      CONTENT_BOTTOM_CLEAR,
   );
   const fontPx = options.fontScale === "small" ? 11.5 : options.fontScale === "large" ? 13.5 : 12.5;
   const lineHeight = 1.55 * SPACING_FACTORS[options.spacing];
@@ -839,6 +856,8 @@ export function ModulePaper({
               fontSize={fontPx}
               fontFamily={fontFamily}
               lineHeight={lineHeight}
+              headerInset={headerInset}
+              footerInset={footerInset}
             >
               <div className="grid h-full place-items-center rounded-lg text-muted-foreground">
                 Preparing print preview…
@@ -866,6 +885,8 @@ export function ModulePaper({
             fontSize={fontPx}
             fontFamily={fontFamily}
             lineHeight={lineHeight}
+            headerInset={headerInset}
+            footerInset={footerInset}
             // no running header over the in-flow hero when there is no title page
             headerText={options.runningHeader && (titlePage || pageIndex > 0) ? module.title : null}
             footer={{
@@ -1547,6 +1568,8 @@ function ModuleSheet({
   fontSize,
   fontFamily,
   lineHeight,
+  headerInset = 0,
+  footerInset = 0,
   headerText,
   footer,
   fullBleed,
@@ -1558,6 +1581,10 @@ function ModuleSheet({
   fontSize?: number;
   fontFamily?: string;
   lineHeight?: number;
+  /** px between the top margin and the header band */
+  headerInset?: number;
+  /** px between the footer band and the bottom margin */
+  footerInset?: number;
   headerText?: string | null;
   footer?: { left: string; text: string | null };
   fullBleed?: boolean;
@@ -1604,14 +1631,14 @@ function ModuleSheet({
               <div
                 aria-hidden
                 className="flex shrink-0 items-center justify-center text-[9px] font-semibold uppercase tracking-[0.28em] text-muted-foreground"
-                style={{ height: HEADER_H }}
+                style={{ height: HEADER_H, marginTop: headerInset }}
               >
                 {headerText}
               </div>
               <div className="paper-content min-h-0 flex-1 overflow-hidden">{children}</div>
               <footer
                 className="flex shrink-0 items-center justify-between gap-5 text-muted-foreground"
-                style={{ height: FOOTER_H, marginTop: "auto" }}
+                style={{ height: FOOTER_H, marginTop: "auto", marginBottom: footerInset }}
               >
                 {footer?.text && (
                   <>

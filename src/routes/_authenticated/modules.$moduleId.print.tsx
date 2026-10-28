@@ -5,6 +5,7 @@ import {
   Columns2,
   Edit3,
   Heading1,
+  MoveVertical,
   Palette,
   Printer,
   RotateCcw,
@@ -30,6 +31,7 @@ import {
 } from "@/components/print/module-paper";
 import { getPaperDims } from "@/components/print/course-paper";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { COLOR_THEMES, getColorTheme } from "@/lib/themes";
 import { cn } from "@/lib/utils";
@@ -87,6 +89,41 @@ function ToggleRow({
         <p className="text-[11px] leading-4 text-muted-foreground">{description}</p>
       </div>
       <Switch checked={checked} onCheckedChange={onChange} />
+    </div>
+  );
+}
+
+function SliderRow({
+  label,
+  description,
+  value,
+  suffix,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  value: number;
+  /** "down" for the header, "up" for the footer */
+  suffix: string;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-xs font-medium">{label}</p>
+        <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
+          {value === 0 ? "At the margin" : `${value.toFixed(1)}% ${suffix}`}
+        </span>
+      </div>
+      <Slider
+        className="mt-2.5"
+        min={0}
+        max={6}
+        step={0.5}
+        value={[value]}
+        onValueChange={(values) => onChange(values[0] ?? 0)}
+      />
+      <p className="mt-1 text-[11px] leading-4 text-muted-foreground">{description}</p>
     </div>
   );
 }
@@ -310,6 +347,28 @@ function ModulePrintPage() {
                     sub={footer.sub}
                   />
                 ))}
+              </div>
+            </OptionGroup>
+
+            <OptionGroup
+              icon={<MoveVertical className="size-4 text-primary" />}
+              label="Header & footer position"
+            >
+              <div className="space-y-4">
+                <SliderRow
+                  label="Header"
+                  description="Push the running header down from the top margin. The page content makes room automatically."
+                  value={options.headerInset ?? 0}
+                  suffix="down"
+                  onChange={(value) => patch({ headerInset: value })}
+                />
+                <SliderRow
+                  label="Footer"
+                  description="Lift the footer up from the bottom margin. The page content makes room automatically."
+                  value={options.footerInset ?? 0}
+                  suffix="up"
+                  onChange={(value) => patch({ footerInset: value })}
+                />
               </div>
             </OptionGroup>
 
