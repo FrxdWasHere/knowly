@@ -40,9 +40,15 @@ export interface ModulePrintOptions {
   includeTitlePage: boolean;
   /** "module" follows the module accent, otherwise a COLOR_THEMES id */
   coverTheme: string;
-  /** how far the running header sits below the top margin, in % of sheet height */
+  /**
+   * Vertical offset of the running header from the top margin, in % of sheet
+   * height. Negative lifts it towards the paper edge, positive pushes it in.
+   */
   headerInset: number;
-  /** how far the footer sits above the bottom margin, in % of sheet height */
+  /**
+   * Vertical offset of the footer from the bottom margin, in % of sheet height.
+   * Positive lifts it up towards the text, negative drops it towards the edge.
+   */
   footerInset: number;
   includeAnswerKey: boolean;
   includeNotes: boolean;
@@ -637,10 +643,17 @@ export function ModulePaper({
   const padTop = margin;
   const padBottom = margin;
   const contentWidth = Math.max(200, dims.width - padX * 2);
-  // header/footer can be nudged inwards from their margin; the content area
-  // gives up exactly that much room so the bands never overlap the flow
-  const headerInset = Math.round((options.headerInset ?? 0) * dims.height * 0.01);
-  const footerInset = Math.round((options.footerInset ?? 0) * dims.height * 0.01);
+  // header/footer can be nudged either way from their margin; the content area
+  // gives up exactly that much room so the bands never overlap the flow. The
+  // clamp keeps both bands on the sheet at extreme values or small papers.
+  const headerInset = Math.max(
+    4 - padTop,
+    Math.round((options.headerInset ?? 0) * dims.height * 0.01),
+  );
+  const footerInset = Math.max(
+    4 - padBottom,
+    Math.round((options.footerInset ?? 0) * dims.height * 0.01),
+  );
   // header and footer are fixed bands inside the padding, always reserved, so
   // this is exactly the height of the flex-1 content area on every page
   const contentHeight = Math.max(

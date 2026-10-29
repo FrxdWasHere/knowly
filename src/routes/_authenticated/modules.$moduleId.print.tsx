@@ -97,28 +97,31 @@ function SliderRow({
   label,
   description,
   value,
-  suffix,
+  labels,
   onChange,
 }: {
   label: string;
   description: string;
   value: number;
-  /** "down" for the header, "up" for the footer */
-  suffix: string;
+  /** wording for a positive / negative drag, e.g. header: down / up */
+  labels: { positive: string; negative: string };
   onChange: (value: number) => void;
 }) {
+  const amount = Math.abs(value);
   return (
     <div>
       <div className="flex items-baseline justify-between gap-3">
         <p className="text-xs font-medium">{label}</p>
         <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
-          {value === 0 ? "At the margin" : `${value.toFixed(1)}% ${suffix}`}
+          {value === 0
+            ? "At the margin"
+            : `${amount.toFixed(1)}% ${value > 0 ? labels.positive : labels.negative}`}
         </span>
       </div>
       <Slider
         className="mt-2.5"
-        min={0}
-        max={6}
+        min={-4}
+        max={4}
         step={0.5}
         value={[value]}
         onValueChange={(values) => onChange(values[0] ?? 0)}
@@ -128,12 +131,23 @@ function SliderRow({
   );
 }
 
+const clampInset = (value: unknown) =>
+  typeof value === "number" && Number.isFinite(value) ? Math.min(4, Math.max(-4, value)) : 0;
+
 function loadOptions(): ModulePrintOptions {
   if (typeof window === "undefined") return defaultModulePrintOptions;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY_MODULE_PRINT);
     if (!raw) return defaultModulePrintOptions;
-    return { ...defaultModulePrintOptions, ...(JSON.parse(raw) as ModulePrintOptions) };
+    const parsed = JSON.parse(raw) as Partial<ModulePrintOptions>;
+    return {
+      ...defaultModulePrintOptions,
+      ...parsed,
+      // older builds stored 0…6 (one-directional); re-centre so the slider has
+      // room on both sides again
+      headerInset: clampInset(parsed.headerInset),
+      footerInset: clampInset(parsed.footerInset),
+    };
   } catch {
     return defaultModulePrintOptions;
   }
@@ -357,16 +371,16 @@ function ModulePrintPage() {
               <div className="space-y-4">
                 <SliderRow
                   label="Header"
-                  description="Push the running header down from the top margin. The page content makes room automatically."
+                  description="Starts at the margin (the middle of the range) — drag either way to move the header up towards the edge or down into the page. The content makes room automatically."
                   value={options.headerInset ?? 0}
-                  suffix="down"
+                  labels={{ positive: "down", negative: "up" }}
                   onChange={(value) => patch({ headerInset: value })}
                 />
                 <SliderRow
                   label="Footer"
-                  description="Lift the footer up from the bottom margin. The page content makes room automatically."
+                  description="Starts at the margin (the middle of the range) — drag either way to lift the footer up or drop it towards the edge. The content makes room automatically."
                   value={options.footerInset ?? 0}
-                  suffix="up"
+                  labels={{ positive: "up", negative: "down" }}
                   onChange={(value) => patch({ footerInset: value })}
                 />
               </div>

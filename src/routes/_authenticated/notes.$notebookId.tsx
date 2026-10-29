@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
   ArrowDown,
@@ -147,7 +147,16 @@ const TOOL_SHORT_LABELS: Partial<Record<NoteTool, string>> = {
 };
 
 type DragMode =
-  "draw" | "erase" | "shape" | "tape" | "select-move" | "select-resize" | "lasso" | "pan" | null;
+  | "draw"
+  | "erase"
+  | "shape"
+  | "tape"
+  | "select-move"
+  | "select-resize"
+  | "text-create"
+  | "lasso"
+  | "pan"
+  | null;
 
 interface DragState {
   mode: DragMode;
@@ -164,6 +173,10 @@ interface DragState {
   resizeId: string | null;
   resizeOrigin: { x: number; y: number; width: number; height: number } | null;
   resizeHandle: "nw" | "ne" | "sw" | "se";
+  /** text/sticky box being sized out from a drag, committed on pointer-up */
+  createId: string | null;
+  /** pointer position where the create-drag started, for distance checks */
+  createOrigin: { x: number; y: number } | null;
   panStartX: number;
   panStartY: number;
   scrollLeft: number;
@@ -184,6 +197,8 @@ const emptyDrag = (): DragState => ({
   resizeId: null,
   resizeOrigin: null,
   resizeHandle: "se",
+  createId: null,
+  createOrigin: null,
   panStartX: 0,
   panStartY: 0,
   scrollLeft: 0,
@@ -202,6 +217,17 @@ function fileToDataUrl(file: Blob): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
+
+/**
+ * Keep a composing textarea exactly as tall as its text (never below the box's
+ * own height), so typed lines are visible as you type instead of being clipped
+ * until blur. Runs on every render, which covers typing, paste and undo.
+ */
+const autoGrowTextarea = (textarea: HTMLTextAreaElement | null, floor: number) => {
+  if (!textarea) return;
+  textarea.style.height = "auto";
+  textarea.style.height = `${Math.max(floor, textarea.scrollHeight)}px`;
+};
 
 function NotebookEditorPage() {
   const { notebookId } = Route.useParams();
@@ -541,6 +567,18 @@ function NotebookEditorPage() {
       } else if (event.key === "Escape") {
         setSelectedIds([]);
         setEditingId(null);
+      } else if (
+        event.key === "Enter" &&
+        selectedIds.length === 1 &&
+        !target.closest("button, a")
+      ) {
+        // Enter on a selected text box or sticky opens it for editing.
+        const element = pageRef.current?.elements.find((item) => item.id === selectedIds[0]);
+        if (element && (element.type === "text" || element.type === "sticky")) {
+          event.preventDefault();
+          setEditingId(element.id);
+          setEditText(element.text);
+        }
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "c") {
         copySelectedElements();
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "x") {
@@ -1148,25 +1186,45 @@ function NotebookEditorPage() {
     }
 
     if (tool === "text") {
+      const hit = topElementAt(page, point.x, point.y);
+      if (hit && (hit.type === "text" || hit.type === "sticky")) {
+        // Clicking an existing box with the text tool edits it in place
+        // instead of stacking a new empty box on top of it.
+        setSelectedIds([hit.id]);
+        startEditing(hit);
+        dragRef.current = drag;
+        return;
+      }
+      // Sizing drag: the box follows the pointer and is committed on release.
+      const initialWidth = Math.max(60, Math.min(320, page.width - point.x - 20));
       const element: NoteElement = {
         id: newElementId(),
         type: "text",
         x: point.x,
         y: point.y,
-        width: Math.max(60, Math.min(320, page.width - point.x - 20)),
+        width: initialWidth,
         height: 100,
         text: "",
         fontSize: textSize,
         color,
       };
-      commitElements([...page.elements, element]);
-      setSelectedIds([element.id]);
-      pendingEditRef.current = element.id;
+      drag.mode = "text-create";
+      drag.snapshot = page.elements;
+      drag.elements = [...page.elements, element];
+      drag.createId = element.id;
+      drag.createOrigin = { x: element.x, y: element.y };
       dragRef.current = drag;
       return;
     }
 
     if (tool === "sticky") {
+      const stickyHit = topElementAt(page, point.x, point.y);
+      if (stickyHit && (stickyHit.type === "text" || stickyHit.type === "sticky")) {
+        setSelectedIds([stickyHit.id]);
+        startEditing(stickyHit);
+        dragRef.current = drag;
+        return;
+      }
       const element: NoteElement = {
         id: newElementId(),
         type: "sticky",
@@ -1177,9 +1235,11 @@ function NotebookEditorPage() {
         text: "",
         color: "#fef3a5",
       };
-      commitElements([...page.elements, element]);
-      setSelectedIds([element.id]);
-      pendingEditRef.current = element.id;
+      drag.mode = "text-create";
+      drag.snapshot = page.elements;
+      drag.elements = [...page.elements, element];
+      drag.createId = element.id;
+      drag.createOrigin = { x: element.x, y: element.y };
       dragRef.current = drag;
       return;
     }
@@ -1305,6 +1365,44 @@ function NotebookEditorPage() {
       return;
     }
 
+    if (drag.mode === "text-create" && drag.createId) {
+      const origin = drag.createOrigin;
+      const moved = Math.abs(point.x - drag.startX) > 6 || Math.abs(point.y - drag.startY) > 6;
+      if (origin && moved) {
+        drag.elements = drag.elements.map((element) => {
+          if (element.id !== drag.createId) return element;
+          if (element.type === "text") {
+            // Dragging right/down defines the box; the origin stays put.
+            return {
+              ...element,
+              width: Math.max(60, point.x - element.x),
+              height: Math.max(56, point.y - element.y),
+            };
+          }
+          if (element.type !== "sticky") return element;
+          // Stickies keep their size and follow the pointer's grab offset.
+          return {
+            ...element,
+            x: Math.max(10, origin.x + (point.x - drag.startX)),
+            y: Math.max(10, origin.y + (point.y - drag.startY)),
+          };
+        });
+        if (moveFrameRef.current === null) {
+          moveFrameRef.current = window.requestAnimationFrame(() => {
+            moveFrameRef.current = null;
+            const live = pageRef.current;
+            if (live && dragRef.current.mode === "text-create") {
+              replacePage(
+                { ...live, elements: dragRef.current.elements, updatedAt: Date.now() },
+                false,
+              );
+            }
+          });
+        }
+      }
+      return;
+    }
+
     if (drag.mode === "select-move") {
       const dx = point.x - drag.lastX;
       const dy = point.y - drag.lastY;
@@ -1415,6 +1513,14 @@ function NotebookEditorPage() {
           ],
           drag.snapshot,
         );
+      }
+    } else if (drag.mode === "text-create") {
+      const created = drag.elements.find((element) => element.id === drag.createId);
+      if (created) {
+        commitElements(drag.elements, drag.snapshot);
+        setSelectedIds([created.id]);
+        // pointer-up tail switches into the editor for this box
+        pendingEditRef.current = created.id;
       }
     } else if (drag.mode === "select-move" || drag.mode === "select-resize") {
       pushHistory(page.id, drag.snapshot);
@@ -2146,6 +2252,7 @@ function NotebookEditorPage() {
                           <textarea
                             data-note-editable="true"
                             key={element.id}
+                            ref={(node) => autoGrowTextarea(node, element.height * zoom)}
                             autoFocus
                             value={editText}
                             onChange={(event) => setEditText(event.target.value)}
@@ -2162,7 +2269,7 @@ function NotebookEditorPage() {
                                 event.currentTarget.blur();
                               }
                             }}
-                            className="absolute z-50 resize-none overflow-auto rounded border border-primary/50 bg-card/95 p-1 text-foreground outline-none"
+                            className="absolute z-50 resize-none overflow-hidden rounded border border-primary/50 bg-card/95 p-1 text-foreground outline-none"
                             style={{
                               left: element.x * zoom,
                               top: element.y * zoom,
@@ -2170,7 +2277,6 @@ function NotebookEditorPage() {
                               height: element.height * zoom,
                               fontSize: element.fontSize * zoom,
                               lineHeight: 1.42,
-                              overflow: "hidden",
                               color: element.color,
                               fontWeight: element.bold ? 700 : 400,
                               fontStyle: element.italic ? "italic" : "normal",
@@ -2208,6 +2314,7 @@ function NotebookEditorPage() {
                           <textarea
                             data-note-editable="true"
                             key={element.id}
+                            ref={(node) => autoGrowTextarea(node, element.height * zoom)}
                             autoFocus
                             value={editText}
                             onChange={(event) => setEditText(event.target.value)}
@@ -2224,14 +2331,13 @@ function NotebookEditorPage() {
                                 event.currentTarget.blur();
                               }
                             }}
-                            className="absolute z-50 resize-none overflow-auto rounded-lg border border-primary/50 p-2 shadow-lg outline-none"
+                            className="absolute z-50 resize-none overflow-hidden rounded-lg border border-primary/50 p-2 shadow-lg outline-none"
                             style={{
                               left: element.x * zoom,
                               top: element.y * zoom,
                               width: element.width * zoom,
                               height: element.height * zoom,
                               fontSize: 16 * zoom,
-                              overflow: "hidden",
                               background: element.color,
                               color: readableOn(element.color),
                             }}
