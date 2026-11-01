@@ -1,25 +1,41 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { MathText } from "@/components/math/math-text";
 import { ModuleMarkdownText } from "@/components/module-markdown";
-import { LETTERS, printableAnswer } from "@/lib/exam-print";
+import {
+  LETTERS,
+  paperThemeVars,
+  printableAnswer,
+  type ExamPaletteId,
+  type ExamTheme,
+} from "@/lib/exam-print";
 import { TYPE_LABELS } from "@/lib/answers";
 import {
   FOOTER_OPTIONS,
   FONT_SCALE_OPTIONS,
-  MARGIN_OPTIONS,
   PAPER_SIZE_OPTIONS,
+  PRINT_MARGIN_PX,
   SPACING_OPTIONS,
   TYPEFACE_OPTIONS,
   getPaperDims,
   type PaperFontScale,
   type PaperFooterStyle,
-  type PaperMarginId,
   type PaperOrientation,
   type PaperSizeId,
   type PaperSpacing,
   type PaperTypeface,
 } from "@/components/print/course-paper";
 import type { CourseBlock, Deck, Module, Question } from "@/lib/types";
+import { CoverOrnament, coverDesign, coverVars } from "@/components/print/cover-designs";
+import { readableAccent } from "@/lib/print-colors";
 import { getColorTheme } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +46,6 @@ import { cn } from "@/lib/utils";
 export interface ModulePrintOptions {
   paper: PaperSizeId;
   orientation: PaperOrientation;
-  margins: PaperMarginId;
   typeface: PaperTypeface;
   fontScale: PaperFontScale;
   spacing: PaperSpacing;
@@ -52,6 +67,12 @@ export interface ModulePrintOptions {
   footerInset: number;
   includeAnswerKey: boolean;
   includeNotes: boolean;
+  /** Paper personality, shared with the exam builder themes. */
+  theme?: ExamTheme;
+  /** Ink palette curated per theme; "theme" keeps the module colour. */
+  palette?: ExamPaletteId | "theme";
+  /** "design" keeps the full covers and washes; "friendly" saves ink. */
+  printStyle?: "design" | "friendly";
   /** preview-only: shows the editor for extra pages. The pages themselves are
    *  always part of the printed flow once they contain text. */
   editMode?: boolean;
@@ -60,7 +81,6 @@ export interface ModulePrintOptions {
 export const defaultModulePrintOptions: ModulePrintOptions = {
   paper: "a4",
   orientation: "portrait",
-  margins: "normal",
   typeface: "sans",
   fontScale: "normal",
   spacing: "normal",
@@ -72,21 +92,15 @@ export const defaultModulePrintOptions: ModulePrintOptions = {
   footerInset: 0,
   includeAnswerKey: true,
   includeNotes: true,
+  theme: "classic",
+  palette: "theme",
+  printStyle: "design",
 };
 
 export const STORAGE_KEY_MODULE_PRINT = "knowly.module-print.v1";
 const STORAGE_KEY_MODULE_PAGES = "knowly.module-print-pages.v1";
 
 const DEFAULT_ACCENT = "#3b5bdb";
-
-/** Real margins in inches (96 CSS px per inch), identical for every paper size
- *  and orientation. */
-const MARGIN_IN: Record<PaperMarginId, number> = {
-  narrow: 0.5,
-  normal: 0.75,
-  wide: 1,
-};
-const PX_PER_IN = 96;
 
 /** Fixed bands inside the margins. Both are always reserved (even when empty)
  *  so every page has exactly the same content height as the paginator budgets. */
@@ -149,15 +163,6 @@ function coverTone(moduleColor: string, themeId: string): CoverTone {
     glow: `color-mix(in oklab, ${themeAccent} 62%, #ffffff 38%)`,
   };
 }
-
-const coverGradient = (tone: CoverTone) =>
-  [
-    // a whisper of shade at the top keeps the small header ink legible even
-    // when the palette's glow is pale
-    "linear-gradient(180deg, rgba(8, 12, 20, 0.26) 0%, rgba(8, 12, 20, 0) 26%)",
-    `radial-gradient(130% 120% at 88% -15%, ${tone.glow} 0%, transparent 55%)`,
-    `linear-gradient(158deg, ${tone.start} 0%, ${tone.middle} 62%, ${tone.deep} 100%)`,
-  ].join(", ");
 
 /* --------------------------------------------------------------------- *
  * Markdown splitting
@@ -638,10 +643,9 @@ export function ModulePaper({
     () => getPaperDims(options.paper, options.orientation),
     [options.paper, options.orientation],
   );
-  const margin = Math.round(MARGIN_IN[options.margins] * PX_PER_IN);
-  const padX = margin;
-  const padTop = margin;
-  const padBottom = margin;
+  const padX = PRINT_MARGIN_PX;
+  const padTop = PRINT_MARGIN_PX;
+  const padBottom = PRINT_MARGIN_PX;
   const contentWidth = Math.max(200, dims.width - padX * 2);
   // header/footer can be nudged either way from their margin; the content area
   // gives up exactly that much room so the bands never overlap the flow. The
@@ -670,6 +674,25 @@ export function ModulePaper({
   const fontPx = options.fontScale === "small" ? 11.5 : options.fontScale === "large" ? 13.5 : 12.5;
   const lineHeight = 1.55 * SPACING_FACTORS[options.spacing];
   const fontFamily = TYPEFACE_OPTIONS.find((t) => t.id === options.typeface)?.stack;
+  const skin = paperThemeVars(options.theme, options.palette, module.color || DEFAULT_ACCENT);
+
+  /* White paper, but the module colour may arrive as a pale theme token
+     (`var(--deck-1)`); deepen it only when it would be illegible.
+
+     The probe lives on <body>, not inside the sheet: `.paper-skin` maps
+     --primary to the accent, so resolving a token like var(--deck-1) inside it
+     would walk a var() cycle. useLayoutEffect keeps that token value off the
+     screen. */
+  const [paperAccent, setPaperAccent] = useState<string | null>(null);
+  useLayoutEffect(() => {
+    const probe = document.createElement("span");
+    probe.style.display = "none";
+    probe.style.color = skin.accent;
+    document.body.appendChild(probe);
+    const resolved = getComputedStyle(probe).color;
+    probe.remove();
+    setPaperAccent(readableAccent(resolved));
+  }, [skin.accent]);
 
   const pagesKey = `${STORAGE_KEY_MODULE_PAGES}.${module.id}`;
   const [editPages, setEditPages] = useState<string[]>(() => loadExtraPages(pagesKey));
@@ -826,13 +849,30 @@ export function ModulePaper({
   };
 
   const padding = { padX, padTop, padBottom };
-  const accent = module.color || DEFAULT_ACCENT;
+  const accent = "var(--exam-accent)";
 
   const focusTextarea = (index: number) =>
     requestAnimationFrame(() => document.getElementById(`edit-textarea-${index}`)?.focus());
 
   return (
-    <div className="max-w-full">
+    <div
+      className={cn(
+        "paper-skin max-w-full",
+        `paper-theme-${skin.theme.id}`,
+        options.printStyle === "friendly" && "print-friendly",
+      )}
+      style={
+        {
+          /* The sheet is white paper in both media (see .paper-skin), so the
+             identity colour is the one measured against white: the preview and
+             the printer use the same value. */
+          "--exam-accent": paperAccent ?? skin.accent,
+          "--exam-accent-print": paperAccent ?? skin.accent,
+          "--exam-soft": skin.soft,
+          "--exam-border": skin.border,
+        } as CSSProperties
+      }
+    >
       <style>{modulePrintStylesheet(dims, contentHeight)}</style>
       {/* hidden measuring flow */}{" "}
       <div
@@ -854,6 +894,7 @@ export function ModulePaper({
             module={module}
             decks={decks}
             coverTheme={options.coverTheme}
+            theme={options.theme}
           />
         ))}
       </div>
@@ -885,6 +926,7 @@ export function ModulePaper({
               padX={padX}
               accent={accent}
               coverTheme={options.coverTheme}
+              theme={options.theme}
             />
           </ModuleSheet>
         )}
@@ -917,6 +959,7 @@ export function ModulePaper({
                 module={module}
                 decks={decks}
                 coverTheme={options.coverTheme}
+                theme={options.theme}
                 flush={unitIndex === 0}
               />
             ))}
@@ -1023,19 +1066,28 @@ function UnitSpace({
   module,
   decks,
   coverTheme,
+  theme,
   flush,
 }: {
   unit: ModuleUnit;
   module: Module;
   decks: Deck[];
   coverTheme?: string;
+  /** paper theme, so the in-flow hero matches the cover */
+  theme?: string;
   /** first unit on a page: the inter-unit spacing above is dropped */
   flush?: boolean;
 }) {
   // flow-root contains children's margins so the measured height is the real one
   return (
     <div style={{ paddingTop: flush ? 0 : unitSpacePad(unit), display: "flow-root" }}>
-      <UnitView unit={unit} module={module} decks={decks} coverTheme={coverTheme} />
+      <UnitView
+        unit={unit}
+        module={module}
+        decks={decks}
+        coverTheme={coverTheme}
+        theme={theme}
+      />
     </div>
   );
 }
@@ -1049,22 +1101,26 @@ function UnitView({
   module,
   decks,
   coverTheme,
+  theme,
 }: {
   unit: ModuleUnit;
   module: Module;
   decks: Deck[];
   coverTheme?: string;
+  theme?: string;
 }) {
   const data = unit.data;
-  const accent = module.color || DEFAULT_ACCENT;
+  const accent = "var(--exam-accent)";
   const accentInk = `color-mix(in oklab, ${accent} 78%, #171c26 22%)`;
 
   switch (data.kind) {
-    case "hero":
+    case "hero": {
+      // the in-flow hero wears the same design as the cover
+      const heroDesign = coverDesign(theme, coverTone(accent, coverTheme ?? "module").start);
       return (
         <div
-          className="module-hero relative overflow-hidden rounded-2xl px-6 pb-5 pt-6 text-white"
-          style={{ background: coverGradient(coverTone(accent, coverTheme ?? "module")) }}
+          className="module-hero relative overflow-hidden rounded-2xl px-6 pb-5 pt-6"
+          style={coverVars(heroDesign)}
         >
           {/* faint oversized emoji ornament, top-right */}
           <span
@@ -1075,24 +1131,24 @@ function UnitView({
           </span>
 
           <div className="relative flex items-start gap-4">
-            <span className="grid size-14 shrink-0 place-items-center rounded-xl border border-white/25 bg-white/15 text-2xl">
+            <span className="grid size-14 shrink-0 place-items-center rounded-xl border border-[color:var(--cover-line)] bg-[color:var(--cover-fill)] text-2xl">
               {module.emoji || "📘"}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="flex items-baseline justify-between gap-3 text-[0.66em] font-semibold uppercase tracking-[0.32em] text-white/70">
+              <p className="flex items-baseline justify-between gap-3 text-[0.66em] font-semibold uppercase tracking-[0.32em] text-[color:var(--cover-muted)]">
                 <span className="min-w-0 truncate">Knowly module · {module.subject}</span>
                 <span className="shrink-0 tracking-[0.26em]">KNOWLY</span>
               </p>
-              <h1 className="mt-1.5 text-[1.68em] font-bold leading-[1.18] tracking-tight text-white">
+              <h1 className="mt-1.5 text-[1.68em] font-bold leading-[1.18] tracking-tight text-[color:var(--cover-ink)]">
                 {module.title}
               </h1>
             </div>
           </div>
 
           <div aria-hidden className="mt-4 flex items-center gap-2">
-            <span className="h-px w-7 bg-white/45" />
-            <span className="size-1.5 rotate-45 rounded-[0.1em] bg-white/60" />
-            <span className="h-px w-4 bg-white/30" />
+            <span className="h-px w-7 bg-[color:var(--cover-line)]" />
+            <span className="size-1.5 rotate-45 rounded-[0.1em] bg-[color:var(--cover-ink)]" />
+            <span className="h-px w-4 bg-[color:var(--cover-line)]" />
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-1.5">
             {[
@@ -1104,7 +1160,7 @@ function UnitView({
               .map((chip, index) => (
                 <span
                   key={index}
-                  className="rounded-full border border-white/25 bg-white/12 px-2.5 py-1 text-[0.7em] font-semibold uppercase tracking-[0.12em] text-white/90"
+                  className="rounded-full border border-[color:var(--cover-line)] bg-[color:var(--cover-fill)] px-2.5 py-1 text-[0.7em] font-semibold uppercase tracking-[0.12em] text-[color:var(--cover-ink)]"
                 >
                   {chip}
                 </span>
@@ -1112,6 +1168,7 @@ function UnitView({
           </div>
         </div>
       );
+    }
     case "objectives":
       return (
         <div
@@ -1480,29 +1537,24 @@ function TitlePageBody({
   padX,
   accent,
   coverTheme,
+  theme,
 }: {
   module: Module;
   padX: number;
   accent: string;
   coverTheme: string;
+  /** paper theme: it owns the cover's design, surface and ink */
+  theme?: string;
 }) {
   const objectives = module.objectives.slice(0, 4);
+  // the cover palette control still chooses the hue; the theme chooses the design
+  const design = coverDesign(theme, coverTone(accent, coverTheme).start);
   return (
     <div
-      className="module-hero relative flex size-full flex-col overflow-hidden px-[13%] py-[9%] text-white"
-      style={{ background: coverGradient(coverTone(accent, coverTheme)) }}
+      className="module-hero relative flex size-full flex-col overflow-hidden px-[13%] py-[9%]"
+      style={coverVars(design)}
     >
-      {/* thin frame ornament */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute border border-white/20"
-        style={{ inset: Math.round(padX * 0.55) }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute border border-white/10"
-        style={{ inset: Math.round(padX * 0.55) + 7 }}
-      />
+      <CoverOrnament theme={theme} padX={padX} accent={accent} design={design} />
 
       {/* ghost emoji ornament */}
       <span
@@ -1513,23 +1565,23 @@ function TitlePageBody({
       </span>
 
       {/* head */}
-      <div className="relative flex items-center justify-between text-[0.72em] font-semibold uppercase tracking-[0.3em] text-white/80">
+      <div className="relative flex items-center justify-between text-[0.72em] font-semibold uppercase tracking-[0.3em] text-[color:var(--cover-muted)]">
         <span>KNOWLY</span>
-        <span className="text-white/70">Module · {module.subject}</span>
+        <span>Module · {module.subject}</span>
       </div>
 
       {/* centered title block */}
       <div className="relative my-auto py-8 text-center">
-        <span className="mx-auto grid size-20 place-items-center rounded-[1.1em] border border-white/25 bg-white/12 text-3xl">
+        <span className="mx-auto grid size-20 place-items-center rounded-[1.1em] border border-[color:var(--cover-line)] bg-[color:var(--cover-fill)] text-3xl">
           {module.emoji || "📘"}
         </span>
-        <h1 className="mx-auto mt-7 max-w-[92%] text-[2.5em] font-bold leading-[1.14] tracking-tight text-white">
+        <h1 className="mx-auto mt-7 max-w-[92%] text-[2.5em] font-bold leading-[1.14] tracking-tight text-[color:var(--cover-ink)]">
           {module.title}
         </h1>
         <div aria-hidden className="mt-7 flex items-center justify-center gap-2.5">
-          <span className="h-px w-12 bg-white/50" />
-          <span className="size-1.5 rotate-45 rounded-[0.1em] bg-white/70" />
-          <span className="h-px w-6 bg-white/40" />
+          <span className="h-px w-12 bg-[color:var(--cover-line)]" />
+          <span className="size-1.5 rotate-45 rounded-[0.1em] bg-[color:var(--cover-ink)]" />
+          <span className="h-px w-6 bg-[color:var(--cover-line)]" />
         </div>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
           {[
@@ -1541,7 +1593,7 @@ function TitlePageBody({
             .map((chip, index) => (
               <span
                 key={index}
-                className="rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-[0.75em] font-semibold uppercase tracking-[0.14em] text-white/90"
+                className="rounded-full border border-[color:var(--cover-line)] bg-[color:var(--cover-fill)] px-3 py-1.5 text-[0.75em] font-semibold uppercase tracking-[0.14em] text-[color:var(--cover-ink)]"
               >
                 {chip}
               </span>
@@ -1550,10 +1602,13 @@ function TitlePageBody({
         {objectives.length > 0 && (
           <ul className="mx-auto mt-8 max-w-[80%] space-y-[0.55em] pl-[1em] text-left">
             {objectives.map((objective) => (
-              <li key={objective} className="flex gap-2.5 text-[0.9em] text-white/85">
+              <li
+                key={objective}
+                className="flex gap-2.5 text-[0.9em] text-[color:var(--cover-muted)]"
+              >
                 <span
                   aria-hidden
-                  className="mt-[0.55em] size-1.5 shrink-0 rotate-45 rounded-[0.08em] bg-white/60"
+                  className="mt-[0.55em] size-1.5 shrink-0 rotate-45 rounded-[0.08em] bg-[color:var(--cover-line)]"
                 />
                 <span className="min-w-0 text-pretty">{objective}</span>
               </li>
@@ -1696,11 +1751,17 @@ function modulePrintStylesheet(dims: { width: number; height: number }, contentH
     page-break-after: always;
     break-inside: avoid;
     box-shadow: none !important;
+    /* the sheet is white, so body ink is pinned — a dark theme's near-white
+       foreground must never reach paper */
     --foreground: #1f2937;
     --muted: #eef1f5;
     --muted-foreground: #6b7280;
     --border: #9ca3af;
     --card: #ffffff;
+    --card-foreground: #1f2937;
+    /* the deepened identity colour, measured against white paper (see
+       readableAccent); the fallback is the default accent */
+    --exam-accent: var(--exam-accent-print, #3b5bdb);
   }
   .print-page:last-of-type { break-after: auto; page-break-after: auto; }
   .module-paper { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -1712,7 +1773,8 @@ function modulePrintStylesheet(dims: { width: number; height: number }, contentH
   }
   .paper-flow .print-page { background-color: #ffffff !important; color: #1f2937 !important; }
   .paper-flow .print-page .text-foreground { color: #1f2937 !important; }
-  .paper-flow .print-page .text-muted-foreground { color: #6b7280 !important; }
+  .paper-flow .print-page .text-card-foreground { color: #1f2937 !important; }
+  .paper-flow .print-page .text-muted-foreground { color: #5b6472 !important; }
   .paper-flow .print-page .border-border { border-color: #9ca3af !important; }
   .paper-flow .print-page .border-foreground { border-color: #1f2937 !important; }
   .paper-flow .print-page img { filter: none !important; }
@@ -1723,7 +1785,6 @@ function modulePrintStylesheet(dims: { width: number; height: number }, contentH
 export {
   FONT_SCALE_OPTIONS,
   FOOTER_OPTIONS,
-  MARGIN_OPTIONS,
   PAPER_SIZE_OPTIONS,
   SPACING_OPTIONS,
   TYPEFACE_OPTIONS,

@@ -10,6 +10,7 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { DialogTitle } from "@/components/ui/dialog";
+import { openImportPanel } from "@/lib/import-panel";
 import { useKnowly } from "@/store/knowly";
 
 export interface PaletteTarget {
@@ -73,6 +74,15 @@ export function CommandPalette({
 
         <CommandSeparator />
         <CommandGroup heading="Actions">
+          <CommandItem
+            value="action import knowly deck course module notebook backup"
+            onSelect={() => {
+              onOpenChange(false);
+              openImportPanel();
+            }}
+          >
+            Import a Knowly file
+          </CommandItem>
           <CommandItem value="action start daily review" onSelect={() => go("/review")}>
             Start daily review
           </CommandItem>

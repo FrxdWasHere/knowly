@@ -633,7 +633,7 @@
 @media print {
   @page {
     size: A4;
-    margin: 18mm;
+    margin: 0.5in;
   }
 
   html,
@@ -670,12 +670,40 @@
     display: block !important;
   }
 
+  /* The paper prints full bleed: `@page` margins are removed by the exam
+     studio's own stylesheet, so this padding is what keeps the printed words
+     0.5in in from every sheet edge. `box-decoration-break: clone` repeats that
+     padding on each printed page instead of only the first and last one, so no
+     page ever loses its margin. Nothing here depends on the print dialog's
+     margin setting, which is what makes "Margins: None" come out finished. */
   .exam-paper {
+    position: relative;
+    z-index: 0;
     width: 100% !important;
-    padding: 0 !important;
+    padding: 0.5in !important;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
     background-color: #fff !important;
     color: #000 !important;
     font-size: 11.5pt;
+  }
+  /* The paper's own background stops where its last line does, which would
+     leave the tail of the final sheet white. This page-sized layer carries the
+     theme art across the whole sheet on every page instead, restarting at each
+     page top, so the design bleeds to every edge right through to the last
+     sheet. It paints under the flow, so text and rules stay on top. */
+  .exam-paper::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-color: inherit;
+    background-image: inherit;
+    background-repeat: inherit;
+    background-size: inherit;
+    background-position: inherit;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   .exam-question {
     break-inside: avoid;
@@ -729,7 +757,11 @@
 .exam-theme-module {
   border-radius: 1rem;
   background-image:
-    radial-gradient(ellipse at 100% 0, color-mix(in srgb, var(--exam-accent) 10%, transparent), transparent 48%),
+    radial-gradient(
+      ellipse at 100% 0,
+      color-mix(in srgb, var(--exam-accent) 10%, transparent),
+      transparent 48%
+    ),
     linear-gradient(180deg, var(--exam-soft) 0, #fff 220px);
 }
 .exam-theme-module .exam-masthead {
@@ -746,14 +778,26 @@
 .exam-theme-field-notes {
   border-top-style: double;
   border-top-width: 8px;
-  background-image: repeating-linear-gradient(180deg, transparent 0 31px, color-mix(in srgb, var(--exam-border) 38%, transparent) 32px, transparent 33px);
+  background-image: repeating-linear-gradient(
+    180deg,
+    transparent 0 31px,
+    color-mix(in srgb, var(--exam-border) 38%, transparent) 32px,
+    transparent 33px
+  );
 }
 .exam-theme-lab-report {
   background-image:
     linear-gradient(color-mix(in srgb, var(--exam-border) 28%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--exam-border) 28%, transparent) 1px, transparent 1px),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--exam-border) 28%, transparent) 1px,
+      transparent 1px
+    ),
     linear-gradient(180deg, var(--exam-soft), #fff 230px);
-  background-size: 18px 18px, 18px 18px, auto;
+  background-size:
+    18px 18px,
+    18px 18px,
+    auto;
 }
 .exam-theme-workbook {
   border-radius: 0.35rem 1rem 1rem 0.35rem;
@@ -811,4 +855,547 @@
   background-color: #ffffff;
   color: #111111;
   color-scheme: light;
+}
+
+/* ------------------------------------------------------------------ *
+ * Paper themes, second pass: each document gets its own character.
+ * Everything here is print-safe (no shadows, no filters needed).
+ * ------------------------------------------------------------------ */
+
+/* Classic exam: a stamped double rule under the running head. */
+.exam-theme-classic .exam-masthead {
+  border-style: double;
+  border-width: 0 0 3px;
+}
+
+/* Study sheet: rounded cards with a headline band and tinted prompts. */
+.exam-theme-module .exam-heading h2 {
+  color: var(--exam-accent);
+}
+.exam-theme-module .exam-question {
+  border-color: color-mix(in srgb, var(--exam-accent) 34%, transparent);
+  background: color-mix(in srgb, var(--exam-soft) 55%, #fff);
+}
+.exam-theme-module .exam-answer-key {
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--exam-soft) 70%, #fff);
+  padding: 1.1rem 1.25rem;
+}
+
+/* Field notes: dashed boxes and squared numerals. */
+.exam-theme-field-notes .exam-question-number {
+  border-radius: 0.25rem;
+  background: transparent;
+  border: 1.5px dashed var(--exam-accent);
+  color: var(--exam-accent);
+}
+.exam-theme-field-notes .exam-question {
+  border-color: color-mix(in srgb, var(--exam-accent) 40%, transparent);
+}
+
+/* Lab report: gridded data sheet with instrument-style numbering. */
+.exam-theme-lab-report .exam-heading {
+  position: relative;
+}
+.exam-theme-lab-report .exam-heading::after {
+  content: "+  +  +";
+  position: absolute;
+  bottom: -0.65rem;
+  right: 0;
+  font-family: ui-monospace, "Courier New", monospace;
+  font-size: 0.7em;
+  letter-spacing: 0.35em;
+  color: color-mix(in srgb, var(--exam-accent) 65%, transparent);
+}
+.exam-theme-lab-report .exam-question-number {
+  border-radius: 0;
+  background: transparent;
+  border: 2px solid var(--exam-accent);
+  color: var(--exam-accent);
+  font-variant-numeric: tabular-nums;
+}
+.exam-theme-lab-report .exam-masthead {
+  border-bottom-width: 1px;
+}
+
+/* Revision workbook: spine, highlighted prompts, ring numbers. */
+.exam-theme-workbook .exam-question-prompt {
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--exam-accent) 45%, transparent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+.exam-theme-workbook .exam-question-number {
+  background: #fff;
+  color: var(--exam-accent);
+  border: 2px solid var(--exam-accent);
+}
+.exam-theme-workbook .exam-answer-key {
+  border-left: 4px solid var(--exam-accent);
+  padding-left: 1rem;
+}
+
+/* Blueprint: drafting grid, framed stamps, measured rules. */
+.exam-theme-blueprint {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--exam-accent) 12%, transparent) 1px, transparent 1px),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--exam-accent) 12%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(180deg, var(--exam-soft), #fff 240px);
+  background-size:
+    12px 12px,
+    12px 12px,
+    auto;
+}
+.exam-theme-blueprint .exam-masthead {
+  border: 1px solid var(--exam-accent);
+  border-radius: 0.1rem;
+  padding: 0.45rem 0.7rem;
+  letter-spacing: 0.3em;
+}
+.exam-theme-blueprint .exam-heading {
+  border-bottom-width: 1px;
+  border-bottom-style: dashed;
+}
+.exam-theme-blueprint .exam-question {
+  border-radius: 0.1rem;
+  border-left-width: 3px;
+  border-left-color: color-mix(in srgb, var(--exam-accent) 55%, transparent);
+}
+.exam-theme-blueprint .exam-question-number {
+  border-radius: 0.1rem;
+  background: transparent;
+  border: 1px solid var(--exam-accent);
+  color: var(--exam-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Illuminated manuscript: parchment, gilded rule, drop cap. */
+.exam-paper.exam-theme-manuscript {
+  border: 1px solid var(--exam-border);
+  border-radius: 0.2rem;
+  background-color: #fbf6ea;
+  background-image:
+    radial-gradient(
+      circle at 8% 4%,
+      color-mix(in srgb, var(--exam-accent) 20%, transparent),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 94% 96%,
+      color-mix(in srgb, var(--exam-accent) 12%, transparent),
+      transparent 36%
+    ),
+    linear-gradient(180deg, #fdf8ec, #f7eeda);
+  color: #3b2c19;
+}
+.exam-theme-manuscript .exam-masthead {
+  border-bottom: 3px double var(--exam-accent);
+  letter-spacing: 0.34em;
+}
+.exam-theme-manuscript .exam-heading h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: 0.01em;
+}
+.exam-theme-manuscript .exam-heading h2::first-letter {
+  float: left;
+  margin: 0.04em 0.08em 0 0;
+  font-size: 2.4em;
+  line-height: 0.82;
+  color: var(--exam-accent);
+}
+.exam-theme-manuscript .exam-question {
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--exam-border) 85%, transparent);
+  border-radius: 0;
+  background: transparent;
+  padding: 0 0 0.7rem;
+}
+.exam-theme-manuscript .exam-question-number {
+  background: transparent;
+  color: var(--exam-accent);
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  border-bottom: 1px solid color-mix(in srgb, var(--exam-accent) 40%, transparent);
+  border-radius: 0.1rem;
+}
+
+/* Front page: broadsheet masthead, uppercase headline, column rules. */
+.exam-theme-newspaper .exam-masthead {
+  border-top: 3px double var(--exam-accent);
+  border-bottom: 3px double var(--exam-accent);
+  border-radius: 0;
+  padding: 0.35rem 0;
+  letter-spacing: 0.28em;
+  color: var(--exam-accent);
+}
+.exam-theme-newspaper .exam-heading {
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-bottom-color: var(--exam-accent);
+}
+.exam-theme-newspaper .exam-heading h2 {
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  font-weight: 800;
+}
+.exam-theme-newspaper .exam-question {
+  border: 0;
+  border-bottom: 1px dotted var(--exam-accent);
+  border-radius: 0;
+  background: transparent;
+  padding: 0 0 0.7rem;
+}
+.exam-theme-newspaper .exam-question-number {
+  background: transparent;
+  color: var(--exam-accent);
+  border-radius: 0;
+  border-bottom: 2px solid var(--exam-accent);
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+/* Comic panel: ink outlines, halftone dots, tilted captions. */
+.exam-paper.exam-theme-comic {
+  border: 3px solid #141414;
+  border-radius: 1rem;
+  background-color: #fffdf5;
+  background-image:
+    radial-gradient(
+      color-mix(in srgb, var(--exam-accent) 20%, transparent) 1.1px,
+      transparent 1.2px
+    ),
+    linear-gradient(180deg, var(--exam-soft), #fffdf5 220px);
+  background-size:
+    9px 9px,
+    auto;
+}
+.exam-theme-comic .exam-masthead {
+  border: 2.5px solid #141414;
+  border-radius: 999px;
+  background: #fff;
+  padding: 0.4rem 0.9rem;
+  color: #141414;
+  transform: rotate(-1.2deg);
+}
+.exam-theme-comic .exam-heading h2 {
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-shadow: 2px 2px 0 color-mix(in srgb, var(--exam-accent) 50%, transparent);
+}
+.exam-theme-comic .exam-question {
+  border: 2px solid #141414;
+  border-radius: 0.75rem;
+  background: #fff;
+}
+.exam-theme-comic .exam-question-number {
+  border-radius: 0.35rem;
+  border: 2px solid #141414;
+  background: var(--exam-accent);
+  color: #fff;
+  transform: rotate(-4deg);
+}
+
+/* Botanical study: pressed-flower wash, dotted numerals, soft cards. */
+.exam-paper.exam-theme-botanical {
+  border-radius: 1.5rem 0.6rem 1.5rem 0.6rem;
+  background-image:
+    radial-gradient(
+      ellipse at 2% 0%,
+      color-mix(in srgb, var(--exam-accent) 18%, transparent),
+      transparent 40%
+    ),
+    radial-gradient(
+      ellipse at 98% 100%,
+      color-mix(in srgb, var(--exam-accent) 14%, transparent),
+      transparent 44%
+    ),
+    linear-gradient(180deg, var(--exam-soft), #fff 230px);
+}
+.exam-theme-botanical .exam-masthead {
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--exam-accent) 14%, #fff);
+  padding: 0.35rem 0.95rem;
+  color: var(--exam-accent);
+}
+.exam-theme-botanical .exam-question {
+  border-color: color-mix(in srgb, var(--exam-border) 85%, transparent);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--exam-soft) 55%, #fff);
+}
+.exam-theme-botanical .exam-question-number {
+  background: transparent;
+  border: 1.5px dotted var(--exam-accent);
+  color: var(--exam-accent);
+}
+
+/* Terminal: phosphor screen; print overrides below drop the dark fill. */
+.exam-paper.exam-theme-terminal {
+  --card: #0a100d;
+  --card-foreground: #d8ffe6;
+  --foreground: #d8ffe6;
+  --muted: #101a15;
+  --muted-foreground: #8fb8a1;
+  --border: #1f4a33;
+  background-color: #0a100d;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(47, 191, 113, 0.07) 0 1px, transparent 1px 22px),
+    radial-gradient(120% 90% at 50% -20%, rgba(47, 191, 113, 0.2), transparent 62%);
+  color: #d8ffe6;
+}
+.exam-theme-terminal .exam-masthead {
+  border-bottom: 1px dashed color-mix(in srgb, var(--exam-accent) 60%, transparent);
+  color: var(--exam-accent);
+  font-family: ui-monospace, "Courier New", monospace;
+  letter-spacing: 0.26em;
+}
+.exam-theme-terminal .exam-heading,
+.exam-theme-terminal .exam-answer-key {
+  border-color: color-mix(in srgb, var(--exam-accent) 40%, transparent);
+}
+.exam-theme-terminal .exam-question {
+  border-color: color-mix(in srgb, var(--exam-accent) 26%, transparent);
+  border-radius: 0.3rem;
+  background: rgba(47, 191, 113, 0.05);
+}
+.exam-theme-terminal .exam-question-number {
+  border-radius: 0.2rem;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--exam-accent) 65%, transparent);
+  color: var(--exam-accent);
+  font-family: ui-monospace, "Courier New", monospace;
+}
+.exam-theme-terminal .exam-answer-key,
+.exam-theme-terminal .exam-answer-key h3 {
+  color: inherit;
+}
+.exam-theme-terminal .exam-footer {
+  border-color: color-mix(in srgb, var(--exam-accent) 26%, transparent);
+  color: color-mix(in srgb, var(--exam-accent) 70%, #d8ffe6);
+}
+
+/* ------------------------------------------------------------------ *
+ * Module sheets and course packs reuse the exam themes + palettes. Ink rides
+ * on --exam-accent / --exam-soft / --exam-border; each sheet only gains a
+ * paper wash and an accent edge, so pagination and layout stay untouched.
+ * ------------------------------------------------------------------ */
+
+/*
+ * The sheet is paper, not UI.
+ *
+ * A printed sheet is white, but the app themes hand out near-white ink
+ * (the default Ocean Deep theme's --foreground is oklch(0.975 ...)) and a dark
+ * card. Inheriting those painted the body text white — and pinning a palette
+ * only inside @media print made the studio preview and the printer disagree.
+ * So the sheet pins its own reading palette in both media: what you read in
+ * the studio is what comes out of the printer, and no app theme can make the
+ * words pale. Same rule the exam paper has always used.
+ */
+.paper-skin {
+  --background: #ffffff;
+  --foreground: #1f2937;
+  --card: #ffffff;
+  --card-foreground: #1f2937;
+  --popover: #ffffff;
+  --popover-foreground: #1f2937;
+  --muted: #eef1f5;
+  --muted-foreground: #5b6472;
+  --border: #9ca3af;
+  --input: #9ca3af;
+  --primary: var(--exam-accent);
+  --primary-foreground: #ffffff;
+  --secondary: color-mix(in srgb, var(--exam-accent) 7%, #ffffff);
+  --secondary-foreground: #1f2937;
+  --accent: color-mix(in srgb, var(--exam-accent) 11%, #ffffff);
+  --accent-foreground: #1f2937;
+  --success: #127a4a;
+  --warning: #a05e0a;
+  --destructive: #b3261e;
+  /* Tailwind's --color-* aliases are pinned too: a utility may be emitted as
+     var(--color-foreground) rather than var(--foreground), and either spelling
+     must land on paper ink. */
+  --color-background: #ffffff;
+  --color-foreground: #1f2937;
+  --color-card: #ffffff;
+  --color-card-foreground: #1f2937;
+  --color-muted: #eef1f5;
+  --color-muted-foreground: #5b6472;
+  --color-border: #9ca3af;
+  --color-input: #9ca3af;
+  --color-primary: var(--exam-accent);
+  --color-primary-foreground: #ffffff;
+  --color-success: #127a4a;
+  --color-warning: #a05e0a;
+  --color-destructive: #b3261e;
+  color: #1f2937;
+  color-scheme: light;
+}
+.paper-skin .print-page {
+  background-image: var(--paper-wash, none);
+  background-size: var(--paper-wash-size, auto);
+}
+.paper-skin .print-page::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 5px;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    var(--exam-accent),
+    color-mix(in srgb, var(--exam-accent) 28%, transparent)
+  );
+}
+.paper-skin.paper-theme-classic .print-page {
+  --paper-wash: linear-gradient(180deg, var(--exam-soft), #fff 175px);
+}
+.paper-skin.paper-theme-module .print-page {
+  --paper-wash: radial-gradient(
+    ellipse at 100% 0,
+    color-mix(in srgb, var(--exam-accent) 9%, transparent),
+    transparent 44%
+  );
+}
+.paper-skin.paper-theme-field-notes .print-page {
+  --paper-wash: repeating-linear-gradient(
+    180deg,
+    transparent 0 31px,
+    color-mix(in srgb, var(--exam-border) 40%, transparent) 32px,
+    transparent 33px
+  );
+}
+.paper-skin.paper-theme-lab-report .print-page {
+  --paper-wash:
+    linear-gradient(color-mix(in srgb, var(--exam-border) 26%, transparent) 1px, transparent 1px),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--exam-border) 26%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(180deg, var(--exam-soft), #fff 230px);
+  --paper-wash-size: 18px 18px, 18px 18px, auto;
+}
+.paper-skin.paper-theme-workbook .print-page {
+  --paper-wash: linear-gradient(90deg, var(--exam-soft), #fff 22%);
+}
+.paper-skin.paper-theme-blueprint .print-page {
+  --paper-wash:
+    linear-gradient(color-mix(in srgb, var(--exam-accent) 11%, transparent) 1px, transparent 1px),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--exam-accent) 11%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(180deg, var(--exam-soft), #fff 240px);
+  --paper-wash-size: 12px 12px, 12px 12px, auto;
+}
+.paper-skin.paper-theme-manuscript .print-page {
+  --paper-wash:
+    radial-gradient(
+      circle at 6% 3%,
+      color-mix(in srgb, var(--exam-accent) 16%, transparent),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 96% 97%,
+      color-mix(in srgb, var(--exam-accent) 10%, transparent),
+      transparent 36%
+    ),
+    linear-gradient(180deg, #fdf8ec, #f7eeda);
+}
+.paper-skin.paper-theme-newspaper .print-page {
+  --paper-wash: linear-gradient(180deg, var(--exam-soft), #fff 210px);
+}
+.paper-skin.paper-theme-comic .print-page {
+  --paper-wash:
+    radial-gradient(
+      color-mix(in srgb, var(--exam-accent) 16%, transparent) 1.1px,
+      transparent 1.2px
+    ),
+    linear-gradient(180deg, var(--exam-soft), #fffdf5 230px);
+  --paper-wash-size: 9px 9px, auto;
+}
+.paper-skin.paper-theme-botanical .print-page {
+  --paper-wash:
+    radial-gradient(
+      ellipse at 0 0,
+      color-mix(in srgb, var(--exam-accent) 15%, transparent),
+      transparent 40%
+    ),
+    radial-gradient(
+      ellipse at 100% 100%,
+      color-mix(in srgb, var(--exam-accent) 9%, transparent),
+      transparent 44%
+    ),
+    linear-gradient(180deg, var(--exam-soft), #fff 230px);
+}
+.paper-skin.paper-theme-terminal .print-page {
+  --paper-wash: repeating-linear-gradient(
+    0deg,
+    color-mix(in srgb, var(--exam-accent) 8%, transparent) 0 1px,
+    transparent 1px 22px
+  );
+}
+.paper-skin.paper-theme-terminal .print-page::before {
+  height: 3px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Print-friendly output. Full design is the digital look; print-friendly
+ * keeps the same layout but drops the ink-heavy paper art: page washes,
+ * solid colour covers and gradient mastheads.
+ * ------------------------------------------------------------------ */
+.print-friendly.exam-paper {
+  --card: #ffffff;
+  --card-foreground: #111111;
+  --foreground: #111111;
+  --muted-foreground: #555555;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: #111111 !important;
+}
+/* the print-time full-bleed background layer is design-only */
+.print-friendly.exam-paper::before {
+  display: none !important;
+}
+.print-friendly .exam-masthead,
+.print-friendly .exam-question,
+.print-friendly .exam-answer-key {
+  background: transparent !important;
+}
+.print-friendly .exam-masthead {
+  color: var(--exam-accent) !important;
+}
+.print-friendly .exam-heading h2 {
+  text-shadow: none !important;
+}
+
+.print-friendly.paper-skin .print-page {
+  background-image: none !important;
+}
+/* A print-friendly cover is plain white paper with accent rules: reset the
+   cover's own ink tokens, not just its background, or light cover type would
+   survive onto the white sheet. The ornament art is dropped with it. */
+.print-friendly :is(.cover-art, .module-hero) {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border: 1px solid color-mix(in srgb, var(--exam-accent) 35%, #ffffff);
+  --cover-ink: #111111;
+  --cover-muted: #4b5563;
+  --cover-line: color-mix(in srgb, var(--exam-accent) 40%, #ffffff);
+  --cover-fill: transparent;
+}
+.print-friendly .cover-ornament {
+  display: none !important;
+}
+/* The cover footer overlays the cover, so a light-text footer would vanish on
+   the white print-friendly cover. */
+.print-friendly .paper-flow .print-page > footer,
+.print-friendly .paper-flow .print-page > footer * {
+  color: #4b5563 !important;
 }

@@ -4,6 +4,7 @@ import {
   BookOpen,
   Columns2,
   Edit3,
+  FileText,
   Heading1,
   MoveVertical,
   Palette,
@@ -22,7 +23,6 @@ import {
   STORAGE_KEY_MODULE_PRINT,
   defaultModulePrintOptions,
   FOOTER_OPTIONS,
-  MARGIN_OPTIONS,
   PAPER_SIZE_OPTIONS,
   SPACING_OPTIONS,
   TYPEFACE_OPTIONS,
@@ -30,6 +30,8 @@ import {
   type ModulePrintOptions,
 } from "@/components/print/module-paper";
 import { getPaperDims } from "@/components/print/course-paper";
+import { PaperThemePicker } from "@/components/print/paper-theme-picker";
+import { PrintStyleMenu } from "@/components/print/print-style-menu";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -158,6 +160,7 @@ function ModulePrintPage() {
   const { state } = useKnowly();
   const module = state.modules.find((m) => m.id === moduleId);
   const [options, setOptions] = useState<ModulePrintOptions>(loadOptions);
+  const [docxWorking, setDocxWorking] = useState(false);
   const dims = getPaperDims(options.paper, options.orientation);
 
   useEffect(() => {
@@ -184,6 +187,45 @@ function ModulePrintPage() {
 
   const patch = (changes: Partial<ModulePrintOptions>) =>
     setOptions((current) => ({ ...current, ...changes }));
+  const handleExportDocx = async () => {
+    if (!module) return;
+    setDocxWorking(true);
+    try {
+      // docx is a ~1 MB library — keep it out of the route chunk and load it
+      // only when a Word export is actually requested.
+      const { moduleDocxBlob } = await import("@/lib/course-docx");
+      const blob = await moduleDocxBlob(
+        module,
+        state.decks,
+        state.moduleProgress[module.id]?.notes,
+        {
+          paper: options.paper,
+          orientation: options.orientation,
+          fontScale: options.fontScale,
+          typeface: options.typeface,
+          spacing: options.spacing,
+          footerStyle: options.footerStyle,
+          includeTitlePage: options.includeTitlePage,
+          includeAnswerKey: options.includeAnswerKey,
+          includeNotes: options.includeNotes,
+        },
+      );
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `${module.title.replace(/[\\/:*?"<>|]+/g, "-").trim() || "module"} — study sheet.docx`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      toast.success("Word document downloaded");
+    } catch (error) {
+      console.error("DOCX export failed:", error);
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error("The Word file didn't download", { description: message.slice(0, 200) });
+    } finally {
+      setDocxWorking(false);
+    }
+  };
+
   const handleSavePdf = () => {
     // Browsers offer "Save as PDF" in the print dialog; title sets the filename.
     const previousTitle = document.title;
@@ -204,6 +246,9 @@ function ModulePrintPage() {
             description="The whole module as one colorful study sheet — a full-page title sheet, then the lesson, notes and answer key."
             action={
               <div className="flex flex-wrap items-center gap-2.5">
+                <Button variant="outline" onClick={handleExportDocx} disabled={docxWorking}>
+                  <FileText /> {docxWorking ? "Preparing…" : "Save as Word file"}
+                </Button>
                 <Button variant="outline" onClick={handleSavePdf}>
                   <ArrowDownToLine /> Save as PDF
                 </Button>
@@ -241,17 +286,10 @@ function ModulePrintPage() {
                   label="Landscape"
                 />
               </div>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {MARGIN_OPTIONS.map((margin) => (
-                  <Chip
-                    key={margin.id}
-                    active={options.margins === margin.id}
-                    onClick={() => patch({ margins: margin.id })}
-                    label={margin.label}
-                    sub={margin.sub}
-                  />
-                ))}
-              </div>
+              <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
+                Every sheet keeps a 0.5in margin around the words — pick “Margins: None” when
+                printing and the paper art still runs edge to edge.
+              </p>
             </OptionGroup>
 
             <OptionGroup icon={<Type className="size-4 text-primary" />} label="Typography">
@@ -301,7 +339,7 @@ function ModulePrintPage() {
               </div>
             </OptionGroup>
 
-            <OptionGroup icon={<Palette className="size-4 text-primary" />} label="Cover theme">
+            <OptionGroup icon={<Palette className="size-4 text-primary" />} label="Cover colour">
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
@@ -345,9 +383,27 @@ function ModulePrintPage() {
               </div>
               <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
                 {options.coverTheme === "module"
-                  ? "The cover follows the module's own accent color."
-                  : `${getColorTheme(options.coverTheme)?.label ?? "Palette"} — the title sheet takes this Knowly palette.`}
+                  ? "Hue of the cover, and of the in-flow hero when there is no title page. The paper theme below designs it."
+                  : `${getColorTheme(options.coverTheme)?.label ?? "Palette"} sets the cover's hue; the paper theme below designs it.`}
               </p>
+            </OptionGroup>
+
+            <OptionGroup icon={<Palette className="size-4 text-primary" />} label="Paper theme">
+              <PaperThemePicker
+                theme={options.theme}
+                palette={options.palette}
+                baseAccent={module.color || "#3b5bdb"}
+                baseLabel="Module colour"
+                onTheme={(theme) => patch({ theme })}
+                onPalette={(palette) => patch({ palette })}
+              />
+            </OptionGroup>
+
+            <OptionGroup icon={<Printer className="size-4 text-primary" />} label="Print style">
+              <PrintStyleMenu
+                value={options.printStyle}
+                onChange={(printStyle) => patch({ printStyle })}
+              />
             </OptionGroup>
 
             <OptionGroup icon={<Columns2 className="size-4 text-primary" />} label="Page furniture">

@@ -5,6 +5,7 @@ import {
   Columns2,
   Copy,
   Loader2,
+  Palette,
   Printer,
   RotateCcw,
   Ruler,
@@ -22,7 +23,6 @@ import {
   CoursePaper,
   FONT_SCALE_OPTIONS,
   FOOTER_OPTIONS,
-  MARGIN_OPTIONS,
   PAPER_SIZE_OPTIONS,
   SPACING_OPTIONS,
   STORAGE_KEY_COURSE_PRINT,
@@ -31,6 +31,8 @@ import {
   getPaperDims,
   type CoursePrintOptions,
 } from "@/components/print/course-paper";
+import { PaperThemePicker } from "@/components/print/paper-theme-picker";
+import { PrintStyleMenu } from "@/components/print/print-style-menu";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { decksForCourse } from "@/lib/courses";
@@ -283,17 +285,10 @@ function CoursePrintPage() {
                   label="Landscape"
                 />
               </div>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {MARGIN_OPTIONS.map((margin) => (
-                  <Chip
-                    key={margin.id}
-                    active={options.margins === margin.id}
-                    onClick={() => patch({ margins: margin.id })}
-                    label={margin.label}
-                    sub={margin.sub}
-                  />
-                ))}
-              </div>
+              <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
+                Every sheet keeps a 0.5in margin around the words — pick “Margins: None” when
+                printing and the paper art still runs edge to edge.
+              </p>
             </OptionGroup>
 
             <OptionGroup icon={<Type className="size-4 text-primary" />} label="Typography">
@@ -351,6 +346,24 @@ function CoursePrintPage() {
                   />
                 ))}
               </div>
+            </OptionGroup>
+
+            <OptionGroup icon={<Palette className="size-4 text-primary" />} label="Paper theme">
+              <PaperThemePicker
+                theme={options.theme}
+                palette={options.palette}
+                baseAccent={course.color || "#3b5bdb"}
+                baseLabel="Course colour"
+                onTheme={(theme) => patch({ theme })}
+                onPalette={(palette) => patch({ palette })}
+              />
+            </OptionGroup>
+
+            <OptionGroup icon={<Printer className="size-4 text-primary" />} label="Print style">
+              <PrintStyleMenu
+                value={options.printStyle}
+                onChange={(printStyle) => patch({ printStyle })}
+              />
             </OptionGroup>
 
             <OptionGroup

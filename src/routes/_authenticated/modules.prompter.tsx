@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { openImportPanel } from "@/lib/import-panel";
 import { useKnowly } from "@/store/knowly";
 import type { Module } from "@/lib/types";
 
@@ -121,10 +122,8 @@ function ModulePrompter() {
             <Button variant="outline" onClick={copyPrompt}>
               <Wand2 className="size-4" /> Copy instructions
             </Button>
-            <Button asChild variant="outline">
-              <a href="/modules/import">
-                <Download className="size-4" /> Import a module
-              </a>
+            <Button variant="outline" onClick={() => openImportPanel({ kind: "module" })}>
+              <Download className="size-4" /> Import a module
             </Button>
           </>
         }
@@ -301,9 +300,13 @@ function ModulePrompter() {
           </div>
           <p className="text-xs leading-5 text-muted-foreground">
             Save the JSON the AI writes as a file, then bring it back through{" "}
-            <a href="/modules/import" className="text-primary underline">
+            <button
+              type="button"
+              onClick={() => openImportPanel({ kind: "module" })}
+              className="text-primary underline"
+            >
               Import a module
-            </a>
+            </button>
             . Knowly checks every block and checkpoint before it joins your library.
           </p>
         </div>

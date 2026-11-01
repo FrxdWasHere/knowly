@@ -2,6 +2,8 @@ import {
   EXAM_FONTS,
   LETTERS,
   EXAM_THEMES,
+  EXAM_PALETTES,
+  THEME_PALETTES,
   printableAnswer,
   type ExamOptions,
   type QuestionEdit,
@@ -10,6 +12,16 @@ import { X } from "lucide-react";
 import type { Question } from "@/lib/types";
 import { MathText } from "@/components/math/math-text";
 import { cn } from "@/lib/utils";
+
+/**
+ * The exam sheet prints as a full-bleed A4 design. Stylesheets can't scope an
+ * `@page` rule to one element, so the studio removes the page margin here and
+ * lets `.exam-paper` carry the 0.5in content margin itself (see styles.css).
+ * Rendering it with the paper keeps the rule out of every other print route.
+ */
+const FULL_BLEED_SHEET = `@media print {
+  @page { size: A4; margin: 0; }
+}`;
 
 function Lines({ count }: { count: number }) {
   return (
@@ -219,12 +231,15 @@ export function ExamPaper({
         : "text-[13px]";
   const centered = options.headerAlign === "center";
   const theme = EXAM_THEMES.find((item) => item.id === options.theme) ?? EXAM_THEMES[0]!;
+  const palette = EXAM_PALETTES.find(
+    (item) => item.id === options.palette && THEME_PALETTES[theme.id].includes(item.id),
+  );
   const themed = options.theme !== "classic";
   const themeStyle = {
     fontFamily: font.stack,
-    "--exam-accent": theme.accent,
-    "--exam-soft": theme.soft,
-    "--exam-border": theme.border,
+    "--exam-accent": palette?.accent ?? theme.accent,
+    "--exam-soft": palette?.soft ?? theme.soft,
+    "--exam-border": palette?.border ?? theme.border,
   } as React.CSSProperties;
   const commit = (key: keyof ExamOptions) =>
     onChange ? (v: string) => onChange({ [key]: v } as Partial<ExamOptions>) : undefined;
@@ -235,10 +250,12 @@ export function ExamPaper({
         "exam-paper bg-card p-8 leading-relaxed text-card-foreground md:p-10 print:bg-white print:text-black",
         `exam-theme-${options.theme ?? "classic"}`,
         themed && "exam-paper-themed",
+        options.printStyle === "friendly" && "print-friendly",
         size,
       )}
       style={themeStyle}
     >
+      <style>{FULL_BLEED_SHEET}</style>
       {options.headerText?.trim() && (
         <div
           className={cn(
@@ -301,25 +318,26 @@ export function ExamPaper({
         </div>
 
         {options.showNameLines && (
-          <div className="mt-4 grid grid-cols-1 gap-5 text-[0.85em] print:grid-cols-3">
-            <p>
-              Name:{" "}
+          <div className="mt-4 flex items-baseline justify-between gap-6 text-[0.85em]">
+            <p className="flex min-w-0 flex-1 items-baseline gap-2">
+              <span className="shrink-0">Name:</span>
               {options.studentName ? (
-                <span className="font-medium">{options.studentName}</span>
+                <span className="truncate font-medium">{options.studentName}</span>
               ) : (
-                <Blank width="w-full" />
+                <Blank width="flex-1" />
               )}
             </p>
-            <p>
-              Class:{" "}
+            <p className="flex min-w-0 flex-1 items-baseline gap-2">
+              <span className="shrink-0">Class:</span>
               {options.studentClass ? (
-                <span className="font-medium">{options.studentClass}</span>
+                <span className="truncate font-medium">{options.studentClass}</span>
               ) : (
-                <Blank width="w-full" />
+                <Blank width="flex-1" />
               )}
             </p>
-            <p>
-              Score: <Blank width="w-full" />
+            <p className="flex min-w-0 flex-1 items-baseline gap-2">
+              <span className="shrink-0">Score:</span>
+              <Blank width="flex-1" />
             </p>
           </div>
         )}

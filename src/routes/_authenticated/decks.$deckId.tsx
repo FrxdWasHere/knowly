@@ -23,6 +23,7 @@ import { MathText } from "@/components/math/math-text";
 import { LabelChips, LabelPickerDialog } from "@/components/binder/label-picker";
 import { TYPE_LABELS } from "@/lib/answers";
 import { cardStage, deckSrs, formatDue, formatInterval, STAGE_META } from "@/lib/srs";
+import { openImportPanel } from "@/lib/import-panel";
 import { useKnowly } from "@/store/knowly";
 import { cn } from "@/lib/utils";
 
@@ -134,10 +135,8 @@ function DeckDetail() {
                 <Swords /> Arena mode
               </Link>
             </Button>
-            <Button variant="outline" asChild>
-              <Link to="/import" search={{ deck: deck.id }}>
-                <Plus /> Add questions
-              </Link>
+            <Button variant="outline" onClick={() => openImportPanel({ deckId: deck.id })}>
+              <Plus /> Add questions
             </Button>
             <Button variant="secondary" asChild>
               <Link to="/quiz">

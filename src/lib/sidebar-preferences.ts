@@ -4,13 +4,17 @@ export interface SidebarGroupPreference {
   visible: boolean;
 }
 
+/**
+ * Default order: content creation → what you collect → how you study → everything else.
+ * The `id` is the key used by the shell; `label` is only the user-facing name.
+ */
 export const DEFAULT_SIDEBAR_GROUPS: SidebarGroupPreference[] = [
   { id: "Home", label: "Home", visible: true },
-  { id: "Study cycle", label: "Study & practice", visible: true },
-  { id: "Courses", label: "Courses", visible: true },
+  { id: "Content", label: "Content", visible: true },
+  { id: "Decks & cards", label: "Decks", visible: true },
   { id: "Modules", label: "Modules", visible: true },
-  { id: "Decks & cards", label: "Decks & cards", visible: true },
-  { id: "Build & import", label: "Create & import", visible: true },
+  { id: "Courses", label: "Courses", visible: true },
+  { id: "Study cycle", label: "Study", visible: true },
   { id: "Notes", label: "Notes", visible: true },
   { id: "Progress", label: "Progress", visible: true },
   { id: "System", label: "Settings & backup", visible: true },
@@ -41,8 +45,18 @@ export function normalizeSidebarGroups(value: unknown): SidebarGroupPreference[]
     });
     seen.add(id);
   }
+  // A section the user has never seen (a newly shipped group) is slotted in at
+  // its default position instead of landing at the bottom of the sidebar.
   for (const group of DEFAULT_SIDEBAR_GROUPS) {
-    if (!seen.has(group.id)) result.push({ ...group });
+    if (seen.has(group.id)) continue;
+    const anchor = DEFAULT_SIDEBAR_GROUPS.indexOf(group);
+    let insertAt = 0;
+    result.forEach((item, index) => {
+      const defaultIndex = DEFAULT_SIDEBAR_GROUPS.findIndex((entry) => entry.id === item.id);
+      if (defaultIndex !== -1 && defaultIndex < anchor) insertAt = index + 1;
+    });
+    result.splice(insertAt, 0, { ...group });
+    seen.add(group.id);
   }
   return result;
 }

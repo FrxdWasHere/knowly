@@ -1,11 +1,27 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { MathText } from "@/components/math/math-text";
-import { LETTERS, printableAnswer } from "@/lib/exam-print";
+import {
+  LETTERS,
+  paperThemeVars,
+  printableAnswer,
+  type ExamPaletteId,
+  type ExamTheme,
+} from "@/lib/exam-print";
 import { courseStats, decksForCourse, lessonProgress, type CourseStats } from "@/lib/courses";
+import { CoverOrnament, coverDesign, coverVars } from "@/components/print/cover-designs";
+import { readableAccent } from "@/lib/print-colors";
 import { TYPE_LABELS } from "@/lib/answers";
 import {
   type Course,
@@ -25,7 +41,9 @@ import { cn } from "@/lib/utils";
 export type PaperSizeId = "a4" | "letter" | "legal" | "b5" | "a5";
 export type PaperOrientation = "portrait" | "landscape";
 export type PaperFontScale = "small" | "normal" | "large";
-export type PaperMarginId = "narrow" | "normal" | "wide";
+/** Every sheet keeps a fixed 0.5in content margin — 48px at 96dpi. The paper art
+ *  runs to the sheet edge, so a no-margin PDF export comes out finished. */
+export const PRINT_MARGIN_PX = 48;
 export type PaperTypeface = "sans" | "serif";
 export type PaperSpacing = "compact" | "normal" | "relaxed";
 export type PaperBreaks = "flow" | "modules" | "lessons";
@@ -35,7 +53,6 @@ export type PaperCoverStyle = "book" | "classic";
 export interface CoursePrintOptions {
   paper: PaperSizeId;
   orientation: PaperOrientation;
-  margins: PaperMarginId;
   fontScale: PaperFontScale;
   typeface: PaperTypeface;
   spacing: PaperSpacing;
@@ -47,12 +64,17 @@ export interface CoursePrintOptions {
   includeAnswerKey: boolean;
   includeNotes: boolean;
   runningHeader: boolean;
+  /** Paper personality, shared with the exam builder themes. */
+  theme?: ExamTheme;
+  /** Ink palette curated per theme; "theme" keeps the course colour. */
+  palette?: ExamPaletteId | "theme";
+  /** "design" keeps the full covers and washes; "friendly" saves ink. */
+  printStyle?: "design" | "friendly";
 }
 
 export const defaultCoursePrintOptions: CoursePrintOptions = {
   paper: "a4",
   orientation: "portrait",
-  margins: "normal",
   fontScale: "normal",
   typeface: "sans",
   spacing: "normal",
@@ -64,6 +86,9 @@ export const defaultCoursePrintOptions: CoursePrintOptions = {
   includeAnswerKey: true,
   includeNotes: true,
   runningHeader: true,
+  theme: "classic",
+  palette: "theme",
+  printStyle: "design",
 };
 
 export const STORAGE_KEY_COURSE_PRINT = "knowly.course-print.v1";
@@ -91,19 +116,6 @@ export function getPaperDims(paper: PaperSizeId, orientation: PaperOrientation) 
     ? { width: size.h, height: size.w }
     : { width: size.w, height: size.h };
 }
-
-export const MARGIN_OPTIONS: { id: PaperMarginId; label: string; sub: string }[] = [
-  { id: "narrow", label: "Narrow", sub: "≈12 mm" },
-  { id: "normal", label: "Normal", sub: "≈18 mm" },
-  { id: "wide", label: "Wide", sub: "≈25 mm" },
-];
-
-/** Padding as a share of the sheet; used by preview, print and the DOCX export. */
-const MARGIN_FACTORS: Record<PaperMarginId, { side: number; top: number; bottom: number }> = {
-  narrow: { side: 0.055, top: 0.042, bottom: 0.055 },
-  normal: { side: 0.088, top: 0.06, bottom: 0.075 },
-  wide: { side: 0.115, top: 0.078, bottom: 0.095 },
-};
 
 /** Nothing may sit this close to the bottom footer: 25px above it, the footer's own band, and 25px below it down to the sheet edge. */
 export const FOOTER_KEEPCLEAR = 25;
@@ -166,8 +178,8 @@ export const FOOTER_OPTIONS: { id: PaperFooterStyle; label: string; sub: string 
 ];
 
 export const COVER_OPTIONS: { id: PaperCoverStyle; label: string; sub: string }[] = [
-  { id: "book", label: "Book", sub: "Full-color cover" },
-  { id: "classic", label: "Classic", sub: "White with accents" },
+  { id: "book", label: "Themed", sub: "Designed by the paper theme" },
+  { id: "classic", label: "Plain", sub: "White title page" },
 ];
 
 const SERIF_HEADINGS_STACK = '"Book Antiqua", "Palatino Linotype", Georgia, serif';
@@ -542,10 +554,9 @@ export function CoursePaper({
     () => getPaperDims(options.paper, options.orientation),
     [options.paper, options.orientation],
   );
-  const factors = MARGIN_FACTORS[options.margins];
-  const padX = Math.round(dims.width * factors.side);
-  const padTop = Math.round(dims.height * factors.top);
-  const padBottom = Math.round(dims.height * factors.bottom);
+  const padX = PRINT_MARGIN_PX;
+  const padTop = PRINT_MARGIN_PX;
+  const padBottom = PRINT_MARGIN_PX;
   const contentWidth = Math.max(200, dims.width - padX * 2);
   const contentHeight = Math.max(
     200,
@@ -554,6 +565,26 @@ export function CoursePaper({
   const fontPx = options.fontScale === "small" ? 11.5 : options.fontScale === "large" ? 13.5 : 12.5;
   const lineHeight = 1.55 * SPACING_FACTORS[options.spacing];
   const fontFamily = TYPEFACE_OPTIONS.find((t) => t.id === options.typeface)?.stack;
+  const skin = paperThemeVars(options.theme, options.palette, course.color || "#3b5bdb");
+
+  /* The sheet is white paper, but a dark theme hands the identity colour over
+     as a light token (`var(--deck-1)` → a pale primary). Measure it against
+     white and deepen it only when it would be illegible.
+
+     The probe lives on <body>, not inside the sheet: `.paper-skin` maps
+     --primary to the accent, so resolving a token like var(--deck-1) inside it
+     would walk a var() cycle. useLayoutEffect keeps that token value off the
+     screen. */
+  const [paperAccent, setPaperAccent] = useState<string | null>(null);
+  useLayoutEffect(() => {
+    const probe = document.createElement("span");
+    probe.style.display = "none";
+    probe.style.color = skin.accent;
+    document.body.appendChild(probe);
+    const resolved = getComputedStyle(probe).color;
+    probe.remove();
+    setPaperAccent(readableAccent(resolved));
+  }, [skin.accent]);
 
   const units = useMemo(
     () => buildUnits(course, progress, decks, options),
@@ -650,7 +681,24 @@ export function CoursePaper({
   };
 
   return (
-    <div className="max-w-full">
+    <div
+      className={cn(
+        "paper-skin max-w-full",
+        `paper-theme-${skin.theme.id}`,
+        options.printStyle === "friendly" && "print-friendly",
+      )}
+      style={
+        {
+          /* The sheet is white paper in both media (see .paper-skin), so the
+             identity colour is the one measured against white: the preview and
+             the printer use the same value. */
+          "--exam-accent": paperAccent ?? skin.accent,
+          "--exam-accent-print": paperAccent ?? skin.accent,
+          "--exam-soft": skin.soft,
+          "--exam-border": skin.border,
+        } as CSSProperties
+      }
+    >
       <style>{printStylesheet(dims)}</style>
 
       {/* hidden measuring flow; hidden from screen + print */}
@@ -667,7 +715,7 @@ export function CoursePaper({
         }}
       >
         {units.map((unit) => (
-          <UnitSlot key={unit.id} unit={unit} courseColor={course.color} toc={{}} />
+          <UnitSlot key={unit.id} unit={unit} courseColor="var(--exam-accent)" toc={{}} />
         ))}
       </div>
 
@@ -698,7 +746,11 @@ export function CoursePaper({
             footer={{
               left: course.title,
               text: options.footerStyle === "none" ? null : footerPageText(1),
-              light: true,
+              // the footer overlays the cover, so its ink follows the cover: a
+              // newspaper cover gets dark meta type, a navy one gets light
+              light:
+                options.coverStyle !== "classic" &&
+                coverDesign(options.theme, "var(--exam-accent)").dark,
             }}
             fullBleed
           >
@@ -717,6 +769,7 @@ export function CoursePaper({
                 padX={padX}
                 padTop={padTop}
                 fontFamily={fontFamily}
+                theme={options.theme}
               />
             )}
           </SheetShell>
@@ -744,7 +797,7 @@ export function CoursePaper({
               <UnitSlot
                 key={unit.id}
                 unit={unit}
-                courseColor={course.color}
+                courseColor="var(--exam-accent)"
                 toc={layout?.toc ?? {}}
               />
             ))}
@@ -1107,12 +1160,15 @@ function CoverBody({
   padX,
   padTop,
   fontFamily,
+  theme,
 }: {
   course: Course;
   stats: CourseStats;
   padX: number;
   padTop: number;
   fontFamily?: string;
+  /** paper theme: it owns the cover's design, surface and ink */
+  theme?: string;
 }) {
   const statPairs: [string, string | number][] = [
     ["Modules", course.modules.length],
@@ -1122,33 +1178,13 @@ function CoverBody({
     ["Minutes", course.estimatedMinutes ?? "—"],
     ["Progress", `${stats.percent}%`],
   ];
+  const design = coverDesign(theme, "var(--exam-accent)");
   return (
     <div
-      className="cover-art relative flex size-full flex-col overflow-hidden text-white"
-      style={{
-        background: `radial-gradient(140% 100% at 90% -20%, color-mix(in oklab, ${course.color} 45%, #ffffff 6%) 0%, transparent 52%), linear-gradient(158deg, ${course.color} 0%, color-mix(in oklab, ${course.color} 40%, #0a1322) 60%, #091120 100%)`,
-      }}
+      className="cover-art relative flex size-full flex-col overflow-hidden"
+      style={coverVars(design)}
     >
-      {/* classic book frame */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute border border-white/25"
-        style={{ inset: 26 }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute border border-white/10"
-        style={{ inset: 33 }}
-      />
-      {/* soft ornaments */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-white/10 blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-28 -left-16 size-72 rounded-full bg-black/30 blur-3xl"
-      />
+      <CoverOrnament theme={theme} padX={padX} accent="var(--exam-accent)" design={design} />
 
       <div
         className="relative flex size-full flex-col"
@@ -1162,15 +1198,15 @@ function CoverBody({
       >
         {/* head */}
         <div className="flex items-center gap-3.5">
-          <span className="grid size-14 shrink-0 place-items-center rounded-xl border border-white/25 bg-white/15 text-[1.9em]">
+          <span className="grid size-14 shrink-0 place-items-center rounded-xl border border-[color:var(--cover-line)] bg-[color:var(--cover-fill)] text-[1.9em]">
             {course.emoji || "📘"}
           </span>
           <div>
-            <p className="text-[0.72em] font-semibold uppercase tracking-[0.32em] text-white/80">
+            <p className="text-[0.72em] font-semibold uppercase tracking-[0.32em] text-[color:var(--cover-ink)]">
               {course.subject}
               {course.level ? ` · ${course.level}` : ""}
             </p>
-            <p className="mt-1 text-[0.72em] uppercase tracking-[0.24em] text-white/45">
+            <p className="mt-1 text-[0.72em] uppercase tracking-[0.24em] text-[color:var(--cover-muted)]">
               Knowly study pack
             </p>
           </div>
@@ -1179,9 +1215,9 @@ function CoverBody({
         {/* title block, vertically centered like a book cover */}
         <div className="my-auto py-10">
           <div aria-hidden className="flex items-center gap-3">
-            <span className="h-px w-10 bg-white/50" />
-            <span className="size-1.5 rounded-full bg-white/70" />
-            <span className="h-px w-4 bg-white/40" />
+            <span className="h-px w-10 bg-[color:var(--cover-line)]" />
+            <span className="size-1.5 rounded-full bg-[color:var(--cover-ink)]" />
+            <span className="h-px w-4 bg-[color:var(--cover-line)]" />
           </div>
           <h1
             className="mt-5 font-display text-[3em] font-bold leading-[1.04] tracking-tight"
@@ -1190,18 +1226,20 @@ function CoverBody({
             {course.title}
           </h1>
           {course.description && (
-            <p className="mt-5 max-w-md text-[1.08em] italic text-white/75">{course.description}</p>
+            <p className="mt-5 max-w-md text-[1.08em] italic text-[color:var(--cover-muted)]">
+              {course.description}
+            </p>
           )}
         </div>
 
         {/* foot meta */}
         <div>
-          <div aria-hidden className="h-px w-full bg-white/20" />
+          <div aria-hidden className="h-px w-full bg-[color:var(--cover-line)]" />
           <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5">
             {statPairs.map(([label, value]) => (
               <p key={label} className="flex items-baseline gap-1.5">
                 <span className="text-[1.05em] font-bold tabular-nums">{value}</span>
-                <span className="text-[0.78em] uppercase tracking-[0.18em] text-white/60">
+                <span className="text-[0.78em] uppercase tracking-[0.18em] text-[color:var(--cover-muted)]">
                   {label}
                 </span>
               </p>
@@ -1212,14 +1250,14 @@ function CoverBody({
               {course.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full border border-white/25 px-2.5 py-1 text-[0.8em] text-white/80"
+                  className="rounded-full border border-[color:var(--cover-line)] px-2.5 py-1 text-[0.8em] text-[color:var(--cover-ink)]"
                 >
                   <MathText text={tag} />
                 </span>
               ))}
             </div>
           )}
-          <p className="mt-4 text-[0.78em] uppercase tracking-[0.2em] text-white/45">
+          <p className="mt-4 text-[0.78em] uppercase tracking-[0.2em] text-[color:var(--cover-muted)]">
             Printed study pack · generated with Knowly
           </p>
         </div>
@@ -1261,7 +1299,7 @@ function CoverBodyClassic({
       }}
     >
       {/* top rule + imprint */}
-      <div aria-hidden className="h-1 w-14" style={{ background: course.color }} />
+      <div aria-hidden className="h-1 w-14" style={{ background: "var(--exam-accent)" }} />
       <p className="mt-4 text-[0.78em] font-semibold uppercase tracking-[0.32em] text-muted-foreground">
         {course.subject}
         {course.level ? ` · ${course.level}` : ""}
@@ -1285,7 +1323,7 @@ function CoverBodyClassic({
                 <span
                   aria-hidden
                   className="mt-[0.52em] size-1.5 shrink-0 rounded-full"
-                  style={{ background: course.color }}
+                  style={{ background: "var(--exam-accent)" }}
                 />
                 <span className="min-w-0">{objective}</span>
               </li>
@@ -1507,17 +1545,46 @@ function printStylesheet(dims: { width: number; height: number }) {
     break-inside: avoid;
     box-shadow: none !important;
     border: 0 !important;
+    /* The sheet is physically white, so the reading palette is pinned in both
+       styles: body ink can never inherit a dark theme's near-white foreground.
+       The identity colour is separate (--exam-accent) and is deepened by the
+       component when it would not be legible on white. */
+    --foreground: #1f2937;
+    --card: #ffffff;
+    --card-foreground: #1f2937;
+    --muted: #eef1f5;
+    --muted-foreground: #6b7280;
+    --border: #9ca3af;
+    --input: #9ca3af;
+    --primary: #3b5bdb;
+    --primary-foreground: #ffffff;
+    --success: #127a4a;
+    --warning: #a05e0a;
+    --destructive: #b3261e;
+    /* the deepened identity colour, measured against white paper (see
+       readableAccent); the fallback is the default accent */
+    --exam-accent: var(--exam-accent-print, #3b5bdb);
   }
   .print-page:last-of-type { break-after: auto; page-break-after: auto; }
   .measure-pane { display: none !important; }
   .course-paper { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  /* On paper the sheet is physically white with dark ink regardless of the
-     screen theme — printers cannot render a theme's light "ink". The themed
-     sheet is for the on-screen preview only. */
-  .paper-flow .print-page { background-color: #ffffff !important; }
-  .paper-flow .print-page * { color: #1f2937 !important; border-color: #9ca3af !important; }
+  /* The sheet itself is white under the theme's paper wash, so the art reaches
+     the sheet edge while the words keep their 0.5in margin. */
+  .paper-flow .print-page { background-color: #ffffff !important; color: #1f2937 !important; }
+  /* Theme ink classes are pinned as well as the variables, so a utility class
+     can never hand the printer a pale colour. */
+  .paper-flow .print-page .text-foreground { color: #1f2937 !important; }
+  .paper-flow .print-page .text-card-foreground { color: #1f2937 !important; }
+  .paper-flow .print-page .text-muted-foreground { color: #5b6472 !important; }
+  .paper-flow .print-page .border-border { border-color: #9ca3af !important; }
+  /* Print friendly drops the ink-heavy palette: neutral ink on white, so the
+     page costs a fraction of the toner. Full design keeps the theme colours. */
+  .print-friendly .paper-flow .print-page * { color: #1f2937 !important; border-color: #9ca3af !important; }
+  /* Surfaces that carry their own fill keep white type in both styles. */
   .paper-flow .print-page .paper-accent { color: #ffffff !important; }
-  .paper-flow .print-page .cover-art,
-  .paper-flow .print-page .cover-art * { color: #ffffff !important; border-color: color-mix(in oklab, #ffffff 45%, transparent) !important; }
+  /* The cover brings its own ink tokens (--cover-ink / -muted / -line), which
+     are already measured against the surface it paints, so nothing is forced
+     white here — a light cover prints dark type. */
+  .paper-flow .print-page .cover-art { color: var(--cover-ink, #1f2937) !important; }
 }`;
 }

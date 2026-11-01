@@ -2,6 +2,32 @@
 
 All notable changes to Knowly are documented here. The app is fully offline — no accounts, no syncing, no network calls.
 
+## 3.3.0 — 2026-11-01 — The Print Studio Release
+
+The headline of v3.3: **course and module print packs became real documents.** Each paper theme now designs its own cover, the sheet is always paper regardless of the app theme, and both studios export Word files that match what you see.
+
+### New: a cover per paper theme
+
+- **Eleven covers, one per theme.** `coverDesign()` in `src/components/print/cover-designs.tsx` gives each paper theme its own surface, ink and ornament, and `CoverOrnament()` draws it: hairline frames on Classic, an accent spine on Module, masking tape and a dot grid on Field notes, a blueprint grid with a title-block rule, scanlines and a prompt line on Terminal, crop marks on Lab report, a punched-holed spine on Workbook, twin parchment frames on Manuscript, masthead rules on Newspaper, an ink border and burst on Comic, a leaf sprig on Botanical.
+- **Light themes print dark ink, dark themes print light ink.** A single `dark` flag is the contract, so no cover can put pale type on a pale surface. The module's in-flow hero wears the same design as its cover, and the course footer takes its tone from the cover it overlays.
+- **Themed or plain.** The course cover control now reads Themed (designed by the paper theme) and Plain (white title page with accent rules); the module panel's control is Cover colour, since the theme owns the design.
+
+### Fixed: paper ink
+
+- **The sheet is paper, not UI.** Course and module sheets inherited the app theme's ink, so in a dark theme the body text was near-white on white paper. `.paper-skin` now pins the full reading palette in both media — `#1f2937` body ink (14.7:1 on white), `#5b6472` secondary (6.0:1), white card, pinned borders — plus the Tailwind `--color-*` aliases and `color-scheme: light`. What you read in the studio is what comes out of the printer.
+- **Print stylesheets no longer rely on inheritance** for the theme ink classes, and the accents are deepened for both media, so the preview and the printed page use the same identity colour.
+
+### New: Word export everywhere
+
+- **Save as Word file** in the module studio, sharing the course builder's renderer (`src/lib/course-docx.ts`): title sheet, objectives, notes, blocks, practice questions, linked-deck practice and an answer key.
+- **Colour tokens resolve before docx sees them.** Identity colours arrive as CSS tokens (`var(--deck-3)`) or `color-mix()`; they are resolved through a DOM probe (with a canvas fallback for `oklch()`/`lab()`) to six-digit hex, which is what docx requires — this is what fixed the export crash in the cover shading.
+
+### Printing
+
+- **Full-bleed backgrounds, 0.5in content margins.** The sheet is exactly the printed page, so the themed wash and accent edge reach the edge while the words keep a 0.5in margin. Choose **Margins: None** in the print dialog for a finished document.
+
+- Version bumped to **3.3.0** across the app, the Tauri desktop shell and the Rust crate.
+
 ## 3.1.0 — 2026-10-25 — The Study Week Release
 
 The headline of v3.1: **Knowly now plans your week and files your practice.** A weekly timetable links every class to its deck, colour-coded binder labels keep the library tidy, a paper shelf saves past papers with full sitting histories — and any subject that needs real math gets properly typeset equations.

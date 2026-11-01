@@ -17,6 +17,7 @@ import { MathText } from "@/components/math/math-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { openImportPanel } from "@/lib/import-panel";
 import { useKnowly } from "@/store/knowly";
 import type { Module } from "@/lib/types";
 
@@ -67,10 +68,8 @@ function ModulesIndex() {
         description="Standalone one-off lessons — a single idea, fully editable, with blurbs, checkpoints and activity squares."
         action={
           <>
-            <Button asChild variant="outline">
-              <Link to="/modules/import">
-                <Download className="size-4" /> Import module
-              </Link>
+            <Button variant="outline" onClick={() => openImportPanel({ kind: "module" })}>
+              <Download className="size-4" /> Import module
             </Button>
             <Button asChild>
               <Link to="/modules/prompter">
@@ -224,10 +223,8 @@ function EmptyModules({ hasModules }: { hasModules: boolean }) {
               <Hammer className="size-4" /> Module Forge
             </Link>
           </Button>
-          <Button asChild variant="outline">
-            <Link to="/modules/import">
-              <Layers className="size-4" /> Add a module file
-            </Link>
+          <Button variant="outline" onClick={() => openImportPanel({ kind: "module" })}>
+            <Layers className="size-4" /> Add a module file
           </Button>
         </div>
       )}

@@ -21,12 +21,23 @@ import {
 } from "docx";
 import { LETTERS, printableAnswer } from "@/lib/exam-print";
 import { TYPE_LABELS } from "@/lib/answers";
-import { getPaperDims, type CoursePrintOptions } from "@/components/print/course-paper";
+import {
+  PRINT_MARGIN_PX,
+  getPaperDims,
+  type CoursePrintOptions,
+  type PaperFontScale,
+  type PaperFooterStyle,
+  type PaperOrientation,
+  type PaperSizeId,
+  type PaperSpacing,
+  type PaperTypeface,
+} from "@/components/print/course-paper";
 import {
   type Course,
   type CourseBlock,
   type CourseProgress,
   type Deck,
+  type Module,
   type Question,
 } from "@/lib/types";
 
@@ -39,7 +50,53 @@ const GRAY_LIGHT = "94A3B8";
 const RULE = "CBD5E1";
 
 const px = (value: number) => Math.round(value * 15); // px @96dpi → twips
-const hex = (color: string) => color.replace("#", "").toUpperCase();
+
+/** `rgb(12, 34, 56)` and `color(srgb 0.1 0.2 0.3)` → `0C2238`. */
+function computedColorToHex(value: string): string | null {
+  const toHex = (channel: number) =>
+    Math.max(0, Math.min(255, Math.round(channel))).toString(16).padStart(2, "0");
+  const rgb = /^rgba?\(([^)]+)\)$/i.exec(value);
+  if (rgb) {
+    const [r, g, b] = rgb[1]!.split(/[,\s/]+/).filter(Boolean).map(Number);
+    if ([r, g, b].some((channel) => !Number.isFinite(channel))) return null;
+    return `${toHex(r!)}${toHex(g!)}${toHex(b!)}`.toUpperCase();
+  }
+  const srgb = /^color\(\s*srgb\s+([^)]+)\)$/i.exec(value);
+  if (srgb) {
+    const parts = srgb[1]!.trim().split(/\s+/).map(Number);
+    if (parts.length < 3 || parts.some((channel) => !Number.isFinite(channel))) return null;
+    return `${toHex(parts[0]! * 255)}${toHex(parts[1]! * 255)}${toHex(parts[2]! * 255)}`.toUpperCase();
+  }
+  return null;
+}
+
+/**
+ * docx rejects anything but a six-digit hex colour, and every identity colour in
+ * this app is a CSS token (`var(--deck-3)`) or a `color-mix()`. Resolve those to
+ * real channels through the browser before they reach a shading or a text run.
+ */
+function resolveHex(color: string | undefined, fallback = "3B5BDB"): string {
+  const raw = (color ?? "").trim();
+  if (!raw) return fallback;
+  const short = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(raw);
+  if (short) return `${short[1]}${short[1]}${short[2]}${short[2]}${short[3]}${short[3]}`.toUpperCase();
+  const full = /^#([0-9a-f]{6})$/i.exec(raw);
+  if (full) return full[1]!.toUpperCase();
+  const bare = /^([0-9a-f]{6})$/i.exec(raw);
+  if (bare) return bare[1]!.toUpperCase();
+  if (typeof document === "undefined") return fallback;
+  const probe = document.createElement("span");
+  probe.style.color = raw;
+  // An unparseable value leaves the property empty, so nothing is guessed.
+  if (!probe.style.color) return fallback;
+  probe.style.display = "none";
+  document.body.appendChild(probe);
+  const computed = getComputedStyle(probe).color;
+  probe.remove();
+  return computedColorToHex(computed) ?? fallback;
+}
+
+const hex = (color: string) => resolveHex(color);
 
 /** Blend a hex color toward white — used for callout fills. */
 function tint(color: string, amount: number): string {
@@ -475,6 +532,59 @@ async function imageChildren(block: CourseBlock): Promise<Paragraph[]> {
   ];
 }
 
+/**
+ * Course blocks rendered into Word runs. Lessons and the module sheet share
+ * these, so a callout looks the same wherever it is printed.
+ */
+async function blockChildren(
+  blocks: CourseBlock[],
+  accent: string,
+  onStatus?: (message: string) => void,
+): Promise<(Paragraph | Table)[]> {
+  const out: (Paragraph | Table)[] = [];
+  for (const block of blocks) {
+    if (block.type === "checkpoint") continue;
+    if (block.type === "markdown") {
+      out.push(...markdownToDocx(block.markdown ?? "", accent));
+    } else if (block.type === "callout" || block.type === "example") {
+      const tone =
+        (block.type === "example" ? CALLOUT_TONES.example : CALLOUT_TONES[block.tone ?? "info"]) ??
+        CALLOUT_TONES.info!;
+      const fill = tint(tone.from, 0.88);
+      out.push(
+        new Paragraph({
+          shading: { type: ShadingType.CLEAR, fill },
+          border: {
+            left: { style: BorderStyle.SINGLE, size: 18, color: tone.border, space: 6 },
+          },
+          indent: { left: 40 },
+          spacing: { before: 140, after: 40 },
+          children: [
+            new TextRun({
+              text: block.title || (block.type === "example" ? "Example" : "Note"),
+              bold: true,
+              color: tone.label,
+            }),
+          ],
+        }),
+      );
+      out.push(...markdownToDocx(block.markdown ?? "", accent, { fill, borderColor: tone.border }));
+    } else if (block.type === "image") {
+      onStatus?.("Embedding image…");
+      out.push(...(await imageChildren(block)));
+    } else if (block.type === "divider") {
+      out.push(
+        new Paragraph({
+          border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: RULE, space: 1 } },
+          spacing: { before: 120, after: 120 },
+          children: [],
+        }),
+      );
+    }
+  }
+  return out;
+}
+
 /* ------------------------------------------------------------------ *
  * Main builder
  * ------------------------------------------------------------------ */
@@ -487,11 +597,7 @@ export async function courseDocxBlob(
   onStatus?: (message: string) => void,
 ): Promise<Blob> {
   const accent = hex(course.color);
-  const dims = getPaperDims(options.paper, options.orientation);
-  const margin = MARGIN_FACTORS[options.margins];
-  const fontFamily = options.typeface === "serif" ? "Georgia" : "Calibri";
   const docFontSizes = { small: 20, normal: 22, large: 25 } as const;
-  const docLine = { compact: 240, normal: 276, relaxed: 312 } as const;
 
   onStatus?.("Gathering course content…");
 
@@ -696,44 +802,7 @@ export async function courseDocxBlob(
         );
       }
 
-      for (const block of lesson.blocks) {
-        if (block.type === "checkpoint") continue;
-        if (block.type === "markdown") {
-          pushAll(markdownToDocx(block.markdown ?? "", accent));
-        } else if (block.type === "callout" || block.type === "example") {
-          const tone = CALLOUT_TONES[block.type === "example" ? "example" : (block.tone ?? "info")];
-          const fill = tint(tone.from, 0.88);
-          children.push(
-            new Paragraph({
-              shading: { type: ShadingType.CLEAR, fill },
-              border: {
-                left: { style: BorderStyle.SINGLE, size: 18, color: tone.border, space: 6 },
-              },
-              indent: { left: 40 },
-              spacing: { before: 140, after: 40 },
-              children: [
-                new TextRun({
-                  text: block.title || (block.type === "example" ? "Example" : "Note"),
-                  bold: true,
-                  color: tone.label,
-                }),
-              ],
-            }),
-          );
-          pushAll(markdownToDocx(block.markdown ?? "", accent, { fill, borderColor: tone.border }));
-        } else if (block.type === "image") {
-          onStatus?.(`Embedding image · ${lesson.title}`);
-          pushAll(await imageChildren(block));
-        } else if (block.type === "divider") {
-          children.push(
-            new Paragraph({
-              border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: RULE, space: 1 } },
-              spacing: { before: 120, after: 120 },
-              children: [],
-            }),
-          );
-        }
-      }
+      pushAll(await blockChildren(lesson.blocks, accent, onStatus));
 
       const lessonState = progress?.lessons[lesson.id];
       if (lessonState?.notes && options.includeNotes) {
@@ -890,41 +959,227 @@ export async function courseDocxBlob(
     });
   }
 
-  /* footer with real Word page numbers */
-  const footer =
-    options.footerStyle === "none"
-      ? undefined
-      : new Footer({
-          children: [
-            new Paragraph({
-              alignment: AlignmentType.CENTER,
-              children: [
-                new TextRun({
-                  children:
-                    options.footerStyle === "of"
-                      ? ["Page ", PageNumber.CURRENT, " of ", PageNumber.TOTAL_PAGES]
-                      : options.footerStyle === "plain"
-                        ? [PageNumber.CURRENT]
-                        : [PageNumber.CURRENT, " / ", PageNumber.TOTAL_PAGES],
-                  size: 18,
-                  color: GRAY,
-                }),
-              ],
-            }),
-          ],
-        });
-
   onStatus?.("Assembling the Word document…");
-  const docxDocument = new Document({
-    creator: "Knowly",
+  return assembleDocx({
     title: course.title,
     description: course.description,
+    children,
+    options,
+    onStatus,
+  });
+}
+
+/* ------------------------------------------------------------------ *
+ * Module sheet → DOCX
+ * ------------------------------------------------------------------ */
+
+export interface ModuleDocxOptions {
+  paper: PaperSizeId;
+  orientation: PaperOrientation;
+  fontScale: PaperFontScale;
+  typeface: PaperTypeface;
+  spacing: PaperSpacing;
+  footerStyle: PaperFooterStyle;
+  includeTitlePage: boolean;
+  includeAnswerKey: boolean;
+  includeNotes: boolean;
+}
+
+/**
+ * The module print studio's Word export: the same one-flow sheet, without a
+ * cover, contents or course-level assessments.
+ */
+export async function moduleDocxBlob(
+  module: Module,
+  decks: Deck[],
+  progressNotes: string | undefined,
+  options: ModuleDocxOptions,
+  onStatus?: (message: string) => void,
+): Promise<Blob> {
+  const accent = hex(module.color);
+  onStatus?.("Gathering module content…");
+  const children: (Paragraph | Table)[] = [];
+  const pushAll = (parts: (Paragraph | Table)[]) => {
+    for (const part of parts) children.push(part);
+  };
+
+  children.push(
+    new Paragraph({
+      heading: HeadingLevel.HEADING_1,
+      spacing: { after: 60 },
+      children: [new TextRun({ text: module.title, bold: true })],
+    }),
+    new Paragraph({
+      spacing: { after: 160 },
+      children: [
+        new TextRun({
+          text: `${module.subject} · ${module.questions.length} questions · ${module.estimatedMinutes} min`,
+          color: GRAY,
+          size: 16,
+          allCaps: true,
+        }),
+      ],
+    }),
+  );
+
+  if (module.objectives.length) {
+    children.push(
+      new Paragraph({
+        heading: HeadingLevel.HEADING_3,
+        spacing: { before: 160, after: 60 },
+        children: [new TextRun("What you'll learn")],
+      }),
+    );
+    for (const objective of module.objectives) {
+      children.push(
+        new Paragraph({
+          bullet: { level: 0 },
+          spacing: { after: 30 },
+          children: inlineRuns(objective),
+        }),
+      );
+    }
+  }
+
+  // The sheet opens with a full-page title; the lesson flow starts on page two.
+  if (options.includeTitlePage) {
+    children.push(new Paragraph({ children: [new PageBreak()] }));
+  }
+
+  if (module.notes) {
+    pushAll(markdownToDocx(module.notes, accent));
+  }
+
+  pushAll(await blockChildren(module.blocks, accent, onStatus));
+
+  if (options.includeNotes && progressNotes) {
+    children.push(
+      new Paragraph({
+        border: { left: { style: BorderStyle.SINGLE, size: 18, color: GRAY_LIGHT, space: 6 } },
+        indent: { left: 40 },
+        spacing: { before: 140, after: 60 },
+        children: [new TextRun({ text: "Your notes", bold: true, color: GRAY })],
+      }),
+    );
+    pushAll(markdownToDocx(progressNotes, accent, { borderColor: GRAY_LIGHT, italics: true }));
+  }
+
+  pushAll(questionSet("Practice questions", module.questions));
+
+  const deckById = new Map(decks.map((deck) => [deck.id, deck]));
+  const practiceDecks = module.linkedDeckIds
+    .map((id) => deckById.get(id))
+    .filter((deck): deck is Deck => !!deck && deck.questions.length > 0);
+  for (const deck of practiceDecks) {
+    children.push(
+      new Paragraph({
+        heading: HeadingLevel.HEADING_3,
+        spacing: { before: 200, after: 40 },
+        children: [new TextRun(`Practice deck · ${deck.title}`)],
+      }),
+    );
+    deck.questions.forEach((question, index) =>
+      children.push(...questionChildren(question, index + 1)),
+    );
+  }
+
+  if (options.includeAnswerKey && (module.questions.length || practiceDecks.length)) {
+    children.push(
+      new Paragraph({
+        heading: HeadingLevel.HEADING_1,
+        pageBreakBefore: true,
+        spacing: { after: 120 },
+        children: [new TextRun("Answer key")],
+      }),
+    );
+    if (module.questions.length) {
+      children.push(...answerLines(module.questions));
+    }
+    for (const deck of practiceDecks) {
+      children.push(
+        new Paragraph({
+          heading: HeadingLevel.HEADING_3,
+          spacing: { before: 140, after: 40 },
+          children: [new TextRun(`Practice deck · ${deck.title}`)],
+        }),
+        ...answerLines(deck.questions),
+      );
+    }
+  }
+
+  onStatus?.("Assembling the Word document…");
+  return assembleDocx({
+    title: module.title,
+    children,
+    options,
+    onStatus,
+  });
+}
+
+/* ------------------------------------------------------------------ *
+ * Shared document assembly
+ * ------------------------------------------------------------------ */
+
+/** Real Word page numbers, or no footer at all. */
+function pageFooter(style: PaperFooterStyle): Footer | undefined {
+  if (style === "none") return undefined;
+  return new Footer({
+    children: [
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [
+          new TextRun({
+            children:
+              style === "of"
+                ? ["Page ", PageNumber.CURRENT, " of ", PageNumber.TOTAL_PAGES]
+                : style === "plain"
+                  ? [PageNumber.CURRENT]
+                  : [PageNumber.CURRENT, " / ", PageNumber.TOTAL_PAGES],
+            size: 18,
+            color: GRAY,
+          }),
+        ],
+      }),
+    ],
+  });
+}
+
+/** Page size, the fixed 0.5in margin, typography and footer — shared by both exports. */
+async function assembleDocx({
+  title,
+  description,
+  children,
+  options,
+  onStatus,
+}: {
+  title: string;
+  description?: string;
+  children: (Paragraph | Table | TableOfContents)[];
+  options: {
+    paper: PaperSizeId;
+    orientation: PaperOrientation;
+    fontScale: PaperFontScale;
+    typeface: PaperTypeface;
+    spacing: PaperSpacing;
+    footerStyle: PaperFooterStyle;
+  };
+  onStatus?: (message: string) => void;
+}): Promise<Blob> {
+  const dims = getPaperDims(options.paper, options.orientation);
+  const fontFamily = options.typeface === "serif" ? "Georgia" : "Calibri";
+  const fontSizes = { small: 20, normal: 22, large: 25 } as const;
+  const lineSpacing = { compact: 240, normal: 276, relaxed: 312 } as const;
+  const footer = pageFooter(options.footerStyle);
+  const docxDocument = new Document({
+    creator: "Knowly",
+    title,
+    description,
     features: { updateFields: true },
     styles: {
       default: {
         document: {
-          run: { font: fontFamily, size: docFontSizes[options.fontScale] },
-          paragraph: { spacing: { line: docLine[options.spacing] } },
+          run: { font: fontFamily, size: fontSizes[options.fontScale] },
+          paragraph: { spacing: { line: lineSpacing[options.spacing] } },
         },
       },
     },
@@ -940,11 +1195,12 @@ export async function courseDocxBlob(
                   ? PageOrientation.LANDSCAPE
                   : PageOrientation.PORTRAIT,
             },
+            // Matches the printed sheet's fixed 0.5in content margin.
             margin: {
-              top: px(Math.round(dims.height * margin.top)),
-              bottom: px(Math.round(dims.height * margin.bottom)),
-              left: px(Math.round(dims.width * margin.side)),
-              right: px(Math.round(dims.width * margin.side)),
+              top: px(PRINT_MARGIN_PX),
+              bottom: px(PRINT_MARGIN_PX),
+              left: px(PRINT_MARGIN_PX),
+              right: px(PRINT_MARGIN_PX),
             },
           },
         },
@@ -954,16 +1210,7 @@ export async function courseDocxBlob(
     ],
   });
 
-  onStatus?.("Saving study pack .docx…");
+  onStatus?.("Saving the .docx…");
   return Packer.toBlob(docxDocument);
 }
 
-/* Margin factors mirror the paper component so DOCX spacing matches the preview. */
-const MARGIN_FACTORS: Record<
-  "narrow" | "normal" | "wide",
-  { side: number; top: number; bottom: number }
-> = {
-  narrow: { side: 0.055, top: 0.042, bottom: 0.055 },
-  normal: { side: 0.088, top: 0.06, bottom: 0.075 },
-  wide: { side: 0.115, top: 0.078, bottom: 0.095 },
-};

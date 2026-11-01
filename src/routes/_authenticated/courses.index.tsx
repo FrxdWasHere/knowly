@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { courseStats, nextLesson } from "@/lib/courses";
+import { openImportPanel } from "@/lib/import-panel";
 import { useKnowly } from "@/store/knowly";
 import { cn } from "@/lib/utils";
 import type { Course } from "@/lib/types";
@@ -115,10 +116,8 @@ function CoursesPage() {
               <Compass className="size-4" />
               <span className="hidden sm:inline">Tour</span>
             </Button>
-            <Button asChild variant="outline">
-              <Link to="/courses/import">
-                <Plus className="size-4" /> Import course
-              </Link>
+            <Button variant="outline" onClick={() => openImportPanel({ kind: "course" })}>
+              <Plus className="size-4" /> Import course
             </Button>
             <Button asChild>
               <Link to="/courses/forge">
@@ -268,10 +267,8 @@ function EmptyCourses({ hasCourses }: { hasCourses: boolean }) {
               <Sparkles className="size-4" /> Generate a course
             </Link>
           </Button>
-          <Button asChild variant="outline">
-            <Link to="/courses/import">
-              <Layers className="size-4" /> Add a course file
-            </Link>
+          <Button variant="outline" onClick={() => openImportPanel({ kind: "course" })}>
+            <Layers className="size-4" /> Add a course file
           </Button>
         </div>
       )}

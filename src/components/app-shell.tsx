@@ -64,6 +64,8 @@ import { useWallpaperUrl } from "@/hooks/use-wallpaper-url";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
 import { CommandPalette, useCommandPalette } from "@/components/command-palette";
+import { ImportPanel } from "@/components/import-panel";
+import { openImportPanel } from "@/lib/import-panel";
 
 interface NavItem {
   to: string;
@@ -72,6 +74,8 @@ interface NavItem {
   exact: boolean;
   /** Short line explaining what the feature does — shown under the label. */
   hint?: string;
+  /** When set the row runs an action instead of navigating (e.g. open the import panel). */
+  onClick?: () => void;
 }
 
 interface NavGroup {
@@ -82,7 +86,11 @@ interface NavGroup {
   items: NavItem[];
 }
 
-/** Ordered around the actual study loop: home → study → library → build → notes → progress → system. */
+/**
+ * Every sidebar section and its items. The order they appear in is controlled by
+ * `DEFAULT_SIDEBAR_GROUPS` (and each user's saved `settings.sidebarGroups`), so this
+ * array only declares what lives inside each section.
+ */
 const NAV_GROUPS: NavGroup[] = [
   {
     label: "Home",
@@ -173,13 +181,6 @@ const NAV_GROUPS: NavGroup[] = [
         hint: "Lessons, checkpoints and final exams",
       },
       {
-        to: "/courses/import",
-        label: "Import a course",
-        icon: FileJson,
-        exact: false,
-        hint: "Check and add an AI-made course",
-      },
-      {
         to: "/timetable",
         label: "Timetable",
         icon: CalendarClock,
@@ -206,13 +207,6 @@ const NAV_GROUPS: NavGroup[] = [
         icon: Hammer,
         exact: false,
         hint: "Hand-build a module block by block",
-      },
-      {
-        to: "/modules/import",
-        label: "Import a module",
-        icon: Download,
-        exact: false,
-        hint: "Bring in a module your AI made",
       },
     ],
   },
@@ -256,13 +250,6 @@ const NAV_GROUPS: NavGroup[] = [
         exact: true,
         hint: "Colour-code decks, courses and papers",
       },
-    ],
-  },
-  {
-    label: "Build & import",
-    icon: Hammer,
-    hint: "Create and maintain decks",
-    items: [
       {
         to: "/forge",
         label: "Deck Forge",
@@ -278,12 +265,19 @@ const NAV_GROUPS: NavGroup[] = [
         hint: "Combine decks or split one by tag",
       },
       {
-        to: "/import",
-        label: "Bring in a deck",
-        icon: Download,
+        to: "/format",
+        label: "Deck file format",
+        icon: FileJson,
         exact: false,
-        hint: "Check and add questions your AI made",
+        hint: "What a deck file looks like, with samples",
       },
+    ],
+  },
+  {
+    label: "Content",
+    icon: Wand2,
+    hint: "Make it, then bring it in",
+    items: [
       {
         to: "/generate",
         label: "Prompt Studio",
@@ -292,11 +286,12 @@ const NAV_GROUPS: NavGroup[] = [
         hint: "Create deck, course, or module prompts in one studio",
       },
       {
-        to: "/format",
-        label: "Deck file format",
-        icon: FileJson,
+        to: "/import",
+        label: "Import",
+        icon: Download,
         exact: false,
-        hint: "What a deck file looks like, with samples",
+        hint: "Any Knowly file: deck, questions, course, module, notebook, backup",
+        onClick: () => openImportPanel(),
       },
     ],
   },
@@ -430,8 +425,8 @@ const navIconClass = (active: boolean) =>
 
 /** Flat, always-labelled nav row: icon · name · one-line hint. */
 function NavRow({ item, active, dueCount }: { item: NavItem; active: boolean; dueCount?: number }) {
-  return (
-    <Link to={item.to} title={item.hint ?? item.label} className={navLinkClass(active)}>
+  const body = (
+    <>
       <span className={navIconClass(active)}>
         <item.icon className="size-4" />
       </span>
@@ -449,6 +444,27 @@ function NavRow({ item, active, dueCount }: { item: NavItem; active: boolean; du
         </span>
       )}
       {active && <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-primary" />}
+    </>
+  );
+
+  const title = item.hint ?? item.label;
+
+  if (item.onClick) {
+    return (
+      <button
+        type="button"
+        onClick={item.onClick}
+        title={title}
+        className={cn(navLinkClass(active), "w-full text-left")}
+      >
+        {body}
+      </button>
+    );
+  }
+
+  return (
+    <Link to={item.to} title={title} className={navLinkClass(active)}>
+      {body}
     </Link>
   );
 }
@@ -550,16 +566,30 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <div aria-hidden className="mx-3 mb-2 border-t border-sidebar-border" />
                     {group.items.map((item) => {
                       const active = isNavItemActive(item, pathname);
-                      return (
+                      const icon = (
+                        <span className={navIconClass(active)}>
+                          <item.icon className="size-4" />
+                        </span>
+                      );
+                      const title = item.hint ? `${item.label} — ${item.hint}` : item.label;
+                      return item.onClick ? (
+                        <button
+                          key={item.to}
+                          type="button"
+                          onClick={item.onClick}
+                          title={title}
+                          className={cn(navLinkClass(active), "w-full justify-center px-2")}
+                        >
+                          {icon}
+                        </button>
+                      ) : (
                         <Link
                           key={item.to}
                           to={item.to}
-                          title={item.hint ? `${item.label} — ${item.hint}` : item.label}
+                          title={title}
                           className={cn(navLinkClass(active), "justify-center px-2")}
                         >
-                          <span className={navIconClass(active)}>
-                            <item.icon className="size-4" />
-                          </span>
+                          {icon}
                         </Link>
                       );
                     })}
@@ -720,27 +750,47 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {groupIndex > 0 && (
                   <span aria-hidden className="h-5 w-px shrink-0 bg-sidebar-border" />
                 )}
-                {group.items.map((item) => (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    title={item.hint ? `${item.label} — ${item.hint}` : item.label}
-                    className="press inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors"
-                    activeProps={{
-                      className:
-                        "border-primary/30 bg-primary/12 text-foreground shadow-[0_8px_24px_-18px_var(--primary)]",
-                    }}
-                    activeOptions={{ exact: item.to === "/dashboard" }}
-                  >
-                    <item.icon className="size-3.5" />
-                    {item.label}
-                    {item.to === "/review" && dueCount > 0 && (
-                      <span className="inline-grid h-4 min-w-4 place-items-center rounded-full bg-primary/15 px-1 text-[9px] font-bold tabular-nums text-primary">
-                        {dueCount > 99 ? "99+" : dueCount}
-                      </span>
-                    )}
-                  </Link>
-                ))}
+                {group.items.map((item) => {
+                  const pillClass =
+                    "press inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors";
+                  const label = (
+                    <>
+                      <item.icon className="size-3.5" />
+                      {item.label}
+                      {item.to === "/review" && dueCount > 0 && (
+                        <span className="inline-grid h-4 min-w-4 place-items-center rounded-full bg-primary/15 px-1 text-[9px] font-bold tabular-nums text-primary">
+                          {dueCount > 99 ? "99+" : dueCount}
+                        </span>
+                      )}
+                    </>
+                  );
+                  const title = item.hint ? `${item.label} — ${item.hint}` : item.label;
+                  return item.onClick ? (
+                    <button
+                      key={item.to}
+                      type="button"
+                      onClick={item.onClick}
+                      title={title}
+                      className={pillClass}
+                    >
+                      {label}
+                    </button>
+                  ) : (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      title={title}
+                      className={pillClass}
+                      activeProps={{
+                        className:
+                          "border-primary/30 bg-primary/12 text-foreground shadow-[0_8px_24px_-18px_var(--primary)]",
+                      }}
+                      activeOptions={{ exact: item.to === "/dashboard" }}
+                    >
+                      {label}
+                    </Link>
+                  );
+                })}
               </div>
             ))}
           </nav>
@@ -751,6 +801,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
       </div>
 
+      <ImportPanel />
       <CommandPalette
         open={palette.open}
         onOpenChange={palette.setOpen}

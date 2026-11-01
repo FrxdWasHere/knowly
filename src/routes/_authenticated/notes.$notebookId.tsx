@@ -106,6 +106,7 @@ import {
   type StrokeElement,
 } from "@/lib/notes/types";
 import { cn } from "@/lib/utils";
+import { openImportPanel } from "@/lib/import-panel";
 import { readableOn } from "@/lib/themes";
 
 /** Read a theme CSS variable so canvas always draws in the current theme. */
@@ -2697,10 +2698,8 @@ function NotebookEditorPage() {
               <Copy className="size-4" /> Copy instructions
             </Button>
             {studyMode !== "summary" && (
-              <Button asChild>
-                <Link to="/import">
-                  Bring the result in <ChevronRight className="size-4" />
-                </Link>
+              <Button onClick={() => openImportPanel()}>
+                Bring the result in <ChevronRight className="size-4" />
               </Button>
             )}
           </div>

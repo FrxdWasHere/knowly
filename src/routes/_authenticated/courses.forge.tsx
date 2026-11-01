@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { TYPE_LABELS } from "@/lib/answers";
 import { createId } from "@/lib/id";
 import { buildCoursePrompt, estimateCourseQuestions } from "@/lib/course-prompt";
+import { openImportPanel } from "@/lib/import-panel";
 import { questionTypes } from "@/lib/schema";
 import { useKnowly } from "@/store/knowly";
 import { cn } from "@/lib/utils";
@@ -217,10 +218,8 @@ function CourseForgePage() {
         description="Describe a topic or paste your notes. Copy the instructions into the AI you use; nothing is uploaded."
         action={
           <>
-            <Button asChild variant="outline">
-              <Link to="/courses/import">
-                <FileJson className="size-4" /> Bring the course in
-              </Link>
+            <Button variant="outline" onClick={() => openImportPanel({ kind: "course" })}>
+              <FileJson className="size-4" /> Bring the course in
             </Button>
             <Button variant="outline" onClick={createEmpty}>
               <BookPlus className="size-4" /> Blank course
@@ -507,12 +506,13 @@ function CourseForgePage() {
           </pre>
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border p-4 text-xs text-muted-foreground">
             <span>Paste it into ChatGPT, Claude, Gemini or the AI you already use.</span>
-            <Link
-              to="/courses/import"
+            <button
+              type="button"
+              onClick={() => openImportPanel({ kind: "course" })}
               className="inline-flex items-center gap-1 font-medium text-primary"
             >
               Bring the course in <ArrowRight className="size-3.5" />
-            </Link>
+            </button>
           </div>
         </section>
       </div>

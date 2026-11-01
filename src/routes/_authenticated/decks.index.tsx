@@ -16,6 +16,7 @@ import {
 import { SrsStatusBadge } from "@/components/srs/srs-status-badge";
 import { LabelChips } from "@/components/binder/label-picker";
 import { deckSrs } from "@/lib/srs";
+import { openImportPanel } from "@/lib/import-panel";
 import { useKnowly } from "@/store/knowly";
 import { cn } from "@/lib/utils";
 
@@ -93,10 +94,8 @@ function DeckLibrary() {
         title="Deck Library"
         description={`${state.decks.length} deck${state.decks.length === 1 ? "" : "s"} stored on this device.`}
         action={
-          <Button asChild>
-            <Link to="/import">
-              <Plus /> Import deck
-            </Link>
+          <Button onClick={() => openImportPanel()}>
+            <Plus /> Import deck
           </Button>
         }
       />
@@ -268,10 +267,12 @@ function DeckLibrary() {
                         Arena
                       </Link>
                     </Button>
-                    <Button size="sm" variant="outline" asChild>
-                      <Link to="/import" search={{ deck: d.id }}>
-                        <Plus /> Add
-                      </Link>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openImportPanel({ deckId: d.id })}
+                    >
+                      <Plus /> Add
                     </Button>
                     <Button size="sm" variant="ghost" asChild>
                       <Link to="/decks/$deckId" params={{ deckId: d.id }}>

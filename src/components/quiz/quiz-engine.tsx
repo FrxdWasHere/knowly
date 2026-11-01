@@ -23,6 +23,7 @@ import { xpForAnswer, comboMultiplier } from "@/lib/gamification";
 import { questionTypes } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 import { createId } from "@/lib/id";
+import { openImportPanel } from "@/lib/import-panel";
 
 import type {
   AnswerRecord,
@@ -91,8 +92,8 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
       <div className="panel grid place-items-center p-16 text-center">
         <p className="font-medium">No decks yet</p>
         <p className="mt-1 text-sm text-muted-foreground">Import a deck to start quizzing.</p>
-        <Button className="mt-5" asChild>
-          <Link to="/import">Bring in a deck</Link>
+        <Button className="mt-5" onClick={() => openImportPanel()}>
+          Bring in a deck
         </Button>
       </div>
     );

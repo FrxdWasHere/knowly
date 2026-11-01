@@ -5,9 +5,17 @@ import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
 import { ExamPaper } from "@/components/print/exam-paper";
+import { PrintStyleMenu } from "@/components/print/print-style-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,7 +27,10 @@ import {
   selectQuestions,
   EXAM_FONTS,
   EXAM_THEMES,
+  EXAM_PALETTES,
+  THEME_PALETTES,
   type ExamOptions,
+  type ExamPaletteId,
   type QuestionEdit,
 } from "@/lib/exam-print";
 import { TYPE_LABELS } from "@/lib/answers";
@@ -151,6 +162,14 @@ function PrintExamPage() {
     [questions, edits],
   );
   const editCount = Object.keys(edits).length;
+  const activeTheme = EXAM_THEMES.find((theme) => theme.id === options.theme) ?? EXAM_THEMES[0]!;
+  const paletteChoices = EXAM_PALETTES.filter((palette) =>
+    THEME_PALETTES[activeTheme.id].includes(palette.id),
+  );
+  const activePalette =
+    options.palette && options.palette !== "theme"
+      ? paletteChoices.find((palette) => palette.id === options.palette)
+      : undefined;
 
   const toggle = <T,>(list: T[], value: T, setter: (v: T[]) => void) =>
     setter(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
@@ -379,13 +398,31 @@ function PrintExamPage() {
           <section className="panel space-y-4 p-5">
             <h2 className="text-sm font-semibold">Look & style</h2>
             <div className="space-y-2">
+              <Label className="text-xs">Print style</Label>
+              <PrintStyleMenu
+                value={options.printStyle}
+                onChange={(printStyle) => set({ printStyle })}
+              />
+            </div>
+            <div className="space-y-2">
               <Label className="text-xs">Document theme</Label>
               <div className="grid gap-2">
                 {EXAM_THEMES.map((theme) => (
                   <button
                     key={theme.id}
                     type="button"
-                    onClick={() => set({ theme: theme.id })}
+                    onClick={() =>
+                      set({
+                        theme: theme.id,
+                        palette:
+                          options.palette &&
+                          options.palette !== "theme" &&
+                          THEME_PALETTES[theme.id].includes(options.palette)
+                            ? options.palette
+                            : "theme",
+                      })
+                    }
+                    aria-pressed={options.theme === theme.id}
                     className={cn(
                       "flex items-start gap-3 rounded-lg border p-3 text-left transition-colors",
                       options.theme === theme.id
@@ -395,8 +432,11 @@ function PrintExamPage() {
                   >
                     <span
                       aria-hidden
-                      className="mt-0.5 size-4 shrink-0 rounded-full border"
-                      style={{ backgroundColor: theme.accent, borderColor: theme.border }}
+                      className="mt-0.5 size-6 shrink-0 rounded-md border"
+                      style={{
+                        backgroundImage: `linear-gradient(135deg, ${theme.soft}, ${theme.accent})`,
+                        borderColor: theme.border,
+                      }}
                     />
                     <span className="min-w-0">
                       <span className="block text-xs font-semibold">{theme.label}</span>
@@ -407,6 +447,48 @@ function PrintExamPage() {
                   </button>
                 ))}
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Colour palette</Label>
+              <Select
+                value={activePalette?.id ?? "theme"}
+                onValueChange={(value) => set({ palette: value as ExamPaletteId | "theme" })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-80">
+                  <SelectItem value="theme">
+                    <span className="flex items-center gap-2">
+                      <span
+                        aria-hidden
+                        className="size-3 shrink-0 rounded-full border"
+                        style={{
+                          backgroundColor: activeTheme.accent,
+                          borderColor: activeTheme.border,
+                        }}
+                      />
+                      Theme default · {activeTheme.label}
+                    </span>
+                  </SelectItem>
+                  {paletteChoices.map((palette) => (
+                    <SelectItem key={palette.id} value={palette.id}>
+                      <span className="flex items-center gap-2">
+                        <span
+                          aria-hidden
+                          className="size-3 shrink-0 rounded-full border border-border"
+                          style={{ backgroundColor: palette.accent }}
+                        />
+                        {palette.label}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] leading-4 text-muted-foreground">
+                {paletteChoices.length} palettes suit the {activeTheme.label.toLowerCase()} theme —
+                the layout stays the same.
+              </p>
             </div>
             <div className="space-y-2">
               <Label className="text-xs">Font</Label>
@@ -629,7 +711,9 @@ function PrintExamPage() {
           </section>
         </div>
 
-        <div className="space-y-3">
+        {/* Frozen preview: stays put while the settings column scrolls, and
+            scrolls on its own when the paper is taller than the screen. */}
+        <div className="space-y-3 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto lg:pr-1">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground">
               Preview · {paperQuestions.length} of {pool.length} available questions
