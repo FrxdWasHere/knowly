@@ -15,6 +15,21 @@ export interface MatchPair {
   right: string;
 }
 
+/**
+ * Pre-written tutor notes, authored with the question itself so the learner
+ * never has to leave a session (or call out to an AI) for a second opinion.
+ */
+export interface TutorNotes {
+  /** the idea in plain words, as if explaining to a beginner */
+  simple?: string;
+  /** a memory hook: acronym, rhyme, image or story */
+  mnemonic?: string;
+  /** a tiny concrete example or analogy */
+  example?: string;
+  /** why each wrong option is wrong */
+  whyWrong?: { option: string; why: string }[];
+}
+
 export interface Question {
   id: string;
   type: QuestionType;
@@ -26,6 +41,8 @@ export interface Question {
   concept?: string;
   hint?: string;
   tags?: string[];
+  /** pre-written tutor notes: plain-words explanation, mnemonic, example, why each distractor fails */
+  tutor?: TutorNotes;
   /** ordering: the items in their correct sequence */
   items?: string[];
   /** matching: prompt/answer couples the learner must pair up */
@@ -323,9 +340,9 @@ export interface Settings {
   confirmBeforeExit: boolean;
   // appearance
   theme: "dark" | "light";
-  /** preset palette id from COLOR_THEMES, a user theme id, "custom", or "default" */
+  /** legacy palette id; app theming now comes from the built-in light/dark themes */
   colorTheme: string;
-  /** hex palette used when colorTheme === "custom" */
+  /** legacy custom palette, kept so older backups still restore cleanly */
   customTheme: {
     background: string;
     surface: string;

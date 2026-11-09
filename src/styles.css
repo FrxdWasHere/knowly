@@ -68,109 +68,180 @@
   --color-warning-foreground: var(--warning-foreground);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-surface-hover: var(--surface-hover);
+  --color-primary-hover: var(--primary-hover);
+  --color-destructive-hover: var(--destructive-hover);
   --font-display: var(--font-display-family);
   --font-sans: var(--font-sans-family);
   --font-mono: var(--font-mono-family);
+  /* Brand blocks: always paired with --color-ink, never with the theme text
+     colour, because they are bright in every palette. */
+  --color-ink: var(--ink);
+  --color-block-coral: var(--block-coral);
+  --color-block-lemon: var(--block-lemon);
+  --color-block-grape: var(--block-grape);
+  --color-block-mint: var(--block-mint);
+  --color-block-sky: var(--block-sky);
+  --color-block-pink: var(--block-pink);
+  --color-block-ink: var(--block-ink);
 }
 
-/* Knowly design system — Ocean Deep, shared across every screen. */
+/* Knowly design system — Daylight (light) and Midnight (dark), authored
+ * together and shared across every screen. */
 :root {
   --radius: 0.75rem;
   --font-display-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-sans-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  /* Arc Deep — the default Knowly superapp surface. */
-  --background: oklch(0.165 0.048 250);
-  --foreground: oklch(0.975 0.012 220);
-  --surface: oklch(0.205 0.052 245);
-  --surface-2: oklch(0.25 0.055 240);
-  --card: oklch(0.205 0.052 245);
-  --card-foreground: oklch(0.975 0.012 220);
-  --popover: oklch(0.205 0.052 245);
-  --popover-foreground: oklch(0.975 0.012 220);
-  --primary: oklch(0.72 0.155 238);
-  --primary-foreground: oklch(0.15 0.04 235);
-  --primary-glow: oklch(0.83 0.115 210);
-  --secondary: oklch(0.27 0.05 240);
-  --secondary-foreground: oklch(0.96 0.012 220);
-  --muted: oklch(0.26 0.04 240);
-  --muted-foreground: oklch(0.76 0.03 220);
-  --accent: oklch(0.68 0.135 220);
-  --accent-foreground: oklch(0.98 0.01 210);
-  --destructive: oklch(0.58 0.2 265);
-  --destructive-foreground: oklch(0.98 0.005 265);
-  --success: oklch(0.78 0.12 210);
-  --success-foreground: oklch(0.16 0.04 230);
-  --warning: oklch(0.74 0.14 250);
-  --warning-foreground: oklch(0.16 0.04 250);
-  --border: oklch(0.85 0.03 220 / 16%);
-  --input: oklch(0.85 0.03 220 / 22%);
+  /* Paper & Ink — the default Knowly surface. Warm paper, black ink, flat
+   * colour blocks, thick rules and hard offset shadows. */
+  --background: oklch(0.982 0.008 85); /* warm daylight paper */
+  --foreground: oklch(0.205 0.014 70); /* espresso ink */
+  --ink: oklch(0 0 0);
+  --surface: oklch(1 0 0); /* white card */
+  --surface-2: oklch(0.947 0.016 85); /* warm inset */
+  --surface-hover: oklch(0.885 0.02 85); /* one visible step below surface-2 */
+  --card: oklch(1 0 0);
+  --card-foreground: var(--foreground);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.53 0.188 25); /* Coral Ink — 5.7:1 on paper */
+  --primary-foreground: oklch(1 0 0);
+  /* Hover always moves *away* from the label colour, so contrast can only go
+   * up: darker in light mode (white label), lighter in dark mode (dark ink
+   * label). The dark theme below follows the same rule. */
+  --primary-hover: oklch(0.43 0.16 25);
+  --primary-glow: oklch(0.715 0.175 24); /* bright coral, fills only */
+  --secondary: oklch(0.947 0.016 85);
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(0.947 0.016 85);
+  --muted-foreground: oklch(0.445 0.018 72);
+  --accent: oklch(0.56 0.21 300); /* deep grape */
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0.527 0.188 24.9);
+  --destructive-foreground: oklch(1 0 0);
+  --destructive-hover: oklch(0.42 0.158 24.9);
+  --success: oklch(0.5 0.115 163.2);
+  --success-foreground: oklch(1 0 0);
+  --warning: oklch(0.55 0.12 75);
+  --warning-foreground: oklch(1 0 0);
+  --border: oklch(0.205 0.014 70);
+  --input: oklch(0.205 0.014 70);
   --ring: var(--primary);
-  --chart-1: var(--primary);
-  --chart-2: var(--accent);
-  --chart-3: oklch(0.65 0.16 250);
-  --chart-4: oklch(0.78 0.11 215);
-  --chart-5: oklch(0.57 0.18 275);
-  --deck-1: var(--primary);
-  --deck-2: var(--accent);
-  --deck-3: color-mix(in oklab, var(--primary) 55%, var(--accent));
-  --deck-4: color-mix(in oklab, var(--primary) 60%, var(--foreground));
-  --deck-5: color-mix(in oklab, var(--accent) 60%, var(--foreground));
-  --deck-6: color-mix(in oklab, var(--primary) 65%, var(--background));
-  --sidebar: oklch(0.145 0.04 250);
+  --chart-1: oklch(0.53 0.188 25);
+  --chart-2: oklch(0.56 0.21 300);
+  --chart-3: oklch(0.714 0.143 254.6);
+  --chart-4: oklch(0.773 0.153 163.2);
+  --chart-5: oklch(0.656 0.212 354.3);
+  --deck-1: oklch(0.53 0.188 25);
+  --deck-2: oklch(0.56 0.21 300);
+  --deck-3: oklch(0.714 0.143 254.6);
+  --deck-4: oklch(0.5 0.115 163.2);
+  --deck-5: oklch(0.656 0.212 354.3);
+  --deck-6: oklch(0.55 0.12 75);
+  --sidebar: oklch(0.968 0.011 85);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: var(--secondary);
+  --sidebar-accent: oklch(0.947 0.016 85);
   --sidebar-accent-foreground: var(--foreground);
-  --sidebar-border: oklch(1 0 0 / 9%);
+  --sidebar-border: oklch(0.205 0.014 70);
   --sidebar-ring: var(--ring);
 
-  --gradient-ocean: linear-gradient(135deg, var(--primary), var(--primary-glow));
-  --gradient-surface: linear-gradient(
-    155deg,
-    color-mix(in oklab, var(--surface) 90%, var(--primary) 10%),
-    var(--surface)
-  );
-  --shadow-forge: 0 22px 64px -44px color-mix(in oklab, var(--primary) 34%, transparent);
-  --shadow-panel: 0 14px 34px -28px oklch(0 0 0 / 42%);
+  /* Brand block colours. Fixed across every theme so a stat tile stays a
+   * stat tile; they are always paired with black ink. */
+  --block-coral: oklch(0.712 0.181 22.8);
+  --block-lemon: oklch(0.922 0.143 97.8);
+  --block-grape: oklch(0.627 0.233 303.9);
+  --block-mint: oklch(0.773 0.153 163.2);
+  --block-sky: oklch(0.714 0.143 254.6);
+  --block-pink: oklch(0.656 0.212 354.3);
+  --block-ink: oklch(0 0 0);
+
+  --gradient-ocean: var(--primary);
+  --gradient-surface: var(--surface);
+  --shadow-ink: oklch(0.205 0.014 70);
+  --shadow-forge: 5px 5px 0 0 var(--shadow-ink);
+  --shadow-panel: 4px 4px 0 0 var(--shadow-ink);
   --speed: 1;
+
+  /* Shared control ladder: buttons, inputs and selects all read these, so a
+   * row never mixes heights. Small-screen overrides and the size preference
+   * below move the whole ladder together. */
+  --control-h-sm: 2.25rem;
+  --control-h: 2.5rem;
+  --control-h-lg: 3rem;
+  --control-icon: 2.5rem;
+  --control-px-sm: 0.875rem;
+  --control-px: 1.125rem;
+  --control-px-lg: 1.75rem;
+  --control-fs-sm: 0.75rem;
+  --control-fs: 0.875rem;
+  --control-fs-lg: 0.9375rem;
 }
 
-.light {
-  --background: oklch(0.98 0.006 220);
-  --foreground: oklch(0.22 0.02 265);
-  --surface: oklch(1 0 0);
-  --surface-2: oklch(0.96 0.012 220);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.02 265);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.02 265);
-  --primary: oklch(0.52 0.17 245);
-  --primary-foreground: oklch(0.99 0.005 85);
-  --primary-glow: oklch(0.64 0.14 220);
-  --secondary: oklch(0.94 0.018 220);
-  --secondary-foreground: oklch(0.25 0.02 265);
-  --muted: oklch(0.95 0.01 220);
-  --muted-foreground: oklch(0.48 0.02 265);
-  --accent: oklch(0.58 0.15 225);
-  --accent-foreground: oklch(0.99 0.005 85);
-  --success: oklch(0.54 0.14 220);
-  --warning: oklch(0.58 0.16 255);
-  --border: oklch(0.22 0.02 265 / 12%);
-  --input: oklch(0.22 0.02 265 / 16%);
-  --sidebar: oklch(0.96 0.012 220);
-  --sidebar-foreground: oklch(0.25 0.02 265);
-  --sidebar-accent: oklch(0.92 0.022 220);
-  --sidebar-accent-foreground: oklch(0.22 0.02 265);
-  --sidebar-border: oklch(0.22 0.02 265 / 10%);
-  --shadow-panel: 0 8px 26px -22px oklch(0.2 0.02 265 / 26%);
+/* Night paper: the same language after dark. Cream ink on warm charcoal, with
+ * the brand blocks still in colour. */
+.dark {
+  --background: oklch(0.168 0.008 75); /* warm midnight charcoal */
+  --foreground: oklch(0.955 0.014 85); /* cream ink */
+  /* Ink stays black because it is the text colour for the bright brand
+     blocks; page text uses --foreground. */
+  --ink: oklch(0 0 0);
+  --surface: oklch(0.212 0.009 75);
+  --surface-2: oklch(0.26 0.01 75);
+  --surface-hover: oklch(0.325 0.012 75); /* lifts off night paper */
+  --card: oklch(0.212 0.009 75);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.212 0.009 75);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.725 0.16 27);
+  --primary-foreground: oklch(0.14 0.01 75);
+  --primary-hover: oklch(0.81 0.14 30);
+  --primary-glow: oklch(0.79 0.14 34);
+  --secondary: oklch(0.26 0.01 75);
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(0.26 0.01 75);
+  --muted-foreground: oklch(0.755 0.016 82);
+  --accent: oklch(0.72 0.16 300);
+  --accent-foreground: oklch(0.14 0.01 75);
+  --destructive: oklch(0.66 0.2 24.9);
+  --destructive-foreground: oklch(0 0 0);
+  --destructive-hover: oklch(0.745 0.17 26.5);
+  --success: oklch(0.773 0.153 163.2);
+  --success-foreground: oklch(0 0 0);
+  --warning: oklch(0.922 0.143 97.8);
+  --warning-foreground: oklch(0 0 0);
+  --border: oklch(0.925 0.012 85);
+  --input: oklch(0.925 0.012 85);
+  --chart-1: oklch(0.725 0.16 27);
+  --chart-2: oklch(0.72 0.16 300);
+  --chart-3: oklch(0.714 0.143 254.6);
+  --chart-4: oklch(0.773 0.153 163.2);
+  --chart-5: oklch(0.656 0.212 354.3);
+  --deck-1: oklch(0.725 0.16 27);
+  --deck-2: oklch(0.72 0.16 300);
+  --deck-3: oklch(0.714 0.143 254.6);
+  --deck-4: oklch(0.773 0.153 163.2);
+  --deck-5: oklch(0.656 0.212 354.3);
+  --deck-6: oklch(0.922 0.143 97.8);
+  --sidebar: oklch(0.19 0.009 75);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: oklch(0.26 0.01 75);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: oklch(0.925 0.012 85);
+  --shadow-ink: oklch(0.09 0.006 75);
+  --shadow-panel: 4px 4px 0 0 var(--shadow-ink);
+  --shadow-forge: 5px 5px 0 0 var(--shadow-ink);
 }
 
 .contrast-high {
-  --border: oklch(1 0 0 / 40%);
-  --muted-foreground: oklch(0.88 0.01 265);
+  --border: var(--foreground);
+  --input: var(--foreground);
+  --muted-foreground: color-mix(in oklab, var(--foreground) 88%, var(--background));
 }
 
 .colorblind {
@@ -189,9 +260,21 @@
 
   body {
     background-color: var(--color-background);
+    /* Page-wide paper texture. Every route inherits it; solid cards and
+       controls sit on top so content keeps its contrast. */
+    background-image: radial-gradient(
+      color-mix(in oklab, var(--foreground) 11%, transparent) 1px,
+      transparent 1px
+    );
+    background-size: 24px 24px;
+    background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-sans-family);
     -webkit-font-smoothing: antialiased;
+    /* Decorative rotated blocks must never create a sideways scrollbar.
+       `clip` (unlike `hidden`) does not turn the body into a scroll container,
+       so sticky headers keep working. */
+    overflow-x: clip;
   }
 
   h1,
@@ -199,7 +282,7 @@
   h3,
   h4 {
     font-family: var(--font-display-family);
-    letter-spacing: 0;
+    letter-spacing: -0.01em;
   }
 
   .reduce-motion *,
@@ -226,25 +309,75 @@
   color: var(--color-muted-foreground);
 }
 
+/* Flat accent text. The paper language has no gradient type inside the app. */
 @utility ocean-text {
-  background: var(--gradient-ocean);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--primary);
 }
 
+/* The base surface: white card, 3px rule, hard offset shadow. */
 @utility panel {
-  background: var(--gradient-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  background: var(--surface);
+  border: 3px solid var(--color-border);
+  border-radius: calc(var(--radius) + 4px);
   box-shadow: var(--shadow-panel);
 }
 
 @utility grid-forge {
   background-image:
-    linear-gradient(color-mix(in oklab, var(--primary) 7%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in oklab, var(--primary) 7%, transparent) 1px, transparent 1px);
+    linear-gradient(color-mix(in oklab, var(--foreground) 9%, transparent) 1px, transparent 1px),
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--foreground) 9%, transparent) 1px,
+      transparent 1px
+    );
   background-size: 44px 44px;
+}
+
+/* Paper textures: the dot grid behind app pages, and ruled lines for lists. */
+@utility dot-grid {
+  background-image: radial-gradient(
+    color-mix(in oklab, var(--foreground) 11%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+}
+
+@utility dot-grid-soft {
+  background-image: radial-gradient(
+    color-mix(in oklab, var(--foreground) 7%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 28px 28px;
+}
+
+/* Hard offset shadows. Offset grows with elevation, never blurs. */
+@utility pop-sm {
+  box-shadow: 3px 3px 0 0 var(--shadow-ink);
+}
+
+@utility pop {
+  box-shadow: 4px 4px 0 0 var(--shadow-ink);
+}
+
+@utility pop-lg {
+  box-shadow: 6px 6px 0 0 var(--shadow-ink);
+}
+
+/* Press-and-lift: the object moves away from its shadow on hover. */
+@utility block-hover {
+  transition:
+    transform calc(0.12s / var(--speed, 1)) ease-out,
+    box-shadow calc(0.12s / var(--speed, 1)) ease-out;
+
+  &:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 0 var(--shadow-ink);
+  }
+
+  &:active {
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 0 var(--shadow-ink);
+  }
 }
 
 /* ---------------------------------------------------------------
@@ -502,13 +635,12 @@
 
 @utility hover-lift {
   transition:
-    transform calc(0.25s / var(--speed, 1)) cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow calc(0.25s / var(--speed, 1)) ease,
-    border-color calc(0.25s / var(--speed, 1)) ease;
+    transform calc(0.16s / var(--speed, 1)) ease-out,
+    box-shadow calc(0.16s / var(--speed, 1)) ease-out;
 
   &:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-forge);
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 0 var(--shadow-ink);
   }
 }
 
@@ -561,19 +693,17 @@
   margin-inline: auto;
 }
 .workspace .panel {
-  background: var(--gradient-surface);
+  background: var(--surface);
   box-shadow: var(--shadow-panel);
 }
 .workspace .panel:hover {
-  border-color: color-mix(in oklab, var(--primary) 32%, var(--border));
+  box-shadow: 5px 5px 0 0 var(--shadow-ink);
 }
-.workspace :is(h1, h2, h3, h4),
-.workspace [class*="tracking-"],
-.auth-premium [class*="tracking-"] {
-  letter-spacing: 0;
+.workspace :is(h1, h2, h3, h4) {
+  letter-spacing: -0.01em;
 }
 .workspace :is(input, textarea, select) {
-  background-color: var(--background);
+  background-color: var(--surface);
 }
 .workspace .rounded-xl {
   border-radius: calc(var(--radius) + 2px);
@@ -581,34 +711,46 @@
 .workspace .rounded-2xl {
   border-radius: calc(var(--radius) + 6px);
 }
-/* Button size preference (Settings > Appearance). */
-:root[data-btn="sm"] [data-knowly-btn][data-size="default"] {
-  height: 2rem;
-  padding-inline: 0.75rem;
-  font-size: 0.75rem;
+/* Control ladder (Settings > Appearance).
+ *
+ * Buttons, inputs and selects share these tokens so a row never mixes heights
+ * and the compact / regular / large preference moves everything together.
+ * Small screens get a taller default target; the preference still wins. */
+@media (max-width: 639px) {
+  :root {
+    --control-h-sm: 2.25rem;
+    --control-h: 2.75rem;
+    --control-h-lg: 3.25rem;
+    --control-icon: 2.75rem;
+    --control-px: 1rem;
+    --control-px-lg: 1.5rem;
+  }
 }
-:root[data-btn="sm"] [data-knowly-btn][data-size="lg"] {
-  height: 2.25rem;
-  padding-inline: 1.25rem;
-  font-size: 0.8125rem;
+
+:root[data-btn="sm"] {
+  --control-h-sm: 2rem;
+  --control-h: 2.25rem;
+  --control-h-lg: 2.75rem;
+  --control-icon: 2.25rem;
+  --control-px-sm: 0.75rem;
+  --control-px: 1rem;
+  --control-px-lg: 1.5rem;
+  --control-fs-sm: 0.6875rem;
+  --control-fs: 0.8125rem;
+  --control-fs-lg: 0.875rem;
 }
-:root[data-btn="lg"] [data-knowly-btn][data-size="default"] {
-  height: 2.75rem;
-  padding-inline: 1.5rem;
-  font-size: 0.95rem;
-}
-:root[data-btn="lg"] [data-knowly-btn][data-size="sm"] {
-  height: 2.25rem;
-  padding-inline: 1rem;
-  font-size: 0.85rem;
-}
-:root[data-btn="lg"] [data-knowly-btn][data-size="icon"] {
-  height: 2.5rem;
-  width: 2.5rem;
-}
-:root[data-btn="sm"] [data-knowly-btn][data-size="icon"] {
-  height: 2rem;
-  width: 2rem;
+
+:root[data-btn="lg"] {
+  --control-h-sm: 2.5rem;
+  --control-h: 3rem;
+  --control-h-lg: 3.25rem;
+  --control-icon: 3rem;
+  --control-px-sm: 1.125rem;
+  --control-px: 1.75rem;
+  --control-px-lg: 2rem;
+  --control-fs-sm: 0.875rem;
+  --control-fs: 1rem;
+  --control-fs-lg: 1.0625rem;
 }
 
 /* Strong focus indicators (Settings > Accessibility). */
@@ -720,6 +862,17 @@
   .exam-answer-key {
     break-before: page;
     page-break-before: always;
+  }
+
+  /* A bulk print job stacks several exam papers: each one starts on a fresh
+     sheet, and its full-bleed background layer stays inside its own paper
+     instead of painting over the sheets printed before it. */
+  .bulk-paper-sheet + .bulk-paper-sheet {
+    break-before: page;
+    page-break-before: always;
+  }
+  .bulk-paper-sheet .exam-paper::before {
+    position: absolute;
   }
 
   /* Keep the course pack's tinted callouts and module chips in colour. */

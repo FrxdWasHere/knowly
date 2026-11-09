@@ -2,6 +2,37 @@
 
 All notable changes to Knowly are documented here. The app is fully offline — no accounts, no syncing, no network calls.
 
+## 3.4.0 — 2026-11-02 — The Rounds Release
+
+The headline of v3.4: **deck study is now a game.** A big deck is split into parts and short rounds, mistakes cost hearts, three buttons sit under every card (Hint · Reveal · Explain), and the end of a part is a boss fight against your hardest cards.
+
+### New: parts, rounds and hearts
+
+- **Decks fragment themselves.** `fragmentDeck()` in `src/lib/rounds.ts` groups cards by concept (then tag, then subject) into parts of at most 20, so 200 cards arrive as a dozen sub-topics instead of one wall. Parts, mastery and due counts appear on the deck page with their own study links.
+- **Rounds of eight.** Each part is studied in rounds, and a round ends on a recap that shows accuracy, XP, hearts left and the cards in the order they appeared, with the right answer beside every miss.
+- **Hearts.** Five per session; a wrong answer costs one. At zero the session stops and a fresh heart can be bought for 500 XP (`spendXp` on the store), so XP is now something you spend as well as earn.
+- **Missed cards come back.** A wrong card is re-queued once at the end of its round instead of vanishing.
+
+### New: the three buttons
+
+- **Hint** crosses out one wrong option (plus the card's saved hint), **Reveal** shows the answer, **Explain** shows the answer with its explanation and marks every option right or wrong.
+- **Think first.** Multiple-choice options stay hidden behind *Show options* until you have an answer in mind — the recall happens before the recognition.
+
+### New: harder rounds and bosses
+
+- **Hard round** (hard cards only) and **speed run** (15 seconds a card) pay 1.5× and 2× XP.
+- **Boss rounds.** Finish a part and *The Forgetting Curve* appears: your six highest-risk cards back to back, each right answer a hit on a visible HP bar. Weighting is `questionWeight()` — lapses, low ease, hard difficulty, never mastered.
+
+### New: pre-written tutor notes
+
+- **The tutor travels inside the JSON.** Every question can carry `tutor: { simple, mnemonic, example, whyWrong }` — a plain-words explanation, a memory hook, an example, and one reason per wrong option. In a session the **Tutor** button (or `T`) opens those notes; **Explain** now prints the matching `whyWrong` line under each distractor. No AI call, no key, works offline.
+- **The prompts write them.** `TUTOR_RULES` in `src/lib/prompt.ts` is shared by the deck, expand-deck, course and lesson/module presets, `QUESTION_SCHEMA_TEXT` documents the object, and every sample JSON demonstrates it — so generated decks arrive with tutor notes already written instead of an empty panel.
+
+### Prompt Forge
+
+- **The Deck Studio matches the new rule.** Its count control starts at 200 (expanding a deck still allows small counts), the helper text previews the exact number the brief will request, and a note explains that cards come back with tutor notes across at least four concepts. `deckSizeTarget()` keeps the preview and the prompt in step.
+- **Decks ask for 200 cards minimum**, scaling at roughly one card per 25 words of source (a 40,000-word source requests ~1,600), over at least four concept labels so the new parts are meaningful. The deck presets say so explicitly; the expand-deck preset keeps its explicit count.
+
 ## 3.3.0 — 2026-11-01 — The Print Studio Release
 
 The headline of v3.3: **course and module print packs became real documents.** Each paper theme now designs its own cover, the sheet is always paper regardless of the app theme, and both studios export Word files that match what you see.

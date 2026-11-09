@@ -409,18 +409,18 @@ const isNavItemActive = (item: NavItem, pathname: string) =>
 
 const navLinkClass = (active: boolean) =>
   cn(
-    "press group relative mb-1 flex items-center gap-2.5 overflow-hidden rounded-[0.9rem] px-2.5 py-2 text-sm font-medium transition-all duration-200 hover:translate-x-0.5",
+    "press group relative mb-1 flex items-center gap-2.5 overflow-hidden rounded-xl border-[2px] px-2.5 py-2 text-sm transition-all duration-150",
     active
-      ? "bg-gradient-to-r from-primary/16 via-primary/5 to-transparent text-sidebar-accent-foreground shadow-[inset_3px_0_0_var(--primary),0_12px_32px_-26px_var(--primary)] ring-1 ring-inset ring-primary/25"
-      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+      ? "border-border bg-block-lemon text-ink shadow-[3px_3px_0_0_var(--shadow-ink)]"
+      : "border-transparent text-sidebar-foreground/75 hover:border-border hover:bg-surface-2 hover:text-sidebar-accent-foreground",
   );
 
 const navIconClass = (active: boolean) =>
   cn(
-    "grid size-7 shrink-0 place-items-center rounded-[0.65rem] ring-1 transition-all duration-200 group-hover:scale-105",
+    "grid size-7 shrink-0 place-items-center rounded-lg border-[2px] transition-colors duration-150",
     active
-      ? "bg-primary/15 text-primary shadow-[0_0_18px_-8px_var(--primary)] ring-primary/30"
-      : "bg-background/40 text-muted-foreground ring-sidebar-border group-hover:text-primary",
+      ? "border-border bg-surface text-foreground"
+      : "border-transparent bg-transparent text-sidebar-foreground/80 group-hover:border-border group-hover:bg-surface group-hover:text-foreground",
   );
 
 /** Flat, always-labelled nav row: icon · name · one-line hint. */
@@ -492,11 +492,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { level, pct, intoLevel, needed } = levelFromXp(state.progress.lifetimeXp);
   const dueCount = useMemo(() => collectDue(state.decks).length, [state.decks]);
   const density = state.settings.density;
-  const pad = density === "compact" ? "p-4" : density === "spacious" ? "p-5 md:p-8" : "p-5 md:p-8";
+  const pad =
+    density === "compact"
+      ? "p-3 sm:p-4"
+      : density === "spacious"
+        ? "p-5 sm:p-7 lg:p-10"
+        : "p-4 sm:p-5 lg:p-8";
   const wallpaper = useWallpaperUrl(state.settings.wallpaper);
 
   return (
-    <div className="workspace relative flex min-h-screen w-full bg-background">
+    <div className="workspace relative flex min-h-screen w-full">
       {wallpaper && (
         <>
           <div
@@ -511,25 +516,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div aria-hidden className="pointer-events-none fixed inset-0 z-0 bg-background/55" />
         </>
       )}
-      {/* Ambient backdrop: one static aurora wash plus a faint blueprint grid.
-          Sits beneath the content (z-0), is suppressed when a user wallpaper is
-          set, gets static-ified by .reduce-motion and hidden in print.
-          Kept static (no blur filters, no animations) so scrolling stays snappy. */}
-      <div aria-hidden className="print-hide pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        {!wallpaper && <div className="app-aurora absolute -inset-[12%] opacity-40" />}
-        <div className="grid-forge absolute inset-0 opacity-[0.07]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_80%_at_50%_45%,transparent_72%,var(--background)_100%)] opacity-65" />
-      </div>
       <aside
         className={cn(
-          "sticky top-0 z-10 hidden h-screen shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar transition-[width] duration-200 md:flex",
-          courseMode ? "w-[304px]" : collapsed ? "w-[76px]" : "w-64",
+          "sticky top-0 z-10 hidden h-screen shrink-0 flex-col overflow-hidden border-r-[3px] border-sidebar-border bg-sidebar transition-[width] duration-200 md:flex",
+          courseMode ? "w-64 lg:w-[304px]" : collapsed ? "w-[76px]" : "md:w-56 lg:w-64",
         )}
       >
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,var(--primary),transparent_45%)] opacity-[0.14]"
-        />
         {activeCourse ? (
           <CourseSidebar course={activeCourse} pathname={pathname} search={search} />
         ) : (
@@ -541,7 +533,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               )}
             >
               {" "}
-              <span className="anim-pop grid size-11 shrink-0 place-items-center rounded-[1.1rem] border border-border bg-gradient-to-br from-primary/30 via-primary/10 to-transparent shadow-[0_16px_34px_-18px_var(--primary)] ring-1 ring-primary/25">
+              <span className="anim-pop grid size-11 shrink-0 place-items-center rounded-xl border-[3px] border-border bg-surface shadow-[3px_3px_0_0_var(--shadow-ink)]">
                 <Logo className="size-7 rounded-lg" />
               </span>
               {!collapsed && (
@@ -620,8 +612,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                         >
                           <span
                             className={cn(
-                              "flex-1 truncate text-[10px] font-semibold uppercase tracking-[0.18em] transition-colors",
-                              hasActive ? "text-primary" : "text-muted-foreground/60",
+                              "flex-1 truncate text-[10px] font-bold uppercase tracking-[0.18em] transition-colors",
+                              hasActive ? "text-primary" : "text-muted-foreground",
                             )}
                           >
                             {group.label}
@@ -660,18 +652,18 @@ export function AppShell({ children }: { children: ReactNode }) {
             </nav>
 
             <div className="relative space-y-3 border-t border-sidebar-border p-3">
-              <div className="rounded-[1.05rem] border border-border bg-gradient-to-br from-primary/10 via-sidebar-accent/60 to-sidebar-accent/20 p-3 shadow-sm">
+              <div className="rounded-xl border-[2px] border-border bg-surface p-3 shadow-[2px_2px_0_0_var(--shadow-ink)]">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold tracking-tight">Lv {level}</span>
+                  <span className="font-bold">Lv {level}</span>
                   {!collapsed && (
                     <span className="text-muted-foreground">
                       {intoLevel}/{needed} XP
                     </span>
                   )}
                 </div>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-background/60 ring-1 ring-sidebar-border">
+                <div className="mt-2 h-2 overflow-hidden rounded-full border-[2px] border-border bg-surface-2">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-700 ease-out"
+                    className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -681,7 +673,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
                 title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
                 onClick={() => updateSettings({ sidebarCollapsed: !collapsed })}
-                className="press flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-xs text-muted-foreground transition-colors hover:border-sidebar-border hover:bg-sidebar-accent hover:text-foreground"
+                className="press flex w-full items-center gap-3 rounded-xl border-[2px] border-transparent px-3 py-2 text-xs font-bold text-muted-foreground transition-colors hover:border-border hover:bg-surface-2 hover:text-foreground"
               >
                 {collapsed ? (
                   <PanelLeft className="size-4" />
@@ -696,40 +688,38 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-background px-4 py-3 md:px-8">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"
-          />
-          <div className="flex items-center gap-2 md:hidden">
-            <span className="grid size-8 place-items-center rounded-xl border border-border bg-gradient-to-br from-primary/25 to-transparent ring-1 ring-primary/20">
+        <header className="sticky top-0 z-30 flex flex-wrap items-center gap-2 border-b-[3px] border-border bg-background px-3 py-2.5 sm:px-4 md:px-8">
+          <div className="flex min-w-0 shrink-0 items-center gap-2 md:hidden">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg border-[2px] border-border bg-surface shadow-[2px_2px_0_0_var(--shadow-ink)]">
               <Logo className="size-5 rounded-md" />
             </span>
-            <span className="font-display font-bold">Knowly</span>
+            <span className="font-display font-bold tracking-tight">Knowly</span>
           </div>
-          <div className="hidden items-center gap-2 rounded-full border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs text-muted-foreground md:flex">
-            <span className="inline-flex size-1.5 animate-pulse rounded-full bg-success shadow-[0_0_8px_var(--success)]" />
-            <HardDrive className="size-3.5 text-primary" />
-            Everything saved on this device · export a copy to move it
+          <div className="hidden min-w-0 items-center gap-2 rounded-full border-[2px] border-border bg-surface px-3 py-1.5 text-xs font-bold lg:flex">
+            <span className="inline-flex size-2 shrink-0 rounded-full bg-success" />
+            <HardDrive className="size-3.5 shrink-0" />
+            <span className="truncate">
+              Everything saved on this device · export a copy to move it
+            </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="ml-auto flex min-w-0 items-center gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={() => palette.setOpen(true)}
               aria-label="Open command palette"
-              className="press inline-flex items-center gap-2 rounded-full border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+              className="press inline-flex shrink-0 items-center gap-2 rounded-full border-[2px] border-border bg-surface px-2.5 py-1.5 text-xs font-bold shadow-[2px_2px_0_0_var(--shadow-ink)] transition-colors hover:bg-block-lemon hover:text-ink sm:px-3"
             >
               <Search className="size-3.5" />
               <span className="hidden sm:inline">Jump to…</span>
-              <kbd className="hidden rounded-md border border-border bg-background/40 px-1.5 py-0.5 text-[10px] sm:inline">
+              <kbd className="hidden rounded-md border-[2px] border-border bg-surface-2 px-1.5 py-0.5 text-[10px] font-bold sm:inline">
                 Ctrl K
               </kbd>
             </button>
-            <span className="press inline-flex items-center gap-1.5 rounded-full border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs font-semibold transition-colors hover:border-primary/50">
-              <Flame className="size-3.5 text-primary" />
+            <span className="press inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border-[2px] border-border bg-block-lemon px-2.5 py-1.5 text-xs font-bold text-ink shadow-[2px_2px_0_0_var(--shadow-ink)] sm:px-3">
+              <Flame className="size-3.5" />
               {state.progress.streak} day
             </span>
-            <span className="press hidden min-[480px]:inline-flex items-center gap-1.5 rounded-full border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs font-semibold transition-colors hover:border-primary/50">
+            <span className="press hidden shrink-0 items-center gap-1.5 rounded-full border-[2px] border-border bg-surface px-3 py-1.5 text-xs font-bold shadow-[2px_2px_0_0_var(--shadow-ink)] min-[480px]:inline-flex">
               <Zap className="size-3.5 text-primary" />
               <span className="max-w-[20vw] truncate">
                 {state.progress.lifetimeXp.toLocaleString()} XP
@@ -743,7 +733,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         ) : (
           <nav
             aria-label="Main navigation"
-            className="flex gap-1.5 overflow-x-auto border-b border-border bg-surface/60 px-3 py-2 md:hidden"
+            className="print-hide flex gap-1.5 overflow-x-auto border-b-[3px] border-border bg-surface px-3 py-2.5 md:hidden"
           >
             {visibleNavGroups.map((group, groupIndex) => (
               <div key={group.label} className="flex items-center gap-1.5">
@@ -752,7 +742,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 )}
                 {group.items.map((item) => {
                   const pillClass =
-                    "press inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-foreground/[0.04] px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors";
+                    "press inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border-[2px] border-border bg-surface px-3 py-2 text-xs font-bold shadow-[2px_2px_0_0_var(--shadow-ink)] transition-colors data-[status=active]:bg-block-lemon data-[status=active]:text-ink";
                   const label = (
                     <>
                       <item.icon className="size-3.5" />
@@ -781,10 +771,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                       to={item.to}
                       title={title}
                       className={pillClass}
-                      activeProps={{
-                        className:
-                          "border-primary/30 bg-primary/12 text-foreground shadow-[0_8px_24px_-18px_var(--primary)]",
-                      }}
                       activeOptions={{ exact: item.to === "/dashboard" }}
                     >
                       {label}
@@ -837,8 +823,8 @@ function CourseSidebar({
 
         <div className="mt-4 flex items-start gap-3">
           <span
-            className="grid size-11 shrink-0 place-items-center rounded-2xl text-xl shadow-sm ring-1 ring-border"
-            style={{ background: `${course.color}24` }}
+            className="grid size-11 shrink-0 place-items-center rounded-xl border-[2px] border-border text-xl"
+            style={{ background: `color-mix(in oklab, ${course.color} 14%, transparent)` }}
           >
             {course.emoji || "📘"}
           </span>
@@ -945,7 +931,7 @@ function CourseOutline({
           "press flex items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-colors",
           overviewActive
             ? "bg-primary/10 text-foreground ring-1 ring-inset ring-primary/20"
-            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
+            : "text-sidebar-foreground/70 hover:bg-surface-hover hover:text-sidebar-accent-foreground",
         )}
       >
         <span className="grid size-6 place-items-center rounded-md bg-background/60 ring-1 ring-sidebar-border">
@@ -987,7 +973,7 @@ function CourseOutline({
                 onClick={() => setExpanded((current) => ({ ...current, [module.id]: !open }))}
                 aria-expanded={open}
                 aria-controls={panelId}
-                className="press flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left hover:bg-sidebar-accent/60"
+                className="press flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left hover:bg-surface-hover"
               >
                 <span
                   className={cn(
@@ -1034,7 +1020,7 @@ function CourseOutline({
                           "press group/lesson relative -ml-3 flex items-center gap-2 rounded-lg py-1.5 pl-3 pr-1.5 text-xs transition-colors",
                           active
                             ? "bg-primary/10 font-semibold text-foreground"
-                            : "text-sidebar-foreground/65 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                            : "text-sidebar-foreground/65 hover:bg-surface-hover hover:text-sidebar-accent-foreground",
                         )}
                       >
                         {complete ? (
@@ -1067,7 +1053,7 @@ function CourseOutline({
                         "press relative -ml-3 flex items-center gap-2 rounded-lg py-1.5 pl-3 pr-1.5 text-xs transition-colors",
                         activeAssessment === module.quiz.id
                           ? "bg-primary/10 font-semibold text-foreground"
-                          : "text-sidebar-foreground/65 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                          : "text-sidebar-foreground/65 hover:bg-surface-hover hover:text-sidebar-accent-foreground",
                       )}
                     >
                       <FileQuestion className="size-3.5 shrink-0 text-muted-foreground" />
@@ -1094,7 +1080,7 @@ function CourseOutline({
             "press mt-4 flex items-center gap-2.5 rounded-xl border px-2.5 py-2.5 text-xs font-medium transition-colors",
             activeAssessment === course.finalExam.id
               ? "border-primary/30 bg-primary/10 text-foreground"
-              : "border-sidebar-border bg-background/40 text-sidebar-foreground/75 hover:border-primary/25 hover:bg-sidebar-accent/60",
+              : "border-sidebar-border bg-background/40 text-sidebar-foreground/75 hover:border-primary/25 hover:bg-surface-hover",
           )}
         >
           <span className="grid size-6 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
@@ -1137,7 +1123,7 @@ function CourseMobileBar({
       >
         <span
           className="grid size-9 shrink-0 place-items-center rounded-xl text-lg"
-          style={{ background: `${course.color}24` }}
+          style={{ background: `color-mix(in oklab, ${course.color} 14%, transparent)` }}
         >
           {course.emoji || "📘"}
         </span>
@@ -1183,15 +1169,19 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="anim-fade-up mb-8 flex flex-wrap items-end gap-4 border-b border-border pb-7">
-      <div className="min-w-0 flex-1 basis-64">
-        <h1 className="break-words font-display text-3xl font-semibold sm:text-4xl">{title}</h1>
+    <div className="anim-fade-up mb-7 flex flex-col gap-4 border-b-[3px] border-border pb-6 lg:flex-row lg:items-end lg:justify-between lg:gap-6 lg:pb-7">
+      <div className="min-w-0 flex-1">
+        <h1 className="break-words font-display text-3xl font-bold leading-[1.05] tracking-tight sm:text-4xl">
+          {title}
+        </h1>
         {description && (
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">{description}</p>
         )}
       </div>
       {action && (
-        <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">{action}</div>
+        <div className="flex w-full min-w-0 flex-wrap items-center gap-2 lg:w-auto lg:max-w-[52%] lg:justify-end">
+          {action}
+        </div>
       )}
     </div>
   );

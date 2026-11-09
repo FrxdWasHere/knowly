@@ -3,7 +3,10 @@ import {
   BorderStyle,
   Document,
   Footer,
+  Header,
   HeadingLevel,
+  HorizontalPositionAlign,
+  HorizontalPositionRelativeFrom,
   ImageRun,
   PageBreak,
   PageNumber,
@@ -11,16 +14,26 @@ import {
   Packer,
   Paragraph,
   ShadingType,
+  TabStopType,
   Table,
   TableCell,
   TableOfContents,
   TableRow,
   TextRun,
+  TextWrappingType,
   VerticalAlign,
+  VerticalPositionRelativeFrom,
   WidthType,
 } from "docx";
 import { LETTERS, printableAnswer } from "@/lib/exam-print";
 import { TYPE_LABELS } from "@/lib/answers";
+import { courseStats } from "@/lib/courses";
+import {
+  buildDocxPaperArt,
+  resolveDocxDesign,
+  type DocxPaperDesign,
+  type PaperDims,
+} from "@/lib/docx-paper-design";
 import {
   PRINT_MARGIN_PX,
   getPaperDims,
@@ -45,19 +58,22 @@ import {
  * Small helpers
  * ------------------------------------------------------------------ */
 
-const GRAY = "6B7280";
 const GRAY_LIGHT = "94A3B8";
-const RULE = "CBD5E1";
 
 const px = (value: number) => Math.round(value * 15); // px @96dpi → twips
 
 /** `rgb(12, 34, 56)` and `color(srgb 0.1 0.2 0.3)` → `0C2238`. */
 function computedColorToHex(value: string): string | null {
   const toHex = (channel: number) =>
-    Math.max(0, Math.min(255, Math.round(channel))).toString(16).padStart(2, "0");
+    Math.max(0, Math.min(255, Math.round(channel)))
+      .toString(16)
+      .padStart(2, "0");
   const rgb = /^rgba?\(([^)]+)\)$/i.exec(value);
   if (rgb) {
-    const [r, g, b] = rgb[1]!.split(/[,\s/]+/).filter(Boolean).map(Number);
+    const [r, g, b] = rgb[1]!
+      .split(/[,\s/]+/)
+      .filter(Boolean)
+      .map(Number);
     if ([r, g, b].some((channel) => !Number.isFinite(channel))) return null;
     return `${toHex(r!)}${toHex(g!)}${toHex(b!)}`.toUpperCase();
   }
@@ -79,7 +95,8 @@ function resolveHex(color: string | undefined, fallback = "3B5BDB"): string {
   const raw = (color ?? "").trim();
   if (!raw) return fallback;
   const short = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(raw);
-  if (short) return `${short[1]}${short[1]}${short[2]}${short[2]}${short[3]}${short[3]}`.toUpperCase();
+  if (short)
+    return `${short[1]}${short[1]}${short[2]}${short[2]}${short[3]}${short[3]}`.toUpperCase();
   const full = /^#([0-9a-f]{6})$/i.exec(raw);
   if (full) return full[1]!.toUpperCase();
   const bare = /^([0-9a-f]{6})$/i.exec(raw);
@@ -169,13 +186,14 @@ function inlineRuns(text: string, style: FlowStyle = {}): TextRun[] {
   return runs.length > 0 ? runs : [new TextRun("")];
 }
 
-function mdTable(header: string[], rows: string[][], accent: string): Table {
+function mdTable(header: string[], rows: string[][], design: DocxPaperDesign): Table {
   const borders = {
-    top: { style: BorderStyle.SINGLE, size: 4, color: RULE },
-    bottom: { style: BorderStyle.SINGLE, size: 4, color: RULE },
-    left: { style: BorderStyle.SINGLE, size: 4, color: RULE },
-    right: { style: BorderStyle.SINGLE, size: 4, color: RULE },
+    top: { style: BorderStyle.SINGLE, size: 4, color: design.rule },
+    bottom: { style: BorderStyle.SINGLE, size: 4, color: design.rule },
+    left: { style: BorderStyle.SINGLE, size: 4, color: design.rule },
+    right: { style: BorderStyle.SINGLE, size: 4, color: design.rule },
   };
+  const headerFill = design.style === "friendly" ? "F1F5F9" : tint(design.accent, 0.84);
   const rowOf = (cells: string[], isHeader: boolean) =>
     new TableRow({
       tableHeader: isHeader,
@@ -183,7 +201,7 @@ function mdTable(header: string[], rows: string[][], accent: string): Table {
         (cell) =>
           new TableCell({
             borders,
-            shading: isHeader ? { type: ShadingType.CLEAR, fill: tint(accent, 0.8) } : undefined,
+            shading: isHeader ? { type: ShadingType.CLEAR, fill: headerFill } : undefined,
             children: [new Paragraph({ children: inlineRuns(cell) })],
           }),
       ),
@@ -194,7 +212,11 @@ function mdTable(header: string[], rows: string[][], accent: string): Table {
   });
 }
 
-function markdownToDocx(md: string, accent: string, style: FlowStyle = {}): (Paragraph | Table)[] {
+function markdownToDocx(
+  md: string,
+  design: DocxPaperDesign,
+  style: FlowStyle = {},
+): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
   const shading: Shading | undefined = style.fill
     ? { type: ShadingType.CLEAR, fill: style.fill }
@@ -270,7 +292,7 @@ function markdownToDocx(md: string, accent: string, style: FlowStyle = {}): (Par
         rows.push(parse(lines[i]));
         i++;
       }
-      out.push(mdTable(header, rows, accent));
+      out.push(mdTable(header, rows, design));
       out.push(new Paragraph({ spacing: { after: 80 }, children: [] }));
       continue;
     }
@@ -279,7 +301,7 @@ function markdownToDocx(md: string, accent: string, style: FlowStyle = {}): (Par
         out.push(
           new Paragraph({
             indent: { left: 360 },
-            border: { left: { style: BorderStyle.SINGLE, size: 12, color: GRAY_LIGHT, space: 8 } },
+            border: { left: { style: BorderStyle.SINGLE, size: 12, color: design.rule, space: 8 } },
             children: inlineRuns(lines[i].replace(/^\s*>\s?/, ""), { italics: true }),
             spacing: { after: 60 },
           }),
@@ -327,7 +349,7 @@ function markdownToDocx(md: string, accent: string, style: FlowStyle = {}): (Par
     if (/^\s*(---+|\*\*\*+|___+)\s*$/.test(line)) {
       out.push(
         new Paragraph({
-          border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: RULE, space: 1 } },
+          border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: design.rule, space: 1 } },
           spacing: { before: 120, after: 120 },
           children: [],
         }),
@@ -363,12 +385,12 @@ function markdownToDocx(md: string, accent: string, style: FlowStyle = {}): (Par
  * Questions
  * ------------------------------------------------------------------ */
 
-function metaRun(q: Question): TextRun {
+function metaRun(q: Question, design: DocxPaperDesign): TextRun {
   const bits = [TYPE_LABELS[q.type], q.difficulty, q.concept].filter(Boolean).join(" · ");
-  return new TextRun({ text: `   (${bits})`, color: GRAY, size: 16 });
+  return new TextRun({ text: `   (${bits})`, color: design.muted, size: 16 });
 }
 
-function questionChildren(q: Question, number: number): Paragraph[] {
+function questionChildren(q: Question, number: number, design: DocxPaperDesign): Paragraph[] {
   const out: Paragraph[] = [];
   out.push(
     new Paragraph({
@@ -376,7 +398,7 @@ function questionChildren(q: Question, number: number): Paragraph[] {
       children: [
         new TextRun({ text: `${number}. `, bold: true }),
         ...inlineRuns(q.question),
-        metaRun(q),
+        metaRun(q, design),
       ],
     }),
   );
@@ -460,7 +482,7 @@ function questionChildren(q: Question, number: number): Paragraph[] {
   return out;
 }
 
-function questionSet(label: string, questions: Question[]): Paragraph[] {
+function questionSet(label: string, questions: Question[], design: DocxPaperDesign): Paragraph[] {
   if (questions.length === 0) return [];
   return [
     new Paragraph({
@@ -468,11 +490,11 @@ function questionSet(label: string, questions: Question[]): Paragraph[] {
       spacing: { before: 200, after: 60 },
       children: [new TextRun(label)],
     }),
-    ...questions.flatMap((q, index) => questionChildren(q, index + 1)),
+    ...questions.flatMap((q, index) => questionChildren(q, index + 1, design)),
   ];
 }
 
-function answerLines(questions: Question[]): Paragraph[] {
+function answerLines(questions: Question[], design: DocxPaperDesign): Paragraph[] {
   return questions.map(
     (question, index) =>
       new Paragraph({
@@ -481,14 +503,20 @@ function answerLines(questions: Question[]): Paragraph[] {
           new TextRun({ text: `${index + 1}. `, bold: true }),
           new TextRun(printableAnswer(question)),
           ...(question.explanation
-            ? [new TextRun({ text: ` — ${question.explanation}`, italics: true, color: GRAY })]
+            ? [
+                new TextRun({
+                  text: ` — ${question.explanation}`,
+                  italics: true,
+                  color: design.muted,
+                }),
+              ]
             : []),
         ],
       }),
   );
 }
 
-async function imageChildren(block: CourseBlock): Promise<Paragraph[]> {
+async function imageChildren(block: CourseBlock, design: DocxPaperDesign): Promise<Paragraph[]> {
   if (block.url?.startsWith("data:image/")) {
     try {
       const comma = block.url.indexOf(",");
@@ -525,7 +553,7 @@ async function imageChildren(block: CourseBlock): Promise<Paragraph[]> {
         new TextRun({
           text: block.caption ? `[Image: ${block.caption}]` : "[Image]",
           italics: true,
-          color: GRAY,
+          color: design.muted,
         }),
       ],
     }),
@@ -538,24 +566,30 @@ async function imageChildren(block: CourseBlock): Promise<Paragraph[]> {
  */
 async function blockChildren(
   blocks: CourseBlock[],
-  accent: string,
+  design: DocxPaperDesign,
   onStatus?: (message: string) => void,
 ): Promise<(Paragraph | Table)[]> {
   const out: (Paragraph | Table)[] = [];
   for (const block of blocks) {
     if (block.type === "checkpoint") continue;
     if (block.type === "markdown") {
-      out.push(...markdownToDocx(block.markdown ?? "", accent));
+      out.push(...markdownToDocx(block.markdown ?? "", design));
     } else if (block.type === "callout" || block.type === "example") {
-      const tone =
-        (block.type === "example" ? CALLOUT_TONES.example : CALLOUT_TONES[block.tone ?? "info"]) ??
-        CALLOUT_TONES.info!;
-      const fill = tint(tone.from, 0.88);
+      const toneName = block.type === "example" ? "example" : (block.tone ?? "info");
+      const onAccent = toneName === "info" || toneName === "tip" || toneName === "definition";
+      const tone = CALLOUT_TONES[toneName] ?? CALLOUT_TONES.info!;
+      // Info and definition notes take the paper's identity colour, exactly
+      // like the preview's `border-primary` / `bg-primary` treatment.
+      const border = onAccent ? design.accent : tone.border;
+      const fill = onAccent
+        ? tint(design.accent, toneName === "info" ? 0.94 : 0.9)
+        : tint(tone.from, 0.88);
+      const label = onAccent ? design.accent : tone.label;
       out.push(
         new Paragraph({
           shading: { type: ShadingType.CLEAR, fill },
           border: {
-            left: { style: BorderStyle.SINGLE, size: 18, color: tone.border, space: 6 },
+            left: { style: BorderStyle.SINGLE, size: 18, color: border, space: 6 },
           },
           indent: { left: 40 },
           spacing: { before: 140, after: 40 },
@@ -563,19 +597,19 @@ async function blockChildren(
             new TextRun({
               text: block.title || (block.type === "example" ? "Example" : "Note"),
               bold: true,
-              color: tone.label,
+              color: label,
             }),
           ],
         }),
       );
-      out.push(...markdownToDocx(block.markdown ?? "", accent, { fill, borderColor: tone.border }));
+      out.push(...markdownToDocx(block.markdown ?? "", design, { fill, borderColor: border }));
     } else if (block.type === "image") {
       onStatus?.("Embedding image…");
-      out.push(...(await imageChildren(block)));
+      out.push(...(await imageChildren(block, design)));
     } else if (block.type === "divider") {
       out.push(
         new Paragraph({
-          border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: RULE, space: 1 } },
+          border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: design.rule, space: 1 } },
           spacing: { before: 120, after: 120 },
           children: [],
         }),
@@ -589,6 +623,128 @@ async function blockChildren(
  * Main builder
  * ------------------------------------------------------------------ */
 
+/** The themed (or plain) cover copy, drawn over the theme's embedded art. */
+function coverChildren(
+  course: Course,
+  progress: CourseProgress | undefined,
+  design: DocxPaperDesign,
+  options: CoursePrintOptions,
+  dims: PaperDims,
+): (Paragraph | Table)[] {
+  const stats = courseStats(course, progress);
+  const themed = options.coverStyle === "book";
+  const ink = themed ? design.cover.ink : design.ink;
+  const muted = themed ? design.cover.muted : design.muted;
+  const line = themed ? design.cover.line : design.border;
+  const subject = `${course.subject}${course.level ? ` · ${course.level}` : ""}`;
+  const out: (Paragraph | Table)[] = [];
+
+  out.push(
+    new Paragraph({
+      spacing: { after: 200 },
+      border: {
+        bottom: { style: BorderStyle.SINGLE, size: 24, color: design.accent, space: 1 },
+      },
+      children: [],
+    }),
+    new Paragraph({
+      spacing: { after: 30 },
+      children: [
+        new TextRun({ text: `${course.emoji || "📘"}  `, size: 40 }),
+        new TextRun({ text: subject, bold: true, color: ink, size: 20, allCaps: true }),
+      ],
+    }),
+    new Paragraph({
+      spacing: { after: 0 },
+      children: [new TextRun({ text: "Knowly study pack", color: muted, size: 18, allCaps: true })],
+    }),
+    // breathing room, so the title block sits where the cover centres it
+    new Paragraph({ spacing: { before: Math.round(dims.height * 0.2 * 15) }, children: [] }),
+    new Paragraph({
+      spacing: { after: 200 },
+      children: [new TextRun({ text: course.title, bold: true, color: ink, size: 56 })],
+    }),
+  );
+
+  if (course.description) {
+    out.push(
+      new Paragraph({
+        spacing: { after: 160 },
+        children: [
+          new TextRun({ text: course.description, italics: true, color: muted, size: 24 }),
+        ],
+      }),
+    );
+  }
+
+  // The plain cover lists the outcomes, like its paper counterpart.
+  if (!themed) {
+    for (const objective of course.objectives.slice(0, 5)) {
+      out.push(
+        new Paragraph({
+          spacing: { after: 40 },
+          indent: { left: 240, hanging: 240 },
+          children: [
+            new TextRun({ text: "•  ", color: design.accent, bold: true }),
+            new TextRun({ text: objective, color: design.ink, size: 21 }),
+          ],
+        }),
+      );
+    }
+  }
+
+  out.push(
+    new Paragraph({
+      spacing: { before: Math.round(dims.height * 0.08 * 15), after: 120 },
+      border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: line, space: 1 } },
+      children: [],
+    }),
+  );
+
+  const statPairs: [string, string | number][] = [
+    ["Modules", course.modules.length],
+    ["Lessons", stats.lessons],
+    ["Questions", stats.questions],
+    ["Assessments", stats.assessments],
+    ["Minutes", course.estimatedMinutes ?? "—"],
+    ["Progress", `${stats.percent}%`],
+  ];
+  const statRuns: TextRun[] = [];
+  statPairs.forEach(([label, value], index) => {
+    if (index > 0) statRuns.push(new TextRun({ text: "    ", size: 18 }));
+    statRuns.push(new TextRun({ text: String(value), bold: true, color: ink, size: 22 }));
+    statRuns.push(new TextRun({ text: ` ${label}`, color: muted, size: 16, allCaps: true }));
+  });
+  out.push(new Paragraph({ spacing: { after: 80 }, children: statRuns }));
+
+  if (course.tags.length > 0) {
+    out.push(
+      new Paragraph({
+        spacing: { after: 80 },
+        children: course.tags.flatMap((tag, index) => [
+          ...(index > 0 ? [new TextRun({ text: "  ·  ", color: muted, size: 18 })] : []),
+          new TextRun({ text: tag, color: ink, size: 18 }),
+        ]),
+      }),
+    );
+  }
+
+  out.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: "Printed study pack · generated with Knowly",
+          color: muted,
+          size: 16,
+          allCaps: true,
+        }),
+      ],
+    }),
+  );
+
+  return out;
+}
+
 export async function courseDocxBlob(
   course: Course,
   progress: CourseProgress | undefined,
@@ -596,8 +752,13 @@ export async function courseDocxBlob(
   options: CoursePrintOptions,
   onStatus?: (message: string) => void,
 ): Promise<Blob> {
-  const accent = hex(course.color);
-  const docFontSizes = { small: 20, normal: 22, large: 25 } as const;
+  const design = resolveDocxDesign({
+    theme: options.theme,
+    palette: options.palette,
+    fallbackAccent: resolveHex(course.color),
+    style: options.printStyle,
+  });
+  const dims = getPaperDims(options.paper, options.orientation);
 
   onStatus?.("Gathering course content…");
 
@@ -609,84 +770,9 @@ export async function courseDocxBlob(
 
   /* cover */
   if (options.includeCover) {
-    if (options.coverStyle === "book") {
-      children.push(
-        new Table({
-          width: { size: 100, type: WidthType.PERCENTAGE },
-          rows: [
-            new TableRow({
-              children: [
-                new TableCell({
-                  shading: { type: ShadingType.CLEAR, fill: accent },
-                  margins: { top: 800, bottom: 800, left: 360, right: 360 },
-                  verticalAlign: VerticalAlign.CENTER,
-                  children: [
-                    new Paragraph({
-                      spacing: { after: 200 },
-                      children: [
-                        new TextRun({
-                          text: `${course.subject}${course.level ? ` · ${course.level}` : ""} — Knowly study pack`,
-                          color: "D8E4F0",
-                          size: docFontSizes.small,
-                          allCaps: true,
-                        }),
-                      ],
-                    }),
-                    new Paragraph({
-                      spacing: { after: 260 },
-                      children: [
-                        new TextRun({
-                          text: course.title,
-                          bold: true,
-                          color: "FFFFFF",
-                          size: docFontSizes.large * 2,
-                        }),
-                      ],
-                    }),
-                    ...(course.description
-                      ? [
-                          new Paragraph({
-                            children: [
-                              new TextRun({
-                                text: course.description,
-                                italics: true,
-                                color: "E2E8F0",
-                                size: docFontSizes.normal,
-                              }),
-                            ],
-                          }),
-                        ]
-                      : []),
-                  ],
-                }),
-              ],
-            }),
-          ],
-        }),
-      );
-    } else {
-      children.push(
-        new Paragraph({
-          spacing: { after: 100 },
-          children: [
-            new TextRun({
-              text: `${course.subject}${course.level ? ` · ${course.level}` : ""} — Knowly study pack`,
-              color: GRAY,
-              allCaps: true,
-              size: docFontSizes.small,
-            }),
-          ],
-        }),
-        new Paragraph({
-          spacing: { before: 240, after: 200 },
-          children: [new TextRun({ text: course.title, bold: true, size: docFontSizes.large * 2 })],
-        }),
-        ...(course.description
-          ? [new Paragraph({ children: [new TextRun({ text: course.description, color: GRAY })] })]
-          : []),
-      );
-    }
-    newPage();
+    pushAll(coverChildren(course, progress, design, options, dims));
+    // a compact hero shares page 1 with the contents that follow
+    if (options.heroLayout !== "compact") newPage();
   }
 
   /* contents */
@@ -704,7 +790,7 @@ export async function courseDocxBlob(
           new TextRun({
             text: "In Word: right-click the table and choose “Update Field” to refresh the page numbers.",
             italics: true,
-            color: GRAY,
+            color: design.muted,
             size: 18,
           }),
         ],
@@ -735,12 +821,12 @@ export async function courseDocxBlob(
         children.push(
           new Paragraph({
             spacing: { after: 80 },
-            children: [new TextRun({ text: deck.description, color: GRAY })],
+            children: [new TextRun({ text: deck.description, color: design.muted })],
           }),
         );
       }
       deck.questions.forEach((question, index) =>
-        children.push(...questionChildren(question, index + 1)),
+        children.push(...questionChildren(question, index + 1, design)),
       );
     }
   };
@@ -756,7 +842,7 @@ export async function courseDocxBlob(
       }),
     );
     if (module.summary) {
-      pushAll(markdownToDocx(module.summary, accent));
+      pushAll(markdownToDocx(module.summary, design));
     }
     for (const objective of module.objectives) {
       children.push(
@@ -786,11 +872,11 @@ export async function courseDocxBlob(
       children.push(
         new Paragraph({
           spacing: { after: 80 },
-          children: [new TextRun({ text: meta, color: GRAY, size: 16, allCaps: true })],
+          children: [new TextRun({ text: meta, color: design.muted, size: 16, allCaps: true })],
         }),
       );
       if (lesson.summary) {
-        pushAll(markdownToDocx(lesson.summary, accent));
+        pushAll(markdownToDocx(lesson.summary, design));
       }
       for (const objective of lesson.objectives) {
         children.push(
@@ -802,24 +888,24 @@ export async function courseDocxBlob(
         );
       }
 
-      pushAll(await blockChildren(lesson.blocks, accent, onStatus));
+      pushAll(await blockChildren(lesson.blocks, design, onStatus));
 
       const lessonState = progress?.lessons[lesson.id];
       if (lessonState?.notes && options.includeNotes) {
         children.push(
           new Paragraph({
-            border: { left: { style: BorderStyle.SINGLE, size: 18, color: GRAY_LIGHT, space: 6 } },
+            border: { left: { style: BorderStyle.SINGLE, size: 18, color: design.rule, space: 6 } },
             indent: { left: 40 },
             spacing: { before: 140, after: 60 },
-            children: [new TextRun({ text: "Lesson notes", bold: true, color: GRAY })],
+            children: [new TextRun({ text: "Lesson notes", bold: true, color: design.muted })],
           }),
         );
         pushAll(
-          markdownToDocx(lessonState.notes, accent, { borderColor: GRAY_LIGHT, italics: true }),
+          markdownToDocx(lessonState.notes, design, { borderColor: design.rule, italics: true }),
         );
       }
 
-      pushAll(questionSet("Check your understanding", lesson.questions));
+      pushAll(questionSet("Check your understanding", lesson.questions, design));
     }
 
     if (module.quiz?.questions.length) {
@@ -837,7 +923,7 @@ export async function courseDocxBlob(
           children: [
             new TextRun({
               text: `${module.quiz.questions.length} questions · pass at ${module.quiz.passingScore}%${module.quiz.timeLimitMinutes ? ` · ${module.quiz.timeLimitMinutes} min` : ""}`,
-              color: GRAY,
+              color: design.muted,
               size: 16,
               allCaps: true,
             }),
@@ -845,7 +931,7 @@ export async function courseDocxBlob(
         }),
       );
       module.quiz.questions.forEach((question, index) =>
-        children.push(...questionChildren(question, index + 1)),
+        children.push(...questionChildren(question, index + 1, design)),
       );
     }
 
@@ -866,7 +952,7 @@ export async function courseDocxBlob(
         children: [
           new TextRun({
             text: `${course.finalExam.questions.length} questions · pass at ${course.finalExam.passingScore}%${course.finalExam.timeLimitMinutes ? ` · ${course.finalExam.timeLimitMinutes} min` : ""}`,
-            color: GRAY,
+            color: design.muted,
             size: 16,
             allCaps: true,
           }),
@@ -874,7 +960,7 @@ export async function courseDocxBlob(
       }),
     );
     course.finalExam.questions.forEach((question, index) =>
-      children.push(...questionChildren(question, index + 1)),
+      children.push(...questionChildren(question, index + 1, design)),
     );
   }
 
@@ -908,7 +994,7 @@ export async function courseDocxBlob(
             children: [new TextRun(`Lesson · ${lesson.title}`)],
           }),
         );
-        children.push(...answerLines(lesson.questions));
+        children.push(...answerLines(lesson.questions, design));
       });
       if (module.quiz?.questions.length) {
         children.push(
@@ -918,7 +1004,7 @@ export async function courseDocxBlob(
             children: [new TextRun(`Module quiz · ${module.quiz.title}`)],
           }),
         );
-        children.push(...answerLines(module.quiz.questions));
+        children.push(...answerLines(module.quiz.questions, design));
       }
       module.linkedDeckIds.forEach((id) => {
         const deck = deckById.get(id);
@@ -931,7 +1017,7 @@ export async function courseDocxBlob(
             children: [new TextRun(`Practice deck · ${deck.title}`)],
           }),
         );
-        children.push(...answerLines(deck.questions));
+        children.push(...answerLines(deck.questions, design));
       });
     });
     if (course.finalExam?.questions.length) {
@@ -942,7 +1028,7 @@ export async function courseDocxBlob(
           children: [new TextRun(`Final exam · ${course.finalExam.title}`)],
         }),
       );
-      children.push(...answerLines(course.finalExam.questions));
+      children.push(...answerLines(course.finalExam.questions, design));
     }
     course.linkedDeckIds.forEach((id) => {
       const deck = deckById.get(id);
@@ -955,9 +1041,15 @@ export async function courseDocxBlob(
           children: [new TextRun(`Practice deck · ${deck.title}`)],
         }),
       );
-      children.push(...answerLines(deck.questions));
+      children.push(...answerLines(deck.questions, design));
     });
   }
+
+  onStatus?.("Embedding the paper design…");
+  const art = await buildDocxPaperArt(design, dims, {
+    cover: options.includeCover && options.coverStyle === "book",
+    wash: true,
+  });
 
   onStatus?.("Assembling the Word document…");
   return assembleDocx({
@@ -965,6 +1057,11 @@ export async function courseDocxBlob(
     description: course.description,
     children,
     options,
+    design,
+    art,
+    footerLeft: course.title,
+    runningHeader: options.runningHeader ? course.title : null,
+    coverDark: Boolean(options.includeCover && options.coverStyle === "book" && art.cover),
     onStatus,
   });
 }
@@ -981,8 +1078,14 @@ export interface ModuleDocxOptions {
   spacing: PaperSpacing;
   footerStyle: PaperFooterStyle;
   includeTitlePage: boolean;
+  /** "page" gives the hero its own sheet, "compact" keeps it on page 1 */
+  heroLayout?: CoursePrintOptions["heroLayout"];
   includeAnswerKey: boolean;
   includeNotes: boolean;
+  /** paper theme / palette / style, shared with the exam and course studios */
+  theme?: CoursePrintOptions["theme"];
+  palette?: CoursePrintOptions["palette"];
+  printStyle?: CoursePrintOptions["printStyle"];
 }
 
 /**
@@ -996,7 +1099,18 @@ export async function moduleDocxBlob(
   options: ModuleDocxOptions,
   onStatus?: (message: string) => void,
 ): Promise<Blob> {
-  const accent = hex(module.color);
+  const design = resolveDocxDesign({
+    theme: options.theme,
+    palette: options.palette,
+    fallbackAccent: resolveHex(module.color),
+    style: options.printStyle,
+  });
+  const dims = getPaperDims(options.paper, options.orientation);
+  const themedTitle = Boolean(options.includeTitlePage && design.style === "design");
+  const titleInk = themedTitle ? design.cover.ink : design.ink;
+  const titleMuted = themedTitle ? design.cover.muted : design.muted;
+  const titleLine = themedTitle ? design.cover.line : design.border;
+
   onStatus?.("Gathering module content…");
   const children: (Paragraph | Table)[] = [];
   const pushAll = (parts: (Paragraph | Table)[]) => {
@@ -1005,16 +1119,21 @@ export async function moduleDocxBlob(
 
   children.push(
     new Paragraph({
-      heading: HeadingLevel.HEADING_1,
       spacing: { after: 60 },
-      children: [new TextRun({ text: module.title, bold: true })],
+      border: { bottom: { style: BorderStyle.SINGLE, size: 24, color: design.accent, space: 1 } },
+      children: [],
+    }),
+    new Paragraph({
+      heading: HeadingLevel.HEADING_1,
+      spacing: { before: 120, after: 60 },
+      children: [new TextRun({ text: module.title, bold: true, color: titleInk })],
     }),
     new Paragraph({
       spacing: { after: 160 },
       children: [
         new TextRun({
           text: `${module.subject} · ${module.questions.length} questions · ${module.estimatedMinutes} min`,
-          color: GRAY,
+          color: titleMuted,
           size: 16,
           allCaps: true,
         }),
@@ -1027,44 +1146,58 @@ export async function moduleDocxBlob(
       new Paragraph({
         heading: HeadingLevel.HEADING_3,
         spacing: { before: 160, after: 60 },
-        children: [new TextRun("What you'll learn")],
+        children: [new TextRun({ text: "What you'll learn", color: titleInk })],
       }),
     );
     for (const objective of module.objectives) {
       children.push(
         new Paragraph({
-          bullet: { level: 0 },
-          spacing: { after: 30 },
-          children: inlineRuns(objective),
+          indent: { left: 240, hanging: 240 },
+          spacing: { after: 40 },
+          children: [
+            new TextRun({ text: "•  ", color: design.accent, bold: true }),
+            new TextRun({ text: objective, color: titleInk, size: 21 }),
+          ],
         }),
       );
     }
   }
 
+  if (options.includeTitlePage && !themedTitle) {
+    children.push(
+      new Paragraph({
+        spacing: { before: Math.round(dims.height * 0.2 * 15), after: 120 },
+        border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: titleLine, space: 1 } },
+        children: [],
+      }),
+    );
+  }
+
   // The sheet opens with a full-page title; the lesson flow starts on page two.
-  if (options.includeTitlePage) {
+  // A compact hero stays in flow, so the lesson follows it on the same page.
+  if (options.includeTitlePage && options.heroLayout !== "compact") {
     children.push(new Paragraph({ children: [new PageBreak()] }));
   }
 
   if (module.notes) {
-    pushAll(markdownToDocx(module.notes, accent));
+    pushAll(markdownToDocx(module.notes, design));
   }
 
-  pushAll(await blockChildren(module.blocks, accent, onStatus));
+  pushAll(await blockChildren(module.blocks, design, onStatus));
 
   if (options.includeNotes && progressNotes) {
     children.push(
       new Paragraph({
-        border: { left: { style: BorderStyle.SINGLE, size: 18, color: GRAY_LIGHT, space: 6 } },
+        border: { left: { style: BorderStyle.SINGLE, size: 18, color: design.rule, space: 6 } },
         indent: { left: 40 },
         spacing: { before: 140, after: 60 },
-        children: [new TextRun({ text: "Your notes", bold: true, color: GRAY })],
+        children: [new TextRun({ text: "Your notes", bold: true, color: design.muted })],
       }),
     );
-    pushAll(markdownToDocx(progressNotes, accent, { borderColor: GRAY_LIGHT, italics: true }));
+    pushAll(markdownToDocx(progressNotes, design, { borderColor: design.rule, italics: true }));
   }
 
-  pushAll(questionSet("Practice questions", module.questions));
+  pushAll(questionSet("Practice questions", module.questions, design));
 
   const deckById = new Map(decks.map((deck) => [deck.id, deck]));
   const practiceDecks = module.linkedDeckIds
@@ -1079,7 +1212,7 @@ export async function moduleDocxBlob(
       }),
     );
     deck.questions.forEach((question, index) =>
-      children.push(...questionChildren(question, index + 1)),
+      children.push(...questionChildren(question, index + 1, design)),
     );
   }
 
@@ -1093,7 +1226,7 @@ export async function moduleDocxBlob(
       }),
     );
     if (module.questions.length) {
-      children.push(...answerLines(module.questions));
+      children.push(...answerLines(module.questions, design));
     }
     for (const deck of practiceDecks) {
       children.push(
@@ -1102,16 +1235,27 @@ export async function moduleDocxBlob(
           spacing: { before: 140, after: 40 },
           children: [new TextRun(`Practice deck · ${deck.title}`)],
         }),
-        ...answerLines(deck.questions),
+        ...answerLines(deck.questions, design),
       );
     }
   }
+
+  onStatus?.("Embedding the paper design…");
+  const art = await buildDocxPaperArt(design, dims, {
+    cover: themedTitle,
+    wash: true,
+  });
 
   onStatus?.("Assembling the Word document…");
   return assembleDocx({
     title: module.title,
     children,
     options,
+    design,
+    art,
+    footerLeft: module.title,
+    runningHeader: null,
+    coverDark: themedTitle && Boolean(art.cover),
     onStatus,
   });
 }
@@ -1120,36 +1264,97 @@ export async function moduleDocxBlob(
  * Shared document assembly
  * ------------------------------------------------------------------ */
 
-/** Real Word page numbers, or no footer at all. */
-function pageFooter(style: PaperFooterStyle): Footer | undefined {
+/** Real Word page numbers on the right, the pack title on the left. */
+function pageFooter(
+  style: PaperFooterStyle,
+  left: string,
+  color: string,
+  contentWidth: number,
+): Footer | undefined {
   if (style === "none") return undefined;
+  const numbers: string[] =
+    style === "of"
+      ? ["Page ", PageNumber.CURRENT, " of ", PageNumber.TOTAL_PAGES]
+      : style === "plain"
+        ? [PageNumber.CURRENT]
+        : [PageNumber.CURRENT, " / ", PageNumber.TOTAL_PAGES];
   return new Footer({
     children: [
       new Paragraph({
-        alignment: AlignmentType.CENTER,
+        tabStops: [{ type: TabStopType.RIGHT, position: contentWidth }],
         children: [
-          new TextRun({
-            children:
-              style === "of"
-                ? ["Page ", PageNumber.CURRENT, " of ", PageNumber.TOTAL_PAGES]
-                : style === "plain"
-                  ? [PageNumber.CURRENT]
-                  : [PageNumber.CURRENT, " / ", PageNumber.TOTAL_PAGES],
-            size: 18,
-            color: GRAY,
-          }),
+          ...(left ? [new TextRun({ text: left, size: 16, color })] : []),
+          new TextRun({ children: ["\t", ...numbers], size: 16, color }),
         ],
       }),
     ],
   });
 }
 
-/** Page size, the fixed 0.5in margin, typography and footer — shared by both exports. */
+/**
+ * A page-sized image anchored behind the text, so the theme's wash (or the
+ * cover art) reaches the sheet edge exactly like it does on the printed page.
+ * The bytes live in the .docx package — nothing is linked or downloaded.
+ */
+function pageHeader(
+  data: Uint8Array | undefined,
+  dims: PaperDims,
+  runningHeader: string | null,
+  color: string,
+): Header | undefined {
+  if (!data && !runningHeader) return undefined;
+  const children: (TextRun | ImageRun)[] = [];
+  if (data) {
+    children.push(
+      new ImageRun({
+        type: "png",
+        data,
+        transformation: { width: dims.width, height: dims.height },
+        floating: {
+          behindDocument: true,
+          allowOverlap: true,
+          zIndex: 0,
+          horizontalPosition: { relative: HorizontalPositionRelativeFrom.PAGE, offset: 0 },
+          verticalPosition: { relative: VerticalPositionRelativeFrom.PAGE, offset: 0 },
+          wrap: { type: TextWrappingType.NONE },
+        },
+      }),
+    );
+  }
+  if (runningHeader) {
+    children.push(
+      new TextRun({
+        text: runningHeader,
+        size: 14,
+        bold: true,
+        allCaps: true,
+        characterSpacing: 60,
+        color,
+      }),
+    );
+  }
+  return new Header({
+    children: [
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 0, after: 0 },
+        children,
+      }),
+    ],
+  });
+}
+
+/** Page size, the fixed 0.5in margin, themed typography and furniture. */
 async function assembleDocx({
   title,
   description,
   children,
   options,
+  design,
+  art,
+  footerLeft,
+  runningHeader,
+  coverDark,
   onStatus,
 }: {
   title: string;
@@ -1163,13 +1368,57 @@ async function assembleDocx({
     spacing: PaperSpacing;
     footerStyle: PaperFooterStyle;
   };
+  design: DocxPaperDesign;
+  art: { cover?: Uint8Array; wash?: Uint8Array };
+  footerLeft: string;
+  runningHeader: string | null;
+  /** true when page one carries the dark/light themed cover art */
+  coverDark: boolean;
   onStatus?: (message: string) => void;
 }): Promise<Blob> {
   const dims = getPaperDims(options.paper, options.orientation);
+  const contentWidth = px(dims.width - PRINT_MARGIN_PX * 2);
   const fontFamily = options.typeface === "serif" ? "Georgia" : "Calibri";
   const fontSizes = { small: 20, normal: 22, large: 25 } as const;
   const lineSpacing = { compact: 240, normal: 276, relaxed: 312 } as const;
-  const footer = pageFooter(options.footerStyle);
+  const headingSizes = { 1: 32, 2: 27, 3: 24, 4: 22 } as const;
+
+  const headingStyle = (level: 1 | 2 | 3 | 4) => ({
+    id: `Heading${level}`,
+    name: `Heading ${level}`,
+    basedOn: "Normal",
+    next: "Normal",
+    quickFormat: true,
+    run: {
+      font: fontFamily,
+      size: headingSizes[level],
+      bold: true,
+      color: design.ink,
+    },
+    paragraph: {
+      spacing: {
+        before: level === 1 ? 320 : level === 2 ? 240 : 180,
+        after: level === 1 ? 140 : 80,
+      },
+      keepNext: true,
+      outlineLevel: level - 1,
+      ...(level === 1
+        ? {
+            border: {
+              bottom: { style: BorderStyle.SINGLE, size: 8, color: design.accent, space: 4 },
+            },
+          }
+        : {}),
+    },
+  });
+
+  const bodyHeader = pageHeader(art.wash, dims, runningHeader, design.muted);
+  const bodyFooter = pageFooter(options.footerStyle, footerLeft, design.muted, contentWidth);
+  const coverHeader = coverDark ? pageHeader(art.cover, dims, null, design.cover.muted) : undefined;
+  const coverFooter = coverDark
+    ? pageFooter(options.footerStyle, footerLeft, design.cover.muted, contentWidth)
+    : undefined;
+
   const docxDocument = new Document({
     creator: "Knowly",
     title,
@@ -1178,14 +1427,16 @@ async function assembleDocx({
     styles: {
       default: {
         document: {
-          run: { font: fontFamily, size: fontSizes[options.fontScale] },
+          run: { font: fontFamily, size: fontSizes[options.fontScale], color: design.ink },
           paragraph: { spacing: { line: lineSpacing[options.spacing] } },
         },
       },
+      paragraphStyles: [headingStyle(1), headingStyle(2), headingStyle(3), headingStyle(4)],
     },
     sections: [
       {
         properties: {
+          ...(coverHeader ? { titlePage: true } : {}),
           page: {
             size: {
               width: px(dims.width),
@@ -1204,7 +1455,22 @@ async function assembleDocx({
             },
           },
         },
-        ...(footer ? { footers: { default: footer } } : {}),
+        ...(bodyHeader || coverHeader
+          ? {
+              headers: {
+                ...(bodyHeader ? { default: bodyHeader } : {}),
+                ...(coverHeader ? { first: coverHeader } : {}),
+              },
+            }
+          : {}),
+        ...(bodyFooter || coverFooter
+          ? {
+              footers: {
+                ...(bodyFooter ? { default: bodyFooter } : {}),
+                ...(coverFooter ? { first: coverFooter } : {}),
+              },
+            }
+          : {}),
         children,
       },
     ],
@@ -1213,4 +1479,3 @@ async function assembleDocx({
   onStatus?.("Saving the .docx…");
   return Packer.toBlob(docxDocument);
 }
-

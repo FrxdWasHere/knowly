@@ -148,7 +148,7 @@ function CramPage() {
                   onClick={() => toggle(d.id)}
                   className={cn(
                     "press flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors",
-                    on ? "border-primary/60 bg-primary/10" : "border-border hover:bg-surface-2/60",
+                    on ? "border-primary/60 bg-primary/10" : "border-border hover:bg-surface-hover",
                   )}
                 >
                   <span
@@ -204,7 +204,7 @@ function CramPage() {
                   "press rounded-lg border px-4 py-2.5 text-left transition-colors",
                   order === o.id
                     ? "border-primary/60 bg-primary/10"
-                    : "border-border hover:bg-surface-2/60",
+                    : "border-border hover:bg-surface-hover",
                 )}
               >
                 <span className="block text-sm font-medium">{o.label}</span>

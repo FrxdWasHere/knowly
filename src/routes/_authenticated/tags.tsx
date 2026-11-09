@@ -190,7 +190,7 @@ function TagExplorerPage() {
                       "flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left transition-colors",
                       selected === e.key
                         ? "border-primary/50 bg-primary/10"
-                        : "border-border hover:bg-secondary/40",
+                        : "border-border hover:bg-surface-hover",
                     )}
                   >
                     {e.kind === "tag" ? (

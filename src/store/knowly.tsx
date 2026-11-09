@@ -20,6 +20,7 @@ import {
   oceanDeckColor,
 } from "@/lib/defaults";
 import { evaluateAchievements, ACHIEVEMENTS } from "@/lib/gamification";
+import { getColorTheme } from "@/lib/themes";
 import { dayKey } from "@/lib/answers";
 import { applyThemeToRoot } from "@/lib/theme-dom";
 import { loadWallpaper, saveWallpaper } from "@/lib/wallpaper-store";
@@ -122,11 +123,22 @@ function normalizeState(parsed: Partial<AppState>): AppState {
   const avatarEmoji = AVATAR_EMOJIS.includes(settings.avatarEmoji)
     ? settings.avatarEmoji
     : DEFAULT_SETTINGS.avatarEmoji;
+  // Preset palettes are gone. If this save was last using one, keep the mode
+  // the user was looking at and retire the palette id; the new hand-built
+  // theme takes over from here.
+  const legacyTheme =
+    settings.colorTheme && settings.colorTheme !== "default"
+      ? (getColorTheme(settings.colorTheme) ??
+        settings.customThemes?.find((theme) => theme.id === settings.colorTheme))
+      : undefined;
+  const theme = legacyTheme?.mode ?? settings.theme;
   return {
     ...state,
     settings: {
       ...DEFAULT_SETTINGS,
       ...settings,
+      theme: theme === "dark" ? "dark" : "light",
+      colorTheme: "default",
       sidebarGroups: normalizeSidebarGroups(settings.sidebarGroups),
       accent,
       avatarEmoji,
@@ -198,6 +210,8 @@ interface Ctx {
   recordCourseAssessment: (courseId: string, result: CourseAssessmentResult) => void;
   /** grade one question's spaced-repetition card */
   reviewQuestion: (deckId: string, questionId: string, grade: SrsGrade) => void;
+  /** spend banked XP (heart refills). Returns false when there isn't enough. */
+  spendXp: (amount: number) => boolean;
   recordSession: (input: RecordSessionInput) => void;
   saveTemplate: (t: PromptTemplate) => void;
   deleteTemplate: (id: string) => void;
@@ -397,6 +411,20 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
             : d,
         ),
       }));
+    },
+    [setState],
+  );
+
+  const spendXp = useCallback(
+    (amount: number) => {
+      if (!Number.isFinite(amount) || amount <= 0) return false;
+      if (stateRef.current.progress.xp < amount) return false;
+      setState((s) =>
+        s.progress.xp < amount
+          ? s
+          : { ...s, progress: { ...s.progress, xp: s.progress.xp - amount } },
+      );
+      return true;
     },
     [setState],
   );
@@ -901,6 +929,7 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
       recordCourseQuestion,
       recordCourseAssessment,
       reviewQuestion,
+      spendXp,
       recordSession,
       saveTemplate: (t) =>
         setState((s) => ({
@@ -957,6 +986,7 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
       recordCourseQuestion,
       recordCourseAssessment,
       reviewQuestion,
+      spendXp,
       recordSession,
       upsertSlot,
       deleteSlot,

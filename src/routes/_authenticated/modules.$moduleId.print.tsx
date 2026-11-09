@@ -29,7 +29,7 @@ import {
   FONT_SCALE_OPTIONS,
   type ModulePrintOptions,
 } from "@/components/print/module-paper";
-import { getPaperDims } from "@/components/print/course-paper";
+import { HERO_LAYOUT_OPTIONS, getPaperDims } from "@/components/print/course-paper";
 import { PaperThemePicker } from "@/components/print/paper-theme-picker";
 import { PrintStyleMenu } from "@/components/print/print-style-menu";
 import { Button } from "@/components/ui/button";
@@ -206,8 +206,12 @@ function ModulePrintPage() {
           spacing: options.spacing,
           footerStyle: options.footerStyle,
           includeTitlePage: options.includeTitlePage,
+          heroLayout: options.heroLayout,
           includeAnswerKey: options.includeAnswerKey,
           includeNotes: options.includeNotes,
+          theme: options.theme,
+          palette: options.palette,
+          printStyle: options.printStyle,
         },
       );
       const url = URL.createObjectURL(blob);
@@ -325,11 +329,27 @@ function ModulePrintPage() {
             <OptionGroup icon={<Heading1 className="size-4 text-primary" />} label="Header">
               <div className="space-y-3">
                 <ToggleRow
-                  label="Title page"
-                  description="Full-page hero on sheet 1; the lesson proper starts on page 2."
+                  label="Hero"
+                  description="Show the hero at all — as a full cover page or the compact hero picked below."
                   checked={options.includeTitlePage}
                   onChange={(value) => patch({ includeTitlePage: value })}
                 />
+                <div className="flex flex-wrap gap-1.5">
+                  {HERO_LAYOUT_OPTIONS.map((hero) => (
+                    <Chip
+                      key={hero.id}
+                      active={(options.heroLayout ?? "page") === hero.id}
+                      onClick={() => patch({ heroLayout: hero.id })}
+                      label={hero.label}
+                      sub={hero.sub}
+                    />
+                  ))}
+                </div>
+                <p className="text-[11px] leading-4 text-muted-foreground">
+                  {(options.heroLayout ?? "page") === "compact"
+                    ? "The hero sits at the top of page 1, sized to its own content up to about a third of the page; the lesson starts underneath it."
+                    : "The hero gets sheet 1 to itself and the lesson proper starts on page 2."}
+                </p>
                 <ToggleRow
                   label="Page header"
                   description="Quick switch: module name in small caps on later pages."
@@ -383,7 +403,7 @@ function ModulePrintPage() {
               </div>
               <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
                 {options.coverTheme === "module"
-                  ? "Hue of the cover, and of the in-flow hero when there is no title page. The paper theme below designs it."
+                  ? "Hue of the cover page, and of the compact or in-flow hero. The paper theme below designs it."
                   : `${getColorTheme(options.coverTheme)?.label ?? "Palette"} sets the cover's hue; the paper theme below designs it.`}
               </p>
             </OptionGroup>
@@ -486,7 +506,7 @@ function ModulePrintPage() {
             </div>
           </div>
 
-          <div className="preview-stage min-w-0 rounded-3xl bg-surface2/40 p-6 sm:p-8">
+          <div className="preview-stage min-w-0 rounded-3xl bg-surface-2/40 p-6 sm:p-8">
             <ModulePaper module={module} decks={state.decks} options={options} />
           </div>
         </div>

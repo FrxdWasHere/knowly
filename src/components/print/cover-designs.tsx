@@ -58,7 +58,11 @@ export function coverDesign(themeId: string | undefined, accent: string): CoverD
         dark: true,
         surface: [
           `radial-gradient(90% 80% at 0% 0%, ${mix(accent, 40, "#20261d")} 0%, transparent 60%)`,
-          `linear-gradient(165deg, #2a2f26 0%, #1d2119 62%, #14170f 100%)`,
+          `linear-gradient(165deg, ${mix(accent, 18, "#2a2f26")} 0%, ${mix(
+            accent,
+            13,
+            "#1d2119",
+          )} 62%, ${mix(accent, 8, "#14170f")} 100%)`,
         ].join(", "),
         ink: "#f6f1e2",
         muted: "rgba(246, 241, 226, 0.72)",
@@ -71,7 +75,11 @@ export function coverDesign(themeId: string | undefined, accent: string): CoverD
         surface: [
           `linear-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px)`,
           `linear-gradient(90deg, rgba(255, 255, 255, 0.09) 1px, transparent 1px)`,
-          `linear-gradient(160deg, #10405f 0%, #0a2a41 55%, #06192a 100%)`,
+          `linear-gradient(160deg, ${mix(accent, 32, "#10405f")} 0%, ${mix(
+            accent,
+            24,
+            "#0a2a41",
+          )} 55%, ${mix(accent, 16, "#06192a")} 100%)`,
         ].join(", "),
         ink: "#eaf4ff",
         muted: "rgba(234, 244, 255, 0.7)",
@@ -84,7 +92,11 @@ export function coverDesign(themeId: string | undefined, accent: string): CoverD
         surface: [
           `repeating-linear-gradient(0deg, rgba(185, 255, 211, 0.06) 0 1px, transparent 1px 4px)`,
           `radial-gradient(120% 90% at 50% -10%, ${mix(accent, 34, "#050807")} 0%, transparent 62%)`,
-          `linear-gradient(180deg, #0a1210 0%, #050807 100%)`,
+          `linear-gradient(180deg, ${mix(accent, 10, "#0a1210")} 0%, ${mix(
+            accent,
+            7,
+            "#050807",
+          )} 100%)`,
         ].join(", "),
         ink: "#c9ffdf",
         muted: "rgba(201, 255, 223, 0.66)",
@@ -99,7 +111,7 @@ export function coverDesign(themeId: string | undefined, accent: string): CoverD
         surface: [
           `linear-gradient(rgba(27, 36, 48, 0.07) 1px, transparent 1px)`,
           `linear-gradient(90deg, rgba(27, 36, 48, 0.07) 1px, transparent 1px)`,
-          `linear-gradient(180deg, #ffffff 0%, #eef4f9 100%)`,
+          `linear-gradient(180deg, #ffffff 0%, ${mix(accent, 14, "#eef4f9")} 100%)`,
         ].join(", "),
         ...lightInk,
       };
@@ -112,7 +124,11 @@ export function coverDesign(themeId: string | undefined, accent: string): CoverD
     case "manuscript":
       return {
         dark: false,
-        surface: `radial-gradient(80% 70% at 8% 4%, ${mix(accent, 10, "#fdf6e7")} 0%, transparent 55%), linear-gradient(160deg, #fdf6e7 0%, #f4e8cf 100%)`,
+        surface: `radial-gradient(80% 70% at 8% 4%, ${mix(accent, 10, "#fdf6e7")} 0%, transparent 55%), linear-gradient(160deg, ${mix(
+          accent,
+          10,
+          "#fdf6e7",
+        )} 0%, ${mix(accent, 16, "#f4e8cf")} 100%)`,
         ink: "#3b2f1c",
         muted: "#6b5836",
         line: "rgba(107, 88, 54, 0.45)",
@@ -121,7 +137,11 @@ export function coverDesign(themeId: string | undefined, accent: string): CoverD
     case "newspaper":
       return {
         dark: false,
-        surface: `linear-gradient(180deg, #fbf8f1 0%, #f3eee2 100%)`,
+        surface: `linear-gradient(180deg, ${mix(accent, 6, "#fbf8f1")} 0%, ${mix(
+          accent,
+          9,
+          "#f3eee2",
+        )} 100%)`,
         ink: "#141414",
         muted: "#4b4b4b",
         line: "rgba(20, 20, 20, 0.34)",
@@ -132,7 +152,11 @@ export function coverDesign(themeId: string | undefined, accent: string): CoverD
         dark: false,
         surface: [
           `radial-gradient(${mix(accent, 25, "#ffffff")} 1.1px, transparent 1.2px)`,
-          `linear-gradient(180deg, #fffdf2 0%, #fff7e4 100%)`,
+          `linear-gradient(180deg, ${mix(accent, 8, "#fffdf2")} 0%, ${mix(
+            accent,
+            12,
+            "#fff7e4",
+          )} 100%)`,
         ].join(", "),
         ink: "#12100d",
         muted: "#4a443c",
@@ -145,7 +169,11 @@ export function coverDesign(themeId: string | undefined, accent: string): CoverD
         surface: [
           `radial-gradient(70% 60% at 100% 0%, ${mix(accent, 16, "#f2f8ef")} 0%, transparent 60%)`,
           `radial-gradient(60% 50% at 0% 100%, ${mix(accent, 12, "#eef6ea")} 0%, transparent 58%)`,
-          `linear-gradient(170deg, #f7fbf4 0%, #e9f2e4 100%)`,
+          `linear-gradient(170deg, ${mix(accent, 8, "#f7fbf4")} 0%, ${mix(
+            accent,
+            12,
+            "#e9f2e4",
+          )} 100%)`,
         ].join(", "),
         ink: "#22301f",
         muted: "#5a6b54",

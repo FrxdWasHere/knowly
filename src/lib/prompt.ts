@@ -1,4 +1,77 @@
+import { SAMPLE_DECK_JSON, SAMPLE_QUESTIONS_JSON } from "./schema";
 import type { Difficulty, QuestionType } from "./types";
+
+/* ------------------------------------------------------------------ *
+ * Shared prompt blocks
+ *
+ * Every prompt preset (deck, deck expansion, course, lesson, module)
+ * prints the SAME complete schema and a full worked sample, so an AI
+ * never has to guess a field — and every preset asks for a .json file.
+ * ------------------------------------------------------------------ */
+
+/** The output rule shared by every prompt: one complete JSON file, nothing else. */
+export function jsonFileRule(name: string) {
+  return [
+    `- Output the result as a JSON FILE named \`${name}\` — one complete, valid JSON document the learner can save straight to disk.`,
+    "- Reply with the contents of that file and nothing else: no markdown fences, no filename heading, no commentary before or after.",
+    "- Every string must be valid JSON (escape quotes, newlines and backslashes).",
+  ].join("\n");
+}
+
+/** The note that stops a model from copying the sample's content verbatim. */
+export const SAMPLE_NOTE =
+  "The sample below is a SHAPE reference, not content to copy: take its keys and value types, and write every string yourself from the material and brief above.";
+
+/** The full question object: every field, including the optional ones. */
+export const QUESTION_SCHEMA_TEXT = `{
+  "type": "flashcard" | "multiple-choice" | "true-false" | "fill-blank" | "short-answer" | "ordering" | "matching" | "word-bank",  // required
+  "question": string,                             // required — the prompt the learner sees
+  "answer": string,                               // required for flashcard, multiple-choice, true-false, fill-blank and short-answer
+  "options": string[],                            // multiple-choice only — 2-6 options; "answer" must match one exactly
+  "items": string[],                              // ordering only — 3-6 steps in the CORRECT order (the app shuffles them)
+  "pairs": [{ "left": string, "right": string }], // matching only — 3-5 couples, every "right" unique
+  "blanks": string[],                             // word-bank only — the correct word for each ___ in "question", in order
+  "wordBank": string[],                           // word-bank only — the blanks plus 2-3 plausible distractors
+  "explanation": string,                          // required — 1-2 sentences on why the answer is right
+  "difficulty": "easy" | "medium" | "hard",       // required
+  "concept": string,                              // required — the specific topic tested; reuse the same label consistently
+  "hint": string,                                  // optional — one-line nudge that never gives the answer away
+  "tutor": {
+    "simple": string,                              // required — the idea in plain words, no jargon
+    "mnemonic": string,                            // required — a memory hook the learner can recall under pressure
+    "example": string,                             // optional — one concrete example or analogy
+    "whyWrong": [{ "option": string, "why": string }] // multiple-choice and true-false only — one entry per incorrect option
+  },
+  "tags": string[]                                // optional — free-form labels
+}`;
+
+/**
+ * The tutor notes are written with the question, not fetched later: the app is
+ * offline, so anything a tutor chat would say has to arrive inside the JSON.
+ */
+export const TUTOR_RULES = `- Every question carries pre-written tutor notes in "tutor". They stand in for a tutor chat, so they must be useful on their own — the learner reads them mid-session without leaving the quiz.
+- "simple": 1-2 short sentences restating the idea in plain language a beginner understands; no jargon carried over from the question.
+- "mnemonic": one memory hook — acronym, rhyme, image, rhyme or a tiny story. It must be specific to this fact, not generic advice like "review regularly".
+- "example": optional; one concrete case, number or analogy that makes the idea stick.
+- "whyWrong": multiple-choice and true-false questions need one { "option", "why" } entry for EVERY incorrect option. Copy the option text exactly and explain the specific misconception that makes it wrong — never just say "incorrect".`;
+
+/** The full deck object. */
+export const DECK_SCHEMA_TEXT = `{
+  "title": string,                 // required — deck name
+  "subject": string,               // required — subject area, e.g. "Biology"
+  "description": string,           // optional — one-line summary
+  "tags": string[],                // optional — free-form labels
+  "isSTEM": boolean,               // optional — true for a maths or science deck
+  "needsEquations": boolean,       // optional — true when the questions rely on LaTeX maths
+  "needsGraphs": boolean,          // optional — true when the questions refer to graphs or diagrams
+  "questions": [ Question ]        // required — one or more, each using the full Question object below
+}`;
+
+/** The full question-pack object (expanding an existing deck). */
+export const QUESTION_PACK_SCHEMA_TEXT = `{
+  "deckTitle": string,             // optional — the deck being extended
+  "questions": [ Question ]        // required — only the NEW questions, each using the full Question object below
+}`;
 
 export interface PromptOptions {
   material: string;
@@ -66,6 +139,47 @@ export function mathPromptSection(o: {
 
 const AUTONOMY = "choose whatever you see fit";
 
+/** Every new deck is asked for at least this many cards. */
+export const MIN_DECK_SIZE = 200;
+
+/**
+ * The deck-size rule: a floor of 200 cards that grows with the source
+ * material. Many small single-fact cards are easier to schedule than a few
+ * dense ones, and the app fragments big decks into parts and rounds, so a
+ * high card count costs the learner nothing.
+ */
+/**
+ * The card count a new-deck prompt will actually request: the 200-card floor,
+ * the material's own scale (~1 card per 25 words), or a higher request.
+ */
+export function deckSizeTarget(auto: boolean | undefined, requested: number, material: string) {
+  const words = material.trim() ? material.trim().split(/\s+/).length : 0;
+  return Math.max(MIN_DECK_SIZE, Math.ceil(words / 25), auto ? 0 : requested);
+}
+
+export function deckSizeLine(auto: boolean | undefined, requested: number, material: string) {
+  const words = material.trim() ? material.trim().split(/\s+/).length : 0;
+  // roughly one card per 25 words of source material
+  const fromMaterial = Math.ceil(words / 25);
+  const target = deckSizeTarget(auto, requested, material);
+  const lines = [
+    `- Write ${target} cards. ${MIN_DECK_SIZE} is the floor for a deck; above it the material sets the count (~1 card per 25 words of source, so twice the material means roughly twice the cards).`,
+    "- Prefer many small cards that test one fact, definition, step or distinction each. Never pad, repeat a question in different words, or split a single idea into filler — if the material is short, write fewer, sharper cards rather than variations.",
+    `- Spread the cards across at least four distinct "concept" labels (15-40 cards each) so the app can split the deck into sub-topic parts and short rounds.`,
+  ];
+  if (fromMaterial > MIN_DECK_SIZE) {
+    lines.push(
+      `- The supplied material is about ${words.toLocaleString("en-US")} words, which calls for roughly ${fromMaterial.toLocaleString("en-US")} cards.`,
+    );
+  }
+  if (auto) {
+    lines.push(
+      "- Beyond that floor, decide the final count yourself: scale it to the amount and density of material supplied.",
+    );
+  }
+  return lines.join("\n");
+}
+
 /** The output-rule line for the question count, honouring "whatever you see fit". */
 function countLine(auto: boolean | undefined, count: number, what: string) {
   if (auto) return `- Decide how many ${what} to write — ${AUTONOMY} for the material; do not pad.`;
@@ -94,32 +208,21 @@ export function buildPrompt(o: PromptOptions) {
   return `You are an expert exam writer. Convert the study material below into a Knowly deck.
 
 OUTPUT RULES
-- Respond with ONE valid JSON object and nothing else. No markdown fences, no commentary.
-- Every string must be valid JSON (escape quotes and newlines).
-${countLine(o.countAuto, o.count, "questions")}
+${jsonFileRule("knowly-deck.json")}
+${deckSizeLine(o.countAuto, o.count, o.material)}
 
-SCHEMA
-{
-  "title": string,
-  "subject": string,
-  "description": string,
-  "tags": string[],
-  "questions": [
-    {
-      "type": "flashcard" | "multiple-choice" | "true-false" | "fill-blank" | "short-answer" | "ordering" | "matching" | "word-bank",
-      "question": string,
-      "options": string[],          // multiple-choice only, 4 entries
-      "answer": string,             // must exactly match one option for multiple-choice; "true"/"false" for true-false; omit for ordering/matching/word-bank
-      "items": string[],            // ordering only: 3-6 steps written in the CORRECT order
-      "pairs": [{ "left": string, "right": string }], // matching only: 3-5 couples
-      "blanks": string[],           // word-bank only: the correct word for each ___ in "question", in order
-      "wordBank": string[],         // word-bank only: the blank answers plus 2-3 plausible distractors
-      "explanation": string,        // why the answer is correct
-      "difficulty": "easy" | "medium" | "hard",
-      "concept": string             // the specific topic being tested
-    }
-  ]
-}
+SCHEMA — the complete deck object
+${DECK_SCHEMA_TEXT}
+
+QUESTION OBJECT — every field, verbatim
+${QUESTION_SCHEMA_TEXT}
+
+TUTOR NOTES — pre-written inside every question
+${TUTOR_RULES}
+
+FULL SAMPLE — a complete deck using all eight question types
+${SAMPLE_NOTE}
+${SAMPLE_DECK_JSON}
 
 INTERACTIVE TYPE RULES
 - ordering: list "items" in the correct sequence; the app shuffles them for the learner. No "answer" field.
@@ -183,29 +286,22 @@ export function buildAppendPrompt(o: AppendPromptOptions) {
   return `You are an expert exam writer. Expand an EXISTING Knowly deck with additional questions.
 
 OUTPUT RULES
-- Respond with ONE valid JSON object and nothing else. No markdown fences, no commentary.
-- Do NOT return deck metadata (no color, tags or description) — only the questions payload below.
+${jsonFileRule("knowly-new-questions.json")}
+- Keep the file to the questions payload below — no deck metadata (no color, tags or description).
 ${countLine(o.countAuto, o.count, "NEW questions that do not duplicate the existing ones")}
 
-SCHEMA
-{
-  "deckTitle": "${o.deckTitle || "Existing Deck"}",
-  "questions": [
-    {
-      "type": "flashcard" | "multiple-choice" | "true-false" | "fill-blank" | "short-answer" | "ordering" | "matching" | "word-bank",
-      "question": string,
-      "options": string[],          // multiple-choice only, 4 entries
-      "answer": string,             // must exactly match one option for multiple-choice; "true"/"false" for true-false; omit for ordering/matching/word-bank
-      "items": string[],            // ordering only: 3-6 steps written in the CORRECT order
-      "pairs": [{ "left": string, "right": string }], // matching only: 3-5 couples
-      "blanks": string[],           // word-bank only: the correct word for each ___ in "question", in order
-      "wordBank": string[],         // word-bank only: the blank answers plus 2-3 plausible distractors
-      "explanation": string,
-      "difficulty": "easy" | "medium" | "hard",
-      "concept": string             // reuse an existing concept label when the topic matches
-    }
-  ]
-}
+SCHEMA — the complete question-pack object
+${QUESTION_PACK_SCHEMA_TEXT}
+
+QUESTION OBJECT — every field, verbatim
+${QUESTION_SCHEMA_TEXT}
+
+TUTOR NOTES — pre-written inside every question
+${TUTOR_RULES}
+
+FULL SAMPLE — a complete question pack
+${SAMPLE_NOTE}
+${SAMPLE_QUESTIONS_JSON}
 
 INTERACTIVE TYPE RULES
 - ordering: list "items" in the correct sequence; the app shuffles them. No "answer" field.

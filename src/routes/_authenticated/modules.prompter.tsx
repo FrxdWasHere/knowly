@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { openImportPanel } from "@/lib/import-panel";
+import { QUESTION_SCHEMA_TEXT, SAMPLE_NOTE, TUTOR_RULES, jsonFileRule } from "@/lib/prompt";
+import { SAMPLE_MODULE_JSON } from "@/lib/module-schema";
 import { useKnowly } from "@/store/knowly";
 import type { Module } from "@/lib/types";
 
@@ -392,23 +394,51 @@ BLURBS REQUESTED (include all of these)
 ${blurbSpec || "  (none requested — blur your own)"}
 
 QUESTIONS
-Add 3-6 checkpoint questions${minutesAuto ? "" : ` for a ${minutes || 15}-minute module`}. Types: "short-answer" (question + answer text) or "multiple-choice" (question + options + answer = the exact correct option text, no letter). Every checkpoint block's questionId must match a question's id. Write the question, its options and its answer in LaTeX whenever they involve an equation or symbol.
+Add 3-6 checkpoint questions${minutesAuto ? "" : ` for a ${minutes || 15}-minute module`}. Types: "short-answer" (question + answer text) or "multiple-choice" (question + options + answer = the exact correct option text, no letter) — the other types in the schema below are allowed, but these two read best inline. Every checkpoint block's questionId must match a question's id. Write the question, its options and its answer in LaTeX whenever they involve an equation or symbol.
 
 OUTPUT RULES
-- Respond with ONE valid JSON object and nothing else. No markdown fences, no filename, no commentary.
-- Every string must be valid JSON (escape quotes and newlines).
-- Shape:
+${jsonFileRule("knowly-module.json")}
+- Do not set "blocks" to null; always give an array, even if it only holds writing so far.
+
+SCHEMA — the complete module object
 {
-  "title": string,
-  "subject": string,
-  "difficulty": ${difficultyAuto ? "1 | 2 | 3 (the depth you judge right)" : difficulty},
-  "emoji": string,
-  "tags": string[],
-  "objectives": string[],
-  "estimatedMinutes": number,
-  "blocks": (the blocks, in order),
-  "questions": (the checkpoint questions),
-  "linkedDeckIds": []
+  "title": string,                                              // required — the lesson name
+  "subject": string,                                            // required — e.g. "Biology"
+  "description": string,                                        // optional — one line on what it teaches
+  "difficulty": ${difficultyAuto ? "1 | 2 | 3 (the depth you judge right)" : difficulty},                                        // 1 = Intro, 2 = Core, 3 = Advanced
+  "emoji": string,                                              // optional — one emoji
+  "color": string,                                              // optional — hex accent, e.g. "#5fd38a"
+  "tags": string[],                                             // optional — free-form labels
+  "isSTEM": boolean,                                            // optional — maths or science topic
+  "needsEquations": boolean,                                    // optional — writing relies on LaTeX maths
+  "needsGraphs": boolean,                                       // optional — writing refers to graphs
+  "objectives": string[],                                       // required — 2-4 measurable goals
+  "estimatedMinutes": number,                                   // required
+  "blocks": [ Block ],                                          // required — the lesson, in reading order
+  "questions": [ Question ],                                    // required — the checkpoint questions
+  "linkedDeckIds": string[]                                     // optional — always leave []
 }
-- Do not set "blocks" to null; always give an array, even if it only holds writing so far.`;
+
+BLOCK OBJECT — every entry in "blocks" uses this shape
+{
+  "type": "markdown" | "callout" | "example" | "image" | "checkpoint" | "divider" | "activity",  // required
+  "markdown": string,                                     // required for markdown, callout and example
+  "tone": "info" | "tip" | "warning" | "definition",     // callout only
+  "title": string,                                        // callout and example
+  "url": string,                                          // image only — a full image address
+  "alt": string,                                          // image only — what the image shows
+  "caption": string,                                      // image only
+  "questionId": string,                                   // checkpoint only — must match the "id" of a question below
+  "deckId": string                                        // activity only — leave empty, decks are linked inside the app
+}
+
+QUESTION OBJECT — every entry in "questions" uses this shape
+${QUESTION_SCHEMA_TEXT}
+
+TUTOR NOTES — pre-written inside every question
+${TUTOR_RULES}
+
+FULL SAMPLE — a complete module
+${SAMPLE_NOTE}
+${SAMPLE_MODULE_JSON}`;
 }

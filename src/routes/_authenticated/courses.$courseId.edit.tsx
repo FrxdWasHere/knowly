@@ -534,7 +534,7 @@ function LessonEditor({
   const setBlocks = (blocks: CourseBlock[]) => onChange({ blocks });
 
   return (
-    <div className="rounded-xl border border-border bg-surface2/40">
+    <div className="rounded-xl border border-border bg-surface-2/40">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}

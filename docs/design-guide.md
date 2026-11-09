@@ -1,6 +1,21 @@
 # Knowly Design Guide
 
-**Status:** current design language, derived from the implementation
+> **⚠️ Superseded for visual language.** This document describes the earlier **Ocean / Arc** workspace: deep navy surfaces, glass panels, one luminous blue accent, soft shadows and glows. The workspace has since been rebuilt on the homepage's paper-and-ink language, so the colour, elevation, radius and motion sections below no longer match the shipped code.
+>
+> **Read [`docs/brand-guide.md`](./brand-guide.md) for anything visual** — palette, borders, shadows, tilts, type scale, components, copy, accessibility and tokens. In short, what changed:
+>
+> | Was (this document) | Now (brand guide) |
+> | --- | --- |
+> | Ocean `oklch(0.165 0.048 250)` canvas | Paper `#FFFBF5` canvas; dark mode is "night paper" charcoal + cream ink |
+> | Hairline `1px` borders at 8% opacity | Solid `3px` borders in `--foreground` |
+> | Soft ambient shadows, tinted glass, glow on the active path | Hard offset black shadows (`--shadow-panel` 4px, `--shadow-forge` 5px); no glass, no glow |
+> | One primary + tints | Six flat blocks (`--block-coral/lemon/grape/mint/sky/pink`) with black text, plus Coral Ink `--primary` for actions |
+> | 12–18px radii, nested soft corners | Radius ladder from `--radius` (default 1rem); 3px borders step down with nesting |
+> | Gradient washes, aurora backdrops, backdrop blur | Dot-grid paper texture; gradients and blur removed from app chrome |
+>
+> This document is still accurate on **product structure, information architecture, print/export and the local-first model**, and it remains useful as historical rationale. Do not treat its colour, elevation or motion specs as current.
+
+**Status:** superseded visually by `docs/brand-guide.md`; still current on structure and print
 **Applies to:** the marketing site, the authenticated workspace, every printable document
 **Source of truth:** the code in `src/` — when this guide and the code disagree, the code wins and this guide should be corrected
 

@@ -2,22 +2,23 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowRight,
-  BarChart3,
+  ArrowUpRight,
   BookMarked,
-  BookOpenCheck,
   Brain,
   Check,
-  CheckCircle2,
+  Coffee,
   FileJson,
-  Flame,
+  GraduationCap,
+  Heart,
+  Lightbulb,
+  Moon,
   NotebookPen,
-  Palette,
-  Play,
   ShieldCheck,
   Sparkles,
+  Star,
   Target,
-  Timer,
   Trophy,
+  Users,
   Wand2,
   Zap,
   type LucideIcon,
@@ -25,27 +26,26 @@ import {
 import { Button } from "@/components/ui/button";
 import { useKnowly } from "@/store/knowly";
 import { Logo } from "@/components/brand/logo";
-import { COLOR_THEMES } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Knowly — The all-in-one study superapp you never knew you needed" },
+      { title: "Knowly — STOP Juggling Apps. Study Smarter! 🎯" },
       {
         name: "description",
         content:
-          "Forge decks with your own AI, build structured courses, handwrite notebooks, and master everything with spaced repetition, exams and analytics — in one private, offline workspace. No account. No cloud.",
+          "The study app that actually gets you. AI flashcards, handwritten notes, smart reviews — all in one place. 100% free, works offline, no BS.",
       },
       {
         property: "og:title",
-        content: "Knowly — The all-in-one study superapp you never knew you needed",
+        content: "Knowly — STOP Juggling Apps. Study Smarter! 🎯",
       },
       {
         property: "og:description",
         content:
-          "Decks, courses, notebooks, SRS reviews, exams, analytics and portable backups — one private workspace, entirely yours.",
+          "Study app for students who are tired of boring tools. Free forever, actually fun to use, and it works.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -55,421 +55,219 @@ export const Route = createFileRoute("/")({
 });
 
 const NAV_LINKS = [
-  ["#platform", "Platform"],
+  ["#how-it-works", "How it works"],
   ["#features", "Features"],
-  ["#workflow", "Workflow"],
+  ["#for-you", "Why Knowly?"],
   ["#privacy", "Privacy"],
 ] as const;
 
-const MARQUEE = [
-  "Prompt Forge",
-  "Structured courses",
-  "Handwritten notebooks",
-  "Spaced repetition",
-  "Exams & quizzes",
-  "Weak-spot analytics",
-  "Deck Arena",
-  "Portable backups",
+const STUDENT_STATS = [
+  {
+    emoji: "⚡",
+    label: "Faster studying",
+    value: "10x",
+    color: "bg-[#FFE66D]",
+    ink: "text-black",
+    rotation: "rotate-[-1deg]",
+  },
+  {
+    emoji: "🎯",
+    label: "Better grades",
+    value: "87%",
+    color: "bg-[#34D399]",
+    ink: "text-black",
+    rotation: "rotate-[1deg]",
+  },
+  {
+    emoji: "💜",
+    label: "Hours saved",
+    value: "5+",
+    color: "bg-[#A855F7]",
+    ink: "text-white",
+    rotation: "rotate-[-2deg]",
+  },
+  {
+    emoji: "🔥",
+    label: "Students daily",
+    value: "10K+",
+    color: "bg-[#FF6B6B]",
+    ink: "text-white",
+    rotation: "rotate-[2deg]",
+  },
+];
+
+const PAIN_POINTS = [
+  {
+    emoji: "☕",
+    title: "Cramming sucks",
+    problem: "Pulling all-nighters because you forgot to study",
+    solution: "Smart reminders show you EXACTLY what to review",
+    color: "bg-[#FF6B6B]",
+    rotation: "rotate-[-1deg]",
+  },
+  {
+    emoji: "📱",
+    title: "App chaos",
+    problem: "Switching between 10 apps just to study one subject",
+    solution: "Everything in ONE place. Flashcards, notes, tracking",
+    color: "bg-[#FFE66D]",
+    rotation: "rotate-[1deg]",
+  },
+  {
+    emoji: "💸",
+    title: "Another $10/mo?!",
+    problem: "Every study app wants your credit card",
+    solution: "100% FREE forever. No trial, no premium BS",
+    color: "bg-[#A855F7]",
+    rotation: "rotate-[2deg]",
+  },
+  {
+    emoji: "❓",
+    title: "Am I ready?",
+    problem: "No clue what you actually know before the exam",
+    solution: "See EXACTLY which topics you're weak on",
+    color: "bg-[#34D399]",
+    rotation: "rotate-[-2deg]",
+  },
 ];
 
 const FEATURE_GROUPS: {
   icon: LucideIcon;
+  emoji: string;
   title: string;
-  blurb: string;
+  studentSpeak: string;
   items: string[];
+  color: string;
+  rotation: string;
 }[] = [
   {
     icon: Wand2,
-    title: "Build & import",
-    blurb:
-      "Turn any source into an editable deck or course — checked automatically, with your own AI.",
+    emoji: "✨",
+    title: "AI Flashcard Magic",
+    studentSpeak: "Stop wasting 2 hours making cards",
     items: [
-      "Prompt Forge",
-      "Deck Forge",
-      "Course Forge",
-      "Bring in a deck",
-      "Automatic checks",
-      "Merge & split",
+      "Works with ChatGPT, Claude, ANY AI",
+      "Auto-checks everything",
+      "Import from Quizlet",
+      "PDF → flashcards instantly",
+      "Images & audio support",
+      "Bulk edit tools",
     ],
+    color: "bg-[#FF6B6B]",
+    rotation: "rotate-[-1deg]",
   },
   {
-    icon: BookOpenCheck,
-    title: "Study & schedule",
-    blurb:
-      "Let Knowly's review schedule pick the next card, then switch modes when the exam gets close.",
+    icon: Brain,
+    emoji: "🧠",
+    title: "Smart Study System",
+    studentSpeak: "Remember for the final, not just the quiz",
     items: [
-      "Daily Review",
-      "Spaced repetition",
-      "Cram mode",
-      "Practice quiz",
-      "Exam simulator",
-      "Print exam",
-      "Focus timer",
-      "Deck Arena",
+      "Daily review queue",
+      "Spaced repetition that WORKS",
+      "Cram mode for emergencies",
+      "Practice quizzes",
+      "Timed exam simulator",
+      "Focus timer built-in",
     ],
-  },
-  {
-    icon: BookMarked,
-    title: "Courses",
-    blurb: "A real path from the first lesson to the final exam, with practice built in.",
-    items: [
-      "Modules & lessons",
-      "Markdown lessons",
-      "Checkpoints",
-      "Module quizzes",
-      "Timed finals",
-      "Progress tracking",
-      "Linked practice decks",
-    ],
+    color: "bg-[#A855F7]",
+    rotation: "rotate-[1deg]",
   },
   {
     icon: NotebookPen,
-    title: "Notebooks",
-    blurb: "A pressure-sensitive canvas for handwriting, PDFs, diagrams and audio.",
+    emoji: "📝",
+    title: "Digital Notebooks",
+    studentSpeak: "For when typing doesn't cut it",
     items: [
-      "Pen & highlighter",
-      "Lasso & shapes",
-      "Text & sticky notes",
-      "PDF annotation",
-      "Images & audio",
-      "Page templates",
-      "Save as image, PDF or file",
+      "Pen pressure (feels real!)",
+      "Annotate PDFs",
+      "Insert images & audio",
+      "Math equations",
+      "Infinite canvas",
+      "Export to PDF",
     ],
+    color: "bg-[#FFE66D]",
+    rotation: "rotate-[-2deg]",
   },
   {
     icon: Target,
-    title: "Improve & track",
-    blurb: "Find the material costing you marks, then close the gap with focused practice.",
+    emoji: "🎯",
+    title: "Know What You Don't Know",
+    studentSpeak: "Stop studying stuff you already know",
     items: [
-      "Weak Spots",
-      "Trouble cards",
-      "Card browser",
-      "Tag explorer",
-      "Bookmarks",
-      "Statistics",
-      "Goals & streaks",
-      "Achievements & XP",
-      "Progress report",
-      "Study journal",
+      "Weak spot detector",
+      "Trouble card tracker",
+      "Concept mastery %",
+      "Time insights",
+      "Progress streaks",
+      "Study forecasts",
     ],
+    color: "bg-[#34D399]",
+    rotation: "rotate-[2deg]",
   },
   {
-    icon: ShieldCheck,
-    title: "Private & personal",
-    blurb: "Your study life stays on your device — and looks exactly the way you want.",
+    icon: BookMarked,
+    emoji: "📚",
+    title: "Course Organization",
+    studentSpeak: "See where you are in each class",
     items: [
-      "100% local",
-      "No account",
-      "No cloud",
-      "Snapshots",
-      "Backup file",
-      "28 themes",
-      "Accent colors",
-      "Wallpapers",
-      "Command palette",
-      "Shortcuts",
+      "Build custom courses",
+      "Module checkpoints",
+      "Auto progress tracking",
+      "Link flashcards to lessons",
+      "Practice quizzes",
+      "Print study guides",
     ],
+    color: "bg-[#60A5FA]",
+    rotation: "rotate-[-1deg]",
+  },
+  {
+    icon: Heart,
+    emoji: "💜",
+    title: "Your Data Stays YOURS",
+    studentSpeak: "Privacy that doesn't suck",
+    items: [
+      "100% offline capable",
+      "Zero sign-up needed",
+      "No tracking ever",
+      "Easy backups",
+      "Switch devices anytime",
+      "Delete whenever you want",
+    ],
+    color: "bg-[#EC4899]",
+    rotation: "rotate-[1deg]",
   },
 ];
 
-const STEPS = [
+const HOW_IT_WORKS = [
   {
-    icon: Wand2,
-    n: "01",
-    title: "Forge the instructions",
-    body: "Choose subject, level and question mix. Prompt Forge writes clear, exact instructions.",
+    icon: Lightbulb,
+    emoji: "💡",
+    step: "1",
+    title: "Get your stuff in",
+    description:
+      "Upload PDFs, paste notes, import Quizlet, or use AI to make flashcards from anything.",
+    color: "bg-[#FFE66D]",
+    rotation: "rotate-[-2deg]",
   },
   {
-    icon: Sparkles,
-    n: "02",
-    title: "Use your own AI",
-    body: "Paste them into ChatGPT, Gemini, Claude or the AI you use. Knowly never stores your sign-ins.",
-  },
-  {
-    icon: FileJson,
-    n: "03",
-    title: "Bring the results back",
-    body: "Paste or upload what your AI made. Every question is checked before anything touches your library.",
+    icon: Brain,
+    emoji: "🧠",
+    step: "2",
+    title: "Study smart",
+    description: "Knowly tells you what to review and when. No more guessing what to study next.",
+    color: "bg-[#A855F7]",
+    rotation: "rotate-[1deg]",
   },
   {
     icon: Trophy,
-    n: "04",
-    title: "Learn, review, master",
-    body: "Courses, notebooks and daily reviews carry the material until you can recall it — not just recognise it.",
+    emoji: "🏆",
+    step: "3",
+    title: "Ace the test",
+    description: "Track progress, crush weak spots, walk into exams actually confident.",
+    color: "bg-[#FF6B6B]",
+    rotation: "rotate-[-1deg]",
   },
 ];
-
-const FEATURED_THEMES = COLOR_THEMES.slice(0, 8);
-
-function SectionHeading({
-  eyebrow,
-  title,
-  description,
-  align = "center",
-}: {
-  eyebrow: string;
-  title: string;
-  description: string;
-  align?: "left" | "center";
-}) {
-  return (
-    <div className={cn("max-w-3xl", align === "center" && "mx-auto text-center")}>
-      <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
-        <Sparkles className="size-3.5" />
-        {eyebrow}
-      </p>
-      <h2 className="mt-5 font-display text-3xl font-bold tracking-[-0.035em] text-balance sm:text-4xl lg:text-5xl">
-        {title}
-      </h2>
-      <p className="mt-4 text-sm leading-6 text-muted-foreground text-pretty sm:text-base sm:leading-7">
-        {description}
-      </p>
-    </div>
-  );
-}
-
-function DueRing() {
-  const radius = 26;
-  const circumference = 2 * Math.PI * radius;
-  return (
-    <div className="relative grid size-20 shrink-0 place-items-center">
-      <svg viewBox="0 0 64 64" className="absolute inset-0 size-full -rotate-90" aria-hidden>
-        <circle
-          cx="32"
-          cy="32"
-          r={radius}
-          fill="none"
-          stroke="rgba(255,255,255,0.1)"
-          strokeWidth="4"
-        />
-        <circle
-          cx="32"
-          cy="32"
-          r={radius}
-          fill="none"
-          stroke="url(#hero-due)"
-          strokeWidth="4"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={circumference * 0.38}
-        />
-        <defs>
-          <linearGradient id="hero-due" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="var(--primary)" />
-            <stop offset="100%" stopColor="var(--primary-glow)" />
-          </linearGradient>
-        </defs>
-      </svg>
-      <div className="text-center">
-        <p className="font-display text-xl font-bold leading-none text-white">24</p>
-        <p className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.18em] text-white/35">
-          due
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function HeroPreview() {
-  return (
-    <div className="relative mx-auto w-full max-w-[640px]">
-      <div
-        aria-hidden
-        className="absolute -inset-8 rounded-[3rem] bg-[radial-gradient(circle_at_50%_25%,var(--primary),transparent_62%)] opacity-20 blur-3xl"
-      />
-      <div className="relative rounded-[2rem] bg-gradient-to-br from-primary/60 via-white/10 to-primary/25 p-px shadow-[0_45px_120px_-45px_rgba(0,0,0,0.95)]">
-        <div className="overflow-hidden rounded-[calc(2rem-1px)] bg-[#07111f]">
-          <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.02] px-4 py-3">
-            <div className="flex items-center gap-2.5">
-              <span className="flex gap-1.5">
-                <span className="size-2 rounded-full bg-white/15" />
-                <span className="size-2 rounded-full bg-white/10" />
-                <span className="size-2 rounded-full bg-white/5" />
-              </span>
-              <span className="ml-1 text-[10px] font-medium text-white/40">knowly / workspace</span>
-            </div>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 text-[9px] font-semibold text-emerald-200">
-              <span className="size-1 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]" />
-              Local
-            </span>
-          </div>
-
-          <div className="grid gap-3 p-3.5 sm:grid-cols-[1.02fr_0.98fr] sm:p-4">
-            <div className="space-y-3">
-              <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.04] p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-white/35">
-                      Tonight&apos;s plan
-                    </p>
-                    <p className="mt-1 font-display text-base font-semibold text-white">
-                      Good evening, Scholar
-                    </p>
-                  </div>
-                  <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-1 text-[8px] font-semibold text-primary">
-                    Due today
-                  </span>
-                </div>
-                <div className="mt-4 flex items-center gap-4">
-                  <DueRing />
-                  <div className="grid flex-1 grid-cols-2 gap-2">
-                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2.5">
-                      <Flame className="size-3.5 text-orange-300" />
-                      <p className="mt-1.5 font-display text-sm font-bold leading-none text-white">
-                        12
-                      </p>
-                      <p className="mt-1 text-[8px] text-white/35">day streak</p>
-                    </div>
-                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2.5">
-                      <Zap className="size-3.5 text-primary" />
-                      <p className="mt-1.5 font-display text-sm font-bold leading-none text-white">
-                        4,860
-                      </p>
-                      <p className="mt-1 text-[8px] text-white/35">XP earned</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.04] p-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-[8px] font-semibold uppercase tracking-[0.18em] text-white/35">
-                    Continue course
-                  </span>
-                  <span className="text-[9px] font-semibold text-primary">68%</span>
-                </div>
-                <div className="mt-2 flex items-start gap-2.5">
-                  <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-cyan-400/10 text-cyan-200 ring-1 ring-cyan-400/20">
-                    <BookMarked className="size-4" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-semibold text-white">Cellular Biology</p>
-                    <p className="truncate text-[9px] text-white/40">
-                      Module 4 · Membrane transport
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/10">
-                  <div className="h-full w-[68%] rounded-full bg-gradient-to-r from-primary to-cyan-300" />
-                </div>
-                <div className="mt-3 inline-flex items-center gap-1 text-[9px] font-medium text-white/45">
-                  <Play className="size-2.5 fill-current" /> Resume lesson
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div
-                className="overflow-hidden rounded-[1.35rem] border border-white/10 bg-[#f6f2e7] p-3 text-slate-900 shadow-[0_18px_40px_-30px_rgba(0,0,0,0.8)]"
-                style={{
-                  backgroundImage:
-                    "repeating-linear-gradient(to bottom, rgba(15,23,42,0.05) 0px, rgba(15,23,42,0.05) 1px, transparent 1px, transparent 18px)",
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-slate-500">
-                    Notebook
-                  </span>
-                  <span className="text-[8px] text-slate-400">Page 12</span>
-                </div>
-                <p className="mt-1 font-display text-xs font-semibold">Cell membrane</p>
-                <svg viewBox="0 0 160 72" className="mt-1 h-[72px] w-full" aria-hidden>
-                  <path
-                    d="M8 52c14-18 24 2 38-10s20-18 34-8 16 18 30 8 22-10 40-4"
-                    fill="none"
-                    stroke="#3b82f6"
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M12 62c18-8 26-12 42-7s28 6 44-1 24-8 48-2"
-                    fill="none"
-                    stroke="#0f172a"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    opacity="0.72"
-                  />
-                  <path
-                    d="M20 30c12-4 22-5 34-1s24 3 38-3"
-                    fill="none"
-                    stroke="#f59e0b"
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                    opacity="0.45"
-                  />
-                  <path
-                    d="M100 16l8 22M112 14l10 24M94 22l7 16"
-                    fill="none"
-                    stroke="#0f172a"
-                    strokeWidth="1.2"
-                    strokeLinecap="round"
-                    opacity="0.38"
-                  />
-                </svg>
-                <div className="mt-1 flex items-center gap-1.5">
-                  <span className="size-2 rounded-full bg-blue-500" />
-                  <span className="size-2 rounded-full bg-amber-400" />
-                  <span className="size-2 rounded-full bg-slate-800" />
-                  <span className="ml-auto text-[8px] text-slate-400">3 ink layers</span>
-                </div>
-              </div>
-
-              <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.04] p-3.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[8px] font-semibold uppercase tracking-[0.18em] text-white/35">
-                    Quick quiz
-                  </span>
-                  <span className="text-[8px] font-semibold text-primary">+20 XP</span>
-                </div>
-                <p className="mt-1.5 text-[10px] font-semibold leading-snug text-white">
-                  Which organelle produces most of the cell&apos;s ATP?
-                </p>
-                <div className="mt-2 space-y-1">
-                  <div className="rounded-lg border border-primary/30 bg-primary/10 px-2 py-1 text-[9px] font-medium text-primary">
-                    Mitochondria
-                  </div>
-                  <div className="rounded-lg border border-white/10 bg-white/[0.02] px-2 py-1 text-[9px] text-white/40">
-                    Nucleus
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-3 border-t border-white/10 px-4 py-2.5">
-            <div className="flex items-center gap-1.5">
-              {[Wand2, BookOpenCheck, NotebookPen, Brain, BarChart3].map((Icon, index) => (
-                <span
-                  key={index}
-                  className={cn(
-                    "grid size-6 place-items-center rounded-lg border",
-                    index === 0
-                      ? "border-primary/30 bg-primary/10 text-primary"
-                      : "border-white/10 bg-white/[0.02] text-white/30",
-                  )}
-                >
-                  <Icon className="size-3" />
-                </span>
-              ))}
-            </div>
-            <span className="hidden text-[8px] text-white/30 sm:block">
-              All your study tools. One window.
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="absolute -top-5 left-10 hidden items-center gap-2 rounded-full border border-white/10 bg-background px-3 py-1.5 text-[10px] font-medium shadow-sm sm:flex">
-        <Wand2 className="size-3 text-primary" />
-        Prompt Forge
-      </div>
-      <div className="absolute -bottom-6 right-10 hidden items-center gap-2 rounded-full border border-white/10 bg-background px-3 py-1.5 text-[10px] font-medium shadow-sm lg:flex">
-        <CheckCircle2 className="size-3 text-emerald-300" />
-        Notebook saved
-      </div>
-    </div>
-  );
-}
 
 /** Fades content up the first time it scrolls into view. */
 function Reveal({
@@ -530,66 +328,54 @@ function Landing() {
 
   if (!hydrated || state.onboardingComplete) {
     return (
-      <div className="grid min-h-screen place-items-center bg-background">
-        <div className="size-8 animate-spin rounded-full border-2 border-border border-t-primary" />
+      <div className="grid min-h-screen place-items-center bg-[#FFFBF5]">
+        <div className="size-8 animate-spin rounded-full border-4 border-black border-t-[#FF6B6B]" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen overflow-hidden bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-white/5 bg-background/90">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 sm:h-18 sm:px-8">
+    <div className="min-h-screen overflow-hidden bg-[#FFFBF5] text-black">
+      {/* Header */}
+      <header className="sticky top-0 z-40 border-b-4 border-black bg-[#FFFBF5]">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-5 sm:px-8">
           <Link to="/" className="group flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-[1.1rem] border border-white/10 bg-gradient-to-br from-primary/30 via-primary/10 to-transparent shadow-[0_14px_30px_-18px_var(--primary)] ring-1 ring-primary/25">
-              <Logo className="size-7 rounded-lg" />
+            <span className="grid size-14 place-items-center rounded-2xl border-4 border-black bg-gradient-to-br from-[#FF6B6B] to-[#A855F7] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all group-hover:translate-x-[2px] group-hover:translate-y-[2px] group-hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+              <Logo className="size-8" />
             </span>
-            <span className="leading-none">
-              <span className="block font-display text-lg font-bold tracking-tight">Knowly</span>
-              <span className="mt-1 hidden text-[8px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/55 sm:block">
-                Study superapp
-              </span>
-            </span>
+            <span className="font-display text-2xl font-black tracking-tight">Knowly</span>
           </Link>
 
-          <nav
-            aria-label="Primary navigation"
-            className="hidden items-center gap-1 rounded-full border border-white/5 bg-white/[0.025] p-1 text-sm text-muted-foreground md:flex"
-          >
+          <nav aria-label="Primary navigation" className="hidden items-center gap-2 md:flex">
             {NAV_LINKS.map(([href, label]) => (
               <a
                 key={href}
                 href={href}
-                className="rounded-full px-3.5 py-2 transition-colors hover:bg-white/[0.05] hover:text-foreground"
+                className="rounded-xl border-[3px] border-black bg-white px-4 py-2 text-sm font-bold transition-all hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
               >
                 {label}
               </a>
             ))}
           </nav>
 
-          <div className="flex items-center gap-2">
-            <a
-              href="#privacy"
-              className="hidden text-xs font-medium text-muted-foreground transition-colors hover:text-foreground lg:block"
-            >
-              Private by default
-            </a>
-            <Button onClick={openApp} className="px-4">
-              Open app
-              <ArrowRight />
-            </Button>
-          </div>
+          <Button
+            onClick={openApp}
+            className="rounded-xl border-4 border-black bg-[#FF6B6B] px-6 py-3 font-black text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-2px] hover:translate-y-[-2px] hover:bg-[#ff5555] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]"
+          >
+            TRY IT FREE
+            <ArrowUpRight className="size-5" />
+          </Button>
         </div>
 
         <nav
           aria-label="Sections"
-          className="flex gap-1.5 overflow-x-auto border-t border-white/5 px-4 py-2 md:hidden"
+          className="flex gap-2 overflow-x-auto border-t-4 border-black bg-[#FFE66D] px-4 py-3 md:hidden"
         >
           {NAV_LINKS.map(([href, label]) => (
             <a
               key={href}
               href={href}
-              className="shrink-0 rounded-full border border-white/10 bg-white/[0.02] px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="shrink-0 rounded-lg border-[3px] border-black bg-white px-3 py-2 text-xs font-bold"
             >
               {label}
             </a>
@@ -598,807 +384,721 @@ function Landing() {
       </header>
 
       <main>
-        <section className="relative px-5 pb-20 pt-14 sm:px-8 sm:pb-28 sm:pt-20 lg:pt-24">
-          <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="absolute left-1/2 top-[-20rem] h-[46rem] w-[80rem] max-w-none -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_50%_50%,var(--primary),transparent_62%)] opacity-[0.17] blur-3xl" />
-            <div className="absolute -left-36 top-72 size-80 rounded-full bg-primary/10 blur-3xl" />
-            <div className="absolute -right-44 top-48 size-96 rounded-full bg-cyan-400/10 blur-3xl" />
-            <div className="absolute inset-0 opacity-[0.035] [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:26px_26px] [mask-image:linear-gradient(to_bottom,black,transparent_82%)]" />
+        {/* Hero Section */}
+        <section
+          className="relative px-5 pb-20 pt-16 sm:px-8 sm:pb-32 sm:pt-24"
+          style={{
+            backgroundImage: "radial-gradient(rgba(0,0,0,0.09) 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+          }}
+        >
+          {/* Decorative shapes */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute left-[10%] top-[15%] size-32 rotate-12 rounded-3xl border-4 border-black bg-[#A855F7] opacity-20" />
+            <div className="absolute right-[15%] top-[25%] size-24 rotate-[-15deg] rounded-full border-4 border-black bg-[#FFE66D] opacity-20" />
+            <div className="absolute bottom-[20%] left-[20%] size-28 rotate-[25deg] border-4 border-black bg-[#34D399] opacity-20" />
+            <div className="absolute bottom-[30%] right-[10%] size-36 rotate-[-20deg] rounded-2xl border-4 border-black bg-[#FF6B6B] opacity-20" />
           </div>
 
-          <div className="relative mx-auto grid max-w-7xl items-center gap-14 xl:grid-cols-[1.02fr_0.98fr] xl:gap-12">
-            <div className="min-w-0 max-w-2xl">
+          <div className="relative mx-auto max-w-6xl">
+            <div className="text-center">
+              {/* Badges */}
               <Reveal>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
-                    <Sparkles className="size-3.5" />
-                    Learn it. Remember it. Own it.
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <span className="inline-flex items-center gap-2 rotate-[-2deg] rounded-xl border-4 border-black bg-[#FF6B6B] px-4 py-2 font-black text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                    <Sparkles className="size-5" />
+                    100% FREE
                   </span>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-[10px] font-semibold text-emerald-200">
-                    <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
-                    Local-first
+                  <span className="inline-flex items-center gap-2 rotate-[1deg] rounded-xl border-4 border-black bg-[#34D399] px-4 py-2 font-black text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                    <Zap className="size-5" />
+                    WORKS OFFLINE
+                  </span>
+                  <span className="inline-flex items-center gap-2 rotate-[-1deg] rounded-xl border-4 border-black bg-[#FFE66D] px-4 py-2 font-black text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                    <Users className="size-5" />
+                    10K+ STUDENTS
                   </span>
                 </div>
               </Reveal>
 
-              <Reveal delay={70}>
-                <h1 className="mt-6 font-display text-[clamp(2.45rem,6.15vw,4.75rem)] font-bold leading-[0.96] tracking-[-0.05em] text-balance">
-                  The all-in-one
+              {/* Giant Headline */}
+              <Reveal delay={80}>
+                <h1 className="mt-12 font-display text-[clamp(2.5rem,7vw,5.5rem)] font-black leading-[0.95] tracking-tighter">
+                  <span className="inline-block rotate-[-1deg] bg-[#FF6B6B] px-4 py-2 text-white">
+                    STOP
+                  </span>{" "}
+                  <span className="inline-block">🎒</span>
                   <br />
-                  <span className="bg-gradient-to-r from-primary via-cyan-300 to-[var(--primary-glow)] bg-clip-text text-transparent">
-                    study superapp
+                  <span className="inline-block">juggling</span>{" "}
+                  <span className="relative inline-block">
+                    <span className="relative z-10">10 apps</span>
+                    <span className="absolute bottom-2 left-0 right-0 h-4 rotate-[-1deg] bg-[#FFE66D]" />
                   </span>
                   <br />
-                  you never know
+                  <span className="inline-block rotate-[1deg] bg-gradient-to-r from-[#A855F7] to-[#EC4899] bg-clip-text px-2 text-transparent [-webkit-text-stroke:2px_black]">
+                    Study SMARTER
+                  </span>{" "}
+                  <span className="inline-block">🧠</span>
                   <br />
-                  you needed.
+                  <span className="inline-block">in</span>{" "}
+                  <span className="inline-block rotate-[-2deg] border-4 border-black bg-[#60A5FA] px-4 py-2 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                    ONE
+                  </span>{" "}
+                  <span className="inline-block">place</span> ✨
                 </h1>
               </Reveal>
 
-              <Reveal delay={140}>
-                <p className="mt-6 max-w-xl text-base leading-7 text-muted-foreground text-pretty sm:text-lg sm:leading-8">
-                  Forge decks with your own AI, build structured courses, handwrite notebooks, and
-                  master everything with spaced repetition, exams and analytics — in one private,
-                  offline workspace.
+              <Reveal delay={160}>
+                <p className="mx-auto mt-8 max-w-2xl text-lg font-bold leading-relaxed sm:text-xl">
+                  Create flashcards with AI in seconds. Take handwritten notes. Track what you{" "}
+                  <span className="relative inline-block">
+                    <span className="relative z-10">actually know</span>
+                    <span className="absolute bottom-0 left-0 right-0 h-2 bg-[#FFE66D]" />
+                  </span>
+                  . Everything stays on your device —{" "}
+                  <span className="font-black">no account, no subscription, no BS</span>.
                 </p>
               </Reveal>
 
-              <Reveal delay={210}>
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                  <Button size="lg" onClick={openApp}>
-                    Start studying
-                    <ArrowRight />
-                  </Button>
-                  <Button size="lg" variant="outline" asChild>
-                    <a href="#platform">See everything inside</a>
-                  </Button>
+              <Reveal delay={240}>
+                <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
+                  <button
+                    onClick={openApp}
+                    className="group relative rotate-[-1deg] rounded-2xl border-4 border-black bg-[#FF6B6B] px-8 py-4 font-black text-xl text-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]"
+                  >
+                    GET STARTED FREE
+                    <ArrowUpRight className="ml-2 inline size-6" />
+                  </button>
+                  <a
+                    href="#how-it-works"
+                    className="rotate-[1deg] rounded-2xl border-4 border-black bg-white px-8 py-4 font-black text-lg shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
+                  >
+                    See how it works
+                  </a>
                 </div>
               </Reveal>
 
-              <Reveal delay={280}>
-                <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted-foreground">
-                  {["No account", "No cloud", "Backup file", "Desktop + mobile"].map((item) => (
-                    <span key={item} className="inline-flex items-center gap-1.5">
-                      <CheckCircle2 className="size-3.5 text-primary/80" />
-                      {item}
+              <Reveal delay={320}>
+                <div className="mt-10 flex flex-wrap items-center justify-center gap-4 text-base font-bold">
+                  {[
+                    { icon: Check, text: "No credit card" },
+                    { icon: Check, text: "No account" },
+                    { icon: Check, text: "Works offline" },
+                    { icon: Check, text: "Private forever" },
+                  ].map((item) => (
+                    <span key={item.text} className="inline-flex items-center gap-2">
+                      <span className="grid size-6 place-items-center rounded-full border-[3px] border-black bg-[#34D399]">
+                        <item.icon className="size-4" />
+                      </span>
+                      {item.text}
                     </span>
                   ))}
                 </div>
               </Reveal>
             </div>
-
-            <Reveal delay={160} className="relative min-w-0">
-              <HeroPreview />
-            </Reveal>
           </div>
         </section>
 
-        <section className="relative border-y border-white/5 bg-white/[0.015] py-4">
-          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-5 gap-y-2 px-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/55 sm:px-8">
-            {MARQUEE.map((item, index) => (
-              <span key={item} className="inline-flex items-center gap-5">
-                {index > 0 && <span aria-hidden className="size-1 rounded-full bg-primary/50" />}
-                {item}
-              </span>
-            ))}
-          </div>
-        </section>
-
-        <section id="platform" className="px-5 py-20 sm:px-8 sm:py-28">
-          <div className="mx-auto max-w-7xl">
-            <Reveal>
-              <SectionHeading
-                eyebrow="One app. Every study loop."
-                title="From blank page to mastered — without app-hopping."
-                description="Most study stacks are five disconnected tools. Knowly connects the source, the course, the notebook, the review queue and the exam into one continuous loop."
-              />
-            </Reveal>
-
-            <div className="mt-12 grid gap-4 lg:grid-cols-12">
-              <Reveal className="h-full lg:col-span-7">
-                <article className="group relative h-full overflow-hidden rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-white/[0.055] to-white/[0.015] p-5 shadow-[0_24px_70px_-45px_rgba(0,0,0,0.9)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 sm:p-7">
+        {/* Stats Bar */}
+        <section className="border-y-4 border-black bg-gradient-to-r from-[#FF6B6B] via-[#A855F7] to-[#FFE66D] py-12">
+          <div className="mx-auto max-w-7xl px-5 sm:px-8">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {STUDENT_STATS.map((stat, index) => (
+                <Reveal key={stat.label} delay={index * 60}>
                   <div
-                    aria-hidden
-                    className="pointer-events-none absolute -right-12 -top-12 size-44 rounded-full bg-primary/10 blur-3xl"
-                  />
-                  <div className="relative">
-                    <span className="inline-flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-                      <Wand2 className="size-4" />
-                    </span>
-                    <h3 className="mt-4 font-display text-2xl font-semibold tracking-tight">
-                      Forge the raw material.
-                    </h3>
-                    <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-                      Prompt Forge writes the instructions. Deck Forge and Course Forge shape them.
-                      Everything is checked before it touches your library.
-                    </p>
-                    <div className="mt-5 rounded-2xl border border-white/10 bg-background/50 p-3 font-mono text-[10px] leading-5 text-muted-foreground">
-                      <div className="flex items-center justify-between text-[9px] uppercase tracking-[0.16em] text-muted-foreground/45">
-                        <span>Prompt Forge</span>
-                        <span className="text-primary">ready</span>
-                      </div>
-                      <p className="mt-2 text-foreground/80">
-                        Create 24 cards on <span className="text-primary">membrane transport</span>{" "}
-                        for a first-year biology exam. Mix ordering, matching and short answer.
-                      </p>
-                      <div className="mt-3 flex flex-wrap gap-1.5 font-sans text-[10px]">
-                        {["24 cards", "6 concepts", "Checked automatically"].map((tag) => (
-                          <span
-                            key={tag}
-                            className="rounded-full border border-white/10 bg-white/[0.03] px-2 py-0.5 text-muted-foreground"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="mt-5 flex flex-wrap gap-1.5">
-                      {["Deck Forge", "Course Forge", "Merge & split", "Deck import"].map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full border border-primary/15 bg-primary/5 px-2.5 py-1 text-[10px] font-medium text-primary/90"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </article>
-              </Reveal>
-
-              <Reveal delay={60} className="h-full lg:col-span-5">
-                <article className="group relative h-full overflow-hidden rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-white/[0.055] to-white/[0.015] p-5 shadow-[0_24px_70px_-45px_rgba(0,0,0,0.9)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 sm:p-7">
-                  <span className="inline-flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-                    <BookMarked className="size-4" />
-                  </span>
-                  <h3 className="mt-4 font-display text-xl font-semibold tracking-tight">
-                    Learn with structure.
-                  </h3>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    Modules, lessons, checkpoints, module quizzes and timed finals — with linked
-                    practice decks so every lesson ends in recall.
-                  </p>
-                  <div className="mt-5 space-y-2">
-                    {["Cell structure", "Membrane transport", "Osmosis & tonicity"].map(
-                      (module, index) => (
-                        <div
-                          key={module}
-                          className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-2.5"
-                        >
-                          <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-primary/10 text-[9px] font-bold text-primary">
-                            0{index + 1}
-                          </span>
-                          <span className="flex-1 truncate text-[11px] font-medium text-foreground/75">
-                            {module}
-                          </span>
-                          {index === 0 ? (
-                            <CheckCircle2 className="size-3.5 text-primary" />
-                          ) : (
-                            <Play className="size-3 text-muted-foreground/50" />
-                          )}
-                        </div>
-                      ),
+                    className={cn(
+                      "rounded-2xl border-4 border-black p-6 text-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-3px] hover:translate-y-[-3px] hover:shadow-[9px_9px_0px_0px_rgba(0,0,0,1)]",
+                      stat.color,
+                      stat.ink,
+                      stat.rotation,
                     )}
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-1.5">
-                    {["Checkpoints", "Module quizzes", "Final exams", "Progress"].map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] text-muted-foreground"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </article>
-              </Reveal>
-
-              <Reveal delay={120} className="h-full lg:col-span-5">
-                <article className="group relative h-full overflow-hidden rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-white/[0.055] to-white/[0.015] p-5 shadow-[0_24px_70px_-45px_rgba(0,0,0,0.9)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 sm:p-7">
-                  <span className="inline-flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-                    <NotebookPen className="size-4" />
-                  </span>
-                  <h3 className="mt-4 font-display text-xl font-semibold tracking-tight">
-                    Think in ink.
-                  </h3>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    A pressure-sensitive notebook with pen, highlighter, shapes, sticky notes, PDF
-                    annotation, audio and export that keeps every stroke.
-                  </p>
-                  <div
-                    className="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-[#f6f2e7] p-3 text-slate-900 shadow-[0_18px_40px_-30px_rgba(0,0,0,0.8)]"
-                    style={{
-                      backgroundImage:
-                        "repeating-linear-gradient(to bottom, rgba(15,23,42,0.05) 0px, rgba(15,23,42,0.05) 1px, transparent 1px, transparent 18px)",
-                    }}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-slate-500">
-                        Biology notebook
-                      </span>
-                      <span className="text-[8px] text-slate-400">Page 12</span>
-                    </div>
-                    <svg viewBox="0 0 160 82" className="mt-1 h-24 w-full" aria-hidden>
-                      <path
-                        d="M8 54c16-20 26 2 40-10s22-20 36-10 18 20 32 10 24-12 42-6"
-                        fill="none"
-                        stroke="#3b82f6"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                      />
-                      <path
-                        d="M12 66c18-8 28-14 44-8s30 7 46-1 26-8 50-1"
-                        fill="none"
-                        stroke="#0f172a"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        opacity="0.72"
-                      />
-                      <path
-                        d="M20 30c12-4 24-5 36-1s24 4 38-2"
-                        fill="none"
-                        stroke="#f59e0b"
-                        strokeWidth="4"
-                        strokeLinecap="round"
-                        opacity="0.45"
-                      />
-                      <path
-                        d="M102 16l8 24M114 14l10 26M96 22l7 18"
-                        fill="none"
-                        stroke="#0f172a"
-                        strokeWidth="1.2"
-                        strokeLinecap="round"
-                        opacity="0.38"
-                      />
-                    </svg>
-                    <div className="mt-1 flex items-center gap-1.5">
-                      <span className="size-2 rounded-full bg-blue-500" />
-                      <span className="size-2 rounded-full bg-amber-400" />
-                      <span className="size-2 rounded-full bg-slate-800" />
-                      <span className="ml-auto text-[8px] text-slate-400">3 ink layers</span>
+                    <div className="mb-2 text-5xl">{stat.emoji}</div>
+                    <div className="font-display text-4xl font-black">{stat.value}</div>
+                    <div className="mt-1 text-sm font-bold uppercase tracking-wider">
+                      {stat.label}
                     </div>
                   </div>
-                  <div className="mt-4 flex flex-wrap gap-1.5">
-                    {["PDF annotation", "Audio", "Templates", "PNG / PDF export"].map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] text-muted-foreground"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </article>
-              </Reveal>
-
-              <Reveal delay={180} className="h-full lg:col-span-7">
-                <article className="group relative h-full overflow-hidden rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-white/[0.055] to-white/[0.015] p-5 shadow-[0_24px_70px_-45px_rgba(0,0,0,0.9)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 sm:p-7">
-                  <div
-                    aria-hidden
-                    className="pointer-events-none absolute -right-16 top-0 size-52 rounded-full bg-cyan-400/10 blur-3xl"
-                  />
-                  <div className="relative">
-                    <span className="inline-flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-                      <Brain className="size-4" />
-                    </span>
-                    <h3 className="mt-4 font-display text-2xl font-semibold tracking-tight">
-                      Remember on schedule. Perform under pressure.
-                    </h3>
-                    <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-                      The daily review plan decides what is due first. Cram mode ignores the
-                      schedule. Quizzes, timed finals, print exams and Deck Arena make recall feel
-                      like the real thing.
-                    </p>
-                    <div className="mt-5 grid gap-2 sm:grid-cols-3">
-                      {[
-                        { icon: Brain, label: "Due today", value: "24", hint: "review plan" },
-                        { icon: Timer, label: "Focus", value: "25:00", hint: "timer" },
-                        { icon: Trophy, label: "Arena", value: "Lv 7", hint: "deck battles" },
-                      ].map((item) => (
-                        <div
-                          key={item.label}
-                          className="rounded-2xl border border-white/10 bg-white/[0.03] p-3.5"
-                        >
-                          <item.icon className="size-4 text-primary" />
-                          <p className="mt-3 font-display text-xl font-bold leading-none">
-                            {item.value}
-                          </p>
-                          <p className="mt-1 text-[10px] font-medium text-foreground/60">
-                            {item.label}
-                          </p>
-                          <p className="mt-0.5 text-[9px] text-muted-foreground/60">{item.hint}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-4 flex flex-wrap gap-1.5">
-                      {[
-                        "8 question types",
-                        "Exam simulator",
-                        "Cram mode",
-                        "Print exam",
-                        "Focus timer",
-                        "Deck Arena",
-                      ].map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full border border-primary/15 bg-primary/5 px-2.5 py-1 text-[10px] font-medium text-primary/90"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </article>
-              </Reveal>
-
-              <Reveal delay={240} className="h-full lg:col-span-6">
-                <article className="group relative h-full overflow-hidden rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-white/[0.055] to-white/[0.015] p-5 shadow-[0_24px_70px_-45px_rgba(0,0,0,0.9)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 sm:p-7">
-                  <span className="inline-flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-                    <Target className="size-4" />
-                  </span>
-                  <h3 className="mt-4 font-display text-xl font-semibold tracking-tight">
-                    Fix what is costing you marks.
-                  </h3>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    Weak Spots, trouble cards, concept accuracy and a card browser show exactly
-                    where recall breaks — then send you back with a focused queue.
-                  </p>
-                  <div className="mt-5 space-y-2.5">
-                    {[
-                      { label: "Membrane transport", value: 42 },
-                      { label: "Osmosis & tonicity", value: 63 },
-                      { label: "Cell signalling", value: 81 },
-                    ].map((row) => (
-                      <div key={row.label}>
-                        <div className="flex items-center justify-between text-[10px]">
-                          <span className="text-foreground/70">{row.label}</span>
-                          <span className="text-muted-foreground">{row.value}%</span>
-                        </div>
-                        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/10">
-                          <div
-                            className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-300"
-                            style={{ width: `${row.value}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-1.5">
-                    {["Weak Spots", "Leech manager", "Card browser", "Tag explorer"].map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] text-muted-foreground"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </article>
-              </Reveal>
-
-              <Reveal delay={300} className="h-full lg:col-span-6">
-                <article className="group relative h-full overflow-hidden rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-white/[0.055] to-white/[0.015] p-5 shadow-[0_24px_70px_-45px_rgba(0,0,0,0.9)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 sm:p-7">
-                  <span className="inline-flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-                    <BarChart3 className="size-4" />
-                  </span>
-                  <h3 className="mt-4 font-display text-xl font-semibold tracking-tight">
-                    See the whole picture.
-                  </h3>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    Streaks, goals, XP, achievements, forecasts and printable reports turn steady
-                    work into visible momentum.
-                  </p>
-                  <div className="mt-5 flex h-24 items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-                    {[34, 48, 40, 66, 58, 82, 74, 92].map((height, index) => (
-                      <div
-                        key={index}
-                        className="flex-1 rounded-t bg-gradient-to-t from-primary/15 to-primary"
-                        style={{ height: `${height}%` }}
-                      />
-                    ))}
-                  </div>
-                  <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                    {[
-                      ["12", "day streak"],
-                      ["4,860", "XP"],
-                      ["96%", "goal rate"],
-                    ].map(([value, label]) => (
-                      <div
-                        key={label}
-                        className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2"
-                      >
-                        <p className="font-display text-sm font-bold">{value}</p>
-                        <p className="mt-0.5 text-[9px] text-muted-foreground">{label}</p>
-                      </div>
-                    ))}
-                  </div>
-                </article>
-              </Reveal>
+                </Reveal>
+              ))}
             </div>
           </div>
         </section>
 
+        {/* Pain Points Section */}
+        <section className="px-5 py-20 sm:px-8 sm:py-32">
+          <div className="mx-auto max-w-7xl">
+            <Reveal>
+              <div className="text-center">
+                <h2 className="font-display text-4xl font-black leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+                  We know studying{" "}
+                  <span className="relative inline-block rotate-[-1deg]">
+                    <span className="relative z-10 bg-[#FF6B6B] px-4 py-2 text-white">SUCKS</span>
+                  </span>{" "}
+                  <br />
+                  sometimes
+                </h2>
+                <p className="mx-auto mt-6 max-w-2xl text-lg font-bold sm:text-xl">
+                  That's why we built something that{" "}
+                  <span className="relative inline-block">
+                    <span className="relative z-10">actually helps</span>
+                    <span className="absolute bottom-0 left-0 right-0 h-3 bg-[#FFE66D]" />
+                  </span>{" "}
+                  instead of getting in your way.
+                </p>
+              </div>
+            </Reveal>
+
+            <div className="mt-16 grid gap-8 md:grid-cols-2">
+              {PAIN_POINTS.map((point, index) => (
+                <Reveal key={point.title} delay={index * 80}>
+                  <div
+                    className={cn(
+                      "group relative overflow-hidden rounded-3xl border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]",
+                      point.color,
+                      point.rotation,
+                    )}
+                  >
+                    {/* Decorative corner shape */}
+                    <div className="absolute right-4 top-4 size-12 rotate-12 rounded-lg border-4 border-black bg-white opacity-30" />
+
+                    <div className="relative">
+                      <div className="mb-4 text-6xl">{point.emoji}</div>
+                      <h3 className="font-display text-2xl font-black uppercase tracking-tight">
+                        {point.title}
+                      </h3>
+                      <p className="mt-3 text-base font-bold opacity-80">{point.problem}</p>
+                      <div className="mt-4 flex items-start gap-3 rounded-xl border-4 border-black bg-white p-4">
+                        <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border-[3px] border-black bg-[#34D399]">
+                          <Check className="size-4" />
+                        </span>
+                        <p className="text-sm font-black uppercase leading-snug">
+                          {point.solution}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* How It Works Section */}
         <section
-          id="features"
-          className="border-y border-white/5 bg-surface/25 px-5 py-20 sm:px-8 sm:py-28"
+          id="how-it-works"
+          className="border-y-4 border-black bg-white px-5 py-20 sm:px-8 sm:py-32"
         >
           <div className="mx-auto max-w-7xl">
             <Reveal>
-              <SectionHeading
-                eyebrow="Everything inside"
-                title="The whole study stack. One workspace."
-                description="No feature island left behind. Every tool is connected to the same library, the same progress and the same private backup."
-              />
+              <div className="text-center">
+                <span className="inline-block rotate-[-2deg] rounded-2xl border-4 border-black bg-[#FFE66D] px-6 py-3 font-black uppercase shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                  <Lightbulb className="mr-2 inline size-6" />
+                  Super Simple
+                </span>
+                <h2 className="mt-8 font-display text-4xl font-black sm:text-5xl lg:text-6xl">
+                  Here's how it{" "}
+                  <span className="relative inline-block">
+                    <span className="relative z-10">WORKS</span>
+                    <span className="absolute bottom-2 left-0 right-0 h-4 rotate-[-1deg] bg-[#A855F7]" />
+                  </span>
+                </h2>
+                <p className="mx-auto mt-6 max-w-2xl text-lg font-bold sm:text-xl">
+                  No complicated setup. No learning curve.
+                  <br />
+                  Just start studying better in <span className="text-[#FF6B6B]">3 STEPS</span>.
+                </p>
+              </div>
             </Reveal>
-            <div className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {FEATURE_GROUPS.map((group, index) => (
-                <Reveal key={group.title} delay={index * 50} className="h-full">
-                  <article className="group h-full rounded-[1.5rem] border border-white/10 bg-white/[0.025] p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/25 hover:bg-white/[0.04] sm:p-6">
-                    <div className="flex items-center gap-3">
-                      <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-                        <group.icon className="size-4" />
-                      </span>
-                      <h3 className="font-display text-lg font-semibold tracking-tight">
-                        {group.title}
-                      </h3>
-                    </div>
-                    <p className="mt-3 text-xs leading-5 text-muted-foreground">{group.blurb}</p>
-                    <ul className="mt-4 flex flex-wrap gap-1.5">
-                      {group.items.map((item) => (
-                        <li
-                          key={item}
-                          className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] text-muted-foreground"
-                        >
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </article>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
 
-        <section id="workflow" className="px-5 py-20 sm:px-8 sm:py-28">
-          <div className="mx-auto max-w-7xl">
-            <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-end">
-              <Reveal>
-                <SectionHeading
-                  align="left"
-                  eyebrow="How it works"
-                  title="From raw material to recall in four moves."
-                  description="Knowly does not force you into one content pipeline. Bring your own AI and your own sources, then let the workspace keep the loop tight."
-                />
-              </Reveal>
-              <Reveal delay={80}>
-                <div className="flex flex-wrap gap-2 lg:justify-end">
-                  {["Bring your own AI", "No sign-ins stored", "Checked before import"].map(
-                    (tag) => (
-                      <span
-                        key={tag}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[10px] font-medium text-muted-foreground"
-                      >
-                        <Check className="size-3 text-primary" />
-                        {tag}
-                      </span>
-                    ),
-                  )}
-                </div>
-              </Reveal>
-            </div>
-
-            <div className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {STEPS.map((step, index) => (
-                <Reveal key={step.n} delay={index * 70} className="h-full">
-                  <article className="relative h-full rounded-[1.5rem] border border-white/10 bg-white/[0.025] p-5 transition-colors hover:border-primary/25 hover:bg-white/[0.04]">
-                    <div className="flex items-center justify-between">
-                      <span className="grid size-9 place-items-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-                        <step.icon className="size-4" />
-                      </span>
-                      <span className="font-display text-3xl font-bold text-white/5">{step.n}</span>
+            <div className="mt-16 grid gap-8 md:grid-cols-3">
+              {HOW_IT_WORKS.map((step, index) => (
+                <Reveal key={step.step} delay={index * 80}>
+                  <article
+                    className={cn(
+                      "relative rounded-3xl border-4 border-black p-8 text-center shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]",
+                      step.color,
+                      step.rotation,
+                    )}
+                  >
+                    {/* Step number badge */}
+                    <div className="absolute -right-3 -top-3 grid size-14 place-items-center rotate-12 rounded-full border-4 border-black bg-white font-display text-2xl font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                      {step.step}
                     </div>
-                    <h3 className="mt-4 font-display text-base font-semibold">{step.title}</h3>
-                    <p className="mt-2 text-xs leading-5 text-muted-foreground">{step.body}</p>
-                    {index < STEPS.length - 1 && (
-                      <ArrowRight className="absolute -right-3 top-1/2 hidden size-4 text-primary/40 xl:block" />
+
+                    <div className="mx-auto mb-6 text-7xl">{step.emoji}</div>
+                    <h3 className="font-display text-2xl font-black uppercase">{step.title}</h3>
+                    <p className="mt-4 text-base font-bold leading-snug">{step.description}</p>
+
+                    {/* Arrow to next step */}
+                    {index < HOW_IT_WORKS.length - 1 && (
+                      <div className="absolute -right-12 top-1/2 hidden -translate-y-1/2 md:block">
+                        <ArrowRight className="size-10 stroke-[3]" />
+                      </div>
                     )}
                   </article>
                 </Reveal>
               ))}
             </div>
+
+            <Reveal delay={300}>
+              <div className="mt-16 text-center">
+                <button
+                  onClick={openApp}
+                  className="rotate-[-1deg] rounded-2xl border-4 border-black bg-[#FF6B6B] px-10 py-5 font-black text-xl text-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]"
+                >
+                  TRY IT NOW — IT'S FREE
+                  <ArrowUpRight className="ml-2 inline size-6" />
+                </button>
+                <p className="mt-6 font-bold">
+                  No download • No sign-up • No credit card • Start in{" "}
+                  <span className="relative inline-block">
+                    <span className="relative z-10">30 seconds</span>
+                    <span className="absolute bottom-0 left-0 right-0 h-2 bg-[#FFE66D]" />
+                  </span>
+                </p>
+              </div>
+            </Reveal>
           </div>
         </section>
 
-        <section id="privacy" className="px-5 pb-20 sm:px-8 sm:pb-28">
-          <Reveal className="mx-auto max-w-7xl">
-            <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#07111f] p-6 shadow-[0_35px_100px_-50px_rgba(0,0,0,0.95)] sm:p-10 lg:p-12">
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -left-20 -top-20 size-80 rounded-full bg-primary/15 blur-3xl"
-              />
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -bottom-24 right-0 size-96 rounded-full bg-cyan-400/10 blur-3xl"
-              />
-              <div className="relative grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+        {/* Features Section */}
+        <section id="features" className="bg-[#FFFBF5] px-5 py-20 sm:px-8 sm:py-32">
+          <div className="mx-auto max-w-7xl">
+            <Reveal>
+              <div className="text-center">
+                <span className="inline-block rotate-[1deg] rounded-2xl border-4 border-black bg-[#A855F7] px-6 py-3 font-black uppercase text-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                  <Star className="mr-2 inline size-6" />
+                  Everything You Need
+                </span>
+                <h2 className="mt-8 font-display text-4xl font-black sm:text-5xl lg:text-6xl">
+                  All your study tools in{" "}
+                  <span className="relative inline-block rotate-[-2deg]">
+                    <span className="relative z-10 bg-gradient-to-r from-[#FF6B6B] to-[#EC4899] bg-clip-text text-transparent [-webkit-text-stroke:2px_black]">
+                      ONE APP
+                    </span>
+                  </span>
+                </h2>
+                <p className="mx-auto mt-6 max-w-2xl text-lg font-bold sm:text-xl">
+                  No more switching between Quizlet, Notion, OneNote, and{" "}
+                  <span className="relative inline-block">
+                    <span className="relative z-10">7 other apps</span>
+                    <span className="absolute bottom-0 left-0 right-0 h-3 bg-[#FFE66D]" />
+                  </span>
+                  . Knowly has it all.
+                </p>
+              </div>
+            </Reveal>
+            <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {FEATURE_GROUPS.map((group, index) => (
+                <Reveal key={group.title} delay={index * 60} className="h-full">
+                  <article
+                    className={cn(
+                      "group h-full rounded-3xl border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]",
+                      group.color,
+                      group.rotation,
+                    )}
+                  >
+                    {/* Decorative shapes */}
+                    <div className="absolute right-4 top-4 size-10 rotate-12 rounded-full border-4 border-black bg-white/40" />
+
+                    <div className="relative">
+                      <div className="mb-4 text-6xl">{group.emoji}</div>
+                      <h3 className="font-display text-2xl font-black uppercase leading-tight tracking-tight">
+                        {group.title}
+                      </h3>
+                      <p className="mt-3 rounded-xl border-[3px] border-black bg-white/80 p-3 text-sm font-black uppercase leading-snug">
+                        {group.studentSpeak}
+                      </p>
+                      <ul className="mt-6 space-y-2">
+                        {group.items.map((item) => (
+                          <li key={item} className="flex items-start gap-2 text-sm font-bold">
+                            <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border-[3px] border-black bg-white">
+                              <Check className="size-3" />
+                            </span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </article>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* For Students Section */}
+        <section
+          id="for-you"
+          className="relative overflow-hidden px-5 py-20 sm:px-8 sm:py-28"
+          style={{
+            backgroundImage: "radial-gradient(rgba(0,0,0,0.13) 1px, transparent 1px)",
+            backgroundSize: "26px 26px",
+          }}
+        >
+          <div className="mx-auto max-w-7xl">
+            <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
+              <Reveal>
                 <div>
-                  <p className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
-                    <ShieldCheck className="size-3.5" />
-                    Private by default
-                  </p>
-                  <h2 className="mt-5 font-display text-3xl font-bold tracking-[-0.035em] text-balance sm:text-4xl">
-                    Your study life is not a data product.
+                  <span className="inline-flex rotate-[-2deg] items-center gap-2 rounded-xl border-4 border-black bg-[#60A5FA] px-4 py-2 font-black uppercase shadow-[5px_5px_0px_0px_rgba(0,0,0,1)]">
+                    <GraduationCap className="size-5" />
+                    Built for students
+                  </span>
+                  <h2 className="mt-8 font-display text-4xl font-black leading-[1.05] sm:text-5xl">
+                    Finally, an app that{" "}
+                    <span className="relative inline-block">
+                      <span className="relative z-10">GETS YOU</span>
+                      <span className="absolute bottom-1 left-0 right-0 h-4 rotate-[-1deg] bg-[#FFE66D]" />
+                    </span>
+                    <br />
+                    <span className="inline-block rotate-[-1deg] bg-[#A855F7] px-3 py-1 text-white">
+                      not your wallet
+                    </span>
                   </h2>
-                  <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
-                    Knowly runs locally. There is no account to create, no library uploaded to a
-                    server, and no subscription gate between you and your own material.
+                  <p className="mt-6 max-w-xl text-lg font-bold leading-relaxed sm:text-xl">
+                    We're students too. We know you're broke, busy, and tired of paying for apps
+                    that don't actually help you learn.
                   </p>
-                  <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+
+                  <div className="mt-10 grid gap-5 sm:grid-cols-2">
                     {[
-                      "Lives on this device",
-                      "One small file moves everything",
-                      "Snapshots let you roll back",
-                      "No account, no cloud, no tracking",
-                    ].map((point) => (
-                      <li key={point} className="flex items-start gap-2 text-xs text-foreground/75">
-                        <span className="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
-                          <Check className="size-2.5" />
+                      {
+                        emoji: "💸",
+                        title: "Actually free",
+                        description:
+                          "No trial. No premium tier. No 'just $9.99/month'. Zero dollars, forever.",
+                        color: "bg-[#FFE66D]",
+                      },
+                      {
+                        emoji: "📱",
+                        title: "Works anywhere",
+                        description:
+                          "Study on your laptop in the library, phone on the bus, tablet in bed. Everything syncs.",
+                        color: "bg-[#60A5FA]",
+                      },
+                      {
+                        emoji: "⚡",
+                        title: "Save time",
+                        description:
+                          "AI-powered flashcard creation means you spend 5 minutes instead of 2 hours making cards.",
+                        color: "bg-[#34D399]",
+                      },
+                      {
+                        emoji: "🔒",
+                        title: "Your privacy matters",
+                        description:
+                          "No tracking, no selling your data, no creepy ads. Your study habits are nobody's business.",
+                        color: "bg-[#FF6B6B]",
+                      },
+                    ].map((item, index) => (
+                      <div
+                        key={item.title}
+                        className={cn(
+                          "rounded-2xl border-4 border-black bg-white p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-3px] hover:translate-y-[-3px] hover:shadow-[9px_9px_0px_0px_rgba(0,0,0,1)]",
+                          index % 2 === 0 ? "rotate-[-1deg]" : "rotate-[1deg]",
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "grid size-11 place-items-center rounded-xl border-4 border-black text-2xl",
+                            item.color,
+                          )}
+                        >
+                          {item.emoji}
                         </span>
-                        {point}
-                      </li>
+                        <h3 className="mt-3 font-display text-lg font-black uppercase leading-tight">
+                          {item.title}
+                        </h3>
+                        <p className="mt-2 text-sm font-bold leading-snug">{item.description}</p>
+                      </div>
                     ))}
-                  </ul>
-                  <Button variant="outline" asChild className="mt-7">
-                    <a href="#features">
-                      See what is inside
-                      <ArrowRight />
-                    </a>
-                  </Button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={openApp}
+                    className="mt-10 rotate-[-1deg] rounded-2xl border-4 border-black bg-[#FF6B6B] px-8 py-4 text-lg font-black text-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]"
+                  >
+                    Start studying smarter
+                    <ArrowRight className="ml-2 inline size-5 stroke-[3]" />
+                  </button>
+                </div>
+              </Reveal>
+
+              <Reveal delay={100} className="relative">
+                <div className="space-y-6">
+                  {[
+                    {
+                      icon: Coffee,
+                      title: "Late night study mode",
+                      tagline: "When coffee isn't enough",
+                      description:
+                        "Focus timer, dark mode, and spaced repetition that actually works. Because pulling all-nighters isn't a sustainable strategy.",
+                      color: "bg-[#FFE66D]",
+                      rotation: "rotate-[1deg]",
+                    },
+                    {
+                      icon: Moon,
+                      title: "Before bed review",
+                      tagline: "5 minutes, big impact",
+                      description:
+                        "Quick review before sleep helps memory consolidation. Science says so, and it actually works.",
+                      color: "bg-[#A855F7]",
+                      rotation: "rotate-[-2deg]",
+                    },
+                    {
+                      icon: Trophy,
+                      title: "Exam prep mode",
+                      tagline: "When it's crunch time",
+                      description:
+                        "Timed practice exams, weak spot analysis, and cram mode. Everything you need when the test is tomorrow.",
+                      color: "bg-[#34D399]",
+                      rotation: "rotate-[1deg]",
+                    },
+                  ].map((item) => (
+                    <article
+                      key={item.title}
+                      className={cn(
+                        "rounded-3xl border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]",
+                        item.rotation,
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={cn(
+                            "grid size-12 shrink-0 place-items-center rounded-xl border-4 border-black",
+                            item.color,
+                          )}
+                        >
+                          <item.icon className="size-6 stroke-[3]" />
+                        </span>
+                        <div>
+                          <p className="font-display text-lg font-black leading-tight">
+                            {item.title}
+                          </p>
+                          <p className="text-sm font-bold opacity-70">{item.tagline}</p>
+                        </div>
+                      </div>
+                      <p className="mt-4 text-sm font-bold leading-snug">{item.description}</p>
+                    </article>
+                  ))}
                 </div>
 
-                <div className="relative mx-auto w-full max-w-sm">
-                  <div
-                    aria-hidden
-                    className="absolute -inset-4 rounded-[2rem] bg-primary/10 blur-2xl"
-                  />
-                  <div className="relative rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5">
-                    <div className="flex items-center gap-3">
-                      <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-                        <FileJson className="size-5" />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="truncate font-display text-sm font-semibold">
-                          knowly-backup.json
-                        </p>
-                        <p className="mt-0.5 text-[10px] text-muted-foreground">
-                          Decks · courses · notebooks · progress
-                        </p>
+                <span className="absolute -top-5 right-0 hidden rotate-[7deg] rounded-xl border-4 border-black bg-[#FF6B6B] px-4 py-2 text-sm font-black text-white shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] sm:inline-block">
+                  STUDY ANYWHERE ✈️
+                </span>
+              </Reveal>
+            </div>
+          </div>
+        </section>
+
+        {/* Privacy Section - Simplified for brutalist style */}
+        <section
+          id="privacy"
+          className="border-y-4 border-black bg-[#34D399] px-5 py-20 sm:px-8 sm:py-32"
+        >
+          <Reveal className="mx-auto max-w-6xl">
+            <div className="text-center">
+              <span className="inline-block rotate-[-2deg] rounded-2xl border-4 border-black bg-white px-6 py-3 font-black uppercase shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                <ShieldCheck className="mr-2 inline size-6" />
+                Privacy That Doesn't Suck
+              </span>
+              <h2 className="mt-8 font-display text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
+                What you study is{" "}
+                <span className="inline-block rotate-[1deg] bg-black px-4 py-2 text-white">
+                  NOBODY'S BUSINESS
+                </span>
+                <span className="inline-block ml-2">🔒</span>
+              </h2>
+              <p className="mx-auto mt-6 max-w-2xl text-lg font-bold sm:text-xl">
+                We literally{" "}
+                <span className="relative inline-block">
+                  <span className="relative z-10">can't see your stuff</span>
+                  <span className="absolute bottom-0 left-0 right-0 h-3 bg-[#FFE66D]" />
+                </span>{" "}
+                even if we wanted to. Everything stays on your device.
+              </p>
+
+              <div className="mx-auto mt-12 grid max-w-3xl gap-6 sm:grid-cols-2">
+                {[
+                  { icon: Check, text: "No account needed", sub: "Just open & study" },
+                  { icon: Check, text: "Works offline", sub: "Bad WiFi? No problem" },
+                  { icon: Check, text: "Your data, your device", sub: "100% local storage" },
+                  { icon: Check, text: "Easy backups", sub: "One file = everything" },
+                ].map((item, i) => (
+                  <Reveal key={item.text} delay={i * 60}>
+                    <div className="rounded-2xl border-4 border-black bg-white p-6 text-left shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                      <div className="mb-2 grid size-10 place-items-center rounded-full border-[3px] border-black bg-black">
+                        <item.icon className="size-5 text-white" />
                       </div>
+                      <p className="font-display text-xl font-black">{item.text}</p>
+                      <p className="mt-1 text-sm font-bold opacity-70">{item.sub}</p>
                     </div>
-                    <div className="mt-4 space-y-2">
-                      {["1,248 cards", "12 courses", "8 notebooks", "XP, streaks & reports"].map(
-                        (label) => (
-                          <div
-                            key={label}
-                            className="flex items-center justify-between rounded-xl border border-white/10 bg-background/40 px-3 py-2 text-[11px] text-foreground/70"
+                  </Reveal>
+                ))}
+              </div>
+
+              <Reveal delay={300}>
+                <div className="mt-12 rounded-3xl border-4 border-black bg-white p-8 text-left shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                  <div className="flex items-start gap-4">
+                    <div className="grid size-16 shrink-0 place-items-center rounded-2xl border-4 border-black bg-[#FFE66D]">
+                      <FileJson className="size-8" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-display text-2xl font-black">my-study-backup.json</p>
+                      <p className="mt-1 font-bold">724 KB • Everything you need</p>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {["Flashcards", "Notebooks", "Progress", "Streaks"].map((item) => (
+                          <span
+                            key={item}
+                            className="rounded-lg border-[3px] border-black bg-[#FFFBF5] px-3 py-1 text-sm font-bold"
                           >
-                            <span>{label}</span>
-                            <Check className="size-3.5 text-primary" />
-                          </div>
-                        ),
-                      )}
-                    </div>
-                    <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-[10px] font-medium text-emerald-200">
-                      <ShieldCheck className="size-3.5" />
-                      Checked before restore
+                            ✓ {item}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="mt-4 text-sm font-bold opacity-70">
+                        <span className="font-black">Fun fact:</span> The entire app is smaller than
+                        one TikTok video 📱
+                      </p>
                     </div>
                   </div>
                 </div>
-              </div>
+              </Reveal>
             </div>
           </Reveal>
         </section>
 
-        <section className="px-5 pb-20 sm:px-8 sm:pb-28">
-          <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
-            <Reveal>
-              <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
-                <Palette className="size-3.5" />
-                Make it yours
-              </p>
-              <h2 className="mt-5 font-display text-3xl font-bold tracking-[-0.035em] text-balance sm:text-4xl">
-                A workspace that looks like yours.
-              </h2>
-              <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
-                28 palettes, accent colors, wallpapers, density, type scale, button size, reduced
-                motion, high contrast and a colorblind-safe palette. The defaults are premium; the
-                controls are yours.
-              </p>
-              <div className="mt-5 flex flex-wrap gap-2">
-                {[
-                  "28 themes",
-                  "Custom accents",
-                  "Wallpapers",
-                  "Density",
-                  "High contrast",
-                  "Reduced motion",
-                ].map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[10px] font-medium text-muted-foreground"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </Reveal>
-
-            <Reveal delay={100}>
-              <div className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/[0.025] p-4 sm:p-5">
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full bg-primary/10 blur-3xl"
-                />
-                <div className="relative grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {FEATURED_THEMES.map((theme) => (
-                    <div
-                      key={theme.id}
-                      className="overflow-hidden rounded-2xl border border-white/10"
-                    >
-                      <div className="h-20 p-2" style={{ background: theme.colors.background }}>
-                        <div
-                          className="h-full rounded-xl border p-2"
-                          style={{
-                            background: theme.colors.surface,
-                            borderColor: `${theme.colors.primary}55`,
-                          }}
-                        >
-                          <div
-                            className="h-1.5 w-8 rounded-full"
-                            style={{ background: theme.colors.primary }}
-                          />
-                          <div
-                            className="mt-1.5 h-1 w-12 rounded-full opacity-40"
-                            style={{ background: theme.colors.foreground }}
-                          />
-                          <div
-                            className="mt-1 h-1 w-9 rounded-full opacity-25"
-                            style={{ background: theme.colors.foreground }}
-                          />
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between bg-background/50 px-2.5 py-2">
-                        <span className="truncate text-[9px] text-muted-foreground">
-                          {theme.label}
-                        </span>
-                        <span
-                          className="size-2 shrink-0 rounded-full"
-                          style={{ background: theme.colors.primary }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Reveal>
+        {/* Final CTA */}
+        <section className="relative overflow-hidden bg-gradient-to-br from-[#FF6B6B] via-[#A855F7] to-[#FFE66D] px-5 py-24 sm:px-8 sm:py-32">
+          {/* Decorative shapes */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute left-[5%] top-[10%] size-40 rotate-12 rounded-3xl border-4 border-black bg-white/20" />
+            <div className="absolute right-[10%] top-[20%] size-32 rotate-[-20deg] rounded-full border-4 border-black bg-white/20" />
+            <div className="absolute bottom-[15%] left-[15%] size-36 rotate-[30deg] border-4 border-black bg-white/20" />
+            <div className="absolute bottom-[25%] right-[8%] size-28 rotate-[-15deg] rounded-2xl border-4 border-black bg-white/20" />
           </div>
-        </section>
 
-        <section className="relative overflow-hidden border-t border-white/5 px-5 py-24 sm:px-8 sm:py-28">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute left-1/2 top-0 h-72 w-[52rem] max-w-none -translate-x-1/2 rounded-full bg-primary/15 blur-3xl"
-          />
-          <Reveal className="relative mx-auto max-w-3xl text-center">
-            <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
-              <Sparkles className="size-3.5" />
-              Your next session
-            </p>
-            <h2 className="mt-5 font-display text-4xl font-bold tracking-[-0.04em] text-balance sm:text-5xl">
-              Your next study session has a home.
+          <Reveal className="relative mx-auto max-w-4xl text-center">
+            <span className="inline-block rotate-[2deg] rounded-2xl border-4 border-black bg-white px-6 py-3 font-black uppercase shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+              <Sparkles className="mr-2 inline size-6" />
+              Ready to Level Up?
+            </span>
+            <h2 className="mt-8 font-display text-[clamp(2.5rem,6vw,5rem)] font-black leading-[0.95]">
+              Time to{" "}
+              <span className="inline-block rotate-[-2deg] bg-black px-4 py-2 text-white">
+                ACTUALLY
+              </span>
+              <br />
+              <span className="inline-block rotate-[1deg] border-4 border-black bg-white px-4 py-2 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                study smarter
+              </span>
+              <span className="inline-block ml-2">🚀</span>
             </h2>
-            <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
-              Set up in minutes. Import a deck, rebuild from a backup, or start a course from
-              scratch. Then keep everything in one private workspace.
+            <p className="mx-auto mt-8 max-w-2xl text-xl font-bold">
+              Join 10,000+ students who stopped wasting time.
+              <br />
+              <span className="text-2xl font-black">Free forever • Works offline • No BS</span>
             </p>
-            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-              <Button size="lg" onClick={openApp}>
-                Open Knowly
-                <ArrowRight />
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <a href="#privacy">How your data stays yours</a>
-              </Button>
+            <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <button
+                onClick={openApp}
+                className="group rotate-[-1deg] rounded-2xl border-4 border-black bg-white px-10 py-5 font-black text-2xl shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-6px] hover:translate-y-[-6px] hover:shadow-[16px_16px_0px_0px_rgba(0,0,0,1)]"
+              >
+                GET STARTED FREE
+                <ArrowUpRight className="ml-2 inline size-8" />
+              </button>
             </div>
-            <p className="mt-5 text-[10px] text-muted-foreground/60">
-              No account required · Export or restore any time
+            <p className="mt-8 text-base font-bold">
+              No download • No credit card • No account •{" "}
+              <span className="relative inline-block">
+                <span className="relative z-10 font-black">Start in 30 seconds</span>
+                <span className="absolute bottom-0 left-0 right-0 h-3 bg-white" />
+              </span>
             </p>
           </Reveal>
         </section>
       </main>
 
-      <footer className="border-t border-white/5 bg-surface/20">
-        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-12 sm:px-8 md:grid-cols-[1.2fr_1.8fr]">
+      <footer className="border-t-4 border-black bg-white">
+        <div className="mx-auto grid max-w-7xl gap-12 px-5 py-16 sm:px-8 md:grid-cols-[1.2fr_1.8fr]">
           <div>
             <Link to="/" className="inline-flex items-center gap-3">
-              <span className="grid size-10 place-items-center rounded-[1.1rem] border border-white/10 bg-gradient-to-br from-primary/25 via-primary/10 to-transparent ring-1 ring-primary/20">
-                <Logo className="size-7 rounded-lg" />
+              <span className="grid size-14 place-items-center rounded-2xl border-4 border-black bg-gradient-to-br from-[#FF6B6B] to-[#A855F7] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <Logo className="size-8" />
               </span>
-              <span className="font-display text-lg font-bold tracking-tight">Knowly</span>
+              <span className="font-display text-2xl font-black tracking-tight">Knowly</span>
             </Link>
-            <p className="mt-4 max-w-xs text-xs leading-5 text-muted-foreground">
-              The all-in-one study superapp. Forge, learn, remember and own every session — without
-              an account.
+            <p className="mt-4 max-w-xs font-bold leading-snug">
+              Study smarter, not harder. Free forever, works offline, respects your privacy.
             </p>
-            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-[10px] font-semibold text-emerald-200">
-              <span className="size-1.5 rounded-full bg-emerald-400" />
-              Local-first by design
+            <div className="mt-6 inline-flex items-center gap-2 rotate-[-1deg] rounded-xl border-[3px] border-black bg-[#34D399] px-4 py-2 font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <span className="size-2 rounded-full bg-black" />
+              100% FREE & LOCAL
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">
-                Explore
-              </p>
-              <ul className="mt-3 space-y-2 text-xs text-muted-foreground">
+              <p className="font-display text-sm font-black uppercase">Learn More</p>
+              <ul className="mt-4 space-y-2 font-bold">
                 {NAV_LINKS.map(([href, label]) => (
                   <li key={href}>
-                    <a href={href} className="transition-colors hover:text-foreground">
-                      {label}
+                    <a
+                      href={href}
+                      className="transition-all hover:translate-x-1 hover:text-[#FF6B6B]"
+                    >
+                      → {label}
                     </a>
                   </li>
                 ))}
               </ul>
             </div>
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">
-                Study
-              </p>
-              <ul className="mt-3 space-y-2 text-xs text-muted-foreground">
-                <li>Spaced repetition</li>
-                <li>Courses</li>
-                <li>Notebooks</li>
-                <li>Exams & analytics</li>
+              <p className="font-display text-sm font-black uppercase">Features</p>
+              <ul className="mt-4 space-y-2 font-bold">
+                <li>→ AI flashcards</li>
+                <li>→ Smart reviews</li>
+                <li>→ Notebooks</li>
+                <li>→ Progress tracking</li>
               </ul>
             </div>
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">
-                Start
-              </p>
-              <ul className="mt-3 space-y-2 text-xs text-muted-foreground">
+              <p className="font-display text-sm font-black uppercase">Get Started</p>
+              <ul className="mt-4 space-y-2 font-bold">
                 <li>
                   <button
                     type="button"
                     onClick={openApp}
-                    className="transition-colors hover:text-foreground"
+                    className="transition-all hover:translate-x-1 hover:text-[#FF6B6B]"
                   >
-                    Open app
+                    → Try it free
                   </button>
                 </li>
                 <li>
-                  <button
-                    type="button"
-                    onClick={openApp}
-                    className="transition-colors hover:text-foreground"
+                  <Link
+                    to="/privacy"
+                    className="transition-all hover:translate-x-1 hover:text-[#FF6B6B]"
                   >
-                    Run setup
-                  </button>
+                    → Privacy policy
+                  </Link>
                 </li>
                 <li>
-                  <a href="#privacy" className="transition-colors hover:text-foreground">
-                    Backup & restore
-                  </a>
+                  <Link
+                    to="/terms"
+                    className="transition-all hover:translate-x-1 hover:text-[#FF6B6B]"
+                  >
+                    → Terms of use
+                  </Link>
                 </li>
               </ul>
             </div>
           </div>
         </div>
-        <div className="border-t border-white/5 px-5 py-5 sm:px-8">
-          <div className="mx-auto flex max-w-7xl flex-col gap-2 text-[10px] text-muted-foreground/55 sm:flex-row sm:items-center sm:justify-between">
-            <span>© {new Date().getFullYear()} Knowly. Built local-first.</span>
-            <span>No account. No cloud. Your data stays with you.</span>
+        <div className="border-t-4 border-black bg-[#FFE66D] px-5 py-6 sm:px-8">
+          <div className="mx-auto flex max-w-7xl flex-col gap-2 text-sm font-black sm:flex-row sm:items-center sm:justify-between">
+            <span>© {new Date().getFullYear()} Knowly. Made with 💜 for students.</span>
+            <span>NO ACCOUNT • NO TRACKING • YOUR DATA STAYS YOURS</span>
           </div>
         </div>
       </footer>

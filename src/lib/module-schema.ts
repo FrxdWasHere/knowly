@@ -218,9 +218,14 @@ export function serializeModuleJson(mod: Module): string {
 export const SAMPLE_MODULE_JSON = `{
   "title": "Photosynthesis in 10 minutes",
   "subject": "Biology",
+  "description": "One focused lesson on how a leaf turns light into sugar.",
   "difficulty": 2,
   "emoji": "🌿",
+  "color": "#5fd38a",
   "tags": ["biology", "plants"],
+  "isSTEM": false,
+  "needsEquations": false,
+  "needsGraphs": false,
   "objectives": [
     "Explain where a plant gets its food",
     "Name the inputs and outputs of photosynthesis"
@@ -229,7 +234,11 @@ export const SAMPLE_MODULE_JSON = `{
   "blocks": [
     {
       "type": "markdown",
-      "markdown": "## The light-powered kitchen\\n\\nA leaf is a **solar-powered kitchen**. Chloroplasts capture light and use it to turn water and carbon dioxide into glucose.\\n\\n- Light in, sugar out\\n- Oxygen is the by-product\\n- Happens inside chloroplasts"
+      "markdown": "## The light-powered kitchen"
+    },
+    {
+      "type": "markdown",
+      "markdown": "A leaf is a **solar-powered kitchen**. Chloroplasts capture light and use it to turn water and carbon dioxide into glucose."
     },
     {
       "type": "callout",
@@ -238,20 +247,35 @@ export const SAMPLE_MODULE_JSON = `{
       "markdown": "Photosynthesis converts light energy into chemical energy stored in glucose."
     },
     {
+      "type": "example",
+      "title": "A worked example",
+      "markdown": "Six molecules of carbon dioxide plus six of water become one glucose and six oxygen molecules, powered by light."
+    },
+    {
       "type": "callout",
       "tone": "warning",
       "title": "Common mistake",
       "markdown": "Plants do not \\"eat soil\\" — the mass of a tree comes mostly from air and water."
+    },
+    {
+      "type": "checkpoint",
+      "questionId": "q1"
+    },
+    {
+      "type": "divider"
     }
   ],
   "questions": [
     {
+      "id": "q1",
       "type": "short-answer",
       "question": "Which gas do plants release during photosynthesis?",
       "answer": "Oxygen — split out of water molecules when light energy breaks them apart.",
       "explanation": "Water is split during the light reactions; oxygen is the leftover.",
       "difficulty": "easy",
-      "concept": "Light reactions"
+      "concept": "Light reactions",
+      "hint": "It is the gas animals need to breathe in.",
+      "tags": ["light reactions"]
     },
     {
       "type": "multiple-choice",
@@ -260,7 +284,27 @@ export const SAMPLE_MODULE_JSON = `{
       "answer": "Chloroplasts",
       "explanation": "Chloroplasts contain chlorophyll, the pigment that captures light.",
       "difficulty": "easy",
-      "concept": "Chloroplasts"
+      "concept": "Chloroplasts",
+      "tutor": {
+        "simple": "Chloroplasts are the green factories in a leaf cell. They hold chlorophyll, which catches sunlight and starts photosynthesis.",
+        "mnemonic": "CHLOROphyll lives in the CHLOROplast — same CHLORO, same job.",
+        "example": "A spinach leaf looks green because you are seeing millions of chloroplasts reflecting green light they cannot absorb.",
+        "whyWrong": [
+          {
+            "option": "Nucleus",
+            "why": "The nucleus stores DNA and runs the cell's instructions; it has no chlorophyll and captures no light."
+          },
+          {
+            "option": "Cell wall",
+            "why": "The cell wall is a rigid support layer outside the membrane, not a site of any reaction."
+          },
+          {
+            "option": "Vacuole",
+            "why": "The vacuole stores water and solutes; it does not contain light-capturing pigments."
+          }
+        ]
+      }
     }
-  ]
+  ],
+  "linkedDeckIds": []
 }`;

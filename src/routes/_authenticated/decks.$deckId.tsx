@@ -23,6 +23,7 @@ import { MathText } from "@/components/math/math-text";
 import { LabelChips, LabelPickerDialog } from "@/components/binder/label-picker";
 import { TYPE_LABELS } from "@/lib/answers";
 import { cardStage, deckSrs, formatDue, formatInterval, STAGE_META } from "@/lib/srs";
+import { fragmentDeck, partCleared } from "@/lib/rounds";
 import { openImportPanel } from "@/lib/import-panel";
 import { useKnowly } from "@/store/knowly";
 import { cn } from "@/lib/utils";
@@ -70,6 +71,7 @@ function DeckDetail() {
 
   const pct = Math.round((deck.masteredIds.length / Math.max(1, deck.questions.length)) * 100);
   const srs = deckSrs(deck);
+  const parts = fragmentDeck(deck);
 
   const exportDeck = () => {
     const payload = {
@@ -126,7 +128,7 @@ function DeckDetail() {
               </Button>
             )}
             <Button variant={srs.due > 0 ? "secondary" : "default"} asChild>
-              <Link to="/study/$deckId" params={{ deckId: deck.id }}>
+              <Link to="/study/$deckId" params={{ deckId: deck.id }} search={{ part: undefined }}>
                 <Play /> Study
               </Link>
             </Button>
@@ -288,6 +290,50 @@ function DeckDetail() {
             solid · difficulty {srs.ease} · you remember {srs.retention}% of your reviews
           </p>
         </div>
+      </section>
+
+      <section className="panel mb-6 p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-sm font-semibold">Parts</h2>
+          <p className="text-xs text-muted-foreground">
+            {parts.length} sub-topic{parts.length === 1 ? "" : "s"} · studied in short rounds
+          </p>
+        </div>
+        <ul className="mt-4 grid gap-2">
+          {parts.map((part) => (
+            <li key={part.id}>
+              <Link
+                to="/study/$deckId"
+                params={{ deckId: deck.id }}
+                search={{ part: part.id }}
+                className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-3 transition-colors hover:border-primary/50"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-2 text-sm font-medium">
+                    {part.title}
+                    {partCleared(part) && (
+                      <Badge className="bg-success text-success-foreground">Cleared</Badge>
+                    )}
+                  </span>
+                  <span className="mt-1 block text-[11px] text-muted-foreground">
+                    {part.questions.length} cards · {part.roundCount} round
+                    {part.roundCount === 1 ? "" : "s"} · {part.due} due · {part.masteryPct}%
+                    mastered
+                  </span>
+                  <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-secondary">
+                    <span
+                      className="block h-full rounded-full bg-primary"
+                      style={{ width: `${part.masteryPct}%` }}
+                    />
+                  </span>
+                </span>
+                <span className="inline-flex items-center gap-1 text-xs text-primary">
+                  Study <Play className="size-3.5" />
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <div className="space-y-3">

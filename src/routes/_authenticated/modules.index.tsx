@@ -123,7 +123,7 @@ function ModuleCard({ module, onDelete }: { module: Module; onDelete: (id: strin
             params={{ moduleId: module.id }}
             className="flex min-w-0 flex-1 items-start gap-3"
           >
-            <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-surface2 text-2xl ring-1 ring-border">
+            <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-surface-2 text-2xl ring-1 ring-border">
               {module.emoji || "📘"}
             </span>
             <div className="min-w-0 flex-1">
@@ -176,7 +176,7 @@ function ModuleCard({ module, onDelete }: { module: Module; onDelete: (id: strin
             </span>
             <span className="font-semibold">{percent}%</span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-surface2">
+          <div className="h-2 overflow-hidden rounded-full bg-surface-2">
             <div
               className="h-full rounded-full transition-all"
               style={{ width: `${Math.max(percent, percent ? 6 : 0)}%`, background: module.color }}

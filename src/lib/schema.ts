@@ -40,6 +40,14 @@ export const questionSchema = z.object({
   pairs: z.array(z.object({ left: z.string(), right: z.string() })).optional(),
   blanks: z.array(z.string()).optional(),
   wordBank: z.array(z.string()).optional(),
+  tutor: z
+    .object({
+      simple: z.string().optional(),
+      mnemonic: z.string().optional(),
+      example: z.string().optional(),
+      whyWrong: z.array(z.object({ option: z.string().min(1), why: z.string().min(1) })).optional(),
+    })
+    .optional(),
 });
 
 type RawQuestion = z.infer<typeof questionSchema>;
@@ -136,6 +144,7 @@ function buildQuestion(
     concept: q.concept,
     hint: q.hint,
     tags: q.tags,
+    tutor: q.tutor,
     items: q.items,
     pairs: q.pairs,
     blanks: q.blanks,
@@ -244,7 +253,28 @@ export const SAMPLE_DECK_JSON = `{
       "answer": "Fluid mosaic model",
       "explanation": "Lipids and proteins move laterally, forming a fluid mosaic.",
       "difficulty": "easy",
-      "concept": "Membrane structure"
+      "concept": "Membrane structure",
+      "hint": "The name describes proteins drifting in a sea of lipid.",
+      "tutor": {
+        "simple": "The membrane is not a wall. It is a moving soup of fat with protein chunks floating around in it, so it can bend, seal and let things through.",
+        "mnemonic": "MOSAIC = Molecules On the Surface And Inside Constantly — the pieces are always shuffling.",
+        "example": "Think of oil and water in a jar that never fully settles: the oil slides around, and little protein droplets travel through it.",
+        "whyWrong": [
+          {
+            "option": "Rigid lattice model",
+            "why": "A lattice cannot bend, but membranes must flex to pinch off vesicles and let cells change shape."
+          },
+          {
+            "option": "Static bilayer model",
+            "why": "A static bilayer denies the lateral movement proved by FRAP experiments, where labelled proteins spread across the membrane."
+          },
+          {
+            "option": "Protein shell model",
+            "why": "Proteins are scattered through the bilayer, not a shell around it; the lipid is the continuous part."
+          }
+        ]
+      },
+      "tags": ["membranes", "models"]
     },
     {
       "type": "true-false",
@@ -268,7 +298,12 @@ export const SAMPLE_DECK_JSON = `{
       "answer": "The movement of water across a semipermeable membrane from low to high solute concentration.",
       "explanation": "Water follows the solute gradient.",
       "difficulty": "medium",
-      "concept": "Osmosis"
+      "concept": "Osmosis",
+      "tutor": {
+        "simple": "Osmosis is water moving to the crowded side. The water goes where there is more dissolved stuff, trying to even things out.",
+        "mnemonic": "Water follows salt.",
+        "example": "Put a raisin in water: the inside is saltier, so water moves in and the raisin plumps up."
+      }
     },
     {
       "type": "flashcard",
@@ -465,7 +500,28 @@ export const SAMPLE_QUESTIONS_JSON = `{
       "answer": "Pump",
       "explanation": "Pumps hydrolyse ATP to move ions up a gradient.",
       "difficulty": "medium",
-      "concept": "Active transport"
+      "concept": "Active transport",
+      "hint": "Channels let ions fall down their gradient; this one spends energy to push back.",
+      "tutor": {
+        "simple": "A pump is the only transport protein that pays ATP to shove ions the wrong way — uphill, against their gradient.",
+        "mnemonic": "Pumps PUSH and PAY.",
+        "example": "The sodium-potassium pump spends one ATP to push 3 Na+ out and 2 K+ in, both against their gradients.",
+        "whyWrong": [
+          {
+            "option": "Channel",
+            "why": "Channels are passive pores: ions only flow through them downhill, never against the gradient."
+          },
+          {
+            "option": "Carrier (facilitated)",
+            "why": "Carriers change shape but still follow the gradient; no ATP is spent, so they cannot go uphill."
+          },
+          {
+            "option": "Aquaporin",
+            "why": "Aquaporins transport water only, and passively at that."
+          }
+        ]
+      },
+      "tags": ["transport", "atp"]
     },
     {
       "type": "short-answer",
@@ -474,6 +530,15 @@ export const SAMPLE_QUESTIONS_JSON = `{
       "explanation": "It borrows energy stored in an existing ion gradient.",
       "difficulty": "hard",
       "concept": "Active transport"
+    },
+    {
+      "type": "word-bank",
+      "question": "In a ___ solution the cell swells, while in a ___ solution it shrinks.",
+      "blanks": ["hypotonic", "hypertonic"],
+      "wordBank": ["hypotonic", "hypertonic", "isotonic", "amphipathic"],
+      "explanation": "Water always moves toward the higher solute concentration.",
+      "difficulty": "medium",
+      "concept": "Tonicity"
     }
   ]
 }`;

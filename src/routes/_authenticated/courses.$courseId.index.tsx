@@ -347,7 +347,10 @@ function CourseOverviewPage() {
                     >
                       <span
                         className="grid size-11 shrink-0 place-items-center rounded-2xl text-sm font-semibold"
-                        style={{ background: `${course.color}1f`, color: course.color }}
+                        style={{
+                          background: `color-mix(in oklab, ${course.color} 12%, transparent)`,
+                          color: course.color,
+                        }}
                       >
                         {String(moduleIndex + 1).padStart(2, "0")}
                       </span>
@@ -365,7 +368,7 @@ function CourseOverviewPage() {
                           {module.quiz ? " · module quiz" : ""} · {moduleDone} complete
                         </span>
                         <span className="mt-2 flex max-w-xs items-center gap-2">
-                          <span className="h-1 flex-1 overflow-hidden rounded-full bg-surface2">
+                          <span className="h-1 flex-1 overflow-hidden rounded-full bg-surface-2">
                             <span
                               className="block h-full rounded-full transition-all"
                               style={{
@@ -409,7 +412,7 @@ function CourseOverviewPage() {
                                     ? "bg-success/10 text-success ring-success/20"
                                     : isNext
                                       ? "bg-primary/10 text-primary ring-primary/20"
-                                      : "bg-surface2 text-muted-foreground ring-border",
+                                      : "bg-surface-2 text-muted-foreground ring-border",
                                 )}
                               >
                                 {complete ? <CheckCircle2 className="size-4" /> : lessonIndex + 1}
@@ -500,7 +503,7 @@ function CourseOverviewPage() {
             </div>
 
             {course.finalExam && course.finalExam.questions.length > 0 && (
-              <div className="relative mt-4 overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/10 via-card to-card p-5">
+              <div className="relative mt-4 overflow-hidden rounded-2xl border-[3px] border-border bg-surface p-5 shadow-[4px_4px_0_0_var(--shadow-ink)]">
                 <div
                   aria-hidden
                   className="absolute -right-10 -top-16 size-40 rounded-full bg-primary/10 blur-2xl"
@@ -650,7 +653,7 @@ function CourseOverviewPage() {
               )}
             </div>
 
-            <div className="rounded-2xl border border-border bg-gradient-to-br from-surface to-card p-5 shadow-sm">
+            <div className="rounded-2xl border-[3px] border-border bg-surface p-5 shadow-[4px_4px_0_0_var(--shadow-ink)]">
               <div className="flex items-center gap-2 text-sm font-semibold">
                 <Sparkles className="size-4 text-primary" /> Study rhythm
               </div>

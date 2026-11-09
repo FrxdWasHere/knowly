@@ -1840,7 +1840,7 @@ function NotebookEditorPage() {
         </div>
 
         <div className="hidden items-center gap-2 text-[11px] text-muted-foreground lg:flex">
-          <span className="rounded-full bg-surface2 px-2 py-1">Local notebook</span>
+          <span className="rounded-full bg-surface-2 px-2 py-1">Local notebook</span>
           {linkedCourse && (
             <Link
               to="/courses/$courseId"
@@ -1963,7 +1963,7 @@ function NotebookEditorPage() {
                     color: activeSection.color,
                   })
                 }
-                className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-md py-1 text-[10px] text-muted-foreground hover:bg-surface2 hover:text-foreground"
+                className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-md py-1 text-[10px] text-muted-foreground hover:bg-surface-hover hover:text-foreground"
                 aria-label="Edit current section"
               >
                 <PencilRuler className="size-3" /> Edit section
@@ -2030,7 +2030,7 @@ function NotebookEditorPage() {
                     onClick={() =>
                       navigate({ to: "/modules/$moduleId", params: { moduleId: m.id } } as never)
                     }
-                    className="flex w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-[11px] text-muted-foreground hover:bg-surface2 hover:text-foreground"
+                    className="flex w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-[11px] text-muted-foreground hover:bg-surface-hover hover:text-foreground"
                   >
                     <span className="text-sm">{m.emoji}</span>
                     <span className="truncate">{m.title}</span>
@@ -2076,7 +2076,7 @@ function NotebookEditorPage() {
                         className="aspect-[3/4] w-full object-cover"
                       />
                     ) : (
-                      <div className="aspect-[3/4] w-full animate-pulse bg-surface2" />
+                      <div className="aspect-[3/4] w-full animate-pulse bg-surface-2" />
                     )}
                     <span className="absolute bottom-1 left-1 rounded bg-foreground/60 px-1.5 py-0.5 text-[10px] font-medium text-background">
                       {index + 1}
@@ -2089,7 +2089,7 @@ function NotebookEditorPage() {
                     <div className="mt-1 flex items-center justify-center gap-0.5">
                       <button
                         type="button"
-                        className="grid size-6 place-items-center rounded text-muted-foreground hover:bg-surface2 hover:text-foreground"
+                        className="grid size-6 place-items-center rounded text-muted-foreground hover:bg-surface-hover hover:text-foreground"
                         onClick={() => movePage(page.id, -1)}
                         aria-label="Move page up"
                       >
@@ -2097,7 +2097,7 @@ function NotebookEditorPage() {
                       </button>
                       <button
                         type="button"
-                        className="grid size-6 place-items-center rounded text-muted-foreground hover:bg-surface2 hover:text-foreground"
+                        className="grid size-6 place-items-center rounded text-muted-foreground hover:bg-surface-hover hover:text-foreground"
                         onClick={() => movePage(page.id, 1)}
                         aria-label="Move page down"
                       >
@@ -2105,7 +2105,7 @@ function NotebookEditorPage() {
                       </button>
                       <button
                         type="button"
-                        className="grid size-6 place-items-center rounded text-muted-foreground hover:bg-surface2 hover:text-foreground"
+                        className="grid size-6 place-items-center rounded text-muted-foreground hover:bg-surface-hover hover:text-foreground"
                         onClick={() => duplicatePage(page)}
                         aria-label="Duplicate page"
                       >
@@ -2114,7 +2114,7 @@ function NotebookEditorPage() {
                       {(notebook.sections?.length ?? 0) > 1 && (
                         <button
                           type="button"
-                          className="grid size-6 place-items-center rounded text-muted-foreground hover:bg-surface2 hover:text-foreground"
+                          className="grid size-6 place-items-center rounded text-muted-foreground hover:bg-surface-hover hover:text-foreground"
                           onClick={() => movePageToSection(page.id, 1)}
                           aria-label="Send page to next section"
                         >
@@ -2124,7 +2124,7 @@ function NotebookEditorPage() {
                       <button
                         type="button"
                         className={cn(
-                          "grid size-6 place-items-center rounded text-muted-foreground hover:bg-surface2 hover:text-foreground",
+                          "grid size-6 place-items-center rounded text-muted-foreground hover:bg-surface-hover hover:text-foreground",
                           bookmarked && "text-warning",
                         )}
                         onClick={() => toggleBookmark(page.id)}
@@ -2134,7 +2134,7 @@ function NotebookEditorPage() {
                       </button>
                       <button
                         type="button"
-                        className="grid size-6 place-items-center rounded text-muted-foreground hover:bg-surface2 hover:text-destructive"
+                        className="grid size-6 place-items-center rounded text-muted-foreground hover:bg-surface-hover hover:text-destructive"
                         onClick={() => setDeleteTarget(page.id)}
                         disabled={pages.length <= 1}
                         aria-label="Delete page"
@@ -2916,7 +2916,7 @@ function InkSizeDialog({
             <Label htmlFor="ink-size" className="text-xs">
               Stroke width
             </Label>
-            <span className="rounded-md bg-surface2 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums">
+            <span className="rounded-md bg-surface-2 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums">
               {width}px
             </span>
           </div>
@@ -3391,7 +3391,7 @@ function RibbonButton({
         "flex h-9 w-[52px] shrink-0 flex-col items-center justify-center gap-0.5 rounded-md px-0.5 text-[9px] leading-none transition-colors",
         active
           ? "bg-primary/15 text-primary ring-1 ring-inset ring-primary/25"
-          : "text-muted-foreground hover:bg-surface2 hover:text-foreground",
+          : "text-muted-foreground hover:bg-surface-hover hover:text-foreground",
         danger && "hover:bg-destructive/10 hover:text-destructive",
         disabled &&
           "cursor-not-allowed opacity-35 hover:bg-transparent hover:text-muted-foreground",
@@ -3422,7 +3422,7 @@ function RibbonIconButton({
       title={label}
       aria-label={label}
       className={cn(
-        "grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-surface2 hover:text-foreground",
+        "grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground",
         disabled && "cursor-not-allowed opacity-30 hover:bg-transparent",
       )}
     >

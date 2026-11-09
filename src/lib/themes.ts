@@ -23,7 +23,10 @@ export interface ColorTheme {
   colors: ThemeColors;
 }
 
-/** Preset palettes. "default" keeps the built-in Ocean Deep stylesheet. */
+/**
+ * Print-cover palettes. App theming is hand-built in styles.css and limited to
+ * the Daylight / Midnight modes; these swatches only colour printed covers.
+ */
 export const COLOR_THEMES: ColorTheme[] = [
   {
     id: "ocean",
@@ -431,12 +434,12 @@ export function newUserThemeId() {
 }
 
 export const DEFAULT_CUSTOM_THEME: ThemeColors = {
-  background: "#08111f",
-  surface: "#122235",
-  surface2: "#1a2f47",
-  foreground: "#eaf4ff",
-  primary: "#5aa9f8",
-  accent: "#49c2e8",
+  background: "#fffbf5",
+  surface: "#ffffff",
+  surface2: "#f6efe3",
+  foreground: "#000000",
+  primary: "#c0272d",
+  accent: "#a855f7",
 };
 
 export function getColorTheme(id: string): ColorTheme | undefined {
@@ -475,10 +478,40 @@ export function readableOn(hex: string) {
 }
 
 /** Derive the full CSS variable map applied to <html> for a palette. */
+/** Blend two hex colours in sRGB. `pct` is the weight of `a`. */
+function blendHex(a: string, b: string, pct: number) {
+  const A = normalizeHex(a);
+  const B = normalizeHex(b);
+  if (!isValidHex(A) || !isValidHex(B)) return A;
+  const channels = [1, 3, 5].map((i) => {
+    const av = parseInt(A.slice(i, i + 2), 16);
+    const bv = parseInt(B.slice(i, i + 2), 16);
+    return Math.round((av * pct) / 100 + (bv * (100 - pct)) / 100);
+  });
+  return `#${channels.map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
+/**
+ * Hover fill that always moves away from the label colour: dark fills get
+ * darker (white label gains contrast), light fills get lighter (black label
+ * gains contrast). Same rule in every palette, light or dark.
+ */
+function hoverFill(base: string) {
+  return luminance(base) > 0.5 ? blendHex(base, "#ffffff", 82) : blendHex(base, "#000000", 82);
+}
+
+/** Quiet hover surface: steps away from the page, in whichever direction the page goes. */
+function hoverSurface(surface: string, background: string) {
+  return luminance(background) > 0.5
+    ? blendHex(surface, "#000000", 82)
+    : blendHex(surface, "#ffffff", 82);
+}
+
 export function themeCssVars(c: ThemeColors): Record<string, string> {
   const mix = (a: string, pct: number, b: string) => `color-mix(in oklab, ${a} ${pct}%, ${b})`;
   const onPrimary = readableOn(c.primary);
   const onAccent = readableOn(c.accent);
+  const destructive = blendHex("#e5484d", c.primary, 78);
   return {
     "--background": c.background,
     "--foreground": c.foreground,
@@ -490,15 +523,18 @@ export function themeCssVars(c: ThemeColors): Record<string, string> {
     "--popover-foreground": c.foreground,
     "--primary": c.primary,
     "--primary-foreground": onPrimary,
+    "--primary-hover": hoverFill(c.primary),
     "--primary-glow": mix(c.primary, 70, c.accent),
     "--secondary": c.surface2,
+    "--surface-hover": hoverSurface(c.surface2, c.background),
     "--secondary-foreground": c.foreground,
     "--muted": c.surface2,
     "--muted-foreground": mix(c.foreground, 66, c.background),
     "--accent": c.accent,
     "--accent-foreground": onAccent,
-    "--border": mix(c.foreground, 16, "transparent"),
-    "--input": mix(c.foreground, 22, "transparent"),
+    // Rules are ink, not hairlines: the paper language outlines everything.
+    "--border": c.foreground,
+    "--input": c.foreground,
     "--ring": c.primary,
     "--chart-1": c.primary,
     "--chart-2": c.accent,
@@ -511,16 +547,19 @@ export function themeCssVars(c: ThemeColors): Record<string, string> {
     "--sidebar-primary-foreground": onPrimary,
     "--sidebar-accent": c.surface2,
     "--sidebar-accent-foreground": c.foreground,
-    "--sidebar-border": mix(c.foreground, 12, "transparent"),
+    "--sidebar-border": c.foreground,
     // Status colours keep their meaning (green / red / amber) but are tinted
     // toward the theme so they sit naturally in every palette.
     "--success": mix("#2fb872", 72, c.accent),
     "--success-foreground": readableOn(c.accent),
-    "--destructive": mix("#e5484d", 78, c.primary),
-    "--destructive-foreground": "#ffffff",
+    "--destructive": destructive,
+    "--destructive-hover": hoverFill(destructive),
+    "--destructive-foreground": readableOn(destructive),
     "--warning": mix("#f0a020", 78, c.primary),
     "--warning-foreground": "#1a1204",
-    "--shadow-panel": `0 8px 22px -16px ${mix(c.foreground, 20, "transparent")}`,
+    // Hard offset shadow, no blur — the same rule in every palette.
+    "--shadow-panel": "4px 4px 0 0 #000",
+    "--shadow-forge": "5px 5px 0 0 #000",
     "--deck-1": c.primary,
     "--deck-2": c.accent,
     "--deck-3": mix(c.primary, 55, c.accent),

@@ -1,10 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Printer, Library, FileJson, CheckCircle2, XCircle, FolderPlus } from "lucide-react";
+import {
+  Printer,
+  Library,
+  FileJson,
+  CheckCircle2,
+  XCircle,
+  FolderPlus,
+  FileText,
+  Layers,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
 import { ExamPaper } from "@/components/print/exam-paper";
+import { MultiPaperConfig } from "@/components/print/multi-paper-config";
 import { PrintStyleMenu } from "@/components/print/print-style-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +44,7 @@ import {
   type QuestionEdit,
 } from "@/lib/exam-print";
 import { TYPE_LABELS } from "@/lib/answers";
+import type { GeneratedBulkPaper } from "@/lib/exam-bulk";
 import { validateDeckJson, validateQuestionsJson } from "@/lib/schema";
 import type { Difficulty, Question, QuestionType } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -118,6 +129,10 @@ function PrintExamPage() {
 
   const set = (patch: Partial<ExamOptions>) => setOptions((o) => ({ ...o, ...patch }));
 
+  const [mode, setMode] = useState<"single" | "bulk">("single");
+  const [bulkPapers, setBulkPapers] = useState<GeneratedBulkPaper[] | null>(null);
+  const [previewBulk, setPreviewBulk] = useState(0);
+
   const pool = useMemo<Question[]>(() => {
     if (source === "json") return jsonQuestions ?? [];
     return decks.filter((d) => deckIds.includes(d.id)).flatMap((d) => d.questions);
@@ -200,41 +215,110 @@ function PrintExamPage() {
     if (first) set({ title: `${first.title} — Exam`, subject: first.subject });
   };
 
+  const handleBulkGenerated = (papers: GeneratedBulkPaper[]) => {
+    setBulkPapers(papers);
+    setPreviewBulk(0);
+    const total = papers.reduce((sum, paper) => sum + paper.questions.length, 0);
+    toast.success(`${papers.length} papers ready`, {
+      description: `${total} questions across ${papers.length} ${papers.length === 1 ? "paper" : "papers"}.`,
+    });
+  };
+
+  const saveBulkPapers = () => {
+    if (!bulkPapers?.length) return;
+    const savedAt = Date.now();
+    bulkPapers.forEach((paper) => {
+      addPaper({
+        id: createId(),
+        title: paper.title,
+        createdAt: savedAt,
+        options: { ...options, title: paper.title },
+        questions: paper.questions,
+        deckIds: source === "decks" ? deckIds : undefined,
+        sittings: [],
+      });
+    });
+    toast.success(`${bulkPapers.length} papers added to your shelf`, {
+      description: "Find them under Paper Shelf — reprint any paper or log its sitting.",
+    });
+  };
+
+  const bulkPreviewPaper = bulkPapers?.length
+    ? bulkPapers[Math.min(previewBulk, bulkPapers.length - 1)]
+    : undefined;
+
   return (
     <div className="max-w-6xl">
       <div className="print-hide">
         <PageHeader
           title={fromPaper ? "Reprint paper" : "Printable exam"}
-          description="Pick a deck or paste in questions, shape the paper, then print it or save it as a PDF."
+          description={
+            mode === "bulk"
+              ? "Build a batch of numbered papers from the same pool — one for each class, version or sitting."
+              : "Pick a deck or paste in questions, shape the paper, then print it or save it as a PDF."
+          }
           action={
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  addPaper({
-                    id: createId(),
-                    title: options.title || "Practice paper",
-                    createdAt: Date.now(),
-                    options,
-                    questions: paperQuestions,
-                    deckIds: source === "decks" ? deckIds : undefined,
-                    sittings: [],
-                  });
-                  toast.success("Added to your paper shelf", {
-                    description:
-                      "Find it under Paper Shelf — reprint it any time or log a sitting's score.",
-                  });
-                }}
-                disabled={!paperQuestions.length}
-              >
-                <FolderPlus /> Save to paper shelf
-              </Button>
-              <Button onClick={() => window.print()} disabled={!questions.length}>
-                <Printer /> Print / Save as PDF
-              </Button>
-            </div>
+            mode === "single" ? (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    addPaper({
+                      id: createId(),
+                      title: options.title || "Practice paper",
+                      createdAt: Date.now(),
+                      options,
+                      questions: paperQuestions,
+                      deckIds: source === "decks" ? deckIds : undefined,
+                      sittings: [],
+                    });
+                    toast.success("Added to your paper shelf", {
+                      description:
+                        "Find it under Paper Shelf — reprint it any time or log a sitting's score.",
+                    });
+                  }}
+                  disabled={!paperQuestions.length}
+                >
+                  <FolderPlus /> Save to paper shelf
+                </Button>
+                <Button onClick={() => window.print()} disabled={!questions.length}>
+                  <Printer /> Print / Save as PDF
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" onClick={saveBulkPapers} disabled={!bulkPapers?.length}>
+                  <FolderPlus /> Save all to shelf
+                </Button>
+                <Button onClick={() => window.print()} disabled={!bulkPapers?.length}>
+                  <Printer /> Print all papers
+                </Button>
+              </div>
+            )
           }
         />
+
+        <div className="mb-6 flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant={mode === "single" ? "default" : "outline"}
+            onClick={() => setMode("single")}
+          >
+            <FileText /> Single paper
+          </Button>
+          <Button
+            size="sm"
+            variant={mode === "bulk" ? "default" : "outline"}
+            onClick={() => setMode("bulk")}
+          >
+            <Layers /> Multiple papers
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {mode === "single"
+              ? "One paper, shaped and edited by hand."
+              : "A numbered batch from the same question pool."}
+          </span>
+        </div>
       </div>
 
       <div className="print-hide grid gap-6 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
@@ -329,28 +413,30 @@ function PrintExamPage() {
           <section className="panel space-y-4 p-5">
             <h2 className="text-sm font-semibold">What goes on the paper</h2>
 
-            <div className="space-y-2">
-              <Label htmlFor="question-count" className="text-xs">
-                Questions
-              </Label>
-              <Input
-                id="question-count"
-                type="number"
-                min={1}
-                step={1}
-                value={count}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  if (raw === "") {
-                    setCount(1);
-                    return;
-                  }
-                  const n = parseInt(raw, 10);
-                  setCount(Math.max(1, n));
-                }}
-                className="max-w-[120px]"
-              />
-            </div>
+            {mode === "single" && (
+              <div className="space-y-2">
+                <Label htmlFor="question-count" className="text-xs">
+                  Questions
+                </Label>
+                <Input
+                  id="question-count"
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={count}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (raw === "") {
+                      setCount(1);
+                      return;
+                    }
+                    const n = parseInt(raw, 10);
+                    setCount(Math.max(1, n));
+                  }}
+                  className="max-w-[120px]"
+                />
+              </div>
+            )}
 
             <div>
               <Label className="text-xs">Question types</Label>
@@ -394,6 +480,15 @@ function PrintExamPage() {
               </div>
             </div>
           </section>
+
+          {mode === "bulk" && (
+            <MultiPaperConfig
+              pool={pool}
+              filters={{ types, difficulties, count, shuffle }}
+              baseOptions={options}
+              onGenerate={handleBulkGenerated}
+            />
+          )}
 
           <section className="panel space-y-4 p-5">
             <h2 className="text-sm font-semibold">Look & style</h2>
@@ -713,55 +808,119 @@ function PrintExamPage() {
 
         {/* Frozen preview: stays put while the settings column scrolls, and
             scrolls on its own when the paper is taller than the screen. */}
-        <div className="space-y-3 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto lg:pr-1">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs text-muted-foreground">
-              Preview · {paperQuestions.length} of {pool.length} available questions
-              {editCount > 0 && ` · ${editCount} edited`}
-            </p>
-            <div className="flex items-center gap-2">
-              {editCount > 0 && (
-                <Button size="sm" variant="ghost" onClick={() => setEdits({})}>
-                  Undo all edits
-                </Button>
-              )}
-              <Label htmlFor="edit-paper" className="text-xs">
-                Edit on paper
-              </Label>
-              <Switch id="edit-paper" checked={editing} onCheckedChange={setEditing} />
+        {mode === "single" ? (
+          <div className="space-y-3 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto lg:pr-1">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">
+                Preview · {paperQuestions.length} of {pool.length} available questions
+                {editCount > 0 && ` · ${editCount} edited`}
+              </p>
+              <div className="flex items-center gap-2">
+                {editCount > 0 && (
+                  <Button size="sm" variant="ghost" onClick={() => setEdits({})}>
+                    Undo all edits
+                  </Button>
+                )}
+                <Label htmlFor="edit-paper" className="text-xs">
+                  Edit on paper
+                </Label>
+                <Switch id="edit-paper" checked={editing} onCheckedChange={setEditing} />
+              </div>
             </div>
-          </div>
-          {editing && (
-            <p className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs">
-              Click any title, instruction, question or answer choice on the paper and type over it.
-              Press Enter to finish. Use the × beside a question to drop it from this paper. Your
-              decks aren't changed.
-            </p>
-          )}
-          <div className="overflow-hidden rounded-xl border border-border shadow-sm">
-            {paperQuestions.length ? (
-              <ExamPaper
-                questions={paperQuestions}
-                options={options}
-                editing={editing}
-                onChange={set}
-                onEditQuestion={editQuestion}
-              />
-            ) : (
-              <p className="p-10 text-center text-sm text-muted-foreground">
-                Choose a deck or paste questions to see the paper.
+            {editing && (
+              <p className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs">
+                Click any title, instruction, question or answer choice on the paper and type over
+                it. Press Enter to finish. Use the × beside a question to drop it from this paper.
+                Your decks aren't changed.
               </p>
             )}
+            <div className="overflow-hidden rounded-xl border border-border shadow-sm">
+              {paperQuestions.length ? (
+                <ExamPaper
+                  questions={paperQuestions}
+                  options={options}
+                  editing={editing}
+                  onChange={set}
+                  onEditQuestion={editQuestion}
+                />
+              ) : (
+                <p className="p-10 text-center text-sm text-muted-foreground">
+                  Choose a deck or paste questions to see the paper.
+                </p>
+              )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="space-y-3 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto lg:pr-1">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">
+                {bulkPapers?.length
+                  ? `${bulkPapers.length} ${bulkPapers.length === 1 ? "paper" : "papers"} · ${bulkPapers.reduce((sum, paper) => sum + paper.questions.length, 0)} questions in total`
+                  : "Bulk preview"}
+              </p>
+              {!!bulkPapers?.length && (
+                <span className="text-[11px] text-muted-foreground">
+                  Click a paper to preview it
+                </span>
+              )}
+            </div>
+            {!bulkPapers?.length ? (
+              <div className="panel grid place-items-center p-10 text-center">
+                <Layers className="size-7 text-muted-foreground" />
+                <p className="mt-3 max-w-sm text-sm text-muted-foreground">
+                  Choose how many papers you need, then generate them. Every paper gets its own
+                  numbered title and its own set of questions.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-wrap gap-1.5">
+                  {bulkPapers.map((paper, index) => (
+                    <button
+                      key={paper.paperId}
+                      type="button"
+                      onClick={() => setPreviewBulk(index)}
+                      aria-pressed={previewBulk === index}
+                      className={cn(
+                        "press rounded-lg border px-3 py-2 text-left text-xs transition-colors",
+                        previewBulk === index
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-primary/40",
+                      )}
+                    >
+                      <span className="block font-semibold">Paper {paper.paperNumber}</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {paper.questions.length}q
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                {bulkPreviewPaper && (
+                  <div className="overflow-hidden rounded-xl border border-border shadow-sm">
+                    <ExamPaper
+                      questions={bulkPreviewPaper.questions}
+                      options={{ ...options, title: bulkPreviewPaper.title }}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Print-only clean copy */}
-      {!!paperQuestions.length && (
+      {/* Print-only clean copies */}
+      {mode === "single" && !!paperQuestions.length && (
         <div className="print-only hidden">
           <ExamPaper questions={paperQuestions} options={options} />
         </div>
       )}
+      {mode === "bulk" &&
+        bulkPapers?.map((paper) => (
+          <div key={paper.paperId} className="print-only bulk-paper-sheet hidden">
+            <ExamPaper questions={paper.questions} options={{ ...options, title: paper.title }} />
+          </div>
+        ))}
     </div>
   );
 }

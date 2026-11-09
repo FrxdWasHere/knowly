@@ -293,7 +293,7 @@ function CourseQuizPage() {
       />
 
       <div className="mx-auto max-w-3xl">
-        <div className="mb-4 h-2 overflow-hidden rounded-full bg-surface2">
+        <div className="mb-4 h-2 overflow-hidden rounded-full bg-surface-2">
           <div
             className="h-full rounded-full bg-primary transition-all"
             style={{ width: `${((index + 1) / total) * 100}%` }}
@@ -350,7 +350,7 @@ function CourseQuizPage() {
           )}
 
           {current.type === "flashcard" && (
-            <div className="mt-5 rounded-xl border border-border bg-surface2/50 p-4">
+            <div className="mt-5 rounded-xl border border-border bg-surface-2/50 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Answer
               </p>

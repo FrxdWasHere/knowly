@@ -23,6 +23,7 @@ import {
   CoursePaper,
   FONT_SCALE_OPTIONS,
   FOOTER_OPTIONS,
+  HERO_LAYOUT_OPTIONS,
   PAPER_SIZE_OPTIONS,
   SPACING_OPTIONS,
   STORAGE_KEY_COURSE_PRINT,
@@ -242,7 +243,7 @@ function CoursePrintPage() {
           <div
             role="status"
             aria-live="polite"
-            className="print-hide fixed inset-0 z-[80] grid place-items-center bg-background/70 p-6 backdrop-blur-sm"
+            className="print-hide fixed inset-0 z-[80] grid place-items-center bg-foreground/55 p-6"
           >
             <div className="panel w-full max-w-sm p-7 text-center">
               <BookOpenCheck className="mx-auto size-8 animate-pulse text-primary" />
@@ -346,6 +347,22 @@ function CoursePrintPage() {
                   />
                 ))}
               </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {HERO_LAYOUT_OPTIONS.map((hero) => (
+                  <Chip
+                    key={hero.id}
+                    active={options.heroLayout === hero.id}
+                    onClick={() => patch({ heroLayout: hero.id })}
+                    label={hero.label}
+                    sub={hero.sub}
+                  />
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
+                {options.heroLayout === "compact"
+                  ? "The hero stays at the top of page 1, sized to its own content up to about a third of the page; the contents follow underneath."
+                  : "The hero gets sheet 1 to itself and the contents start on page 2."}
+              </p>
             </OptionGroup>
 
             <OptionGroup icon={<Palette className="size-4 text-primary" />} label="Paper theme">
@@ -394,8 +411,8 @@ function CoursePrintPage() {
                   onChange={(value) => patch({ includeToc: value })}
                 />
                 <ToggleRow
-                  label="Cover page"
-                  description="Drop the cover to start straight at the contents."
+                  label="Cover / hero"
+                  description="Show the hero at all — as a cover sheet or the compact hero picked above."
                   checked={options.includeCover}
                   onChange={(value) => patch({ includeCover: value })}
                 />
@@ -437,7 +454,7 @@ function CoursePrintPage() {
             </div>
           </div>
 
-          <div className="preview-stage min-w-0 rounded-3xl bg-surface2/40 p-6 sm:p-8">
+          <div className="preview-stage min-w-0 rounded-3xl bg-surface-2/40 p-6 sm:p-8">
             <CoursePaper
               course={course}
               progress={progress}

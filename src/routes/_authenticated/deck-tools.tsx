@@ -177,7 +177,7 @@ function DeckToolsPage() {
                   "flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
                   mergeIds.includes(d.id)
                     ? "border-primary/50 bg-primary/10"
-                    : "border-border hover:bg-secondary/40",
+                    : "border-border hover:bg-surface-hover",
                 )}
               >
                 <span className="flex min-w-0 items-center gap-2">

@@ -1660,7 +1660,7 @@ export function buildSampleProfile(now = Date.now()): AppState {
   const labels: BinderLabel[] = [
     { id: "label-l1", name: "Term 1", color: "blue", emoji: "📘" },
     { id: "label-l2", name: "Exam priority", color: "amber", emoji: "🎯" },
-    { id: "label-l3", name: "Needs practice", color: "rose", emoji: "🧗" },
+    { id: "label-l3", name: "Needs practice", color: "rose", emoji: "🧭" },
   ];
 
   // Monday-first: day 0 = Monday … day 6 = Sunday.
@@ -1859,7 +1859,7 @@ export function buildSampleProfile(now = Date.now()): AppState {
     focusSubjects: ["Biology", "Chemistry", "Statistics"],
     studyReason: "Exam prep",
     dailyGoal: 30,
-    theme: "dark",
+    theme: "light",
     sidebarCollapsed: false,
     hiddenWidgets: [],
   };

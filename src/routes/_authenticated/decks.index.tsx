@@ -258,7 +258,11 @@ function DeckLibrary() {
                       </Button>
                     )}
                     <Button size="sm" variant={srs.due > 0 ? "secondary" : "default"} asChild>
-                      <Link to="/study/$deckId" params={{ deckId: d.id }}>
+                      <Link
+                        to="/study/$deckId"
+                        params={{ deckId: d.id }}
+                        search={{ part: undefined }}
+                      >
                         Study
                       </Link>
                     </Button>

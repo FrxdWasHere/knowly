@@ -373,7 +373,7 @@ function CourseForgePage() {
                     "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
                     types.includes(type) && !typesAuto
                       ? "border-primary/40 bg-primary/15 text-primary"
-                      : "border-border bg-surface2 text-muted-foreground hover:text-foreground",
+                      : "border-border bg-surface-2 text-muted-foreground hover:text-foreground",
                     typesAuto && "opacity-40",
                   )}
                 >
@@ -403,7 +403,7 @@ function CourseForgePage() {
 
           <div className="space-y-2">
             <Label>Math & science</Label>
-            <label className="flex items-center gap-3 rounded-xl border border-border bg-surface2/60 p-3 text-sm">
+            <label className="flex items-center gap-3 rounded-xl border border-border bg-surface-2/60 p-3 text-sm">
               <input
                 type="checkbox"
                 checked={isSTEM}
@@ -417,7 +417,7 @@ function CourseForgePage() {
                 </span>
               </span>
             </label>
-            <label className="flex items-center gap-3 rounded-xl border border-border bg-surface2/60 p-3 text-sm">
+            <label className="flex items-center gap-3 rounded-xl border border-border bg-surface-2/60 p-3 text-sm">
               <input
                 type="checkbox"
                 checked={needsEquations}
@@ -431,7 +431,7 @@ function CourseForgePage() {
                 </span>
               </span>
             </label>
-            <label className="flex items-center gap-3 rounded-xl border border-border bg-surface2/60 p-3 text-sm">
+            <label className="flex items-center gap-3 rounded-xl border border-border bg-surface-2/60 p-3 text-sm">
               <input
                 type="checkbox"
                 checked={needsGraphs}
@@ -447,7 +447,7 @@ function CourseForgePage() {
             </label>
           </div>
 
-          <label className="flex items-center gap-3 rounded-xl border border-border bg-surface2/60 p-3 text-sm">
+          <label className="flex items-center gap-3 rounded-xl border border-border bg-surface-2/60 p-3 text-sm">
             <input
               type="checkbox"
               checked={includeAssessments}
@@ -462,7 +462,7 @@ function CourseForgePage() {
             </span>
           </label>
 
-          <div className="flex items-center justify-between rounded-xl border border-border bg-surface2/50 px-4 py-3">
+          <div className="flex items-center justify-between rounded-xl border border-border bg-surface-2/50 px-4 py-3">
             <div>
               <p className="text-sm font-medium">
                 {sizeAuto

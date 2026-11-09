@@ -365,7 +365,7 @@ function NotesLibraryPage() {
                 search={{ page: hit.page.id }}
                 className="panel flex flex-wrap items-center gap-3 p-3 text-sm transition-colors hover:border-primary/30"
               >
-                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-surface2 text-sm">
+                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-surface-2 text-sm">
                   {hit.notebook.emoji}
                 </span>
                 <span className="min-w-0 flex-1">
@@ -429,7 +429,9 @@ function NotebookCard({
         to="/notes/$notebookId"
         params={{ notebookId: notebook.id }}
         className="relative block aspect-[4/3] overflow-hidden"
-        style={{ background: `linear-gradient(140deg, ${notebook.color}, ${notebook.color}55)` }}
+        style={{
+          background: `linear-gradient(140deg, ${notebook.color}, color-mix(in oklab, ${notebook.color} 40%, transparent))`,
+        }}
       >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,color-mix(in_oklab,var(--foreground)_14%,transparent),transparent_45%)]" />
         <div className="absolute inset-x-5 bottom-5 top-8 rounded-xl border border-border bg-card/90 p-4 shadow-xl">
@@ -465,7 +467,7 @@ function NotebookCard({
             aria-label={notebook.favorite ? "Remove favourite" : "Favourite notebook"}
             onClick={onFavorite}
             className={cn(
-              "grid size-8 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-surface2",
+              "grid size-8 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-surface-hover",
               notebook.favorite && "text-warning",
             )}
           >

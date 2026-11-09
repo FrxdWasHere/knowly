@@ -212,7 +212,7 @@ function CourseLessonPage() {
             <div className="mt-3 flex items-start gap-3">
               <span
                 className="grid size-12 shrink-0 place-items-center rounded-2xl text-2xl ring-1 ring-border"
-                style={{ background: `${course.color}1d` }}
+                style={{ background: `color-mix(in oklab, ${course.color} 11%, transparent)` }}
               >
                 {course.emoji || "📘"}
               </span>
@@ -269,7 +269,7 @@ function CourseLessonPage() {
           <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             Course progress
           </span>
-          <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-surface2">
+          <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-2">
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{
@@ -285,7 +285,7 @@ function CourseLessonPage() {
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
           <article className="min-w-0 overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
-            <div className="border-b border-border bg-gradient-to-br from-surface to-card px-5 py-5 sm:px-8">
+            <div className="border-b-[3px] border-border bg-surface px-5 py-5 sm:px-8">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline">Module {course.modules.indexOf(module) + 1}</Badge>
                 {lesson.objectives.length > 0 && (
@@ -518,7 +518,7 @@ function LessonBlock({ block }: { block: CourseBlock }) {
               ? "border-warning/30 bg-warning/10"
               : block.tone === "definition"
                 ? "border-primary/25 bg-primary/8"
-                : "border-border bg-surface2/60",
+                : "border-border bg-surface-2/60",
         )}
       >
         <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
@@ -535,7 +535,7 @@ function LessonBlock({ block }: { block: CourseBlock }) {
 
 function Markdown({ markdown }: { markdown: string }) {
   return (
-    <div className="text-sm leading-7 text-foreground/90 [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-5 [&_blockquote]:text-muted-foreground [&_code]:rounded [&_code]:bg-surface2 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-xs [&_h1]:mb-3 [&_h1]:mt-6 [&_h1]:font-display [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:mb-2 [&_h2]:mt-6 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:mb-2 [&_h3]:mt-5 [&_h3]:font-semibold [&_li]:my-1 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-8 [&_p]:my-3 [&_pre]:my-3 [&_pre]:overflow-auto [&_pre]:rounded-xl [&_pre]:bg-surface2 [&_pre]:p-4 [&_pre]:text-xs [&_strong]:font-semibold [&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-border [&_td]:p-2 [&_th]:border [&_th]:border-border [&_th]:bg-surface2 [&_th]:p-2 [&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-8">
+    <div className="text-sm leading-7 text-foreground/90 [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-5 [&_blockquote]:text-muted-foreground [&_code]:rounded [&_code]:bg-surface-2 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-xs [&_h1]:mb-3 [&_h1]:mt-6 [&_h1]:font-display [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:mb-2 [&_h2]:mt-6 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:mb-2 [&_h3]:mt-5 [&_h3]:font-semibold [&_li]:my-1 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-8 [&_p]:my-3 [&_pre]:my-3 [&_pre]:overflow-auto [&_pre]:rounded-xl [&_pre]:bg-surface-2 [&_pre]:p-4 [&_pre]:text-xs [&_strong]:font-semibold [&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-border [&_td]:p-2 [&_th]:border [&_th]:border-border [&_th]:bg-surface-2 [&_th]:p-2 [&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-8">
       <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
         {markdown}
       </ReactMarkdown>
@@ -565,7 +565,7 @@ function Checkpoint({
   };
 
   return (
-    <div className="rounded-2xl border border-border bg-surface2/40 p-4 sm:p-5">
+    <div className="rounded-2xl border border-border bg-surface-2/40 p-4 sm:p-5">
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="outline">{TYPE_LABELS[question.type]}</Badge>
         {question.concept && (

@@ -15,11 +15,11 @@ export function LegalPage({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border bg-background/90 backdrop-blur">
+    <div className="min-h-screen text-foreground">
+      <header className="border-b-[3px] border-border bg-background">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
           <Link to="/" className="flex items-center gap-3 font-display text-lg font-bold">
-            <span className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground">
+            <span className="grid size-9 place-items-center rounded-lg border-[3px] border-border bg-surface text-primary shadow-[2px_2px_0_0_var(--shadow-ink)]">
               <Flame className="size-4" />
             </span>
             Knowly
@@ -38,7 +38,7 @@ export function LegalPage({
         <p className="mt-5 text-xs text-muted-foreground">Effective September 12, 2026</p>
         <div className="legal-copy mt-14 space-y-10">{children}</div>
       </main>
-      <footer className="border-t border-border py-8">
+      <footer className="border-t-[3px] border-border py-8">
         <div className="mx-auto flex max-w-3xl flex-wrap gap-x-6 gap-y-2 px-6 text-sm text-muted-foreground">
           <span>© 2026 Knowly</span>
           <Link to="/privacy" className="hover:text-foreground">

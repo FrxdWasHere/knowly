@@ -40,9 +40,9 @@ export const Route = createFileRoute("/_authenticated/journal")({
 
 const MOODS: { id: JournalMood; label: string; emoji: string }[] = [
   { id: "great", label: "Great", emoji: "🔥" },
-  { id: "good", label: "Good", emoji: "🙂" },
-  { id: "okay", label: "Okay", emoji: "😐" },
-  { id: "rough", label: "Rough", emoji: "😵" },
+  { id: "good", label: "Good", emoji: "☀️" },
+  { id: "okay", label: "Okay", emoji: "⛅" },
+  { id: "rough", label: "Rough", emoji: "🌧️" },
 ];
 
 function moodMeta(mood: JournalMood) {

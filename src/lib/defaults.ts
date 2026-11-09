@@ -5,18 +5,33 @@ import { DEFAULT_CUSTOM_THEME } from "./themes";
 import { DEFAULT_SRS_CONFIG } from "./srs";
 import { DEFAULT_SIDEBAR_GROUPS } from "./sidebar-preferences";
 
+/**
+ * Brand accents for the paper workspace. Each value clears 4.5:1 against paper
+ * so it can be used for links and icons, and takes white text when used as a
+ * fill. The `glow` is the bright block version, for decorative fills only.
+ */
 export const ACCENTS: { id: string; label: string; value: string; glow: string }[] = [
-  { id: "ocean", label: "Ocean", value: "oklch(0.72 0.155 238)", glow: "oklch(0.83 0.115 210)" },
   {
-    id: "deep-blue",
-    label: "Deep Blue",
-    value: "oklch(0.62 0.18 255)",
-    glow: "oklch(0.74 0.15 245)",
+    id: "coral",
+    label: "Coral",
+    value: "oklch(0.527 0.188 24.9)",
+    glow: "oklch(0.712 0.181 22.8)",
   },
-  { id: "cyan", label: "Arc Blue", value: "oklch(0.75 0.12 220)", glow: "oklch(0.84 0.09 215)" },
-  { id: "azure", label: "Azure", value: "oklch(0.68 0.17 235)", glow: "oklch(0.79 0.13 225)" },
-  { id: "midnight", label: "Midnight", value: "oklch(0.55 0.2 270)", glow: "oklch(0.68 0.17 260)" },
-  { id: "tidal", label: "Tidal", value: "oklch(0.66 0.15 205)", glow: "oklch(0.78 0.12 210)" },
+  {
+    id: "grape",
+    label: "Grape",
+    value: "oklch(0.49 0.23 303.9)",
+    glow: "oklch(0.627 0.233 303.9)",
+  },
+  { id: "sky", label: "Sky", value: "oklch(0.488 0.217 264)", glow: "oklch(0.714 0.143 254.6)" },
+  {
+    id: "mint",
+    label: "Mint",
+    value: "oklch(0.508 0.115 163.2)",
+    glow: "oklch(0.773 0.153 163.2)",
+  },
+  { id: "pink", label: "Pink", value: "oklch(0.49 0.19 5)", glow: "oklch(0.656 0.212 354.3)" },
+  { id: "ink", label: "Ink", value: "oklch(0 0 0)", glow: "oklch(0.35 0 0)" },
 ];
 
 export const DECK_COLORS = [
@@ -68,16 +83,16 @@ export const DEFAULT_SETTINGS: Settings = {
   studyReason: "",
   dailyGoal: 20,
   confirmBeforeExit: true,
-  theme: "dark",
+  theme: "light",
   colorTheme: "default",
   customTheme: { ...DEFAULT_CUSTOM_THEME },
-  accent: "ocean",
+  accent: "coral",
   wallpaper: null,
   wallpaperOpacity: 0.35,
   wallpaperBlur: 4,
   fontScale: 1,
   density: "cozy",
-  radius: 0.75,
+  radius: 1,
   buttonSize: "default",
   animationSpeed: 1,
   showProgressBars: true,
@@ -296,22 +311,26 @@ export function stemFlagsForSubject(subject: string | undefined): StemFlags {
   };
 }
 
+/**
+ * Profile marks. Objects and symbols only — no faces, no animals, no people.
+ * The avatar is an identity badge, not a mascot.
+ */
 export const AVATAR_EMOJIS = [
   "🌊",
   "💧",
-  "🐋",
-  "🐬",
-  "🐙",
-  "🦈",
-  "🐚",
   "⚓",
+  "🌀",
   "🧠",
   "📘",
   "📐",
   "🔬",
   "🧪",
-  "🌀",
+  "📚",
+  "✏️",
+  "🖋️",
   "🫐",
+  "💎",
+  "🔷",
   "🩵",
   "💙",
   "⚡",
@@ -319,8 +338,8 @@ export const AVATAR_EMOJIS = [
   "🏆",
   "🎯",
   "🚀",
-  "🦉",
-  "🐺",
+  "⭐",
+  "🌙",
 ];
 
 export const STUDY_REASONS = [

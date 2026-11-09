@@ -16,12 +16,10 @@ import {
   Keyboard,
   Lightbulb,
   ListChecks,
-  Moon,
   RotateCcw,
   ShieldCheck,
   Shuffle,
   SlidersHorizontal,
-  Sun,
   Target,
   Timer,
   Trash2,
@@ -44,13 +42,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import {
-  ACCENTS,
-  AVATAR_EMOJIS,
-  GRADE_LEVELS,
-  STUDY_REASONS,
-  SUBJECT_SUGGESTIONS,
-} from "@/lib/defaults";
+import { AVATAR_EMOJIS, GRADE_LEVELS, STUDY_REASONS, SUBJECT_SUGGESTIONS } from "@/lib/defaults";
 import { fileToWallpaperDataUrl } from "@/lib/wallpaper";
 import { estimateStorageUsage, formatBytes, type StorageUsage } from "@/lib/storage-usage";
 import { useWallpaperUrl } from "@/hooks/use-wallpaper-url";
@@ -66,7 +58,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
       {
         name: "description",
         content:
-          "Tune accent colors, density, accessibility, study behaviour and gamification, then export, import or wipe all locally stored Knowly data.",
+          "Tune the Knowly light or dark theme, density, accessibility, study behaviour and gamification, then export, import or wipe all locally stored Knowly data.",
       },
       { property: "og:title", content: "Settings — Knowly" },
       {
@@ -170,8 +162,8 @@ function SliderBlock({
     <div className="px-4 py-3">
       <div className="flex items-center gap-3">
         {icon && tint && <Tile icon={icon} tint={tint} />}
-        <span className="flex-1 text-[15px]">{label}</span>
-        <span className="text-[15px] tabular-nums text-muted-foreground">{value}</span>
+        <span className="min-w-0 flex-1 truncate text-[15px]">{label}</span>
+        <span className="shrink-0 text-[15px] tabular-nums text-muted-foreground">{value}</span>
       </div>
       <div className={cn(icon && tint && "pl-11", "mt-2")}>{children}</div>
       {hint && (
@@ -202,7 +194,7 @@ function ActionRow({
     <button
       type="button"
       onClick={onClick}
-      className="press flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-muted/40"
+      className="press flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-surface-hover"
     >
       <Tile icon={icon} tint={tint} />
       <span className="min-w-0 flex-1">
@@ -367,7 +359,7 @@ function SettingsPage() {
         {/* Profile banner, iOS Apple-Account style */}
         <div className="anim-fade-up overflow-hidden rounded-2xl border border-border bg-card/80 p-4">
           <div className="flex items-center gap-4">
-            <span className="grid size-16 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary/50 via-primary/20 to-transparent text-3xl ring-1 ring-primary/30">
+            <span className="grid size-16 shrink-0 place-items-center rounded-full border-[3px] border-border bg-block-lemon text-3xl text-ink shadow-[3px_3px_0_0_var(--shadow-ink)]">
               {s.avatarEmoji || "🌊"}
             </span>
             <div className="min-w-0 flex-1">
@@ -641,37 +633,13 @@ function SettingsPage() {
           </div>
         </Group>
 
-        <Group title="Appearance" footer="Pick a preset palette or build your own from hex codes.">
-          <div className="px-4 py-3">
+        <Group
+          title="Appearance"
+          footer="Knowly has two hand-built themes, designed together so switching modes keeps the same character. Density, type size and control size are yours to tune."
+        >
+          <div className="px-4 py-4">
             <ThemePicker />
           </div>
-          <ChipRow label={`Accent${s.colorTheme !== "default" ? " (default theme only)" : ""}`}>
-            {ACCENTS.map((a) => (
-              <button
-                key={a.id}
-                type="button"
-                onClick={() => set("accent", a.id)}
-                aria-pressed={s.accent === a.id}
-                className={cn(
-                  "press flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-[13px]",
-                  s.accent === a.id && "border-primary bg-primary/15 font-medium text-primary",
-                )}
-              >
-                <span className="size-3 rounded-full" style={{ background: a.value }} />
-                {a.label}
-              </button>
-            ))}
-          </ChipRow>
-          <Segmented
-            label="Theme"
-            ariaLabel="Colour theme"
-            value={s.theme}
-            onChange={(v) => set("theme", v)}
-            options={[
-              { value: "light", label: "Light", icon: Sun },
-              { value: "dark", label: "Dark", icon: Moon },
-            ]}
-          />
           <SliderBlock
             icon={Gauge}
             tint="--chart-4"

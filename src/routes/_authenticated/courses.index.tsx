@@ -178,7 +178,7 @@ function CourseCard({ course }: { course: Course }) {
       <div className="h-1.5 w-full" style={{ background: course.color }} />
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-start gap-3">
-          <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-surface2 text-2xl ring-1 ring-border">
+          <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-surface-2 text-2xl ring-1 ring-border">
             {course.emoji || "📘"}
           </span>
           <div className="min-w-0 flex-1">
@@ -217,7 +217,7 @@ function CourseCard({ course }: { course: Course }) {
             </span>
             <span className="font-semibold">{stats.percent}%</span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-surface2">
+          <div className="h-2 overflow-hidden rounded-full bg-surface-2">
             <div
               className="h-full rounded-full transition-all"
               style={{ width: `${stats.percent}%`, background: course.color }}

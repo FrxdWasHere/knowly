@@ -49,6 +49,12 @@ export type PaperSpacing = "compact" | "normal" | "relaxed";
 export type PaperBreaks = "flow" | "modules" | "lessons";
 export type PaperFooterStyle = "count" | "of" | "plain" | "none";
 export type PaperCoverStyle = "book" | "classic";
+/**
+ * How much room the hero takes: `page` prints it as a dedicated cover sheet,
+ * `compact` keeps it in the flow at the top of page one, about a third of the
+ * page area.
+ */
+export type PaperHeroLayout = "page" | "compact";
 
 export interface CoursePrintOptions {
   paper: PaperSizeId;
@@ -60,6 +66,7 @@ export interface CoursePrintOptions {
   footerStyle: PaperFooterStyle;
   includeCover: boolean;
   coverStyle: PaperCoverStyle;
+  heroLayout: PaperHeroLayout;
   includeToc: boolean;
   includeAnswerKey: boolean;
   includeNotes: boolean;
@@ -82,6 +89,7 @@ export const defaultCoursePrintOptions: CoursePrintOptions = {
   footerStyle: "count",
   includeCover: true,
   coverStyle: "book",
+  heroLayout: "page",
   includeToc: true,
   includeAnswerKey: true,
   includeNotes: true,
@@ -182,6 +190,11 @@ export const COVER_OPTIONS: { id: PaperCoverStyle; label: string; sub: string }[
   { id: "classic", label: "Plain", sub: "White title page" },
 ];
 
+export const HERO_LAYOUT_OPTIONS: { id: PaperHeroLayout; label: string; sub: string }[] = [
+  { id: "page", label: "Full cover page", sub: "Hero gets sheet 1 to itself" },
+  { id: "compact", label: "Compact hero", sub: "Fits its copy, up to a third of p1" },
+];
+
 const SERIF_HEADINGS_STACK = '"Book Antiqua", "Palatino Linotype", Georgia, serif';
 
 /* --------------------------------------------------------------------- *
@@ -197,6 +210,7 @@ interface TocRowData {
 }
 
 type UnitData =
+  | { kind: "hero"; height: number; stats: CourseStats }
   | { kind: "toc-header" }
   | { kind: "toc-row"; row: TocRowData }
   | { kind: "course-objectives"; items: string[] }
@@ -223,6 +237,7 @@ interface PaperUnit {
 }
 
 const UNIT_SPACE: Partial<Record<UnitData["kind"], number>> = {
+  hero: 0,
   "toc-header": 0,
   "toc-row": 6,
   "course-objectives": 18,
@@ -255,12 +270,24 @@ function buildUnits(
   progress: CourseProgress | undefined,
   decks: Deck[],
   options: CoursePrintOptions,
+  contentHeight: number,
 ): PaperUnit[] {
   const units: PaperUnit[] = [];
   let uid = 0;
   const push = (data: UnitData, tocKey?: string) => {
     units.push({ id: `unit-${++uid}`, data, tocKey });
   };
+
+  /* ---------------------------- hero ---------------------------- */
+  // a compact hero shares page 1 with the contents instead of owning a sheet;
+  // it stands as tall as its own copy needs, up to about a third of the page
+  if (options.includeCover && options.heroLayout === "compact") {
+    push({
+      kind: "hero",
+      height: Math.round(contentHeight / 3),
+      stats: courseStats(course, progress),
+    });
+  }
 
   /* ---------------------------- TOC ---------------------------- */
   if (options.includeToc) {
@@ -587,9 +614,12 @@ export function CoursePaper({
   }, [skin.accent]);
 
   const units = useMemo(
-    () => buildUnits(course, progress, decks, options),
-    [course, progress, decks, options],
+    () => buildUnits(course, progress, decks, options, contentHeight),
+    [course, progress, decks, options, contentHeight],
   );
+  const coverStyle = options.coverStyle;
+  // only a full cover gets its own sheet; a compact hero stays in the flow
+  const coverOnOwnSheet = options.includeCover && options.heroLayout === "page";
 
   const measureRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
@@ -617,7 +647,7 @@ export function CoursePaper({
       let cursor = 0;
       let index = 0;
       // the answer key and the final exam are separate "book parts" — always new pages
-      const offset = options.includeCover ? 2 : 1;
+      const offset = coverOnOwnSheet ? 2 : 1;
       for (const unit of units) {
         const height = heights[index++] ?? 0;
         const forced =
@@ -656,7 +686,7 @@ export function CoursePaper({
     options.paper,
     options.orientation,
     options.breaks,
-    options.includeCover,
+    coverOnOwnSheet,
   ]);
 
   /* responsive preview scale */
@@ -671,7 +701,7 @@ export function CoursePaper({
   }, []);
   const scale = stageWidth ? Math.max(0.05, Math.min(1, stageWidth / dims.width)) : 1;
 
-  const totalPages = (layout?.pages.length ?? 0) + (options.includeCover ? 1 : 0);
+  const totalPages = (layout?.pages.length ?? 0) + (coverOnOwnSheet ? 1 : 0);
   const coverDims = dims;
   const flowPages = layout?.pages ?? [];
   const footerPageText = (page: number) => {
@@ -715,7 +745,15 @@ export function CoursePaper({
         }}
       >
         {units.map((unit) => (
-          <UnitSlot key={unit.id} unit={unit} courseColor="var(--exam-accent)" toc={{}} />
+          <UnitSlot
+            key={unit.id}
+            unit={unit}
+            course={course}
+            courseColor="var(--exam-accent)"
+            toc={{}}
+            theme={options.theme}
+            coverStyle={coverStyle}
+          />
         ))}
       </div>
 
@@ -738,7 +776,7 @@ export function CoursePaper({
             </SheetShell>
           ))}
 
-        {options.includeCover && (
+        {coverOnOwnSheet && (
           <SheetShell
             dims={coverDims}
             scale={scale}
@@ -790,15 +828,18 @@ export function CoursePaper({
               text:
                 options.footerStyle === "none"
                   ? null
-                  : footerPageText(pageIndex + (options.includeCover ? 2 : 1)),
+                  : footerPageText(pageIndex + (coverOnOwnSheet ? 2 : 1)),
             }}
           >
             {pageUnits.map((unit) => (
               <UnitSlot
                 key={unit.id}
                 unit={unit}
+                course={course}
                 courseColor="var(--exam-accent)"
                 toc={layout?.toc ?? {}}
+                theme={options.theme}
+                coverStyle={coverStyle}
               />
             ))}
           </SheetShell>
@@ -913,30 +954,61 @@ function SheetShell({
 
 function UnitSlot({
   unit,
+  course,
   courseColor,
   toc,
+  theme,
+  coverStyle,
 }: {
   unit: PaperUnit;
+  course: Course;
   courseColor: string;
   toc: Record<string, number>;
+  /** paper theme, so a compact hero matches the cover design */
+  theme?: string;
+  /** cover style, so a plain cover also gets a plain compact hero */
+  coverStyle?: PaperCoverStyle;
 }) {
   return (
     <div style={{ paddingTop: UNIT_SPACE[unit.data.kind] ?? 8 }}>
-      <UnitView data={unit.data} courseColor={courseColor} toc={toc} />
+      <UnitView
+        data={unit.data}
+        course={course}
+        courseColor={courseColor}
+        toc={toc}
+        theme={theme}
+        coverStyle={coverStyle}
+      />
     </div>
   );
 }
 
 function UnitView({
   data,
+  course,
   courseColor,
   toc,
+  theme,
+  coverStyle,
 }: {
   data: UnitData;
+  course: Course;
   courseColor: string;
   toc: Record<string, number>;
+  theme?: string;
+  coverStyle?: PaperCoverStyle;
 }) {
   switch (data.kind) {
+    case "hero":
+      return (
+        <CompactHero
+          course={course}
+          stats={data.stats}
+          height={data.height}
+          theme={theme}
+          coverStyle={coverStyle}
+        />
+      );
     case "toc-header":
       return (
         <header className="border-b-2 border-foreground pb-3">
@@ -1350,6 +1422,135 @@ function CoverBodyClassic({
       <p className="mt-4 text-[0.78em] uppercase tracking-[0.2em] text-muted-foreground">
         Printed study pack · generated with Knowly
       </p>
+    </div>
+  );
+}
+
+/* --------------------------------------------------------------------- *
+ * Compact hero — the cover's identity in about a third of a page, in flow.
+ * --------------------------------------------------------------------- */
+
+function CompactHero({
+  course,
+  stats,
+  height,
+  theme,
+  coverStyle,
+}: {
+  course: Course;
+  stats: CourseStats;
+  /** ceiling: about a third of the content area. The hero sizes itself to its
+   *  copy, so a short hero stays short instead of padding out a whole block */
+  height: number;
+  theme?: string;
+  /** "classic" is the white, text-first cover: the hero follows it too */
+  coverStyle?: PaperCoverStyle;
+}) {
+  const plain = coverStyle === "classic";
+  const design = coverDesign(theme, "var(--exam-accent)");
+  const statPairs: [string, string | number][] = [
+    ["Modules", course.modules.length],
+    ["Lessons", stats.lessons],
+    ["Questions", stats.questions],
+    ["Minutes", course.estimatedMinutes ?? "—"],
+  ];
+  if (plain) {
+    return (
+      <div
+        className="relative flex flex-col gap-4 overflow-hidden rounded-xl border border-border"
+        style={{
+          maxHeight: height,
+          padding: "26px 30px",
+          color: INK,
+          background: "#fff",
+        }}
+      >
+        <div>
+          <div aria-hidden className="h-1 w-12" style={{ background: "var(--exam-accent)" }} />
+          <p className="mt-3 text-[0.66em] font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+            {course.subject}
+            {course.level ? ` · ${course.level}` : ""}
+          </p>
+          <p className="mt-0.5 text-[0.62em] uppercase tracking-[0.22em] text-muted-foreground">
+            Knowly study pack
+          </p>
+        </div>
+        <div>
+          <h1 className="line-clamp-3 text-[1.85em] font-bold leading-[1.1] tracking-tight">
+            {course.title}
+          </h1>
+          {course.description && (
+            <p className="mt-2 line-clamp-2 max-w-lg text-[0.9em] leading-snug text-foreground">
+              {course.description}
+            </p>
+          )}
+        </div>
+        <div>
+          <div aria-hidden className="h-px w-full bg-border" />
+          <div className="mt-2.5 flex flex-wrap gap-x-5 gap-y-1.5">
+            {statPairs.map(([label, value]) => (
+              <p key={label} className="flex items-baseline gap-1.5">
+                <span className="text-[0.95em] font-bold tabular-nums">{value}</span>
+                <span className="text-[0.68em] uppercase tracking-[0.16em] text-muted-foreground">
+                  {label}
+                </span>
+              </p>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div
+      className="cover-art relative flex flex-col gap-4 overflow-hidden rounded-xl"
+      style={{ ...coverVars(design), maxHeight: height, padding: "26px 30px" }}
+    >
+      <CoverOrnament theme={theme} padX={30} accent="var(--exam-accent)" design={design} />
+      <div className="relative flex items-start justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="grid size-11 shrink-0 place-items-center rounded-lg border border-[color:var(--cover-line)] bg-[color:var(--cover-fill)] text-[1.4em]">
+            {course.emoji || "📘"}
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-[0.66em] font-semibold uppercase tracking-[0.3em] text-[color:var(--cover-muted)]">
+              {course.subject}
+              {course.level ? ` · ${course.level}` : ""}
+            </p>
+            <p className="mt-0.5 text-[0.62em] uppercase tracking-[0.22em] text-[color:var(--cover-muted)]">
+              Knowly study pack
+            </p>
+          </div>
+        </div>
+        <span className="shrink-0 text-[0.62em] font-semibold uppercase tracking-[0.26em] text-[color:var(--cover-muted)]">
+          KNOWLY
+        </span>
+      </div>
+
+      <div className="relative py-1">
+        <h1 className="line-clamp-3 font-display text-[1.85em] font-bold leading-[1.1] tracking-tight text-[color:var(--cover-ink)]">
+          {course.title}
+        </h1>
+        {course.description && (
+          <p className="mt-2 line-clamp-2 max-w-lg text-[0.9em] italic leading-snug text-[color:var(--cover-muted)]">
+            {course.description}
+          </p>
+        )}
+      </div>
+
+      <div className="relative">
+        <div aria-hidden className="h-px w-full bg-[color:var(--cover-line)]" />
+        <div className="mt-2.5 flex flex-wrap gap-x-5 gap-y-1.5">
+          {statPairs.map(([label, value]) => (
+            <p key={label} className="flex items-baseline gap-1.5 text-[color:var(--cover-ink)]">
+              <span className="text-[0.95em] font-bold tabular-nums">{value}</span>
+              <span className="text-[0.68em] uppercase tracking-[0.16em] text-[color:var(--cover-muted)]">
+                {label}
+              </span>
+            </p>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

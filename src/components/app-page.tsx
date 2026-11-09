@@ -13,7 +13,7 @@ export function AppPage({ children }: { children: ReactNode }) {
 
   if (!hydrated) {
     return (
-      <div className="grid min-h-screen place-items-center bg-background">
+      <div className="grid min-h-screen place-items-center">
         <div className="size-8 animate-spin rounded-full border-2 border-border border-t-primary" />
       </div>
     );

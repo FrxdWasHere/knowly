@@ -1,4 +1,11 @@
-import { mathPromptSection } from "./prompt";
+import {
+  QUESTION_SCHEMA_TEXT,
+  SAMPLE_NOTE,
+  TUTOR_RULES,
+  jsonFileRule,
+  mathPromptSection,
+} from "./prompt";
+import { SAMPLE_COURSE_JSON } from "./course-schema";
 import type { Difficulty, QuestionType } from "./types";
 
 export interface CoursePromptOptions {
@@ -30,25 +37,118 @@ export interface CoursePromptOptions {
   distributionAuto?: boolean;
 }
 
+/** The full course sample, minus "quiz" and "finalExam" for a no-assessments run. */
+function courseSample(includeAssessments: boolean) {
+  if (includeAssessments) return SAMPLE_COURSE_JSON;
+  const copy = JSON.parse(SAMPLE_COURSE_JSON) as {
+    finalExam?: unknown;
+    modules: Record<string, unknown>[];
+  };
+  delete copy.finalExam;
+  for (const module of copy.modules) delete module.quiz;
+  return JSON.stringify(copy, null, 2);
+}
+
 export function estimateCourseQuestions(o: CoursePromptOptions): number {
   return (
     Math.max(0, o.moduleCount) * Math.max(0, o.lessonsPerModule) * Math.max(0, o.questionsPerLesson)
   );
 }
 
-const QUESTION_SHAPE = `{
-  "type": "flashcard" | "multiple-choice" | "true-false" | "fill-blank" | "short-answer" | "ordering" | "matching" | "word-bank",
-  "question": string,
-  "answer": string,
-  "options"?: string[],
-  "explanation"?: string,
-  "difficulty"?: "easy" | "medium" | "hard",
-  "concept"?: string,
-  "hint"?: string,
-  "items"?: string[],
-  "pairs"?: { "left": string, "right": string }[],
-  "blanks"?: string[],
-  "wordBank"?: string[]
+/* The complete object shapes printed by the course and lesson prompts. */
+const COURSE_SCHEMA_TEXT = `{
+  "title": string,                              // required — course name
+  "subject": string,                            // required — e.g. "Biology"
+  "description": string,                        // optional — one-line promise of the course
+  "level": string,                              // optional — e.g. "Grade 11"
+  "emoji": string,                              // optional — one emoji for the course card
+  "color": string,                              // optional — hex accent, e.g. "#5fd38a"
+  "tags": string[],                             // optional — free-form labels
+  "isSTEM": boolean,                            // optional — maths or science course
+  "needsEquations": boolean,                    // optional — lessons rely on LaTeX maths
+  "needsGraphs": boolean,                       // optional — lessons refer to graphs
+  "objectives": string[],                       // required — 3-6 measurable course goals
+  "estimatedMinutes": number,                   // optional — total study time
+  "sources": [{ "title": string, "content": string }],  // optional — reference notes stored with the course
+  "modules": [ Module ],                        // required — one or more
+  "finalExam": Assessment,                      // optional — see the Assessment object
+  "linkedDeckIds": string[]                     // optional — always leave []
+}`;
+
+const MODULE_SHAPE = `{
+  "title": string,                 // required
+  "summary": string,               // optional — what the module covers
+  "objectives": string[],          // required — 2-4 measurable goals
+  "lessons": [ Lesson ],           // required — one or more
+  "quiz": Assessment,              // optional — the module quiz
+  "linkedDeckIds": string[]        // optional — always leave []
+}`;
+
+const LESSON_SHAPE = `{
+  "title": string,                 // required
+  "summary": string,               // optional
+  "objectives": string[],          // required
+  "estimatedMinutes": number,      // optional — 10-25
+  "blocks": [ Block ],             // required — the writing, in order
+  "questions": [ Question ],       // required — the checkpoint questions
+  "linkedDeckIds": string[]        // optional — always leave []
+}`;
+
+const BLOCK_SHAPE = `{
+  "type": "markdown" | "callout" | "example" | "image" | "checkpoint" | "divider",  // required
+  "markdown": string,                                  // required for markdown, callout and example
+  "tone": "info" | "tip" | "warning" | "definition",  // callout only
+  "title": string,                                     // callout and example
+  "url": string,                                       // image only — a full image address
+  "alt": string,                                       // image only — what the image shows
+  "caption": string,                                   // image only
+  "questionId": string                                 // checkpoint only — must match the "id" of a question in the same lesson
+}`;
+
+/* A complete single lesson, used by the lesson-expansion prompt. */
+const SAMPLE_LESSON_JSON = `{
+  "title": "The fluid mosaic model",
+  "summary": "Lipids, proteins and the crowded surface of a cell.",
+  "objectives": ["Identify the components of the membrane", "Explain why the model is fluid"],
+  "estimatedMinutes": 15,
+  "blocks": [
+    { "type": "markdown", "markdown": "## A moving surface" },
+    { "type": "markdown", "markdown": "The plasma membrane is a **phospholipid bilayer** with proteins floating in and on it." },
+    { "type": "callout", "tone": "definition", "title": "Fluid mosaic model", "markdown": "The membrane is a fluid sea of lipids with a mosaic of proteins, glycoproteins and glycolipids." },
+    { "type": "example", "title": "Why cholesterol matters", "markdown": "At body temperature cholesterol stiffens the bilayer; in the cold it keeps the tails apart so the membrane stays flexible." },
+    { "type": "checkpoint", "questionId": "q1" },
+    { "type": "divider" }
+  ],
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "question": "Which part of a phospholipid faces the watery environment?",
+      "options": ["Hydrophilic head", "Hydrophobic tail", "Cholesterol ring", "Fatty acid chain"],
+      "answer": "Hydrophilic head",
+      "explanation": "The polar head interacts with water; the tails hide inside the bilayer.",
+      "difficulty": "easy",
+      "concept": "Membrane structure",
+      "hint": "Water is polar — which end of the lipid is polar too?",
+      "tags": ["membranes"]
+    },
+    {
+      "type": "short-answer",
+      "question": "Why do membrane proteins drift sideways?",
+      "answer": "The lipid bilayer is fluid, so proteins are free to move laterally within it.",
+      "explanation": "Phospholipids are held by weak interactions, not a rigid lattice.",
+      "difficulty": "medium",
+      "concept": "Membrane structure"
+    }
+  ],
+  "linkedDeckIds": []
+}`;
+
+const ASSESSMENT_SHAPE = `{
+  "title": string,                 // e.g. "Final exam"
+  "passingScore": number,          // 0-100, default 80
+  "timeLimitMinutes": number,      // optional
+  "questions": [ Question ]        // required
 }`;
 
 export function buildCoursePrompt(o: CoursePromptOptions): string {
@@ -114,62 +214,39 @@ LAYOUT & EQUATIONS
 - Use LaTeX for units and scientific notation ($3.00 \\times 10^8\\,\\text{m/s}$, $6.626 \\times 10^{-34}\\, \\text{J s}$) and for chemical formulas when you need them ($H_2O$, $CO_2$, $C_6H_{12}O_6$).
 
 OUTPUT RULES
-- Respond with ONE valid JSON object and nothing else. No markdown fences, no commentary.
-- Every string must be valid JSON (escape quotes and newlines).
-- Use markdown inside content fields for emphasis, lists, tables, and short code blocks.
-- Keep total output practical: prefer concise lesson content over padding.
-
-SCHEMA
-{
-  "title": string,
-  "subject": string,
-  "description": string,
-  "level": string,
-  "emoji": string,
-  "tags": string[],
-  "objectives": string[],
-  "estimatedMinutes": number,
-  "modules": [
-    {
-      "title": string,
-      "summary": string,
-      "objectives": string[],
-      "lessons": [
-        {
-          "title": string,
-          "summary": string,
-          "objectives": string[],
-          "estimatedMinutes": number,
-          "blocks": [
-            { "type": "markdown", "markdown": string },
-            { "type": "callout", "tone": "info" | "tip" | "warning" | "definition", "title": string, "markdown": string },
-            { "type": "example", "title": string, "markdown": string }
-          ],
-          "questions": [${QUESTION_SHAPE}]
-        }
-      ]${
-        o.includeAssessments
-          ? `,
-      "quiz": {
-        "title": string,
-        "passingScore": number,
-        "questions": [${QUESTION_SHAPE}]
-      }`
-          : ""
-      }
-    }
-  ]${
-    o.includeAssessments
-      ? `,
-  "finalExam": {
-    "title": string,
-    "passingScore": number,
-    "timeLimitMinutes": number,
-    "questions": [${QUESTION_SHAPE}]
-  }`
-      : ""
-  }
+${jsonFileRule("knowly-course.json")}
+- Use markdown inside content fields for emphasis, lists, tables and short code blocks.
+- Keep the file practical: prefer concise lesson content over padding.
+${
+  o.includeAssessments
+    ? '- Fill in every module "quiz" and the course "finalExam".'
+    : '- Do not include "quiz" or "finalExam" anywhere — this run has no assessments.'
 }
+
+SCHEMA — the complete course object
+${COURSE_SCHEMA_TEXT}
+
+MODULE OBJECT — every module uses this shape
+${MODULE_SHAPE}
+
+LESSON OBJECT — every lesson uses this shape
+${LESSON_SHAPE}
+
+BLOCK OBJECT — one entry per piece of the lesson, in reading order
+${BLOCK_SHAPE}
+
+ASSESSMENT OBJECT — used by a module quiz and the final exam
+${ASSESSMENT_SHAPE}
+
+QUESTION OBJECT — every question uses this shape
+${QUESTION_SCHEMA_TEXT}
+
+TUTOR NOTES — pre-written inside every question
+${TUTOR_RULES}
+
+FULL SAMPLE — a complete course with a module and a lesson
+${SAMPLE_NOTE}
+${courseSample(o.includeAssessments)}
 
 QUESTION RULES
 - multiple-choice: 2–6 options; the answer must exactly match one option.
@@ -204,19 +281,31 @@ REFERENCE MATERIAL
 ${o.material.trim() || "(use accurate established knowledge)"}
 
 TASK
-Write the lesson as ONE valid JSON object and nothing else:
+Write the lesson as one JSON file.
+${jsonFileRule("knowly-lesson.json")}
+
+SCHEMA — the complete lesson object
 {
   "title": "${lessonTitle}",
-  "summary": string,
-  "objectives": string[],
-  "estimatedMinutes": number,
-  "blocks": [
-    { "type": "markdown", "markdown": string },
-    { "type": "callout", "tone": "info" | "tip" | "warning" | "definition", "title": string, "markdown": string },
-    { "type": "example", "title": string, "markdown": string }
-  ],
-  "questions": [${QUESTION_SHAPE}]
+  "summary": string,                 // optional — one line on what the lesson gives away
+  "objectives": string[],           // required — measurable goals
+  "estimatedMinutes": number,       // optional — 10-25
+  "blocks": [ Block ],              // required — the writing, in order
+  "questions": [ Question ],        // required — the checkpoint questions
+  "linkedDeckIds": string[]         // optional — always leave []
 }
+
+BLOCK OBJECT — one entry per piece of the lesson, in reading order
+${BLOCK_SHAPE}
+
+QUESTION OBJECT — every question uses this shape
+${QUESTION_SCHEMA_TEXT}
+
+TUTOR NOTES — pre-written inside every question
+${TUTOR_RULES}
+
+FULL SAMPLE — one complete lesson (shape only, write your own content)
+${SAMPLE_LESSON_JSON}
 
 Write ${Math.max(1, o.questionsPerLesson)} checkpoint questions with explanations and concept labels.
 Use markdown in content fields. No markdown fences around the JSON.

@@ -31,7 +31,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
-  ACCENTS,
   AVATAR_EMOJIS,
   GRADE_LEVELS,
   SESSION_LENGTHS,
@@ -85,7 +84,7 @@ const STEP_TIPS = [
   "Start with one deck, then let the analytics point you to the concepts that need another pass.",
   "A name and avatar make your dashboard, reports and arena results feel like yours.",
   "These choices tune your daily goal, subject hints and weak-topic suggestions. Nothing is locked in.",
-  "Themes, accents and comfort settings can all be changed later from Settings.",
+  "The light and dark themes and comfort settings can all be changed later from Settings.",
   "Bring a deck, restore a full backup, or skip this step and start with a clean library.",
   "You're ready. The Prompt Forge is the fastest way to turn your notes into a first deck.",
 ];
@@ -283,25 +282,18 @@ function Onboarding() {
   const shortStep = step === 0 || step === 1 || step === 2 || step === 7;
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden bg-background">
-      {/* Soft forge backdrop behind the setup frame. */}
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="landing-aurora absolute -top-40 left-1/2 h-[30rem] w-[60rem] max-w-none -translate-x-1/2 opacity-40" />
-        <div className="grid-forge absolute inset-0 opacity-[0.035] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_40%,black,transparent_75%)]" />
-        <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,var(--primary),transparent)] opacity-60" />
-      </div>
-
+    <div className="relative flex min-h-screen flex-col overflow-hidden">
       <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-4 sm:px-6 sm:py-6">
-        <div className="relative rounded-[1.75rem] bg-gradient-to-br from-primary/60 via-border to-primary/30 p-px shadow-[0_35px_100px_-45px_color-mix(in_oklab,var(--foreground)_42%,transparent)]">
-          <div className="grid w-full overflow-hidden rounded-[calc(1.75rem-1px)] bg-background lg:h-[min(780px,calc(100vh-6.5rem))] lg:grid-cols-[0.82fr_1.18fr]">
-            <aside className="relative flex min-h-64 flex-col overflow-hidden bg-surface-2 p-6 text-foreground lg:min-h-0 lg:p-8">
+        <div className="relative rounded-[1.75rem] border-[3px] border-border bg-surface shadow-[10px_10px_0_0_var(--shadow-ink)]">
+          <div className="grid w-full overflow-hidden rounded-[calc(1.75rem-3px)] bg-background lg:h-[min(780px,calc(100vh-6.5rem))] lg:grid-cols-[0.82fr_1.18fr]">
+            <aside className="relative flex flex-col overflow-hidden bg-surface-2 p-4 text-foreground sm:p-6 lg:min-h-0 lg:p-8">
               <div
                 aria-hidden
-                className="absolute -right-24 -top-20 size-72 rounded-full bg-primary/50 blur-3xl"
+                className="absolute -right-10 -top-10 size-32 rotate-12 rounded-2xl border-[3px] border-border bg-block-lemon opacity-80"
               />
               <div
                 aria-hidden
-                className="absolute -bottom-24 -left-20 size-64 rounded-full bg-accent/30 blur-3xl"
+                className="absolute -bottom-12 -left-10 size-28 -rotate-12 rounded-2xl border-[3px] border-border bg-block-sky opacity-80"
               />
               <div
                 aria-hidden
@@ -318,18 +310,18 @@ function Onboarding() {
                 </span>
               </div>
 
-              <div className="relative mt-6 flex flex-1 flex-col items-center justify-center">
+              <div className="relative mt-4 flex flex-1 flex-col items-center justify-center sm:mt-6">
                 <div className="relative">
                   <div
                     aria-hidden
                     className="absolute inset-0 scale-125 rounded-full bg-primary/25 blur-2xl"
                   />
-                  <div className="relative grid size-24 place-items-center rounded-[1.75rem] border border-primary/20 bg-primary/10 shadow-lg lg:size-32 lg:rounded-[2rem]">
+                  <div className="relative grid size-16 place-items-center rounded-[1.25rem] border border-primary/20 bg-primary/10 shadow-lg sm:size-24 sm:rounded-[1.75rem] lg:size-32 lg:rounded-[2rem]">
                     <div
                       aria-hidden
-                      className="absolute inset-3 rounded-[1.35rem] border border-primary/15 lg:rounded-[1.45rem]"
+                      className="absolute inset-2.5 rounded-[1rem] border border-primary/15 sm:inset-3 sm:rounded-[1.35rem] lg:rounded-[1.45rem]"
                     />
-                    <StepIcon className="relative size-10 lg:size-14" strokeWidth={1.4} />
+                    <StepIcon className="relative size-7 sm:size-10 lg:size-14" strokeWidth={1.4} />
                   </div>
                   <span className="absolute -left-16 top-1 hidden rounded-full border border-border bg-foreground/5 px-2.5 py-1 text-[10px] font-medium text-foreground/80 shadow-sm sm:block">
                     Local-first
@@ -351,7 +343,7 @@ function Onboarding() {
                 </div>
               </div>
 
-              <div className="relative mt-4 hidden rounded-2xl border border-border bg-foreground/[0.05] p-3 backdrop-blur sm:block">
+              <div className="relative mt-4 hidden rounded-2xl border-[3px] border-border bg-surface p-3 shadow-[3px_3px_0_0_var(--shadow-ink)] sm:block">
                 <div className="flex items-center gap-3">
                   <div className="relative grid size-11 shrink-0 place-items-center">
                     <svg
@@ -840,40 +832,20 @@ function Onboarding() {
                           Make it look right
                         </h1>
                         <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-                          Choose a colour theme and comfort settings. You can change all of this
-                          later.
+                          Pick the Knowly theme that suits your desk, then tune comfort settings to
+                          taste. Everything here can be changed later.
                         </p>
                       </div>
 
-                      <div className="rounded-xl border border-border bg-surface/60 p-5">
-                        <Label className="text-xs">Colour theme</Label>
+                      <div className="rounded-xl border border-border bg-surface/60 p-4 sm:p-5">
+                        <Label className="text-xs">Theme</Label>
                         <div className="mt-3">
                           <ThemePicker compact />
                         </div>
-                      </div>
-
-                      <div className="rounded-xl border border-border bg-surface/60 p-5">
-                        <Label className="text-xs">Accent colour</Label>
-                        <div className="stagger mt-3 grid gap-3 sm:grid-cols-3">
-                          {ACCENTS.map((a) => (
-                            <button
-                              key={a.id}
-                              onClick={() => updateSettings({ accent: a.id })}
-                              className={cn(
-                                "press hover-lift flex items-center gap-3 rounded-xl border border-border bg-background/50 p-3 text-left",
-                                settings.accent === a.id && "border-primary bg-primary/12",
-                              )}
-                            >
-                              <span
-                                className="size-7 shrink-0 rounded-lg"
-                                style={{
-                                  background: `linear-gradient(135deg, ${a.value}, ${a.glow})`,
-                                }}
-                              />
-                              <span className="text-sm font-medium">{a.label}</span>
-                            </button>
-                          ))}
-                        </div>
+                        <p className="mt-3 text-[11px] leading-5 text-muted-foreground">
+                          Both themes are built into Knowly — no presets to scroll past, and the
+                          palette carries across every screen.
+                        </p>
                       </div>
 
                       <div className="grid gap-4 lg:grid-cols-2">
@@ -1155,7 +1127,7 @@ function Onboarding() {
 
                   {step === 7 && (
                     <div className="text-center">
-                      <div className="anim-pop mx-auto grid size-20 place-items-center rounded-[28px] bg-gradient-to-br from-primary/40 via-primary/15 to-transparent text-primary ring-1 ring-primary/40 shadow-[0_18px_50px_-20px_var(--primary)]">
+                      <div className="anim-pop mx-auto grid size-20 place-items-center rounded-[28px] border-[3px] border-border bg-block-lemon text-ink shadow-[5px_5px_0_0_var(--shadow-ink)]">
                         <Rocket className="size-9" />
                       </div>
                       <h1 className="mt-6 font-display text-3xl leading-tight tracking-tight sm:text-4xl">

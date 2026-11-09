@@ -8,26 +8,99 @@ export function renderErrorPage(): string {
     <script>
       (() => {
         try {
-          const theme = JSON.parse(localStorage.getItem("knowly.theme.v1") || "null");
-          if (!theme || !theme.vars) return;
+          const cached =
+            localStorage.getItem("knowly.theme.v2") ||
+            localStorage.getItem("knowly.theme.v1");
+          if (!cached) return;
+          const theme = JSON.parse(cached);
+          if (!theme || typeof theme !== "object") return;
           const root = document.documentElement;
-          root.dataset.mode = theme.mode === "light" ? "light" : "dark";
-          for (const [name, value] of Object.entries(theme.vars)) {
-            if (/^--[a-z0-9-]+$/.test(name) && typeof value === "string") root.style.setProperty(name, value);
-          }
+          root.classList.toggle("light", theme.mode === "light");
+          root.classList.toggle("dark", theme.mode === "dark");
         } catch {}
       })();
     </script>
     <style>
-      :root { --background: #071a33; --foreground: #edf7ff; --surface: #0c2747; --surface-2: #102f52; --primary: #49a8ee; --primary-foreground: #071a33; --muted-foreground: #9bbbd6; --border: #234a73; }
-      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: var(--background); color: var(--foreground); display: grid; place-items: center; min-height: 100vh; margin: 0; padding: 1.5rem; }
-      .card { max-width: 28rem; width: 100%; text-align: center; padding: 2rem; border: 1px solid var(--border); background: var(--surface); border-radius: 0.5rem; }
-      h1 { font-size: 1.25rem; margin: 0 0 0.5rem; }
+      :root {
+        color-scheme: light;
+        --background: oklch(0.982 0.008 85);
+        --foreground: oklch(0.205 0.014 70);
+        --surface: oklch(1 0 0);
+        --surface-2: oklch(0.947 0.016 85);
+        --primary: oklch(0.53 0.188 25);
+        --primary-foreground: oklch(1 0 0);
+        --muted-foreground: oklch(0.445 0.018 72);
+        --border: oklch(0.205 0.014 70);
+        --shadow: oklch(0.205 0.014 70);
+      }
+      :root.dark {
+        color-scheme: dark;
+        --background: oklch(0.168 0.008 75);
+        --foreground: oklch(0.955 0.014 85);
+        --surface: oklch(0.212 0.009 75);
+        --surface-2: oklch(0.26 0.01 75);
+        --primary: oklch(0.725 0.16 27);
+        --primary-foreground: oklch(0.14 0.01 75);
+        --muted-foreground: oklch(0.755 0.016 82);
+        --border: oklch(0.925 0.012 85);
+        --shadow: oklch(0.925 0.012 85);
+      }
+      * { box-sizing: border-box; }
+      body {
+        font: 15px/1.5 "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--background);
+        color: var(--foreground);
+        display: grid;
+        place-items: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 1.5rem;
+      }
+      .card {
+        max-width: 28rem;
+        width: 100%;
+        text-align: center;
+        padding: 2rem;
+        border: 2px solid var(--border);
+        background: var(--surface);
+        border-radius: 1rem;
+        box-shadow: 6px 6px 0 var(--shadow);
+      }
+      h1 {
+        font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+        font-size: 1.5rem;
+        letter-spacing: -0.02em;
+        margin: 0 0 0.5rem;
+      }
       p { color: var(--muted-foreground); margin: 0 0 1.5rem; }
       .actions { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
-      a, button { padding: 0.5rem 1rem; border-radius: 0.375rem; font: inherit; cursor: pointer; text-decoration: none; border: 1px solid transparent; }
-      .primary { background: var(--primary); color: var(--primary-foreground); }
-      .secondary { background: var(--surface-2); color: var(--foreground); border-color: var(--border); }
+      a, button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 2.75rem;
+        padding: 0.625rem 1rem;
+        border-radius: 0.5rem;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        border: 2px solid var(--border);
+      }
+      a:focus-visible, button:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+      }
+      .primary {
+        background: var(--primary);
+        color: var(--primary-foreground);
+        box-shadow: 3px 3px 0 var(--shadow);
+      }
+      .secondary { background: var(--surface-2); color: var(--foreground); }
+      @media (max-width: 380px) {
+        .actions { flex-direction: column; }
+        a, button { width: 100%; }
+      }
     </style>
   </head>
   <body>

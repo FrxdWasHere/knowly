@@ -27,6 +27,7 @@ import {
   TYPEFACE_OPTIONS,
   getPaperDims,
   type PaperFontScale,
+  type PaperHeroLayout,
   type PaperFooterStyle,
   type PaperOrientation,
   type PaperSizeId,
@@ -51,8 +52,11 @@ export interface ModulePrintOptions {
   spacing: PaperSpacing;
   footerStyle: PaperFooterStyle;
   runningHeader: boolean;
-  /** full-page hero on sheet 1; the lesson proper starts on sheet 2 */
+  /** show the hero at all */
   includeTitlePage: boolean;
+  /** "page": the hero gets sheet 1 to itself; "compact": it sits at the top
+   *  of page 1 and takes about a third of the page area */
+  heroLayout: PaperHeroLayout;
   /** "module" follows the module accent, otherwise a COLOR_THEMES id */
   coverTheme: string;
   /**
@@ -87,6 +91,7 @@ export const defaultModulePrintOptions: ModulePrintOptions = {
   footerStyle: "count",
   runningHeader: true,
   includeTitlePage: true,
+  heroLayout: "page",
   coverTheme: "module",
   headerInset: 0,
   footerInset: 0,
@@ -392,7 +397,7 @@ function splitCodePiece(piece: Piece): Piece[] {
  * --------------------------------------------------------------------- */
 
 type ModuleUnitData =
-  | { kind: "hero" }
+  | { kind: "hero"; height?: number }
   | { kind: "objectives"; items: string[] }
   | {
       kind: "markdown";
@@ -488,6 +493,7 @@ function buildUnits(
   module: Module,
   options: ModulePrintOptions,
   extraPages: string[],
+  heroHeight: number,
 ): ModuleUnit[] {
   const units: ModuleUnit[] = [];
   let uid = 0;
@@ -495,8 +501,12 @@ function buildUnits(
     units.push({ id: `munit-${++uid}`, data });
   };
 
+  // no title page: the small in-flow card. Compact: a taller in-flow hero
+  // that shares page 1 with the lesson and fills about a third of it.
   if (!options.includeTitlePage) {
     push({ kind: "hero" });
+  } else if ((options.heroLayout ?? "page") === "compact") {
+    push({ kind: "hero", height: heroHeight });
   }
   if (module.objectives.length) push({ kind: "objectives", items: module.objectives });
 
@@ -721,8 +731,8 @@ export function ModulePaper({
   }, [editPages, pagesKey]);
 
   const units = useMemo(
-    () => buildUnits(module, options, deferredEditPages),
-    [module, options, deferredEditPages],
+    () => buildUnits(module, options, deferredEditPages, Math.round(contentHeight / 3)),
+    [module, options, deferredEditPages, contentHeight],
   );
 
   const measureRef = useRef<HTMLDivElement | null>(null);
@@ -838,7 +848,8 @@ export function ModulePaper({
     return () => observer.disconnect();
   }, []);
   const scale = stageWidth ? Math.max(0.05, Math.min(1, stageWidth / dims.width)) : 1;
-  const titlePage = options.includeTitlePage;
+  // only a full hero is its own sheet; a compact hero is part of page 1
+  const titlePage = options.includeTitlePage && (options.heroLayout ?? "page") === "page";
   // the title page counts as page 1; typed pages are part of `pages`, so the
   // total is identical with edit mode on or off
   const totalPages = (pages?.length ?? 0) + (titlePage ? 1 : 0);
@@ -1081,13 +1092,7 @@ function UnitSpace({
   // flow-root contains children's margins so the measured height is the real one
   return (
     <div style={{ paddingTop: flush ? 0 : unitSpacePad(unit), display: "flow-root" }}>
-      <UnitView
-        unit={unit}
-        module={module}
-        decks={decks}
-        coverTheme={coverTheme}
-        theme={theme}
-      />
+      <UnitView unit={unit} module={module} decks={decks} coverTheme={coverTheme} theme={theme} />
     </div>
   );
 }
@@ -1117,11 +1122,22 @@ function UnitView({
     case "hero": {
       // the in-flow hero wears the same design as the cover
       const heroDesign = coverDesign(theme, coverTone(accent, coverTheme ?? "module").start);
+      // `height` marks the compact hero and caps it at about a third of the
+      // page; the block sizes itself to its copy so a short hero stays short
+      const compact = typeof data.height === "number";
       return (
         <div
-          className="module-hero relative overflow-hidden rounded-2xl px-6 pb-5 pt-6"
-          style={coverVars(heroDesign)}
+          className={cn(
+            "module-hero relative overflow-hidden rounded-2xl",
+            compact ? "flex flex-col px-8 pb-6 pt-7" : "px-6 pb-5 pt-6",
+          )}
+          style={{
+            ...coverVars(heroDesign),
+            ...(compact ? { maxHeight: data.height } : null),
+          }}
         >
+          {/* every paper theme keeps its ornament in the compact hero too */}
+          {compact && <CoverOrnament theme={theme} padX={32} accent={accent} design={heroDesign} />}
           {/* faint oversized emoji ornament, top-right */}
           <span
             aria-hidden
@@ -1139,18 +1155,23 @@ function UnitView({
                 <span className="min-w-0 truncate">Knowly module · {module.subject}</span>
                 <span className="shrink-0 tracking-[0.26em]">KNOWLY</span>
               </p>
-              <h1 className="mt-1.5 text-[1.68em] font-bold leading-[1.18] tracking-tight text-[color:var(--cover-ink)]">
+              <h1
+                className={cn(
+                  "mt-1.5 font-bold leading-[1.18] tracking-tight text-[color:var(--cover-ink)]",
+                  compact ? "line-clamp-3 text-[2.1em]" : "text-[1.68em]",
+                )}
+              >
                 {module.title}
               </h1>
             </div>
           </div>
 
-          <div aria-hidden className="mt-4 flex items-center gap-2">
+          <div aria-hidden className="relative mt-4 flex items-center gap-2">
             <span className="h-px w-7 bg-[color:var(--cover-line)]" />
             <span className="size-1.5 rotate-45 rounded-[0.1em] bg-[color:var(--cover-ink)]" />
             <span className="h-px w-4 bg-[color:var(--cover-line)]" />
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <div className="relative mt-3 flex flex-wrap items-center gap-1.5">
             {[
               `${module.estimatedMinutes} min`,
               DIFFICULTY_LABEL[module.difficulty],

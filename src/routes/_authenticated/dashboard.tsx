@@ -55,6 +55,18 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   ),
 });
 
+/** Bright brand blocks, always with black ink. Used for headline numbers. */
+const BLOCK_TONES = {
+  coral: "bg-block-coral",
+  lemon: "bg-block-lemon",
+  grape: "bg-block-grape",
+  mint: "bg-block-mint",
+  sky: "bg-block-sky",
+  pink: "bg-block-pink",
+} as const;
+
+type BlockTone = keyof typeof BLOCK_TONES;
+
 function Widget({
   id,
   title,
@@ -62,6 +74,7 @@ function Widget({
   children,
   className,
   onHide,
+  tone,
 }: {
   id: string;
   title: string;
@@ -69,20 +82,41 @@ function Widget({
   children: ReactNode;
   className?: string;
   onHide: (id: string) => void;
+  /** Paint the widget as a brand block instead of a white card. */
+  tone?: BlockTone;
 }) {
   return (
-    <section className={cn("panel group relative p-5", className)}>
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-          <Icon className="size-4 text-primary" />
+    <section
+      className={cn(
+        "group relative p-5",
+        tone
+          ? cn(
+              "rounded-2xl border-[3px] border-border text-ink shadow-[4px_4px_0_0_var(--shadow-ink)]",
+              BLOCK_TONES[tone],
+            )
+          : "panel",
+        className,
+      )}
+    >
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <h2
+          className={cn(
+            "flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em]",
+            tone ? "text-ink/75" : "text-muted-foreground",
+          )}
+        >
+          <Icon className={cn("size-4", tone ? "text-ink" : "text-primary")} />
           {title}
         </h2>
         <button
           aria-label={`Hide ${title} widget`}
           onClick={() => onHide(id)}
-          className="grid min-h-[44px] min-w-[44px] place-items-center opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+          className={cn(
+            "grid min-h-[44px] min-w-[44px] place-items-center opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100",
+            tone ? "text-ink/80 hover:text-ink" : "text-muted-foreground hover:text-foreground",
+          )}
         >
-          <EyeOff className="size-3.5 text-muted-foreground hover:text-foreground" />
+          <EyeOff className="size-3.5" />
         </button>
       </div>
       {children}
@@ -143,7 +177,7 @@ function Dashboard() {
               : "Your forge is empty. Knowly writes the instructions for you — copy them into any AI you use, then bring the finished cards back here to make your first deck."
           }
         />
-        <div className="panel grid gap-4 p-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
               to: "/generate",
@@ -179,11 +213,13 @@ function Dashboard() {
             <Link
               key={c.to}
               to={c.to}
-              className="rounded-xl border border-border bg-surface-2/50 p-5 transition-colors hover:border-primary/60"
+              className="rounded-2xl border-[3px] border-border bg-surface p-5 shadow-[3px_3px_0_0_var(--shadow-ink)] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_var(--shadow-ink)]"
             >
-              <c.icon className="size-5 text-primary" />
-              <p className="mt-3 font-semibold">{c.title}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{c.body}</p>
+              <span className="grid size-10 place-items-center rounded-xl border-[2px] border-border bg-block-lemon text-ink">
+                <c.icon className="size-5" />
+              </span>
+              <p className="mt-3 font-display font-bold">{c.title}</p>
+              <p className="mt-1 text-xs font-medium text-muted-foreground">{c.body}</p>
             </Link>
           ))}
         </div>
@@ -260,7 +296,11 @@ function Dashboard() {
               </div>
               <div className="flex shrink-0 flex-wrap gap-2">
                 <Button asChild className="min-h-[44px]">
-                  <Link to="/study/$deckId" params={{ deckId: recentDeck.id }}>
+                  <Link
+                    to="/study/$deckId"
+                    params={{ deckId: recentDeck.id }}
+                    search={{ part: undefined }}
+                  >
                     Study
                   </Link>
                 </Button>
@@ -270,7 +310,7 @@ function Dashboard() {
               </div>
             </div>
             {settings.showProgressBars && (
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-secondary">
+              <div className="mt-4 h-2.5 overflow-hidden rounded-full border-[2px] border-border bg-surface-2">
                 <div
                   className="h-full rounded-full bg-primary"
                   style={{
@@ -289,17 +329,18 @@ function Dashboard() {
             icon={Target}
             onHide={hide}
             className="xl:col-span-4"
+            tone="sky"
           >
-            <p className="font-display text-3xl font-bold">
+            <p className="font-display text-4xl font-bold tabular-nums">
               {todayCount}
-              <span className="text-base text-muted-foreground"> / {settings.dailyGoal}</span>
+              <span className="text-base text-ink/60"> / {settings.dailyGoal}</span>
             </p>
             {settings.showProgressBars && (
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-secondary">
-                <div className="h-full rounded-full bg-success" style={{ width: `${goalPct}%` }} />
+              <div className="mt-3 h-2.5 overflow-hidden rounded-full border-[2px] border-border bg-ink/15">
+                <div className="h-full rounded-full bg-ink" style={{ width: `${goalPct}%` }} />
               </div>
             )}
-            <p className={cn("mt-2 text-xs", goalMet ? "text-success" : "text-muted-foreground")}>
+            <p className={cn("mt-2 text-xs font-bold", goalMet ? "text-ink" : "text-ink/70")}>
               {goalMet
                 ? "Goal reached today 🎉"
                 : `${settings.dailyGoal - todayCount} more question${settings.dailyGoal - todayCount === 1 ? "" : "s"} to go`}
@@ -321,16 +362,16 @@ function Dashboard() {
                   key={s.subject}
                   to="/decks"
                   search={{ q: s.subject }}
-                  className="rounded-lg border border-border p-3 transition-colors hover:border-primary/60"
+                  className="rounded-xl border-[2px] border-border bg-surface p-3 shadow-[2px_2px_0_0_var(--shadow-ink)] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_var(--shadow-ink)]"
                 >
-                  <p className="text-sm font-medium">{s.subject}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="text-sm font-bold">{s.subject}</p>
+                  <p className="mt-1 text-xs font-medium text-muted-foreground">
                     {s.deckCount
                       ? `${s.deckCount} deck${s.deckCount === 1 ? "" : "s"} · ${s.mastered}/${s.total} mastered`
                       : "No decks yet — build one"}
                   </p>
                   {settings.showProgressBars && s.total > 0 && (
-                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary">
+                    <div className="mt-2 h-2 overflow-hidden rounded-full border-[2px] border-border bg-surface-2">
                       <div
                         className="h-full rounded-full bg-primary"
                         style={{ width: `${(s.mastered / s.total) * 100}%` }}
@@ -344,19 +385,26 @@ function Dashboard() {
         )}
 
         {show("level") && (
-          <Widget id="level" title="Level & XP" icon={Zap} onHide={hide} className="xl:col-span-4">
+          <Widget
+            id="level"
+            title="Level & XP"
+            icon={Zap}
+            onHide={hide}
+            className="xl:col-span-4"
+            tone="grape"
+          >
             <div className="flex items-baseline gap-2">
-              <span className="ocean-text font-display text-3xl font-bold">Lv {level}</span>
-              <span className="text-xs text-muted-foreground">
+              <span className="font-display text-4xl font-bold tabular-nums">Lv {level}</span>
+              <span className="text-xs font-bold text-ink/70">
                 {intoLevel}/{needed} XP
               </span>
             </div>
             {settings.showProgressBars && (
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-secondary">
-                <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+              <div className="mt-3 h-2.5 overflow-hidden rounded-full border-[2px] border-border bg-ink/15">
+                <div className="h-full rounded-full bg-ink" style={{ width: `${pct}%` }} />
               </div>
             )}
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="mt-2 text-xs font-bold text-ink/70">
               {progress.lifetimeXp.toLocaleString()} lifetime XP
             </p>
           </Widget>
@@ -369,22 +417,33 @@ function Dashboard() {
             icon={Flame}
             onHide={hide}
             className="xl:col-span-4"
+            tone="coral"
           >
-            <p className="font-display text-3xl font-bold">{progress.streak} days</p>
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="font-display text-4xl font-bold tabular-nums">{progress.streak} days</p>
+            <p className="mt-2 text-xs font-bold text-ink/70">
               Longest {progress.longestStreak} · {formatDuration(progress.studyTimeMs)} studied
             </p>
           </Widget>
         )}
 
         {show("due") && (
-          <Widget id="due" title="Cards due" icon={Clock} onHide={hide} className="xl:col-span-4">
-            <p className="font-display text-3xl font-bold">{dueNow}</p>
-            <p className="mt-2 text-xs text-muted-foreground">
+          <Widget
+            id="due"
+            title="Cards due"
+            icon={Clock}
+            onHide={hide}
+            className="xl:col-span-4"
+            tone="lemon"
+          >
+            <p className="font-display text-4xl font-bold tabular-nums">{dueNow}</p>
+            <p className="mt-2 text-xs font-bold text-ink/70">
               due now · {unmastered} still unmastered · {accuracy}% lifetime accuracy
             </p>
             {dueNow > 0 && (
-              <Link to="/review" className="mt-2 inline-block text-xs text-primary hover:underline">
+              <Link
+                to="/review"
+                className="mt-2 inline-block text-xs font-bold text-ink underline underline-offset-4"
+              >
                 Start review →
               </Link>
             )}
@@ -404,10 +463,10 @@ function Dashboard() {
                 {history.slice(0, 5).map((h) => (
                   <li
                     key={h.id}
-                    className="flex items-center justify-between rounded-lg bg-surface-2/60 px-3 py-2 text-sm"
+                    className="flex items-center justify-between rounded-lg border-[2px] border-border bg-surface-2 px-3 py-2 text-sm"
                   >
                     <span className="truncate">
-                      <span className="font-medium capitalize">{h.mode}</span> ·{" "}
+                      <span className="font-bold capitalize">{h.mode}</span> ·{" "}
                       {h.deckTitles.join(", ") || "Mixed"}
                     </span>
                     <span className="shrink-0 text-xs text-muted-foreground">
@@ -468,11 +527,14 @@ function Dashboard() {
                     key={d.id}
                     to="/decks/$deckId"
                     params={{ deckId: d.id }}
-                    className="flex items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:border-primary/60"
+                    className="flex items-center gap-3 rounded-xl border-[2px] border-border bg-surface p-3 shadow-[2px_2px_0_0_var(--shadow-ink)] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_var(--shadow-ink)]"
                   >
-                    <span className="size-9 shrink-0 rounded-lg" style={{ background: d.color }} />
+                    <span
+                      className="size-9 shrink-0 rounded-lg border-[2px] border-border"
+                      style={{ background: d.color }}
+                    />
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium">{d.title}</span>
+                      <span className="block truncate text-sm font-bold">{d.title}</span>
                       <span className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
                         {d.questions.length} questions
                         <SrsDueChip deck={d} />

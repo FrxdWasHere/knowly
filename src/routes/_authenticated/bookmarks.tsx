@@ -173,7 +173,7 @@ function BookmarksPage() {
                 key={key}
                 className={cn(
                   "transition-colors",
-                  isOpen ? "bg-secondary/30" : "hover:bg-secondary/20",
+                  isOpen ? "bg-secondary/30" : "hover:bg-surface-hover",
                 )}
               >
                 <div className="flex items-start gap-3 px-4 py-3 sm:px-5">

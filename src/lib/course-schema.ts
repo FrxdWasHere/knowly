@@ -245,18 +245,28 @@ export const SAMPLE_COURSE_JSON = `{
   "description": "A compact course on membrane structure, diffusion and active transport.",
   "level": "Grade 11",
   "emoji": "🧬",
-  "tags": ["biology", "cells"],
+  "color": "#5fd38a",
+  "tags": ["biology", "cells", "exam-prep"],
+  "isSTEM": false,
+  "needsEquations": false,
+  "needsGraphs": false,
   "objectives": [
     "Explain the fluid mosaic model",
     "Compare passive and active transport",
     "Predict the effect of tonicity on a cell"
   ],
   "estimatedMinutes": 45,
+  "sources": [
+    {
+      "title": "Course notes — chapter 4",
+      "content": "The plasma membrane is a phospholipid bilayer with proteins, cholesterol and glycolipids."
+    }
+  ],
   "modules": [
     {
       "title": "Membrane structure",
       "summary": "What the plasma membrane is made of and why it matters.",
-      "objectives": ["Describe the fluid mosaic model"],
+      "objectives": ["Describe the fluid mosaic model", "Name the main membrane components"],
       "lessons": [
         {
           "title": "The fluid mosaic model",
@@ -266,24 +276,62 @@ export const SAMPLE_COURSE_JSON = `{
           "blocks": [
             {
               "type": "markdown",
-              "markdown": "## A moving surface\\n\\nThe plasma membrane is a **phospholipid bilayer** with proteins floating in and on it.\\n\\n- Hydrophilic heads face water\\n- Hydrophobic tails face inward\\n- Cholesterol tunes fluidity"
+              "markdown": "## A moving surface"
+            },
+            {
+              "type": "markdown",
+              "markdown": "The plasma membrane is a **phospholipid bilayer** with proteins floating in and on it."
             },
             {
               "type": "callout",
               "tone": "definition",
               "title": "Fluid mosaic model",
               "markdown": "The membrane is a fluid sea of lipids with a mosaic of proteins, glycoproteins and glycolipids."
+            },
+            {
+              "type": "example",
+              "title": "Why cholesterol matters",
+              "markdown": "At body temperature cholesterol packs the tails and stiffens the bilayer; in the cold it keeps them apart so the membrane stays flexible."
+            },
+            {
+              "type": "checkpoint",
+              "questionId": "q1"
+            },
+            {
+              "type": "divider"
             }
           ],
           "questions": [
             {
+              "id": "q1",
               "type": "multiple-choice",
               "question": "Which part of a phospholipid faces the watery environment?",
               "options": ["Hydrophilic head", "Hydrophobic tail", "Cholesterol ring", "Fatty acid chain"],
               "answer": "Hydrophilic head",
               "explanation": "The polar head interacts with water; the tails hide inside the bilayer.",
               "difficulty": "easy",
-              "concept": "Membrane structure"
+              "concept": "Membrane structure",
+              "hint": "Water is polar — which end of the lipid is polar too?",
+              "tutor": {
+                "simple": "A phospholipid has a water-loving head and two water-fearing tails. The heads face the watery inside and outside of the cell; the tails hide in the middle.",
+                "mnemonic": "Heads shake hands with water, tails run away.",
+                "example": "Drop oil into water: the oil gathers into a ball so its water-fearing parts stay together, exactly like the bilayer's tails.",
+                "whyWrong": [
+                  {
+                    "option": "Hydrophobic tail",
+                    "why": "Hydrophobic means it fears water, so the tails point inward, away from the watery environment."
+                  },
+                  {
+                    "option": "Cholesterol ring",
+                    "why": "Cholesterol sits between the tails as a stiffener; it does not face the water."
+                  },
+                  {
+                    "option": "Fatty acid chain",
+                    "why": "The fatty acid chains ARE the tails, so they too point inward."
+                  }
+                ]
+              },
+              "tags": ["membranes"]
             },
             {
               "type": "true-false",
@@ -292,10 +340,62 @@ export const SAMPLE_COURSE_JSON = `{
               "explanation": "Many proteins move laterally within the fluid bilayer.",
               "difficulty": "easy",
               "concept": "Membrane structure"
+            },
+            {
+              "type": "word-bank",
+              "question": "In a ___ solution the cell swells, while in a ___ solution it shrinks.",
+              "blanks": ["hypotonic", "hypertonic"],
+              "wordBank": ["hypotonic", "hypertonic", "isotonic", "amphipathic"],
+              "explanation": "Water always moves toward the higher solute concentration.",
+              "difficulty": "medium",
+              "concept": "Tonicity"
             }
-          ]
+          ],
+          "linkedDeckIds": []
         }
-      ]
+      ],
+      "quiz": {
+        "title": "Membrane structure quiz",
+        "passingScore": 80,
+        "timeLimitMinutes": 10,
+        "questions": [
+          {
+            "type": "ordering",
+            "question": "Put the steps of the sodium-potassium pump in order.",
+            "items": [
+              "3 Na+ bind inside the cell",
+              "ATP is hydrolysed and the pump is phosphorylated",
+              "The pump changes shape and releases Na+ outside",
+              "2 K+ bind and the phosphate is released",
+              "The pump resets, releasing K+ inside"
+            ],
+            "explanation": "Each shape change is driven by phosphorylation then dephosphorylation.",
+            "difficulty": "hard",
+            "concept": "Active transport"
+          }
+        ]
+      },
+      "linkedDeckIds": []
     }
-  ]
+  ],
+  "finalExam": {
+    "title": "Membranes & transport — final",
+    "passingScore": 75,
+    "timeLimitMinutes": 30,
+    "questions": [
+      {
+        "type": "matching",
+        "question": "Match each transport process with its description.",
+        "pairs": [
+          { "left": "Osmosis", "right": "Water moves down its own gradient" },
+          { "left": "Facilitated diffusion", "right": "Solutes cross via proteins, no ATP" },
+          { "left": "Active transport", "right": "Solutes move against a gradient using ATP" }
+        ],
+        "explanation": "Only active transport spends energy to move solutes uphill.",
+        "difficulty": "medium",
+        "concept": "Transport mechanisms"
+      }
+    ]
+  },
+  "linkedDeckIds": []
 }`;
