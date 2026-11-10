@@ -961,6 +961,27 @@ function SettingsPage() {
           </div>
         </Group>
 
+        <Group title="About">
+          <div className="px-4 py-3 space-y-3">
+            <div>
+              <p className="text-[13px] text-muted-foreground mb-1">Version</p>
+              <p className="text-[15px] font-medium">4.0.0</p>
+            </div>
+            <div>
+              <p className="text-[13px] text-muted-foreground mb-1">About Knowly</p>
+              <p className="text-[13px] leading-5">
+                Knowly is a local-first study workspace designed to make learning personal and effective. All your data stays on your device — no accounts, no cloud syncing, no tracking.
+              </p>
+            </div>
+            <div>
+              <p className="text-[13px] text-muted-foreground mb-1">Made with love</p>
+              <p className="text-[13px] leading-5">
+                Made with love by Frederic Liam De Guzman, for the kind students of the School of Our Lady of La Salette. All rights reserved. To God be all the glory!
+              </p>
+            </div>
+          </div>
+        </Group>
+
         <div className="px-4 py-2 text-center">
           <p className="text-[13px] text-muted-foreground">
             Knowly · local-first study workspace · no account

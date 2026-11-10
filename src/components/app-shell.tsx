@@ -433,7 +433,14 @@ function NavRow({ item, active, dueCount }: { item: NavItem; active: boolean; du
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[13px] font-semibold leading-tight">{item.label}</span>
         {item.hint && (
-          <span className="mt-0.5 block truncate text-[10px] leading-tight text-muted-foreground/70 transition-colors group-hover:text-muted-foreground">
+          <span
+            className={cn(
+              "mt-0.5 block truncate text-[10px] leading-tight transition-colors",
+              active
+                ? "text-ink/60"
+                : "text-muted-foreground/70 group-hover:text-muted-foreground",
+            )}
+          >
             {item.hint}
           </span>
         )}
@@ -554,9 +561,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <nav className="relative flex-1 overflow-y-auto px-3 pb-2">
               {collapsed ? (
                 visibleNavGroups.map((group) => (
-                  <div key={group.label} className="mt-4 first:mt-1">
+                  <div key={group.label} className="mt-4 space-y-0.5 first:mt-1">
                     <div aria-hidden className="mx-3 mb-2 border-t border-sidebar-border" />
-                    {group.items.map((item) => {
+                    {group.items.map((item, index) => {
                       const active = isNavItemActive(item, pathname);
                       const icon = (
                         <span className={navIconClass(active)}>
@@ -564,7 +571,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                         </span>
                       );
                       const title = item.hint ? `${item.label} — ${item.hint}` : item.label;
-                      return item.onClick ? (
+                      const button = item.onClick ? (
                         <button
                           key={item.to}
                           type="button"
@@ -583,6 +590,17 @@ export function AppShell({ children }: { children: ReactNode }) {
                         >
                           {icon}
                         </Link>
+                      );
+                      return (
+                        <div key={item.to}>
+                          {button}
+                          {index < group.items.length - 1 && (
+                            <div
+                              aria-hidden
+                              className="mx-2.5 my-0.5 border-t border-sidebar-border/40"
+                            />
+                          )}
+                        </div>
                       );
                     })}
                   </div>
@@ -632,14 +650,20 @@ export function AppShell({ children }: { children: ReactNode }) {
                           />
                         </button>
                         {!closed && (
-                          <ul id={panelId}>
-                            {group.items.map((item) => (
+                          <ul id={panelId} className="space-y-0.5">
+                            {group.items.map((item, index) => (
                               <li key={item.to}>
                                 <NavRow
                                   item={item}
                                   active={isNavItemActive(item, pathname)}
                                   dueCount={dueCount}
                                 />
+                                {index < group.items.length - 1 && (
+                                  <div
+                                    aria-hidden
+                                    className="mx-2.5 my-0.5 border-t border-sidebar-border/40"
+                                  />
+                                )}
                               </li>
                             ))}
                           </ul>

@@ -1100,6 +1100,10 @@ function Landing() {
             <span>© {new Date().getFullYear()} Knowly. Made with 💜 for students.</span>
             <span>NO ACCOUNT • NO TRACKING • YOUR DATA STAYS YOURS</span>
           </div>
+          <div className="mx-auto mt-4 max-w-7xl border-t-2 border-black pt-4 text-center text-xs font-bold leading-snug">
+            <p>Made with love by Frederic Liam De Guzman, for the kind students of the School of Our Lady of La Salette.</p>
+            <p className="mt-2">All rights reserved. To God be all the glory! 🙏</p>
+          </div>
         </div>
       </footer>
     </div>

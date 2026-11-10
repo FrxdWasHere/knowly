@@ -181,59 +181,61 @@
   --control-fs-lg: 0.9375rem;
 }
 
-/* Night paper: the same language after dark. Cream ink on warm charcoal, with
- * the brand blocks still in colour. */
+/* Night paper: the same language after dark. Warm, relaxed charcoal with
+ * soft cream text. Reduced contrast and saturation for comfort. */
 .dark {
-  --background: oklch(0.168 0.008 75); /* warm midnight charcoal */
-  --foreground: oklch(0.955 0.014 85); /* cream ink */
+  --background: oklch(0.188 0.007 75); /* softer, warmer midnight */
+  --foreground: oklch(0.92 0.009 85); /* softer cream, less bright */
   /* Ink stays black because it is the text colour for the bright brand
      blocks; page text uses --foreground. */
   --ink: oklch(0 0 0);
-  --surface: oklch(0.212 0.009 75);
-  --surface-2: oklch(0.26 0.01 75);
-  --surface-hover: oklch(0.325 0.012 75); /* lifts off night paper */
-  --card: oklch(0.212 0.009 75);
+  --surface: oklch(0.235 0.008 75);
+  --surface-2: oklch(0.285 0.009 75);
+  --surface-hover: oklch(0.345 0.01 75); /* subtle lift off surface */
+  --card: oklch(0.235 0.008 75);
   --card-foreground: var(--foreground);
-  --popover: oklch(0.212 0.009 75);
+  --popover: oklch(0.235 0.008 75);
   --popover-foreground: var(--foreground);
-  --primary: oklch(0.725 0.16 27);
-  --primary-foreground: oklch(0.14 0.01 75);
-  --primary-hover: oklch(0.81 0.14 30);
-  --primary-glow: oklch(0.79 0.14 34);
-  --secondary: oklch(0.26 0.01 75);
+  --primary: oklch(0.68 0.12 27); /* softer coral, less saturated */
+  --primary-foreground: oklch(0.19 0.008 75);
+  --primary-hover: oklch(0.74 0.11 28); /* gentle lift */
+  --primary-glow: oklch(0.72 0.1 32);
+  --secondary: oklch(0.285 0.009 75);
   --secondary-foreground: var(--foreground);
-  --muted: oklch(0.26 0.01 75);
-  --muted-foreground: oklch(0.755 0.016 82);
-  --accent: oklch(0.72 0.16 300);
-  --accent-foreground: oklch(0.14 0.01 75);
-  --destructive: oklch(0.66 0.2 24.9);
-  --destructive-foreground: oklch(0 0 0);
-  --destructive-hover: oklch(0.745 0.17 26.5);
-  --success: oklch(0.773 0.153 163.2);
-  --success-foreground: oklch(0 0 0);
-  --warning: oklch(0.922 0.143 97.8);
-  --warning-foreground: oklch(0 0 0);
-  --border: oklch(0.925 0.012 85);
-  --input: oklch(0.925 0.012 85);
-  --chart-1: oklch(0.725 0.16 27);
-  --chart-2: oklch(0.72 0.16 300);
-  --chart-3: oklch(0.714 0.143 254.6);
-  --chart-4: oklch(0.773 0.153 163.2);
-  --chart-5: oklch(0.656 0.212 354.3);
-  --deck-1: oklch(0.725 0.16 27);
-  --deck-2: oklch(0.72 0.16 300);
-  --deck-3: oklch(0.714 0.143 254.6);
-  --deck-4: oklch(0.773 0.153 163.2);
-  --deck-5: oklch(0.656 0.212 354.3);
-  --deck-6: oklch(0.922 0.143 97.8);
-  --sidebar: oklch(0.19 0.009 75);
+  --muted: oklch(0.285 0.009 75);
+  --muted-foreground: oklch(0.72 0.01 82); /* more readable muted text */
+  --accent: oklch(0.66 0.12 300); /* softer grape */
+  --accent-foreground: oklch(0.19 0.008 75);
+  --destructive: oklch(0.62 0.15 24.9); /* desaturated red */
+  --destructive-foreground: oklch(0.08 0.005 75);
+  --destructive-hover: oklch(0.68 0.13 26);
+  --success: oklch(0.7 0.12 163.2); /* softer mint */
+  --success-foreground: oklch(0.08 0.005 75);
+  --warning: oklch(0.8 0.1 75); /* softer lemon */
+  --warning-foreground: oklch(0.08 0.005 75);
+  --border: oklch(0.88 0.008 85); /* subtle borders */
+  --input: oklch(0.88 0.008 85);
+  --chart-1: oklch(0.68 0.12 27);
+  --chart-2: oklch(0.66 0.12 300);
+  --chart-3: oklch(0.66 0.1 254.6);
+  --chart-4: oklch(0.7 0.12 163.2);
+  --chart-5: oklch(0.6 0.15 354.3);
+  --deck-1: oklch(0.68 0.12 27);
+  --deck-2: oklch(0.66 0.12 300);
+  --deck-3: oklch(0.66 0.1 254.6);
+  --deck-4: oklch(0.7 0.12 163.2);
+  --deck-5: oklch(0.6 0.15 354.3);
+  --deck-6: oklch(0.8 0.1 75);
+  --sidebar: oklch(0.21 0.008 75);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: oklch(0.26 0.01 75);
+  --sidebar-accent: oklch(0.285 0.009 75);
   --sidebar-accent-foreground: var(--foreground);
-  --sidebar-border: oklch(0.925 0.012 85);
-  --shadow-ink: oklch(0.09 0.006 75);
+  --sidebar-border: oklch(0.88 0.008 85);
+  /* Softer shadows for dark mode: deeper but not harsh, maintains depth
+     without creating jarring contrast. Desaturated to feel organic. */
+  --shadow-ink: oklch(0.12 0.005 75);
   --shadow-panel: 4px 4px 0 0 var(--shadow-ink);
   --shadow-forge: 5px 5px 0 0 var(--shadow-ink);
 }
@@ -351,19 +353,6 @@
 }
 
 /* Hard offset shadows. Offset grows with elevation, never blurs. */
-@utility pop-sm {
-  box-shadow: 3px 3px 0 0 var(--shadow-ink);
-}
-
-@utility pop {
-  box-shadow: 4px 4px 0 0 var(--shadow-ink);
-}
-
-@utility pop-lg {
-  box-shadow: 6px 6px 0 0 var(--shadow-ink);
-}
-
-/* Press-and-lift: the object moves away from its shadow on hover. */
 @utility block-hover {
   transition:
     transform calc(0.12s / var(--speed, 1)) ease-out,

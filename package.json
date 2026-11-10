@@ -1,11 +1,11 @@
 {
   "name": "knowly",
   "private": true,
-  "version": "3.3.0",
+  "version": "4.0.0",
   "description": "A local-first study workspace for decks, structured courses and handwritten notebooks.",
   "sideEffects": false,
   "type": "module",
-  "license": "MIT",
+  "license": "CC-BY-NC-SA-4.0",
   "engines": {
     "node": ">=22"
   },

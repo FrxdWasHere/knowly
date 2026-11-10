@@ -8,13 +8,16 @@ import {
   FolderPlus,
   FileText,
   Layers,
+  Sparkles,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ArrowDownToLine } from "lucide-react";
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
 import { ExamPaper } from "@/components/print/exam-paper";
 import { MultiPaperConfig } from "@/components/print/multi-paper-config";
+import { PrintMarketplace } from "@/components/print/print-marketplace";
 import { PrintStyleMenu } from "@/components/print/print-style-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -132,6 +135,10 @@ function PrintExamPage() {
   const [mode, setMode] = useState<"single" | "bulk">("single");
   const [bulkPapers, setBulkPapers] = useState<GeneratedBulkPaper[] | null>(null);
   const [previewBulk, setPreviewBulk] = useState(0);
+  const [exportState, setExportState] = useState<
+    { kind: "idle" } | { kind: "working"; message: string } | { kind: "error"; log: string }
+  >({ kind: "idle" });
+  const docxWorking = exportState.kind === "working";
 
   const pool = useMemo<Question[]>(() => {
     if (source === "json") return jsonQuestions ?? [];
@@ -149,6 +156,7 @@ function PrintExamPage() {
 
   const [editing, setEditing] = useState(false);
   const [edits, setEdits] = useState<Record<string, QuestionEdit>>({});
+  const [marketplaceOpen, setMarketplaceOpen] = useState(false);
   const editQuestion = (id: string, edit: QuestionEdit) =>
     setEdits((all) => {
       const prev = all[id] ?? {};
@@ -243,6 +251,35 @@ function PrintExamPage() {
     });
   };
 
+  const handleExportDocx = async () => {
+    setExportState({ kind: "working", message: "Preparing the export…" });
+    try {
+      const { examDocxBlob } = await import("@/lib/docx-export");
+      const { defaultCoursePrintOptions } = await import("@/components/print/course-paper");
+      const blob = await examDocxBlob(
+        options.title || "Exam",
+        paperQuestions,
+        options,
+        defaultCoursePrintOptions,
+        undefined,
+        (message) => setExportState({ kind: "working", message }),
+      );
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `${options.title || "exam"}.docx`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setExportState({ kind: "idle" });
+      toast.success("Word document downloaded");
+    } catch (error) {
+      console.error("DOCX export failed:", error);
+      const message = error instanceof Error ? error.message : String(error);
+      setExportState({ kind: "error", log: message });
+      toast.error("The Word file didn't download", { description: message.slice(0, 200) });
+    }
+  };
+
   const bulkPreviewPaper = bulkPapers?.length
     ? bulkPapers[Math.min(previewBulk, bulkPapers.length - 1)]
     : undefined;
@@ -260,6 +297,13 @@ function PrintExamPage() {
           action={
             mode === "single" ? (
               <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleExportDocx}
+                  disabled={!paperQuestions.length || docxWorking}
+                >
+                  <ArrowDownToLine /> Save as Word file
+                </Button>
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -297,6 +341,45 @@ function PrintExamPage() {
             )
           }
         />
+
+        {exportState.kind === "error" && (
+          <div className="print-hide mb-4 rounded-2xl border border-destructive/40 bg-destructive/10 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-destructive">Word export failed</p>
+                <p className="mt-1 text-xs text-muted-foreground">{exportState.log}</p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleExportDocx}>
+                  <ArrowDownToLine /> Retry export
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(exportState.log).then(() =>
+                      toast.success("Details copied"),
+                    );
+                  }}
+                >
+                  Copy details
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setExportState({ kind: "idle" })}>
+                  Dismiss
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {exportState.kind === "working" && (
+          <div className="print-hide mb-4 rounded-2xl border border-border bg-surface/50 p-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <span>{exportState.message}</span>
+            </div>
+          </div>
+        )}
 
         <div className="mb-6 flex flex-wrap items-center gap-2">
           <Button
@@ -584,6 +667,15 @@ function PrintExamPage() {
                 {paletteChoices.length} palettes suit the {activeTheme.label.toLowerCase()} theme —
                 the layout stays the same.
               </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setMarketplaceOpen(true)}
+                className="w-full mt-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                Browse marketplace
+              </Button>
             </div>
             <div className="space-y-2">
               <Label className="text-xs">Font</Label>
@@ -921,6 +1013,16 @@ function PrintExamPage() {
             <ExamPaper questions={paper.questions} options={{ ...options, title: paper.title }} />
           </div>
         ))}
+      <PrintMarketplace
+        open={marketplaceOpen}
+        onOpenChange={setMarketplaceOpen}
+        onSelectTheme={(themeId, palette) => {
+          set({ theme: themeId });
+          if (palette) set({ palette });
+        }}
+        documentType="exam"
+        currentTheme={options.theme}
+      />
     </div>
   );
 }

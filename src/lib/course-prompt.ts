@@ -59,50 +59,50 @@ export function estimateCourseQuestions(o: CoursePromptOptions): number {
 const COURSE_SCHEMA_TEXT = `{
   "title": string,                              // required — course name
   "subject": string,                            // required — e.g. "Biology"
-  "description": string,                        // optional — one-line promise of the course
-  "level": string,                              // optional — e.g. "Grade 11"
-  "emoji": string,                              // optional — one emoji for the course card
-  "color": string,                              // optional — hex accent, e.g. "#5fd38a"
-  "tags": string[],                             // optional — free-form labels
-  "isSTEM": boolean,                            // optional — maths or science course
-  "needsEquations": boolean,                    // optional — lessons rely on LaTeX maths
-  "needsGraphs": boolean,                       // optional — lessons refer to graphs
+  "description": string,                        // required — one-line promise of the course
+  "level": string,                              // required — e.g. "Grade 11"
+  "emoji": string,                              // required — one emoji for the course card
+  "color": string,                              // required — hex accent, e.g. "#5fd38a"
+  "tags": string[],                             // required — free-form labels
+  "isSTEM": boolean,                            // required — maths or science course
+  "needsEquations": boolean,                    // required — lessons rely on LaTeX maths
+  "needsGraphs": boolean,                       // required — lessons refer to graphs
   "objectives": string[],                       // required — 3-6 measurable course goals
-  "estimatedMinutes": number,                   // optional — total study time
-  "sources": [{ "title": string, "content": string }],  // optional — reference notes stored with the course
+  "estimatedMinutes": number,                   // required — total study time
+  "sources": [{ "title": string, "content": string }],  // required — reference notes stored with the course
   "modules": [ Module ],                        // required — one or more
-  "finalExam": Assessment,                      // optional — see the Assessment object
-  "linkedDeckIds": string[]                     // optional — always leave []
+  "finalExam": Assessment,                      // required — see the Assessment object
+  "linkedDeckIds": string[]                     // required — always leave []
 }`;
 
 const MODULE_SHAPE = `{
   "title": string,                 // required
-  "summary": string,               // optional — what the module covers
+  "summary": string,               // required — what the module covers
   "objectives": string[],          // required — 2-4 measurable goals
   "lessons": [ Lesson ],           // required — one or more
-  "quiz": Assessment,              // optional — the module quiz
-  "linkedDeckIds": string[]        // optional — always leave []
+  "quiz": Assessment,              // required — the module quiz
+  "linkedDeckIds": string[]        // required — always leave []
 }`;
 
 const LESSON_SHAPE = `{
   "title": string,                 // required
-  "summary": string,               // optional
+  "summary": string,               // required
   "objectives": string[],          // required
-  "estimatedMinutes": number,      // optional — 10-25
+  "estimatedMinutes": number,      // required — 10-25
   "blocks": [ Block ],             // required — the writing, in order
   "questions": [ Question ],       // required — the checkpoint questions
-  "linkedDeckIds": string[]        // optional — always leave []
+  "linkedDeckIds": string[]        // required — always leave []
 }`;
 
 const BLOCK_SHAPE = `{
   "type": "markdown" | "callout" | "example" | "image" | "checkpoint" | "divider",  // required
   "markdown": string,                                  // required for markdown, callout and example
-  "tone": "info" | "tip" | "warning" | "definition",  // callout only
-  "title": string,                                     // callout and example
-  "url": string,                                       // image only — a full image address
-  "alt": string,                                       // image only — what the image shows
-  "caption": string,                                   // image only
-  "questionId": string                                 // checkpoint only — must match the "id" of a question in the same lesson
+  "tone": "info" | "tip" | "warning" | "definition",  // required for callout
+  "title": string,                                     // required for callout and example
+  "url": string,                                       // required for image — a full image address
+  "alt": string,                                       // required for image — what the image shows
+  "caption": string,                                   // required for image
+  "questionId": string                                 // required for checkpoint — must match the "id" of a question in the same lesson
 }`;
 
 /* A complete single lesson, used by the lesson-expansion prompt. */
@@ -145,9 +145,9 @@ const SAMPLE_LESSON_JSON = `{
 }`;
 
 const ASSESSMENT_SHAPE = `{
-  "title": string,                 // e.g. "Final exam"
-  "passingScore": number,          // 0-100, default 80
-  "timeLimitMinutes": number,      // optional
+  "title": string,                 // required — e.g. "Final exam"
+  "passingScore": number,          // required — 0-100, default 80
+  "timeLimitMinutes": number,      // required — optional
   "questions": [ Question ]        // required
 }`;
 

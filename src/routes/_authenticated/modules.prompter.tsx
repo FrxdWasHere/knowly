@@ -115,7 +115,7 @@ function ModulePrompter() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <AppPage>
       <PageHeader
         title="Prompt Studio · Module"
         description="Describe one focused lesson, then copy the instructions into the AI you use. Bring the finished module back through Import a module."
@@ -313,7 +313,7 @@ function ModulePrompter() {
           </p>
         </div>
       </div>
-    </div>
+    </AppPage>
   );
 }
 
@@ -404,32 +404,32 @@ SCHEMA — the complete module object
 {
   "title": string,                                              // required — the lesson name
   "subject": string,                                            // required — e.g. "Biology"
-  "description": string,                                        // optional — one line on what it teaches
-  "difficulty": ${difficultyAuto ? "1 | 2 | 3 (the depth you judge right)" : difficulty},                                        // 1 = Intro, 2 = Core, 3 = Advanced
-  "emoji": string,                                              // optional — one emoji
-  "color": string,                                              // optional — hex accent, e.g. "#5fd38a"
-  "tags": string[],                                             // optional — free-form labels
-  "isSTEM": boolean,                                            // optional — maths or science topic
-  "needsEquations": boolean,                                    // optional — writing relies on LaTeX maths
-  "needsGraphs": boolean,                                       // optional — writing refers to graphs
+  "description": string,                                        // required — one line on what it teaches
+  "difficulty": ${difficultyAuto ? "1 | 2 | 3 (the depth you judge right)" : difficulty},                                        // required — 1 = Intro, 2 = Core, 3 = Advanced
+  "emoji": string,                                              // required — one emoji
+  "color": string,                                              // required — hex accent, e.g. "#5fd38a"
+  "tags": string[],                                             // required — free-form labels
+  "isSTEM": boolean,                                            // required — maths or science topic
+  "needsEquations": boolean,                                    // required — writing relies on LaTeX maths
+  "needsGraphs": boolean,                                       // required — writing refers to graphs
   "objectives": string[],                                       // required — 2-4 measurable goals
   "estimatedMinutes": number,                                   // required
   "blocks": [ Block ],                                          // required — the lesson, in reading order
   "questions": [ Question ],                                    // required — the checkpoint questions
-  "linkedDeckIds": string[]                                     // optional — always leave []
+  "linkedDeckIds": string[]                                     // required — always leave []
 }
 
 BLOCK OBJECT — every entry in "blocks" uses this shape
 {
   "type": "markdown" | "callout" | "example" | "image" | "checkpoint" | "divider" | "activity",  // required
   "markdown": string,                                     // required for markdown, callout and example
-  "tone": "info" | "tip" | "warning" | "definition",     // callout only
-  "title": string,                                        // callout and example
-  "url": string,                                          // image only — a full image address
-  "alt": string,                                          // image only — what the image shows
-  "caption": string,                                      // image only
-  "questionId": string,                                   // checkpoint only — must match the "id" of a question below
-  "deckId": string                                        // activity only — leave empty, decks are linked inside the app
+  "tone": "info" | "tip" | "warning" | "definition",     // required for callout
+  "title": string,                                        // required for callout and example
+  "url": string,                                          // required for image — a full image address
+  "alt": string,                                          // required for image — what the image shows
+  "caption": string,                                      // required for image
+  "questionId": string,                                   // required for checkpoint — must match the "id" of a question below
+  "deckId": string                                        // required for activity — leave empty, decks are linked inside the app
 }
 
 QUESTION OBJECT — every entry in "questions" uses this shape

@@ -282,7 +282,20 @@ export const SAMPLE_DECK_JSON = `{
       "answer": "false",
       "explanation": "It is passive; it uses the concentration gradient, not ATP.",
       "difficulty": "medium",
-      "concept": "Passive transport"
+      "concept": "Passive transport",
+      "hint": "The word 'facilitated' means helped, not powered.",
+      "tutor": {
+        "simple": "Facilitated diffusion means a channel protein helps a molecule cross the membrane, but the molecule still goes downhill — following the concentration gradient. No energy is paid.",
+        "mnemonic": "Facilitated = helped by a channel. Diffusion = still goes downhill. No ATP paid.",
+        "example": "Glucose entering a red blood cell through GLUT1 is facilitated diffusion: the channel helps it cross, but glucose flows from high concentration outside the cell to low concentration inside.",
+        "whyWrong": [
+          {
+            "option": "True",
+            "why": "Active transport requires ATP because it works uphill. Facilitated diffusion is passive and always follows the gradient."
+          }
+        ]
+      },
+      "tags": ["passive transport", "diffusion"]
     },
     {
       "type": "fill-blank",
@@ -290,7 +303,15 @@ export const SAMPLE_DECK_JSON = `{
       "answer": "3",
       "explanation": "3 Na+ out, 2 K+ in, per ATP hydrolysed.",
       "difficulty": "medium",
-      "concept": "Active transport"
+      "concept": "Active transport",
+      "hint": "Think about why it is called the sodium-potassium pump: how many sodiums versus how many potassiums?",
+      "tutor": {
+        "simple": "Every time the pump uses one ATP, it moves 3 sodium ions OUT of the cell and 2 potassium ions IN. The numbers are hardwired into the pump's structure.",
+        "mnemonic": "3 Na OUT, 2 K IN, per ATP spent.",
+        "example": "In each cycle: 3 Na+ leave, 2 K+ enter. The pump is never 1-to-1 — it always favours sodium export.",
+        "whyWrong": []
+      },
+      "tags": ["active transport", "ion pumps"]
     },
     {
       "type": "short-answer",
@@ -310,7 +331,16 @@ export const SAMPLE_DECK_JSON = `{
       "question": "Hypertonic solution",
       "answer": "A solution with higher solute concentration than the cell, causing water to leave the cell.",
       "difficulty": "easy",
-      "concept": "Tonicity"
+      "concept": "Tonicity",
+      "hint": "Hyper- means more; tonic means solute concentration.",
+      "tutor": {
+        "simple": "Hypertonic means the solution around the cell has MORE dissolved stuff than inside the cell. Water always moves toward the higher salt concentration, so water leaves the cell and it shrivels.",
+        "mnemonic": "HYPERtonic = solution has a HYPERamount of salt. Water leaves = cell shrinks.",
+        "example": "Putting a cell in salt water (hypertonic) makes it shrivel, like a raisin. The water inside moves out toward the salty outside.",
+        "whyWrong": []
+      },
+      "explanation": "Hypertonic solutions have more dissolved particles outside the cell than inside, causing water to move out by osmosis.",
+      "tags": ["tonicity", "osmosis"]
     },
     {
       "type": "ordering",
@@ -324,7 +354,15 @@ export const SAMPLE_DECK_JSON = `{
       ],
       "explanation": "Each conformational change is driven by phosphorylation then dephosphorylation.",
       "difficulty": "hard",
-      "concept": "Active transport"
+      "concept": "Active transport",
+      "hint": "ATP binding and hydrolysis cause the shape changes; potassium comes in after sodium goes out.",
+      "tutor": {
+        "simple": "The pump is a shape-shifter. When ATP sticks and breaks, it triggers shape changes that move ions. Sodium escapes on one conformation, potassium enters on the next.",
+        "mnemonic": "Bind Na+ → zap ATP → pump flips → Na+ out → K+ in → pump flips back.",
+        "example": "Like a turnstile that takes a coin (ATP), rotates (shape change), lets 3 people out one side and 2 people in from the other.",
+        "whyWrong": []
+      },
+      "tags": ["active transport", "mechanism"]
     },
     {
       "type": "matching",
@@ -336,7 +374,16 @@ export const SAMPLE_DECK_JSON = `{
         { "left": "Endocytosis", "right": "Material enters the cell in a vesicle" }
       ],
       "difficulty": "medium",
-      "concept": "Transport mechanisms"
+      "concept": "Transport mechanisms",
+      "explanation": "Each mechanism has a distinct energy requirement and purpose.",
+      "hint": "Two are passive, one uses ATP, one uses vesicles. Look for keywords like 'water', 'protein', 'ATP', 'vesicle'.",
+      "tutor": {
+        "simple": "Osmosis is water following salt. Facilitated diffusion is molecules following their gradient through a channel (passive, no energy). Active transport is molecules being pushed against their gradient (costs ATP). Endocytosis is a vesicle engulfing material (also costs ATP).",
+        "mnemonic": "Osmosis = water moves. Facilitated = passive, with help. Active = costs ATP. Endocytosis = vesicle eats.",
+        "example": "A cell swelling in pure water is osmosis. Glucose entering through GLUT1 is facilitated diffusion. The Na+ gradient built by the pump is active transport. Eating bacteria is endocytosis.",
+        "whyWrong": []
+      },
+      "tags": ["transport mechanisms", "comparison"]
     },
     {
       "type": "word-bank",
@@ -345,7 +392,15 @@ export const SAMPLE_DECK_JSON = `{
       "wordBank": ["hypotonic", "hypertonic", "isotonic", "amphipathic"],
       "explanation": "Water always moves toward the higher solute concentration.",
       "difficulty": "medium",
-      "concept": "Tonicity"
+      "concept": "Tonicity",
+      "hint": "Hypo- means less salt (cell swells as water enters), hyper- means more salt (cell shrinks as water leaves).",
+      "tutor": {
+        "simple": "Hypotonic = fewer dissolved particles outside, so water enters the cell and it swells. Hypertonic = more dissolved particles outside, so water leaves the cell and it shrinks.",
+        "mnemonic": "Hypotonic = cell swells. Hypertonic = cell shrinks. Water always follows the salt.",
+        "example": "Put a cell in pure water (hypotonic): it balloons. Put a cell in salt water (hypertonic): it shrivels like a raisin.",
+        "whyWrong": []
+      },
+      "tags": ["tonicity", "osmosis", "solutions"]
     }
   ]
 }`;
@@ -529,7 +584,15 @@ export const SAMPLE_QUESTIONS_JSON = `{
       "answer": "The electrochemical gradient created by primary active transport.",
       "explanation": "It borrows energy stored in an existing ion gradient.",
       "difficulty": "hard",
-      "concept": "Active transport"
+      "concept": "Active transport",
+      "hint": "Think about what primary active transport creates that secondary active transport can use.",
+      "tutor": {
+        "simple": "Primary active transport uses ATP to build a gradient of ions. Secondary active transport uses that gradient as an energy source, like a power plant using a dam.",
+        "mnemonic": "Primary = builds the gradient (costs ATP). Secondary = coasts on it (free energy).",
+        "example": "The Na+ gradient the pump builds can then drive glucose INTO a cell via secondary active transport, piggy-backing on the sodium flow.",
+        "whyWrong": []
+      },
+      "tags": ["active transport", "energy"]
     },
     {
       "type": "word-bank",
@@ -538,7 +601,15 @@ export const SAMPLE_QUESTIONS_JSON = `{
       "wordBank": ["hypotonic", "hypertonic", "isotonic", "amphipathic"],
       "explanation": "Water always moves toward the higher solute concentration.",
       "difficulty": "medium",
-      "concept": "Tonicity"
+      "concept": "Tonicity",
+      "hint": "Hypo- means less dissolved particles outside (water enters), hyper- means more (water leaves).",
+      "tutor": {
+        "simple": "Hypotonic solution has fewer dissolved particles outside the cell than inside, so water enters and the cell swells. Hypertonic has more outside, so water leaves and the cell shrinks.",
+        "mnemonic": "Hypotonic swells. Hypertonic shrinks. Water follows salt.",
+        "example": "Red blood cells in pure water swell and burst (hypotonic). Red blood cells in concentrated salt water shrivel (hypertonic).",
+        "whyWrong": []
+      },
+      "tags": ["tonicity", "osmosis"]
     }
   ]
 }`;

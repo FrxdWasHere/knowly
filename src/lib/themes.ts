@@ -512,6 +512,15 @@ export function themeCssVars(c: ThemeColors): Record<string, string> {
   const onPrimary = readableOn(c.primary);
   const onAccent = readableOn(c.accent);
   const destructive = blendHex("#e5484d", c.primary, 78);
+  
+  // Adaptive shadow: blends toward the background for depth on dark themes,
+  // stays dark on light themes. The luminance check determines if we need a
+  // dark shadow (light theme) or a light shadow (dark theme).
+  const shadowBase = luminance(c.background) > 0.5 ? "#000000" : c.background;
+  const shadowColor = luminance(c.background) > 0.5
+    ? shadowBase
+    : blendHex(shadowBase, "#000000", 70); // Darker shadow for dark themes
+  
   return {
     "--background": c.background,
     "--foreground": c.foreground,
@@ -557,9 +566,11 @@ export function themeCssVars(c: ThemeColors): Record<string, string> {
     "--destructive-foreground": readableOn(destructive),
     "--warning": mix("#f0a020", 78, c.primary),
     "--warning-foreground": "#1a1204",
-    // Hard offset shadow, no blur — the same rule in every palette.
-    "--shadow-panel": "4px 4px 0 0 #000",
-    "--shadow-forge": "5px 5px 0 0 #000",
+    // Hard offset shadow, no blur — adaptive to theme. Dark themes get darker
+    // shadows for better depth; light themes keep black. The shadow color is
+    // computed so it contrasts with the surface without fighting the design.
+    "--shadow-panel": `4px 4px 0 0 ${shadowColor}`,
+    "--shadow-forge": `5px 5px 0 0 ${shadowColor}`,
     "--deck-1": c.primary,
     "--deck-2": c.accent,
     "--deck-3": mix(c.primary, 55, c.accent),

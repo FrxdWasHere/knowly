@@ -48,6 +48,10 @@ export function LegalPage({
             Terms
           </Link>
         </div>
+        <div className="mx-auto mt-6 max-w-3xl border-t-[2px] border-border px-6 pt-6 text-center text-xs leading-relaxed text-muted-foreground">
+          <p>Made with love by Frederic Liam De Guzman, for the kind students of the School of Our Lady of La Salette.</p>
+          <p className="mt-1">All rights reserved. To God be all the glory! 🙏</p>
+        </div>
       </footer>
     </div>
   );

@@ -121,7 +121,20 @@ Please keep changes focused and follow the existing TypeScript/React conventions
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+**Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International** (CC BY-NC-SA 4.0)
+
+This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. See [LICENSE](./LICENSE) for the full text.
+
+**Summary:**
+- ✅ You can **share, adapt, and remix** Knowly for educational purposes
+- ✅ You must provide **attribution** (credit to Frederic Liam De Guzman and the School of Our Lady of La Salette)
+- ❌ You **cannot use it for commercial purposes**
+- ✅ Any derivative works must use the **same CC BY-NC-SA 4.0 license**
+
+For more information, visit [creativecommons.org/licenses/by-nc-sa/4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+
+**Made with love by Frederic Liam De Guzman, for the kind students of the School of Our Lady of La Salette.**
+**All rights reserved. To God be all the glory! 🙏**
 
 ---
 

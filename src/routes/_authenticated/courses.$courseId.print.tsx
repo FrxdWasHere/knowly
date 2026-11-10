@@ -11,6 +11,7 @@ import {
   Ruler,
   ScrollText,
   Signature,
+  Sparkles,
   Type,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -33,6 +34,7 @@ import {
   type CoursePrintOptions,
 } from "@/components/print/course-paper";
 import { PaperThemePicker } from "@/components/print/paper-theme-picker";
+import { PrintMarketplace } from "@/components/print/print-marketplace";
 import { PrintStyleMenu } from "@/components/print/print-style-menu";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -126,6 +128,7 @@ function CoursePrintPage() {
   const course = state.courses.find((course) => course.id === courseId);
   const [options, setOptions] = useState<CoursePrintOptions>(loadOptions);
   const [exportState, setExportState] = useState<ExportState>({ kind: "idle" });
+  const [marketplaceOpen, setMarketplaceOpen] = useState(false);
   const docxWorking = exportState.kind === "working";
   const dims = getPaperDims(options.paper, options.orientation);
 
@@ -161,7 +164,7 @@ function CoursePrintPage() {
     try {
       // docx is a ~1 MB library — keep it out of the route chunk and load it
       // only when a Word export is actually requested.
-      const { courseDocxBlob } = await import("@/lib/course-docx");
+      const { courseDocxBlob } = await import("@/lib/docx-export");
       const blob = await courseDocxBlob(course, progress, linkedDecks, options, (message) =>
         setExportState({ kind: "working", message }),
       );
@@ -366,14 +369,27 @@ function CoursePrintPage() {
             </OptionGroup>
 
             <OptionGroup icon={<Palette className="size-4 text-primary" />} label="Paper theme">
-              <PaperThemePicker
-                theme={options.theme}
-                palette={options.palette}
-                baseAccent={course.color || "#3b5bdb"}
-                baseLabel="Course colour"
-                onTheme={(theme) => patch({ theme })}
-                onPalette={(palette) => patch({ palette })}
-              />
+              <div className="flex gap-2 mb-3">
+                <div className="flex-1">
+                  <PaperThemePicker
+                    theme={options.theme}
+                    palette={options.palette}
+                    baseAccent={course.color || "#3b5bdb"}
+                    baseLabel="Course colour"
+                    onTheme={(theme) => patch({ theme })}
+                    onPalette={(palette) => patch({ palette })}
+                  />
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setMarketplaceOpen(true)}
+                className="w-full"
+              >
+                <Sparkles className="w-4 h-4" />
+                Browse marketplace
+              </Button>
             </OptionGroup>
 
             <OptionGroup icon={<Printer className="size-4 text-primary" />} label="Print style">
@@ -464,6 +480,18 @@ function CoursePrintPage() {
           </div>
         </div>
       </div>
+
+      <PrintMarketplace
+        open={marketplaceOpen}
+        onOpenChange={setMarketplaceOpen}
+        onSelectTheme={(themeId, palette) => {
+          patch({ theme: themeId });
+          if (palette) patch({ palette });
+        }}
+        documentType="course"
+        currentTheme={options.theme}
+        heroLayout={options.heroLayout}
+      />
     </AppPage>
   );
 }

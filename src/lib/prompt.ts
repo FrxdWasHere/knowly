@@ -27,22 +27,22 @@ export const QUESTION_SCHEMA_TEXT = `{
   "type": "flashcard" | "multiple-choice" | "true-false" | "fill-blank" | "short-answer" | "ordering" | "matching" | "word-bank",  // required
   "question": string,                             // required — the prompt the learner sees
   "answer": string,                               // required for flashcard, multiple-choice, true-false, fill-blank and short-answer
-  "options": string[],                            // multiple-choice only — 2-6 options; "answer" must match one exactly
-  "items": string[],                              // ordering only — 3-6 steps in the CORRECT order (the app shuffles them)
-  "pairs": [{ "left": string, "right": string }], // matching only — 3-5 couples, every "right" unique
-  "blanks": string[],                             // word-bank only — the correct word for each ___ in "question", in order
-  "wordBank": string[],                           // word-bank only — the blanks plus 2-3 plausible distractors
+  "options": string[],                            // required for multiple-choice only — 2-6 options; "answer" must match one exactly
+  "items": string[],                              // required for ordering only — 3-6 steps in the CORRECT order (the app shuffles them)
+  "pairs": [{ "left": string, "right": string }], // required for matching only — 3-5 couples, every "right" unique
+  "blanks": string[],                             // required for word-bank only — the correct word for each ___ in "question", in order
+  "wordBank": string[],                           // required for word-bank only — the blanks plus 2-3 plausible distractors
   "explanation": string,                          // required — 1-2 sentences on why the answer is right
   "difficulty": "easy" | "medium" | "hard",       // required
   "concept": string,                              // required — the specific topic tested; reuse the same label consistently
-  "hint": string,                                  // optional — one-line nudge that never gives the answer away
+  "hint": string,                                  // required — one-line nudge that never gives the answer away
   "tutor": {
     "simple": string,                              // required — the idea in plain words, no jargon
     "mnemonic": string,                            // required — a memory hook the learner can recall under pressure
-    "example": string,                             // optional — one concrete example or analogy
-    "whyWrong": [{ "option": string, "why": string }] // multiple-choice and true-false only — one entry per incorrect option
+    "example": string,                             // required — one concrete example or analogy
+    "whyWrong": [{ "option": string, "why": string }] // required for multiple-choice and true-false only — one entry per incorrect option
   },
-  "tags": string[]                                // optional — free-form labels
+  "tags": string[]                                // required — free-form labels
 }`;
 
 /**
@@ -59,11 +59,11 @@ export const TUTOR_RULES = `- Every question carries pre-written tutor notes in 
 export const DECK_SCHEMA_TEXT = `{
   "title": string,                 // required — deck name
   "subject": string,               // required — subject area, e.g. "Biology"
-  "description": string,           // optional — one-line summary
-  "tags": string[],                // optional — free-form labels
-  "isSTEM": boolean,               // optional — true for a maths or science deck
-  "needsEquations": boolean,       // optional — true when the questions rely on LaTeX maths
-  "needsGraphs": boolean,          // optional — true when the questions refer to graphs or diagrams
+  "description": string,           // required — one-line summary
+  "tags": string[],                // required — free-form labels
+  "isSTEM": boolean,               // required — true for a maths or science deck
+  "needsEquations": boolean,       // required — true when the questions rely on LaTeX maths
+  "needsGraphs": boolean,          // required — true when the questions refer to graphs or diagrams
   "questions": [ Question ]        // required — one or more, each using the full Question object below
 }`;
 
