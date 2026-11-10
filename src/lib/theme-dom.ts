@@ -1,4 +1,5 @@
 import { THEME_VAR_NAMES } from "@/lib/themes";
+import * as storage from "@/lib/storage";
 import type { Settings } from "@/lib/types";
 
 export const THEME_CACHE_KEY = "knowly.theme.v2";
@@ -56,17 +57,24 @@ export function applyThemeToRoot(settings: Settings) {
   // built-in theme instead of carrying stale colours.
   for (const name of THEME_VAR_NAMES) root.style.removeProperty(name);
 
-  try {
-    window.localStorage.setItem(THEME_CACHE_KEY, JSON.stringify(theme));
-    window.localStorage.removeItem(LEGACY_THEME_CACHE_KEY);
-  } catch {
-    // Theme application still works when browser storage is unavailable.
-  }
+  void (async () => {
+    try {
+      await storage.setItem(THEME_CACHE_KEY, JSON.stringify(theme));
+      await storage.removeItem(LEGACY_THEME_CACHE_KEY);
+    } catch {
+      // Theme application still works when browser storage is unavailable.
+    }
+  })();
 }
 
 /**
  * Runs before React paints, using the last safely resolved theme cache.
  * The v1 cache is read only for its mode and comfort flags; its palette
  * variables are deliberately ignored.
+ *
+ * NOTE: This script runs synchronously before React loads, so it checks
+ * localStorage only. The async IndexedDB storage is populated after React
+ * hydrates, so the bootstrap doesn't wait for IndexedDB. Fallback to localStorage
+ * (which contains the last cached theme) is acceptable for the initial paint.
  */
 export const THEME_BOOTSTRAP_SCRIPT = `(()=>{try{const s=localStorage.getItem('${THEME_CACHE_KEY}')||localStorage.getItem('${LEGACY_THEME_CACHE_KEY}')||'null';const t=JSON.parse(s);if(!t)return;const r=document.documentElement;r.classList.toggle('light',t.mode==='light');r.classList.toggle('dark',t.mode==='dark');r.classList.toggle('contrast-high',!!t.highContrast);r.classList.toggle('colorblind',!!t.colorblindPalette);r.classList.toggle('reduce-motion',!!t.reducedMotion);r.classList.toggle('focus-strong',!!t.focusIndicators);if(t.buttonSize)r.dataset.btn=t.buttonSize;if(Number.isFinite(t.fontScale))r.style.setProperty('--font-scale',String(t.fontScale));if(Number.isFinite(t.radius))r.style.setProperty('--radius',t.radius+'rem');if(Number.isFinite(t.animationSpeed))r.style.setProperty('--speed',String(t.animationSpeed));}catch{}})();`;

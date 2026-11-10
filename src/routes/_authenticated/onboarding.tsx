@@ -24,6 +24,7 @@ import {
   Plus,
   Clock,
   Sparkles,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,7 @@ import {
   SUBJECT_SUGGESTIONS,
 } from "@/lib/defaults";
 import { validateDeckJson, type ValidationResult } from "@/lib/schema";
+import { fileToAvatarDataUrl } from "@/lib/avatar-store";
 import { cn } from "@/lib/utils";
 
 import { useKnowly } from "@/store/knowly";
@@ -167,7 +169,7 @@ function previewBackup(
 function Onboarding() {
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState(1);
-  const { state, completeOnboarding, updateSettings, addDeck, importState } = useKnowly();
+  const { state, completeOnboarding, updateSettings, addDeck, importState, setAvatar } = useKnowly();
   const navigate = useNavigate();
   const settings = state.settings;
 
@@ -184,6 +186,7 @@ function Onboarding() {
   const [sampleArmed, setSampleArmed] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const backupFileRef = useRef<HTMLInputElement>(null);
+  const avatarRef = useRef<HTMLInputElement>(null);
 
   const evaluate = (text: string) => {
     setRaw(text);
@@ -626,9 +629,17 @@ function Onboarding() {
                       </div>
 
                       <div className="flex flex-col gap-6 rounded-xl border border-border bg-surface/60 p-5 sm:flex-row sm:items-center">
-                        <div className="anim-pop grid size-20 shrink-0 place-items-center rounded-3xl border border-primary/40 bg-primary/10 text-4xl">
-                          {settings.avatarEmoji || "🌊"}
-                        </div>
+                        {state.settings.avatarImage ? (
+                          <img
+                            src={state.settings.avatarImage}
+                            alt="Your avatar"
+                            className="size-20 shrink-0 rounded-lg object-cover border border-primary/40 shadow-[3px_3px_0_0_var(--shadow-ink)]"
+                          />
+                        ) : (
+                          <div className="anim-pop grid size-20 shrink-0 place-items-center rounded-lg border border-primary/40 bg-primary/10 text-4xl">
+                            {settings.avatarEmoji || "🌊"}
+                          </div>
+                        )}
                         <div className="min-w-0 flex-1 space-y-1.5">
                           <Label className="text-xs">What should we call you?</Label>
                           <Input
@@ -646,21 +657,73 @@ function Onboarding() {
 
                       <div>
                         <Label className="text-xs">Pick an avatar</Label>
-                        <div className="stagger mt-2 grid grid-cols-6 gap-2 sm:grid-cols-12">
+                        <div className="stagger mt-2 flex flex-wrap items-center gap-1.5">
                           {AVATAR_EMOJIS.map((e) => (
                             <button
                               key={e}
-                              onClick={() => updateSettings({ avatarEmoji: e })}
+                              onClick={() => {
+                                updateSettings({ avatarEmoji: e });
+                                setAvatar(null); // Clear image if switching to emoji
+                              }}
                               className={cn(
-                                "press grid aspect-square min-h-[44px] place-items-center rounded-xl border border-border text-lg transition-all hover:scale-110",
-                                settings.avatarEmoji === e &&
-                                  "scale-110 border-primary bg-primary/15",
+                                "press grid aspect-square min-h-[44px] size-10 place-items-center rounded-xl border border-transparent text-lg transition-all hover:scale-110",
+                                settings.avatarEmoji === e && !state.settings.avatarImage && "scale-110 border-primary bg-primary/15",
                               )}
                             >
                               {e}
                             </button>
                           ))}
+                          <button
+                            type="button"
+                            onClick={() => avatarRef.current?.click()}
+                            className={cn(
+                              "press inline-flex items-center gap-1.5 px-3 h-10 rounded-lg border-2 border-border bg-surface text-sm font-semibold transition-all hover:shadow-[3px_3px_0_0_var(--shadow-ink)] hover:-translate-x-0.5 hover:-translate-y-0.5",
+                              state.settings.avatarImage && "border-primary bg-primary/10",
+                            )}
+                            title="Upload a custom image"
+                          >
+                            <Upload className="size-4" />
+                            Upload
+                          </button>
+                          <input
+                            ref={avatarRef}
+                            type="file"
+                            accept="image/*"
+                            hidden
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              e.target.value = "";
+                              if (!file) return;
+                              try {
+                                const next = await fileToAvatarDataUrl(file);
+                                setAvatar(next);
+                                toast.success("Avatar updated");
+                              } catch (err) {
+                                toast.error((err as Error).message);
+                              }
+                            }}
+                          />
+                          {state.settings.avatarImage && (
+                            <button
+                              type="button"
+                              onClick={() => setAvatar(null)}
+                              className="text-muted-foreground hover:text-foreground transition-colors"
+                              title="Remove custom avatar"
+                            >
+                              <X className="size-4" />
+                            </button>
+                          )}
                         </div>
+                        {state.settings.avatarImage && (
+                          <div className="mt-3 flex items-center gap-2">
+                            <img
+                              src={state.settings.avatarImage}
+                              alt="Your custom avatar preview"
+                              className="size-12 rounded-lg object-cover border border-border"
+                            />
+                            <p className="text-xs text-muted-foreground">Custom avatar preview</p>
+                          </div>
+                        )}
                       </div>
 
                       <div className="grid gap-4 sm:grid-cols-2">

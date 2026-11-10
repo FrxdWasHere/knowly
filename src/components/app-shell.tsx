@@ -61,6 +61,7 @@ import { normalizeSidebarGroups } from "@/lib/sidebar-preferences";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useWallpaperUrl } from "@/hooks/use-wallpaper-url";
+import { useAvatarUrl } from "@/lib/use-avatar-url";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
 import { CommandPalette, useCommandPalette } from "@/components/command-palette";
@@ -266,7 +267,7 @@ const NAV_GROUPS: NavGroup[] = [
       },
       {
         to: "/format",
-        label: "Deck file format",
+        label: "Content formats",
         icon: FileJson,
         exact: false,
         hint: "What a deck file looks like, with samples",
@@ -478,6 +479,7 @@ function NavRow({ item, active, dueCount }: { item: NavItem; active: boolean; du
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { state, updateSettings } = useKnowly();
+  const avatarUrl = useAvatarUrl(state.settings.avatarImage);
   const palette = useCommandPalette();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const search = useRouterState({ select: (r) => r.location.searchStr });
@@ -552,7 +554,16 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <span className="size-1.5 rounded-full bg-success shadow-[0_0_8px_var(--success)]" />
                   </div>
                   <p className="mt-1.5 inline-flex max-w-full items-center gap-1 truncate text-[10px] uppercase tracking-[0.16em] text-muted-foreground/60">
-                    {state.settings.avatarEmoji} {state.settings.displayName}
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt="Your avatar"
+                        className="size-3.5 rounded-sm object-cover shrink-0"
+                      />
+                    ) : (
+                      <span>{state.settings.avatarEmoji}</span>
+                    )}
+                    {state.settings.displayName}
                   </p>
                 </div>
               )}

@@ -613,3 +613,312 @@ export const SAMPLE_QUESTIONS_JSON = `{
     }
   ]
 }`;
+
+/**
+ * Sample course JSON with modules, lessons, checkpoints, and final exam.
+ */
+export const SAMPLE_COURSE_JSON = `{
+  "title": "Plant Biology Fundamentals",
+  "subject": "Biology",
+  "description": "A comprehensive introduction to plant structure, function, and ecology.",
+  "level": "Grade 11",
+  "color": "var(--deck-3)",
+  "emoji": "🌱",
+  "tags": ["biology", "plants", "ecology"],
+  "isSTEM": true,
+  "needsEquations": false,
+  "needsGraphs": true,
+  "objectives": [
+    "Understand plant cell structure and function",
+    "Learn about photosynthesis and respiration",
+    "Explore plant growth and reproduction",
+    "Analyze plant ecology and adaptation"
+  ],
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Plant Cell Structure",
+      "summary": "Learn about the unique structures found in plant cells.",
+      "objectives": ["Identify plant cell organelles", "Understand cell wall function"],
+      "lessons": [
+        {
+          "id": "lesson-1",
+          "title": "Introduction to Plant Cells",
+          "summary": "Overview of plant cell components.",
+          "objectives": ["Define plant cells", "List key organelles"],
+          "blocks": [
+            {
+              "id": "block-1",
+              "type": "markdown",
+              "markdown": "## What is a Plant Cell?\\n\\nPlant cells are eukaryotic cells found in plants. They have a **cell wall**, **large vacuole**, and **chloroplasts** that animal cells lack.\\n\\n### Key Features:\\n- Cell wall provides structure\\n- Vacuole stores water and maintains turgor pressure\\n- Chloroplasts conduct photosynthesis"
+            },
+            {
+              "id": "block-2",
+              "type": "checkpoint",
+              "questionId": "q-checkpoint-1"
+            }
+          ],
+          "questions": [
+            {
+              "id": "q-checkpoint-1",
+              "type": "multiple-choice",
+              "question": "Which organelle is unique to plant cells?",
+              "options": ["Mitochondria", "Chloroplast", "Nucleus", "Ribosome"],
+              "answer": "Chloroplast",
+              "difficulty": "easy",
+              "concept": "Plant Cell Structure"
+            }
+          ],
+          "linkedDeckIds": []
+        }
+      ]
+    }
+  ],
+  "finalExam": {
+    "id": "final-exam",
+    "title": "Plant Biology Final Exam",
+    "passingScore": 70,
+    "timeLimitMinutes": 90,
+    "questions": [
+      {
+        "id": "q-final-1",
+        "type": "multiple-choice",
+        "question": "What is the primary function of chloroplasts?",
+        "options": ["Energy production", "Photosynthesis", "Protein synthesis", "Water storage"],
+        "answer": "Photosynthesis",
+        "difficulty": "medium",
+        "concept": "Photosynthesis"
+      }
+    ]
+  },
+  "linkedDeckIds": [],
+  "createdAt": 1699564800000,
+  "updatedAt": 1699564800000
+}`;
+
+/**
+ * Sample module JSON with blocks, questions, and linked decks.
+ */
+export const SAMPLE_MODULE_JSON = `{
+  "id": "module-photosynthesis",
+  "title": "Photosynthesis: Light and Dark Reactions",
+  "subject": "Biology",
+  "color": "var(--deck-2)",
+  "emoji": "☀️",
+  "tags": ["photosynthesis", "energy", "biology"],
+  "isSTEM": true,
+  "needsEquations": true,
+  "needsGraphs": true,
+  "difficulty": 2,
+  "objectives": [
+    "Understand the light-dependent reactions",
+    "Learn the Calvin cycle (light-independent reactions)",
+    "Compare C3 and C4 photosynthesis"
+  ],
+  "estimatedMinutes": 45,
+  "blocks": [
+    {
+      "id": "block-1",
+      "type": "markdown",
+      "markdown": "# Photosynthesis Overview\\n\\nPhotosynthesis is the process by which plants convert light energy into chemical energy. The overall equation is:\\n\\n$$6CO_2 + 6H_2O + \\\\text{light energy} \\\\rightarrow C_6H_{12}O_6 + 6O_2$$"
+    },
+    {
+      "id": "block-2",
+      "type": "markdown",
+      "markdown": "## Light-Dependent Reactions\\n\\nThese occur in the **thylakoid membranes** and produce ATP and NADPH:\\n\\n- **Photolysis**: Water is split, releasing $O_2$\\n- **Electron Transport**: High-energy electrons move through the chain\\n- **Chemiosmosis**: Creates a proton gradient for ATP synthesis"
+    },
+    {
+      "id": "block-3",
+      "type": "checkpoint",
+      "questionId": "q-1"
+    }
+  ],
+  "questions": [
+    {
+      "id": "q-1",
+      "type": "multiple-choice",
+      "question": "Where do the light-dependent reactions occur?",
+      "options": ["Stroma", "Thylakoid membrane", "Grana", "Chloroplast matrix"],
+      "answer": "Thylakoid membrane",
+      "difficulty": "medium",
+      "concept": "Light-Dependent Reactions"
+    },
+    {
+      "id": "q-2",
+      "type": "short-answer",
+      "question": "What are the two products of the light-dependent reactions?",
+      "answer": "ATP and NADPH",
+      "difficulty": "medium",
+      "concept": "Light-Dependent Reactions"
+    }
+  ],
+  "linkedDeckIds": ["deck-photosynthesis"],
+  "createdAt": 1699564800000,
+  "updatedAt": 1699564800000
+}`;
+
+/**
+ * Validates a course JSON payload.
+ */
+export function validateCourseJson(raw: string): ValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  let data: unknown;
+  try {
+    data = JSON.parse(raw);
+  } catch (e) {
+    return {
+      ok: false,
+      errors: [`That text isn't valid JSON — ${(e as Error).message}`],
+      warnings,
+    };
+  }
+
+  if (!data || typeof data !== "object") {
+    return {
+      ok: false,
+      errors: ["Course data must be a JSON object."],
+      warnings,
+    };
+  }
+
+  const obj = data as Record<string, unknown>;
+
+  // Required fields
+  if (!obj.title || typeof obj.title !== "string") {
+    errors.push("title: Course must have a title (string).");
+  }
+  if (!obj.subject || typeof obj.subject !== "string") {
+    errors.push("subject: Course must have a subject (string).");
+  }
+  if (!obj.color || typeof obj.color !== "string") {
+    errors.push("color: Course must have a color (string, hex or CSS var).");
+  }
+  if (!Array.isArray(obj.objectives) || obj.objectives.length === 0) {
+    errors.push("objectives: Course must have at least one learning objective.");
+  }
+  if (!Array.isArray(obj.modules) || obj.modules.length === 0) {
+    errors.push("modules: Course must have at least one module.");
+  }
+
+  if (errors.length) return { ok: false, errors, warnings };
+
+  return {
+    ok: true,
+    errors,
+    warnings,
+    deck: undefined, // Courses don't map to deck structure
+  };
+}
+
+/**
+ * Validates a module JSON payload.
+ */
+export function validateModuleJson(raw: string): ValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  let data: unknown;
+  try {
+    data = JSON.parse(raw);
+  } catch (e) {
+    return {
+      ok: false,
+      errors: [`That text isn't valid JSON — ${(e as Error).message}`],
+      warnings,
+    };
+  }
+
+  if (!data || typeof data !== "object") {
+    return {
+      ok: false,
+      errors: ["Module data must be a JSON object."],
+      warnings,
+    };
+  }
+
+  const obj = data as Record<string, unknown>;
+
+  // Required fields
+  if (!obj.id || typeof obj.id !== "string") {
+    errors.push("id: Module must have a unique ID (string).");
+  }
+  if (!obj.title || typeof obj.title !== "string") {
+    errors.push("title: Module must have a title (string).");
+  }
+  if (!obj.subject || typeof obj.subject !== "string") {
+    errors.push("subject: Module must have a subject (string).");
+  }
+  if (!obj.color || typeof obj.color !== "string") {
+    errors.push("color: Module must have a color (string, hex or CSS var).");
+  }
+  if (!obj.emoji || typeof obj.emoji !== "string") {
+    errors.push("emoji: Module must have an emoji (string).");
+  }
+  if (!Array.isArray(obj.blocks) || obj.blocks.length === 0) {
+    errors.push("blocks: Module must have at least one content block.");
+  }
+  if (!Array.isArray(obj.questions)) {
+    errors.push("questions: Module must have a questions array.");
+  }
+  if (!Array.isArray(obj.objectives) || obj.objectives.length === 0) {
+    errors.push("objectives: Module must have at least one learning objective.");
+  }
+
+  if (errors.length) return { ok: false, errors, warnings };
+
+  return {
+    ok: true,
+    errors,
+    warnings,
+    deck: undefined, // Modules don't map to deck structure
+  };
+}
+
+/**
+ * Field documentation for courses.
+ */
+export const COURSE_FIELD_DOCS: { field: string; type: string; required: boolean; note: string }[] = [
+  { field: "title", type: "string", required: true, note: "Course name shown in your library." },
+  { field: "subject", type: "string", required: true, note: "Subject area for organization (e.g., 'Biology', 'Mathematics')." },
+  { field: "description", type: "string", required: false, note: "Detailed description of the course." },
+  { field: "level", type: "string", required: false, note: "Grade or proficiency level (e.g., 'Grade 11', 'Advanced')." },
+  { field: "color", type: "string (hex or CSS var)", required: true, note: "Color for the course card. Use hex (#FF5733) or CSS variable (var(--deck-3))." },
+  { field: "emoji", type: "string", required: false, note: "Single emoji to display on the course card." },
+  { field: "tags", type: "array<string>", required: false, note: "Array of tags for filtering (e.g., ['biology', 'ecology'])." },
+  { field: "isSTEM", type: "boolean", required: false, note: "Set to true for STEM subjects; shows math helpers." },
+  { field: "needsEquations", type: "boolean", required: false, note: "Set to true if content includes LaTeX equations ($...$)." },
+  { field: "needsGraphs", type: "boolean", required: false, note: "Set to true if content includes diagrams or graphs." },
+  { field: "objectives", type: "array<string>", required: true, note: "Learning objectives for the course." },
+  { field: "modules", type: "array<CourseModule>", required: true, note: "Array of course modules." },
+  { field: "finalExam", type: "CourseAssessment", required: false, note: "Final exam assessment." },
+  { field: "linkedDeckIds", type: "array<string>", required: false, note: "IDs of decks linked to this course." },
+  { field: "createdAt", type: "number (timestamp)", required: true, note: "Unix timestamp when course was created." },
+  { field: "updatedAt", type: "number (timestamp)", required: true, note: "Unix timestamp when course was last updated." },
+];
+
+/**
+ * Field documentation for modules.
+ */
+export const MODULE_FIELD_DOCS: { field: string; type: string; required: boolean; note: string }[] = [
+  { field: "id", type: "string", required: true, note: "Unique identifier for the module." },
+  { field: "title", type: "string", required: true, note: "Module title." },
+  { field: "subject", type: "string", required: true, note: "Subject area (e.g., 'Biology')." },
+  { field: "color", type: "string (hex or CSS var)", required: true, note: "Color for the module card." },
+  { field: "emoji", type: "string", required: true, note: "Single emoji for the module." },
+  { field: "tags", type: "array<string>", required: false, note: "Array of tags for categorization." },
+  { field: "isSTEM", type: "boolean", required: true, note: "Whether this is a STEM module." },
+  { field: "needsEquations", type: "boolean", required: true, note: "Whether content includes LaTeX." },
+  { field: "needsGraphs", type: "boolean", required: true, note: "Whether content includes graphs/diagrams." },
+  { field: "difficulty", type: "number (1-3)", required: true, note: "Difficulty level: 1=easy, 2=medium, 3=hard." },
+  { field: "objectives", type: "array<string>", required: true, note: "Learning objectives." },
+  { field: "estimatedMinutes", type: "number", required: true, note: "Estimated time to complete in minutes." },
+  { field: "blocks", type: "array<CourseBlock>", required: true, note: "Array of content blocks (markdown, callouts, checkpoints, etc.)." },
+  { field: "questions", type: "array<Question>", required: true, note: "Array of questions in the module." },
+  { field: "linkedDeckIds", type: "array<string>", required: false, note: "IDs of related decks." },
+  { field: "notes", type: "string", required: false, note: "Additional notes about the module." },
+  { field: "notebookId", type: "string", required: false, note: "ID of associated notebook if applicable." },
+  { field: "createdAt", type: "number (timestamp)", required: true, note: "Unix timestamp when module was created." },
+  { field: "updatedAt", type: "number (timestamp)", required: true, note: "Unix timestamp when module was last updated." },
+];

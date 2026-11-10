@@ -24,9 +24,11 @@ import { getColorTheme } from "@/lib/themes";
 import { dayKey } from "@/lib/answers";
 import { applyThemeToRoot } from "@/lib/theme-dom";
 import { loadWallpaper, saveWallpaper } from "@/lib/wallpaper-store";
+import { loadAvatar, saveAvatar } from "@/lib/avatar-store";
 import { normalizeSidebarGroups } from "@/lib/sidebar-preferences";
 import { createId } from "@/lib/id";
 import { schedule, DAY_MS, type SrsGrade } from "@/lib/srs";
+import * as storage from "@/lib/storage";
 import type {
   AppState,
   Course,
@@ -160,13 +162,14 @@ function normalizeState(parsed: Partial<AppState>): AppState {
   };
 }
 
-function loadPersistedState(): AppState {
+async function loadPersistedState(): Promise<AppState> {
   if (typeof window === "undefined") return DEFAULT_STATE;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = await storage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_STATE;
     return normalizeState(JSON.parse(raw) as Partial<AppState>);
-  } catch {
+  } catch (err) {
+    console.error("[Storage] Error loading persisted state:", err);
     return DEFAULT_STATE;
   }
 }
@@ -178,6 +181,8 @@ interface Ctx {
   updateSettings: (patch: Partial<Settings>) => void;
   /** Persist (or clear) the wallpaper. Stored in IndexedDB, not the state blob. */
   setWallpaper: (dataUrl: string | null) => void;
+  /** Persist (or clear) the avatar image. Stored in IndexedDB, not the state blob. */
+  setAvatar: (dataUrl: string | null) => void;
   resetSettings: () => void;
   addDeck: (deck: Deck) => void;
   addQuestions: (deckId: string, questions: Question[]) => void;
@@ -265,24 +270,38 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Parse + swap the persisted blob as a transition so the first paint and
     // the first interactions stay responsive even with a large study history.
-    const persisted = loadPersistedState();
-    startTransition(() => {
-      setInternal(persisted);
-    });
     let cancelled = false;
     void (async () => {
-      // Migrate a legacy inline wallpaper out of the blob, otherwise hydrate
-      // the wallpaper from its own store.
-      const legacy = persisted.settings.wallpaper;
-      if (legacy) {
-        await saveWallpaper(legacy);
-      } else {
-        const stored = await loadWallpaper();
-        if (!cancelled && stored) {
-          setInternal((s) => ({ ...s, settings: { ...s.settings, wallpaper: stored } }));
+      try {
+        const persisted = await loadPersistedState();
+        if (cancelled) return;
+        startTransition(() => {
+          setInternal(persisted);
+        });
+
+        // Migrate a legacy inline wallpaper out of the blob, otherwise hydrate
+        // the wallpaper from its own store.
+        const legacy = persisted.settings.wallpaper;
+        if (legacy) {
+          await saveWallpaper(legacy);
+        } else {
+          const stored = await loadWallpaper();
+          if (!cancelled && stored) {
+            setInternal((s) => ({ ...s, settings: { ...s.settings, wallpaper: stored } }));
+          }
         }
+
+        // Load avatar image from IndexedDB
+        const avatar = await loadAvatar();
+        if (!cancelled && avatar) {
+          setInternal((s) => ({ ...s, settings: { ...s.settings, avatarImage: avatar } }));
+        }
+
+        if (!cancelled) setHydrated(true);
+      } catch (err) {
+        console.error("[Storage] Error during hydration:", err);
+        if (!cancelled) setHydrated(true);
       }
-      if (!cancelled) setHydrated(true);
     })();
     return () => {
       cancelled = true;
@@ -295,7 +314,7 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!hydrated || typeof window === "undefined") return;
-    const timer = window.setTimeout(() => {
+    const timer = window.setTimeout(async () => {
       try {
         // The wallpaper is persisted separately (IndexedDB) so a large image
         // can never exhaust the state blob's quota.
@@ -303,15 +322,16 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
           ...stateRef.current,
           settings: { ...stateRef.current.settings, wallpaper: null },
         };
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+        await storage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
         saveErrorShown.current = false;
-      } catch {
+      } catch (err) {
+        console.error("[Storage] Error saving state:", err);
         if (!saveErrorShown.current) {
           saveErrorShown.current = true;
-          toast.error("Couldn't save your work — Knowly is running out of space", {
+          toast.error("Couldn't save your work — storage unavailable", {
             id: "storage-full",
             description:
-              "Save a backup of your library first, then remove large wallpapers to free up room.",
+              "Check your browser's storage quota or try exporting a backup.",
           });
         }
       }
@@ -908,9 +928,14 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
         setState((s) => ({ ...s, settings: { ...s.settings, wallpaper: dataUrl } }));
         void saveWallpaper(dataUrl);
       },
+      setAvatar: (dataUrl) => {
+        setState((s) => ({ ...s, settings: { ...s.settings, avatarImage: dataUrl } }));
+        void saveAvatar(dataUrl);
+      },
       resetSettings: () => {
         setState((s) => ({ ...s, settings: DEFAULT_SETTINGS }));
         void saveWallpaper(null);
+        void saveAvatar(null);
       },
       addDeck,
       addQuestions,

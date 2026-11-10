@@ -621,7 +621,24 @@ const samePages = (a: ModuleUnit[][], b: ModuleUnit[][]) =>
   a.length === b.length &&
   a.every((page, i) => page.length === b[i].length && page.every((u, j) => u === b[i][j]));
 
-function loadExtraPages(key: string): string[] {
+async function loadExtraPages(key: string): Promise<string[]> {
+  try {
+    const storage = await import("@/lib/storage");
+    const raw = await storage.getItem(key);
+    if (raw) {
+      const parsed: unknown = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.every((p) => typeof p === "string") && parsed.length) {
+        return parsed as string[];
+      }
+    }
+  } catch {
+    /* storage unavailable or corrupt — start empty */
+  }
+  return [""];
+}
+
+// Sync version for useState initializer
+function loadExtraPageSync(key: string): string[] {
   try {
     const raw = window.localStorage.getItem(key);
     if (raw) {
@@ -705,7 +722,7 @@ export function ModulePaper({
   }, [skin.accent]);
 
   const pagesKey = `${STORAGE_KEY_MODULE_PAGES}.${module.id}`;
-  const [editPages, setEditPages] = useState<string[]>(() => loadExtraPages(pagesKey));
+  const [editPages, setEditPages] = useState<string[]>(() => loadExtraPageSync(pagesKey));
   const [activeTextareaIndex, setActiveTextareaIndex] = useState<number>(0);
   const deferredEditPages = useDeferredValue(editPages);
 
@@ -714,7 +731,7 @@ export function ModulePaper({
   useEffect(() => {
     if (loadedKey.current !== pagesKey) {
       loadedKey.current = pagesKey;
-      setEditPages(loadExtraPages(pagesKey));
+      setEditPages(loadExtraPageSync(pagesKey));
       setActiveTextareaIndex(0);
     }
   }, [pagesKey]);
@@ -722,12 +739,15 @@ export function ModulePaper({
   // persist typed pages so a remount or option change never loses them
   useEffect(() => {
     if (loadedKey.current !== pagesKey) return;
-    try {
-      if (editPages.every((p) => !p.trim())) window.localStorage.removeItem(pagesKey);
-      else window.localStorage.setItem(pagesKey, JSON.stringify(editPages));
-    } catch {
-      /* ignore quota / privacy-mode errors */
-    }
+    void (async () => {
+      try {
+        const storage = await import("@/lib/storage");
+        if (editPages.every((p) => !p.trim())) await storage.removeItem(pagesKey);
+        else await storage.setItem(pagesKey, JSON.stringify(editPages));
+      } catch {
+        /* ignore quota / privacy-mode errors */
+      }
+    })();
   }, [editPages, pagesKey]);
 
   const units = useMemo(

@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import * as storage from "@/lib/storage";
 
 export interface TourStep {
   eyebrow: string;
@@ -17,19 +18,24 @@ export function useFeatureTour(storageKey: string) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    try {
-      if (window.localStorage.getItem(storageKey) !== "1") setOpen(true);
-    } catch {
-      setOpen(true);
-    }
+    void (async () => {
+      try {
+        const val = await storage.getItem(storageKey);
+        if (val !== "1") setOpen(true);
+      } catch {
+        setOpen(true);
+      }
+    })();
   }, [storageKey]);
 
   const dismiss = () => {
-    try {
-      window.localStorage.setItem(storageKey, "1");
-    } catch {
-      // Private browsing can disable storage. Dismissing still works for this session.
-    }
+    void (async () => {
+      try {
+        await storage.setItem(storageKey, "1");
+      } catch {
+        // Storage may be unavailable in private browsing. Dismissing still works for this session.
+      }
+    })();
     setOpen(false);
   };
 

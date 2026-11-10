@@ -116,7 +116,7 @@ function inlineRuns(text: string, style: FlowStyle = {}): TextRun[] {
   while ((match = pattern.exec(text))) {
     // Add plain text before this match
     if (match.index > last) {
-      runs.push(new TextRun(text.slice(last, match.index)));
+      runs.push(new TextRun({ text: text.slice(last, match.index), size: 22 }));
     }
 
     // LaTeX display: $$...$$ (group 1)
@@ -198,7 +198,7 @@ function inlineRuns(text: string, style: FlowStyle = {}): TextRun[] {
 
   // Add remaining text
   if (last < text.length) {
-    runs.push(new TextRun(text.slice(last)));
+    runs.push(new TextRun({ text: text.slice(last), size: 22 }));
   }
 
   return runs.length > 0 ? runs : [new TextRun("")];

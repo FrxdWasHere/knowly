@@ -98,7 +98,20 @@ function ToggleRow({
   );
 }
 
-function loadOptions(): CoursePrintOptions {
+async function loadOptions(): Promise<CoursePrintOptions> {
+  if (typeof window === "undefined") return defaultCoursePrintOptions;
+  try {
+    const storage = await import("@/lib/storage");
+    const raw = await storage.getItem(STORAGE_KEY_COURSE_PRINT);
+    if (!raw) return defaultCoursePrintOptions;
+    return { ...defaultCoursePrintOptions, ...(JSON.parse(raw) as CoursePrintOptions) };
+  } catch {
+    return defaultCoursePrintOptions;
+  }
+}
+
+// Sync version for useState
+function loadOptionsSync(): CoursePrintOptions {
   if (typeof window === "undefined") return defaultCoursePrintOptions;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY_COURSE_PRINT);
@@ -126,18 +139,21 @@ function CoursePrintPage() {
   const { courseId } = Route.useParams();
   const { state } = useKnowly();
   const course = state.courses.find((course) => course.id === courseId);
-  const [options, setOptions] = useState<CoursePrintOptions>(loadOptions);
+  const [options, setOptions] = useState<CoursePrintOptions>(loadOptionsSync);
   const [exportState, setExportState] = useState<ExportState>({ kind: "idle" });
   const [marketplaceOpen, setMarketplaceOpen] = useState(false);
   const docxWorking = exportState.kind === "working";
   const dims = getPaperDims(options.paper, options.orientation);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(STORAGE_KEY_COURSE_PRINT, JSON.stringify(options));
-    } catch {
-      // storage may be unavailable; options simply don't persist
-    }
+    void (async () => {
+      try {
+        const storage = await import("@/lib/storage");
+        await storage.setItem(STORAGE_KEY_COURSE_PRINT, JSON.stringify(options));
+      } catch {
+        // storage may be unavailable; options simply don't persist
+      }
+    })();
   }, [options]);
 
   if (!course) {

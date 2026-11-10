@@ -1,4 +1,12 @@
-import { SAMPLE_DECK_JSON, SAMPLE_QUESTIONS_JSON } from "./schema";
+import { 
+  SAMPLE_DECK_JSON, 
+  SAMPLE_QUESTIONS_JSON,
+  SAMPLE_COURSE_JSON,
+  SAMPLE_MODULE_JSON,
+  DECK_SCHEMA_TEXT as DECK_SCHEMA_FROM_SCHEMA,
+  COURSE_FIELD_DOCS,
+  MODULE_FIELD_DOCS,
+} from "./schema";
 import type { Difficulty, QuestionType } from "./types";
 
 /* ------------------------------------------------------------------ *
@@ -17,6 +25,14 @@ export function jsonFileRule(name: string) {
     "- Every string must be valid JSON (escape quotes, newlines and backslashes).",
   ].join("\n");
 }
+
+/** Strict instructions to follow the format completely and include all fields */
+export const STRICT_FORMAT_RULES = [
+  "CRITICAL: You MUST follow this format EXACTLY. Every field shown in the schema is REQUIRED — do not omit optional fields, do not add new fields, do not rename fields.",
+  "CRITICAL: Include ALL fields from the complete sample, whether marked optional or not. The app requires every field to be present.",
+  "CRITICAL: Validate your entire output against the complete sample provided above — every key, every data type, every structure must match.",
+  "CRITICAL: If you are unsure about a field or its value, refer directly to the complete sample — copy its structure and adapt only the string content.",
+].join("\n");
 
 /** The note that stops a model from copying the sample's content verbatim. */
 export const SAMPLE_NOTE =
@@ -220,9 +236,12 @@ ${QUESTION_SCHEMA_TEXT}
 TUTOR NOTES — pre-written inside every question
 ${TUTOR_RULES}
 
-FULL SAMPLE — a complete deck using all eight question types
+FULL SAMPLE REFERENCE — a complete, working deck using all eight question types
 ${SAMPLE_NOTE}
 ${SAMPLE_DECK_JSON}
+
+FORMAT ADHERENCE — CRITICAL
+${STRICT_FORMAT_RULES}
 
 INTERACTIVE TYPE RULES
 - ordering: list "items" in the correct sequence; the app shuffles them for the learner. No "answer" field.
@@ -299,9 +318,12 @@ ${QUESTION_SCHEMA_TEXT}
 TUTOR NOTES — pre-written inside every question
 ${TUTOR_RULES}
 
-FULL SAMPLE — a complete question pack
+FULL SAMPLE REFERENCE — a complete question pack
 ${SAMPLE_NOTE}
 ${SAMPLE_QUESTIONS_JSON}
+
+FORMAT ADHERENCE — CRITICAL
+${STRICT_FORMAT_RULES}
 
 INTERACTIVE TYPE RULES
 - ordering: list "items" in the correct sequence; the app shuffles them. No "answer" field.

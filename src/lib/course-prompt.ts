@@ -4,6 +4,7 @@ import {
   TUTOR_RULES,
   jsonFileRule,
   mathPromptSection,
+  STRICT_FORMAT_RULES,
 } from "./prompt";
 import { SAMPLE_COURSE_JSON } from "./course-schema";
 import type { Difficulty, QuestionType } from "./types";
@@ -244,9 +245,12 @@ ${QUESTION_SCHEMA_TEXT}
 TUTOR NOTES — pre-written inside every question
 ${TUTOR_RULES}
 
-FULL SAMPLE — a complete course with a module and a lesson
+FULL SAMPLE REFERENCE — a complete, working course with a module and lessons
 ${SAMPLE_NOTE}
 ${courseSample(o.includeAssessments)}
+
+FORMAT ADHERENCE — CRITICAL
+${STRICT_FORMAT_RULES}
 
 QUESTION RULES
 - multiple-choice: 2–6 options; the answer must exactly match one option.

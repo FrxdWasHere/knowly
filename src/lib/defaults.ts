@@ -79,6 +79,7 @@ export const DEFAULT_SETTINGS: Settings = {
   gradeLevel: "",
   school: "",
   avatarEmoji: "🌊",
+  avatarImage: null,
   focusSubjects: [],
   studyReason: "",
   dailyGoal: 20,

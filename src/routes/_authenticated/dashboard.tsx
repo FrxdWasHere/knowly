@@ -26,6 +26,7 @@ import { SrsDashboardWidget } from "@/components/srs/srs-dashboard-widget";
 import { SrsDueChip } from "@/components/srs/srs-status-badge";
 import { collectDue } from "@/lib/srs";
 import { useKnowly } from "@/store/knowly";
+import { useAvatarUrl } from "@/lib/use-avatar-url";
 import { levelFromXp, ACHIEVEMENTS } from "@/lib/gamification";
 import { dayKey, formatDuration } from "@/lib/answers";
 import { cn } from "@/lib/utils";
@@ -134,6 +135,7 @@ function greeting() {
 function Dashboard() {
   const { state, updateSettings } = useKnowly();
   const { decks, progress, history, settings } = state;
+  const avatarUrl = useAvatarUrl(settings.avatarImage);
   const { level, pct, intoLevel, needed } = levelFromXp(progress.lifetimeXp);
   const hidden = settings.hiddenWidgets;
   const hide = (id: string) => updateSettings({ hiddenWidgets: [...hidden, id] });
@@ -156,7 +158,7 @@ function Dashboard() {
 
   const unlocked = ACHIEVEMENTS.filter((a) => progress.unlockedAchievements.includes(a.id));
 
-  const hello = `${settings.avatarEmoji} ${greeting()}, ${settings.displayName || "there"}`;
+  const hello = `${greeting()}, ${settings.displayName || "there"}`;
   const goalMet = todayCount >= settings.dailyGoal;
   const subjectRows = settings.focusSubjects.map((subject) => {
     const mine = decks.filter((d) => d.subject.toLowerCase() === subject.toLowerCase());
@@ -229,19 +231,43 @@ function Dashboard() {
 
   return (
     <div>
-      <PageHeader
-        title={hello}
-        description={[
-          contextLine,
-          settings.studyReason ? `Studying for ${settings.studyReason.toLowerCase()}` : "",
-          goalMet
-            ? `Daily goal of ${settings.dailyGoal} done — nice work.`
-            : `${Math.max(0, settings.dailyGoal - todayCount)} questions to hit today's goal.`,
-        ]
-          .filter(Boolean)
-          .join(" · ")}
-        action={
-          hidden.length ? (
+      <div className="anim-fade-up mb-7 flex flex-col gap-4 border-b-[3px] border-border pb-6 lg:flex-row lg:items-end lg:justify-between lg:gap-6 lg:pb-7">
+        <div className="min-w-0 flex-1 flex items-center gap-4">
+          <div className="flex-shrink-0">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="Your avatar"
+                className="size-20 rounded-lg object-cover border-[3px] border-border shadow-[3px_3px_0_0_var(--shadow-ink)]"
+              />
+            ) : (
+              <span className="grid size-20 place-items-center rounded-lg border-[3px] border-border bg-block-lemon text-5xl text-ink shadow-[3px_3px_0_0_var(--shadow-ink)]">
+                {settings.avatarEmoji || "🌊"}
+              </span>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="break-words font-display text-3xl font-bold leading-[1.05] tracking-tight sm:text-4xl">
+              {hello}
+            </h1>
+            {(() => {
+              const desc = [
+                contextLine,
+                settings.studyReason ? `Studying for ${settings.studyReason.toLowerCase()}` : "",
+                goalMet
+                  ? `Daily goal of ${settings.dailyGoal} done — nice work.`
+                  : `${Math.max(0, settings.dailyGoal - todayCount)} questions to hit today's goal.`,
+              ]
+                .filter(Boolean)
+                .join(" · ");
+              return desc ? (
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">{desc}</p>
+              ) : null;
+            })()}
+          </div>
+        </div>
+        {(() => {
+          const actionNode = hidden.length ? (
             <Button
               variant="outline"
               size="sm"
@@ -261,18 +287,23 @@ function Dashboard() {
                 <Play /> Start a quiz
               </Link>
             </Button>
-          )
-        }
-      />
+          );
+          return actionNode ? (
+            <div className="flex w-full min-w-0 flex-wrap items-center gap-2 lg:w-auto lg:max-w-[52%] lg:justify-end">
+              {actionNode}
+            </div>
+          ) : null;
+        })()}
+      </div>
 
-      <div className="grid grid-flow-row-dense gap-4 md:grid-cols-2 xl:grid-cols-12">
+      <div className="grid grid-flow-row-dense gap-4 md:grid-cols-2 xl:grid-cols-12 stagger">
         {show("srs") && decks.length > 0 && (
           <Widget
             id="srs"
             title="Review schedule"
             icon={Brain}
             onHide={hide}
-            className="md:col-span-2 xl:col-span-12"
+            className="md:col-span-2 xl:col-span-12 anim-fade-up"
           >
             <SrsDashboardWidget decks={decks} />
           </Widget>
@@ -284,7 +315,7 @@ function Dashboard() {
             title="Continue studying"
             icon={Play}
             onHide={hide}
-            className="md:col-span-2 xl:col-span-8"
+            className="md:col-span-2 xl:col-span-8 anim-fade-up"
           >
             <div className="grid grid-cols-1 items-center gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
               <div className="min-w-0">
@@ -295,7 +326,7 @@ function Dashboard() {
                 </p>
               </div>
               <div className="flex shrink-0 flex-wrap gap-2">
-                <Button asChild className="min-h-[44px]">
+                <Button asChild className="min-h-[44px] anim-fade-up press">
                   <Link
                     to="/study/$deckId"
                     params={{ deckId: recentDeck.id }}
@@ -304,7 +335,7 @@ function Dashboard() {
                     Study
                   </Link>
                 </Button>
-                <Button variant="outline" asChild className="min-h-[44px]">
+                <Button variant="outline" asChild className="min-h-[44px] anim-fade-up press">
                   <Link to="/quiz">Quiz</Link>
                 </Button>
               </div>
@@ -312,7 +343,7 @@ function Dashboard() {
             {settings.showProgressBars && (
               <div className="mt-4 h-2.5 overflow-hidden rounded-full border-[2px] border-border bg-surface-2">
                 <div
-                  className="h-full rounded-full bg-primary"
+                  className="h-full rounded-full bg-primary anim-fade-up"
                   style={{
                     width: `${(recentDeck.masteredIds.length / Math.max(1, recentDeck.questions.length)) * 100}%`,
                   }}
@@ -328,16 +359,16 @@ function Dashboard() {
             title="Today's goal"
             icon={Target}
             onHide={hide}
-            className="xl:col-span-4"
+            className="xl:col-span-4 widget-sky anim-fade-up"
             tone="sky"
           >
-            <p className="font-display text-4xl font-bold tabular-nums">
+            <p className="font-display text-4xl font-bold tabular-nums anim-pop">
               {todayCount}
               <span className="text-base text-ink/60"> / {settings.dailyGoal}</span>
             </p>
             {settings.showProgressBars && (
               <div className="mt-3 h-2.5 overflow-hidden rounded-full border-[2px] border-border bg-ink/15">
-                <div className="h-full rounded-full bg-ink" style={{ width: `${goalPct}%` }} />
+                <div className="h-full rounded-full bg-ink anim-fade-up" style={{ width: `${goalPct}%` }} />
               </div>
             )}
             <p className={cn("mt-2 text-xs font-bold", goalMet ? "text-ink" : "text-ink/70")}>
@@ -354,15 +385,15 @@ function Dashboard() {
             title="Your subjects"
             icon={BookOpen}
             onHide={hide}
-            className="md:col-span-2 xl:col-span-8"
+            className="md:col-span-2 xl:col-span-8 anim-fade-up"
           >
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2 stagger">
               {subjectRows.map((s) => (
                 <Link
                   key={s.subject}
                   to="/decks"
                   search={{ q: s.subject }}
-                  className="rounded-xl border-[2px] border-border bg-surface p-3 shadow-[2px_2px_0_0_var(--shadow-ink)] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_var(--shadow-ink)]"
+                  className="rounded-xl border-[2px] border-border bg-surface p-3 shadow-[2px_2px_0_0_var(--shadow-ink)] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_var(--shadow-ink)] anim-fade-up hover:anim-float press"
                 >
                   <p className="text-sm font-bold">{s.subject}</p>
                   <p className="mt-1 text-xs font-medium text-muted-foreground">
@@ -390,11 +421,11 @@ function Dashboard() {
             title="Level & XP"
             icon={Zap}
             onHide={hide}
-            className="xl:col-span-4"
+            className="xl:col-span-4 widget-grape anim-fade-up"
             tone="grape"
           >
             <div className="flex items-baseline gap-2">
-              <span className="font-display text-4xl font-bold tabular-nums">Lv {level}</span>
+              <span className="font-display text-4xl font-bold tabular-nums anim-pop">Lv {level}</span>
               <span className="text-xs font-bold text-ink/70">
                 {intoLevel}/{needed} XP
               </span>
@@ -416,10 +447,10 @@ function Dashboard() {
             title="Study streak"
             icon={Flame}
             onHide={hide}
-            className="xl:col-span-4"
+            className="xl:col-span-4 widget-coral anim-fade-up"
             tone="coral"
           >
-            <p className="font-display text-4xl font-bold tabular-nums">{progress.streak} days</p>
+            <p className="font-display text-4xl font-bold tabular-nums anim-pop">{progress.streak} days</p>
             <p className="mt-2 text-xs font-bold text-ink/70">
               Longest {progress.longestStreak} · {formatDuration(progress.studyTimeMs)} studied
             </p>
@@ -432,17 +463,17 @@ function Dashboard() {
             title="Cards due"
             icon={Clock}
             onHide={hide}
-            className="xl:col-span-4"
+            className="xl:col-span-4 widget-lemon anim-fade-up"
             tone="lemon"
           >
-            <p className="font-display text-4xl font-bold tabular-nums">{dueNow}</p>
+            <p className="font-display text-4xl font-bold tabular-nums anim-pop">{dueNow}</p>
             <p className="mt-2 text-xs font-bold text-ink/70">
               due now · {unmastered} still unmastered · {accuracy}% lifetime accuracy
             </p>
             {dueNow > 0 && (
               <Link
                 to="/review"
-                className="mt-2 inline-block text-xs font-bold text-ink underline underline-offset-4"
+                className="mt-2 inline-block text-xs font-bold text-ink underline underline-offset-4 anim-fade-up hover:anim-float"
               >
                 Start review →
               </Link>
@@ -456,14 +487,14 @@ function Dashboard() {
             title="Recent activity"
             icon={BarChart3}
             onHide={hide}
-            className="md:col-span-2 xl:col-span-8"
+            className="md:col-span-2 xl:col-span-8 anim-fade-up"
           >
             {history.length ? (
-              <ul className="space-y-2">
+              <ul className="space-y-2 stagger">
                 {history.slice(0, 5).map((h) => (
                   <li
                     key={h.id}
-                    className="flex items-center justify-between rounded-lg border-[2px] border-border bg-surface-2 px-3 py-2 text-sm"
+                    className="flex items-center justify-between rounded-lg border-[2px] border-border bg-surface-2 px-3 py-2 text-sm anim-fade-up transition-all hover:shadow-[2px_2px_0_0_var(--shadow-ink)] press"
                   >
                     <span className="truncate">
                       <span className="font-bold capitalize">{h.mode}</span> ·{" "}
@@ -487,12 +518,12 @@ function Dashboard() {
             title="Weak topics"
             icon={TrendingDown}
             onHide={hide}
-            className="xl:col-span-4"
+            className="xl:col-span-4 widget-pink anim-fade-up"
           >
             {weak.length ? (
-              <ul className="space-y-2 text-sm">
+              <ul className="space-y-2 text-sm stagger">
                 {weak.map((w) => (
-                  <li key={w.concept} className="flex items-center justify-between gap-2">
+                  <li key={w.concept} className="flex items-center justify-between gap-2 anim-fade-up">
                     <span className="truncate">
                       <MathText text={w.concept} />
                     </span>
@@ -516,9 +547,9 @@ function Dashboard() {
             title="Recent decks"
             icon={Library}
             onHide={hide}
-            className="md:col-span-2 xl:col-span-8"
+            className="md:col-span-2 xl:col-span-8 anim-fade-up"
           >
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2 stagger">
               {[...decks]
                 .sort((a, b) => (b.lastStudiedAt ?? b.createdAt) - (a.lastStudiedAt ?? a.createdAt))
                 .slice(0, 4)
@@ -527,7 +558,7 @@ function Dashboard() {
                     key={d.id}
                     to="/decks/$deckId"
                     params={{ deckId: d.id }}
-                    className="flex items-center gap-3 rounded-xl border-[2px] border-border bg-surface p-3 shadow-[2px_2px_0_0_var(--shadow-ink)] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_var(--shadow-ink)]"
+                    className="flex items-center gap-3 rounded-xl border-[2px] border-border bg-surface p-3 shadow-[2px_2px_0_0_var(--shadow-ink)] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_var(--shadow-ink)] anim-fade-up press"
                   >
                     <span
                       className="size-9 shrink-0 rounded-lg border-[2px] border-border"
@@ -552,15 +583,15 @@ function Dashboard() {
             title="Achievements"
             icon={Trophy}
             onHide={hide}
-            className="xl:col-span-4"
+            className="xl:col-span-4 anim-fade-up"
           >
-            <p className="font-display text-3xl font-bold">
+            <p className="font-display text-3xl font-bold anim-pop">
               {unlocked.length}
               <span className="text-base text-muted-foreground"> / {ACHIEVEMENTS.length}</span>
             </p>
             <Link
               to="/achievements"
-              className="mt-2 inline-block text-xs text-primary hover:underline"
+              className="mt-2 inline-block text-xs text-primary hover:underline anim-fade-up"
             >
               View all →
             </Link>
@@ -573,22 +604,22 @@ function Dashboard() {
             title="Lifetime stats"
             icon={BarChart3}
             onHide={hide}
-            className="md:col-span-2 xl:col-span-4"
+            className="md:col-span-2 xl:col-span-4 anim-fade-up"
           >
-            <dl className="grid grid-cols-2 gap-3 text-sm">
-              <div>
+            <dl className="grid grid-cols-2 gap-3 text-sm stagger">
+              <div className="anim-fade-up">
                 <dt className="text-xs text-muted-foreground">Answered</dt>
                 <dd className="font-semibold">{progress.totalAnswered}</dd>
               </div>
-              <div>
+              <div className="anim-fade-up">
                 <dt className="text-xs text-muted-foreground">Correct</dt>
                 <dd className="font-semibold text-success">{progress.totalCorrect}</dd>
               </div>
-              <div>
+              <div className="anim-fade-up">
                 <dt className="text-xs text-muted-foreground">Quizzes</dt>
                 <dd className="font-semibold">{progress.quizzesCompleted}</dd>
               </div>
-              <div>
+              <div className="anim-fade-up">
                 <dt className="text-xs text-muted-foreground">Best combo</dt>
                 <dd className="font-semibold">{progress.bestCombo}</dd>
               </div>

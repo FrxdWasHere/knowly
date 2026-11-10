@@ -334,6 +334,8 @@ export interface Settings {
   gradeLevel: string;
   school: string;
   avatarEmoji: string;
+  /** data URL of a user-uploaded avatar image, stored locally in IndexedDB */
+  avatarImage: string | null;
   focusSubjects: string[];
   studyReason: string;
   dailyGoal: number;

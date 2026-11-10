@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { openImportPanel } from "@/lib/import-panel";
-import { QUESTION_SCHEMA_TEXT, SAMPLE_NOTE, TUTOR_RULES, jsonFileRule } from "@/lib/prompt";
+import { QUESTION_SCHEMA_TEXT, SAMPLE_NOTE, TUTOR_RULES, jsonFileRule, STRICT_FORMAT_RULES } from "@/lib/prompt";
 import { SAMPLE_MODULE_JSON } from "@/lib/module-schema";
 import { useKnowly } from "@/store/knowly";
 import type { Module } from "@/lib/types";
@@ -440,5 +440,8 @@ ${TUTOR_RULES}
 
 FULL SAMPLE — a complete module
 ${SAMPLE_NOTE}
-${SAMPLE_MODULE_JSON}`;
+${SAMPLE_MODULE_JSON}
+
+FORMAT ADHERENCE — CRITICAL
+${STRICT_FORMAT_RULES}`;
 }

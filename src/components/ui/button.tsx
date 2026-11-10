@@ -21,7 +21,7 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive text-destructive-foreground shadow-[2px_2px_0_0_var(--shadow-ink)] hover:bg-destructive-hover hover:shadow-[4px_4px_0_0_var(--shadow-ink)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none sm:shadow-[3px_3px_0_0_var(--shadow-ink)] sm:hover:-translate-x-0.5 sm:hover:-translate-y-0.5 sm:hover:shadow-[5px_5px_0_0_var(--shadow-ink)]",
         outline:
-          "bg-surface text-foreground shadow-[2px_2px_0_0_var(--shadow-ink)] hover:bg-block-lemon hover:text-ink hover:border-ink hover:shadow-[4px_4px_0_0_var(--shadow-ink)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none sm:shadow-[3px_3px_0_0_var(--shadow-ink)] sm:hover:-translate-x-0.5 sm:hover:-translate-y-0.5 sm:hover:shadow-[5px_5px_0_0_var(--shadow-ink)]",
+          "bg-surface text-foreground shadow-[2px_2px_0_0_var(--shadow-ink)] hover:shadow-[4px_4px_0_0_var(--shadow-ink)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 sm:shadow-[3px_3px_0_0_var(--shadow-ink)] sm:hover:-translate-x-0.5 sm:hover:-translate-y-0.5 sm:hover:shadow-[5px_5px_0_0_var(--shadow-ink)] hover:bg-block-lemon hover:text-ink hover:border-ink",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-surface-hover hover:text-foreground",
         ghost:

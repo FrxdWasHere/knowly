@@ -44,8 +44,10 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { AVATAR_EMOJIS, GRADE_LEVELS, STUDY_REASONS, SUBJECT_SUGGESTIONS } from "@/lib/defaults";
 import { fileToWallpaperDataUrl } from "@/lib/wallpaper";
+import { fileToAvatarDataUrl } from "@/lib/avatar-store";
 import { estimateStorageUsage, formatBytes, type StorageUsage } from "@/lib/storage-usage";
 import { useWallpaperUrl } from "@/hooks/use-wallpaper-url";
+import { useAvatarUrl } from "@/lib/use-avatar-url";
 import { useKnowly } from "@/store/knowly";
 import { cn } from "@/lib/utils";
 import type { Settings } from "@/lib/types";
@@ -300,12 +302,14 @@ function Chip({
 /* ------------------------------------------------------------------ */
 
 function SettingsPage() {
-  const { state, updateSettings, setWallpaper, resetSettings, resetAll, exportState, importState } =
+  const { state, updateSettings, setWallpaper, setAvatar, resetSettings, resetAll, exportState, importState } =
     useKnowly();
   const s = state.settings;
   const wallpaperUrl = useWallpaperUrl(s.wallpaper);
+  const avatarUrl = useAvatarUrl(s.avatarImage);
   const fileRef = useRef<HTMLInputElement>(null);
   const wallpaperRef = useRef<HTMLInputElement>(null);
+  const avatarRef = useRef<HTMLInputElement>(null);
   const [confirmWipe, setConfirmWipe] = useState(false);
   const [usage, setUsage] = useState<StorageUsage | null>(null);
 
@@ -359,9 +363,17 @@ function SettingsPage() {
         {/* Profile banner, iOS Apple-Account style */}
         <div className="anim-fade-up overflow-hidden rounded-2xl border border-border bg-card/80 p-4">
           <div className="flex items-center gap-4">
-            <span className="grid size-16 shrink-0 place-items-center rounded-full border-[3px] border-border bg-block-lemon text-3xl text-ink shadow-[3px_3px_0_0_var(--shadow-ink)]">
-              {s.avatarEmoji || "🌊"}
-            </span>
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="Your avatar"
+                className="size-16 shrink-0 rounded-lg object-cover border-[3px] border-border shadow-[3px_3px_0_0_var(--shadow-ink)]"
+              />
+            ) : (
+              <span className="grid size-16 shrink-0 place-items-center rounded-lg border-[3px] border-border bg-block-lemon text-3xl text-ink shadow-[3px_3px_0_0_var(--shadow-ink)]">
+                {s.avatarEmoji || "🌊"}
+              </span>
+            )}
             <div className="min-w-0 flex-1">
               <p className="truncate font-display text-xl font-bold">
                 {s.displayName || "Study Profile"}
@@ -375,22 +387,75 @@ function SettingsPage() {
         <Group title="Profile" footer="Used across the dashboard, arena and reports.">
           <div className="px-4 py-3">
             <Label className="text-[15px]">Avatar</Label>
-            <div className="mt-2 flex flex-wrap gap-1.5">
+            <div className="mt-2 flex flex-wrap gap-1.5 items-center">
               {AVATAR_EMOJIS.map((e) => (
                 <button
                   key={e}
                   type="button"
-                  onClick={() => set("avatarEmoji", e)}
-                  aria-pressed={s.avatarEmoji === e}
+                  onClick={() => {
+                    set("avatarEmoji", e);
+                    if (avatarUrl) setAvatar(null); // Clear image if switching to emoji
+                  }}
+                  aria-pressed={s.avatarEmoji === e && !avatarUrl}
                   className={cn(
                     "press grid size-10 place-items-center rounded-xl border border-transparent text-lg transition-all hover:scale-110",
-                    s.avatarEmoji === e && "scale-110 border-primary bg-primary/15",
+                    s.avatarEmoji === e && !avatarUrl && "scale-110 border-primary bg-primary/15",
                   )}
                 >
                   {e}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => avatarRef.current?.click()}
+                className={cn(
+                  "press inline-flex items-center gap-1.5 px-3 h-10 rounded-lg border-2 border-border bg-surface text-sm font-semibold transition-all hover:shadow-[3px_3px_0_0_var(--shadow-ink)] hover:-translate-x-0.5 hover:-translate-y-0.5",
+                  avatarUrl && "border-primary bg-primary/10",
+                )}
+                title="Upload a custom image"
+              >
+                <Upload className="size-4" />
+                Upload
+              </button>
+              <input
+                ref={avatarRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!file) return;
+                  try {
+                    const next = await fileToAvatarDataUrl(file);
+                    setAvatar(next);
+                    toast.success("Avatar updated");
+                  } catch (err) {
+                    toast.error((err as Error).message);
+                  }
+                }}
+              />
+              {avatarUrl && (
+                <button
+                  type="button"
+                  onClick={() => setAvatar(null)}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  title="Remove custom avatar"
+                >
+                  <X className="size-4" />
+                </button>
+              )}
             </div>
+            {avatarUrl && (
+              <div className="mt-3 flex items-center gap-2">
+                <img
+                  src={avatarUrl}
+                  alt="Your custom avatar preview"
+                  className="size-12 rounded-lg object-cover border border-border"
+                />
+                <p className="text-xs text-muted-foreground">Custom avatar preview</p>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3 px-4 py-2.5">
             <Tile icon={UserRound} tint="--primary" />
