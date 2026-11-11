@@ -268,10 +268,33 @@ function CoursePrintPage() {
               <BookOpenCheck className="mx-auto size-8 animate-pulse text-primary" />
               <h2 className="mt-4 font-display text-lg font-semibold">Building your book set…</h2>
               <p className="mt-1.5 truncate text-sm text-muted-foreground">{course.title}</p>
-              <div className="mt-4 flex items-center justify-center gap-2 rounded-xl border bg-surface/50 px-4 py-3 text-xs text-muted-foreground">
-                <Loader2 className="size-3.5 shrink-0 animate-spin text-primary" />
-                <span className="min-w-0 truncate">{exportState.message}</span>
+              
+              <div className="mt-4 space-y-3 rounded-xl border bg-surface/50 px-4 py-3">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="size-3.5 shrink-0 animate-spin text-primary" />
+                  <span className="min-w-0 truncate">{exportState.message}</span>
+                </div>
+                
+                {/* Progress bar with percentage extraction */}
+                {(() => {
+                  const match = exportState.message.match(/(\d+)%/);
+                  const percent = match ? parseInt(match[1], 10) : 0;
+                  return percent > 0 ? (
+                    <div className="space-y-1">
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-border">
+                        <div
+                          className="h-full bg-gradient-to-r from-primary to-primary-glow transition-all duration-300 ease-out"
+                          style={{ width: `${percent}%` }}
+                        />
+                      </div>
+                      <div className="text-right text-[10px] tabular-nums text-muted-foreground">
+                        {percent}%
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
               </div>
+              
               <p className="mt-3 text-[11px] leading-4 text-muted-foreground">
                 Everything is created on this device — larger courses take a few seconds.
               </p>

@@ -374,9 +374,29 @@ function PrintExamPage() {
 
         {exportState.kind === "working" && (
           <div className="print-hide mb-4 rounded-2xl border border-border bg-surface/50 p-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <span>{exportState.message}</span>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                <span className="text-sm font-medium">{exportState.message}</span>
+              </div>
+              {/* Extract percentage from message like "50% ..." or "Rendering (20%)..." */}
+              {(() => {
+                const match = exportState.message.match(/(\d+)%/);
+                const percent = match ? parseInt(match[1], 10) : 0;
+                return percent > 0 ? (
+                  <div className="space-y-1">
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-border">
+                      <div
+                        className="h-full bg-gradient-to-r from-primary to-primary-glow transition-all duration-300 ease-out"
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+                    <div className="text-right text-xs text-muted-foreground tabular-nums">
+                      {percent}%
+                    </div>
+                  </div>
+                ) : null;
+              })()}
             </div>
           </div>
         )}

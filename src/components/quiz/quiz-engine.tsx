@@ -332,19 +332,17 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
           </h2>
 
           <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <Label>Question count</Label>
-              <Badge variant="secondary">
-                {config.unlimited ? "Unlimited" : config.questionCount}
-              </Badge>
-            </div>
-            <Slider
+            <Label>Question count</Label>
+            <Input
               disabled={config.unlimited}
-              value={[config.questionCount]}
-              min={5}
-              max={100}
-              step={5}
-              onValueChange={([v]) => toggle("questionCount", v)}
+              type="number"
+              min={1}
+              max={1000}
+              value={config.questionCount}
+              onChange={(e) => {
+                const val = e.target.value ? Math.max(1, parseInt(e.target.value, 10)) : 1;
+                toggle("questionCount", val);
+              }}
             />
           </div>
 

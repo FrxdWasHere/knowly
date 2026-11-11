@@ -87,6 +87,13 @@ import { type ExamOptions } from "@/lib/exam-print";
  * ================================================================== */
 
 /**
+ * Cached regex pattern for markdown inline parsing.
+ * Moved to module scope to avoid recompilation on every call.
+ */
+const MARKDOWN_INLINE_PATTERN =
+  /\$\$([^\$]+)\$\$|\$([^\$\n]+)\$|\*\*\*([^*]+)\*\*\*|___([^_]+)___|\*\*([^*]+)\*\*|__([^_]+)__|~~([^~]+)~~|`([^`]+)`|\[([^\]]+)\]\(([^)]+)\)|\*([^*]+)\*|_([^_]+)_/g;
+
+/**
  * Enhanced inline markdown parser supporting:
  * - Bold: **text** or __text__
  * - Italic: *text* or _text_
@@ -107,8 +114,7 @@ function inlineRuns(text: string, style: FlowStyle = {}): TextRun[] {
   // - Strikethrough: ~~...~~
   // - Code: `...`
   // - Links: [...](...) 
-  const pattern =
-    /\$\$([^\$]+)\$\$|\$([^\$\n]+)\$|\*\*\*([^*]+)\*\*\*|___([^_]+)___|\*\*([^*]+)\*\*|__([^_]+)__|~~([^~]+)~~|`([^`]+)`|\[([^\]]+)\]\(([^)]+)\)|\*([^*]+)\*|_([^_]+)_/g;
+  const pattern = MARKDOWN_INLINE_PATTERN;
 
   let last = 0;
   let match: RegExpExecArray | null;
@@ -840,6 +846,7 @@ export async function courseDocxBlob(
 
   /* cover */
   if (options.includeCover) {
+    onStatus?.("Creating cover page…");
     pushAll(coverChildren(course, progress, design, options, dims));
     // a compact hero shares page 1 with the contents that follow
     if (options.heroLayout !== "compact") newPage();
@@ -847,6 +854,7 @@ export async function courseDocxBlob(
 
   /* contents */
   if (options.includeToc) {
+    onStatus?.("Generating table of contents…");
     children.push(
       new Paragraph({
         heading: HeadingLevel.HEADING_1,
@@ -902,7 +910,8 @@ export async function courseDocxBlob(
   };
 
   for (const [moduleIndex, module] of course.modules.entries()) {
-    onStatus?.(`Writing module ${moduleIndex + 1} of ${course.modules.length} · ${module.title}`);
+    const progressPercent = Math.round((moduleIndex / course.modules.length) * 40 + 10); // 10-50%
+    onStatus?.(`Processing content: ${progressPercent}% (Module ${moduleIndex + 1}/${course.modules.length})`);
     children.push(
       new Paragraph({
         heading: HeadingLevel.HEADING_1,
@@ -1115,7 +1124,7 @@ export async function courseDocxBlob(
     });
   }
 
-  onStatus?.("Embedding the paper design…");
+  onStatus?.("Rendering the paper design (60%)…");
   const art = await buildDocxPaperArt(design, dims, {
     cover: options.includeCover && options.coverStyle === "book",
     wash: true,
@@ -1309,7 +1318,7 @@ export async function moduleDocxBlob(
     }
   }
 
-  onStatus?.("Embedding the paper design…");
+  onStatus?.("Rendering the paper design (60%)…");
   const art = await buildDocxPaperArt(design, dims, {
     cover: themedTitle,
     wash: true,
@@ -1555,6 +1564,7 @@ export async function examDocxBlob(
 
   // Header
   if (options.showInstructions && options.instructions) {
+    onStatus?.("Adding instructions…");
     children.push(
       new Paragraph({
         heading: HeadingLevel.HEADING_1,
@@ -1594,13 +1604,18 @@ export async function examDocxBlob(
     }),
   );
 
-  // Questions
+  // Questions — render with progress reporting every 25 questions
+  onStatus?.(`Formatting ${questions.length} questions…`);
   questions.forEach((question, index) => {
+    if (index > 0 && index % 25 === 0) {
+      onStatus?.(`Formatting questions: ${index} of ${questions.length}`);
+    }
     children.push(...examQuestionChildren(question, index + 1, design, options.pointsPerQuestion));
   });
 
   // Answer key
   if (options.includeAnswerKey) {
+    onStatus?.("Generating answer key…");
     children.push(new Paragraph({ children: [new PageBreak()] }));
     children.push(
       new Paragraph({
@@ -1612,13 +1627,13 @@ export async function examDocxBlob(
     children.push(...examAnswerLines(questions, design));
   }
 
-  onStatus?.("Embedding the paper design…");
+  onStatus?.("Rendering the paper design (20%)…");
   const art = await buildDocxPaperArt(design, dims, {
     cover: false,
     wash: true,
   });
 
-  onStatus?.("Assembling the Word document…");
+  onStatus?.("Assembling the Word document (80%)…");
   return assembleDocx({
     title,
     children,
@@ -1859,6 +1874,8 @@ async function assembleDocx({
     ],
   });
 
-  onStatus?.("Saving the .docx…");
-  return Packer.toBlob(docxDocument);
+  onStatus?.("Compressing the Word document (90%)…");
+  const blob = await Packer.toBlob(docxDocument);
+  onStatus?.("Done! Download ready (100%)");
+  return blob;
 }

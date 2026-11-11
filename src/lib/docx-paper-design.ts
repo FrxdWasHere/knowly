@@ -979,14 +979,33 @@ export async function buildDocxPaperArt(
   options: { cover: boolean; wash: boolean },
 ): Promise<{ cover?: Uint8Array; wash?: Uint8Array }> {
   if (design.style === "friendly") return {};
-  const art: { cover?: Uint8Array; wash?: Uint8Array } = {};
+  
+  // Render SVGs in parallel instead of sequentially for better performance
+  const tasks: Promise<[string, Uint8Array | null]>[] = [];
+  
   if (options.wash) {
-    const wash = await svgToPng(pageWashSvg(design, dims), dims.width, dims.height, 1.5, WHITE);
-    if (wash) art.wash = wash;
+    tasks.push(
+      svgToPng(pageWashSvg(design, dims), dims.width, dims.height, 1.5, WHITE).then(
+        (result) => ["wash", result] as const
+      )
+    );
   }
+  
   if (options.cover) {
-    const cover = await svgToPng(coverArtSvg(design, dims), dims.width, dims.height, 2);
-    if (cover) art.cover = cover;
+    tasks.push(
+      svgToPng(coverArtSvg(design, dims), dims.width, dims.height, 2).then(
+        (result) => ["cover", result] as const
+      )
+    );
   }
+  
+  const results = await Promise.all(tasks);
+  const art: { cover?: Uint8Array; wash?: Uint8Array } = {};
+  
+  for (const [key, data] of results) {
+    if (data && key === "wash") art.wash = data;
+    if (data && key === "cover") art.cover = data;
+  }
+  
   return art;
 }
