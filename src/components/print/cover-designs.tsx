@@ -1,4 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
+import { EXAM_THEMES } from "@/lib/exam-print";
+import { luminance } from "@/lib/themes";
 
 /**
  * Cover designs for the paper themes.
@@ -9,6 +11,11 @@ import type { CSSProperties, ReactNode } from "react";
  * comic, botanical, workbook) print dark ink; dark covers (classic, module,
  * field notes, blueprint, terminal) print light ink. Nothing here can produce
  * white body text on white paper.
+ *
+ * The hand-drawn designs below cover the first eleven themes. Every other
+ * theme gets a derived cover from its own paper and ink (`derivedCover`), so
+ * applying a theme to a course or module always changes the cover instead of
+ * silently falling back to the classic navy sheet.
  *
  * Everything is CSS + inline SVG, so covers stay offline and vector.
  */
@@ -181,9 +188,8 @@ export function coverDesign(themeId: string | undefined, accent: string): CoverD
         fill: "rgba(58, 74, 52, 0.07)",
       };
 
-    /* ---- classic book (default) -------------------------------------- */
+    /* ---- classic book ------------------------------------------------ */
     case "classic":
-    default:
       return {
         dark: true,
         surface: [
@@ -195,7 +201,44 @@ export function coverDesign(themeId: string | undefined, accent: string): CoverD
         line: "rgba(255, 255, 255, 0.26)",
         fill: "rgba(255, 255, 255, 0.14)",
       };
+
+    /* ---- every other theme: its own paper decides -------------------- */
+    default:
+      return derivedCover(themeId, accent);
   }
+}
+
+/**
+ * A cover built from the theme's own paper: a dark paper (terminal, neon,
+ * chalkboard) prints light ink, and a light paper prints dark ink, both tinted
+ * with the theme's accent. Nothing is white-on-white.
+ */
+function derivedCover(themeId: string | undefined, accent: string): CoverDesign {
+  const theme = EXAM_THEMES.find((item) => item.id === themeId);
+  const soft = theme?.soft ?? "#f7f7f5";
+
+  if (luminance(soft) < 0.28) {
+    return {
+      dark: true,
+      surface: [
+        `radial-gradient(120% 100% at 88% -12%, ${mix(accent, 32, soft)} 0%, transparent 58%)`,
+        `linear-gradient(160deg, ${mix(accent, 16, soft)} 0%, ${mix(accent, 6, "#0b1119")} 100%)`,
+      ].join(", "),
+      ink: "#f7f7f5",
+      muted: "rgba(247, 247, 245, 0.72)",
+      line: "rgba(247, 247, 245, 0.3)",
+      fill: "rgba(247, 247, 245, 0.12)",
+    };
+  }
+
+  return {
+    dark: false,
+    surface: [
+      `radial-gradient(120% 100% at 90% -10%, ${mix(accent, 22, soft)} 0%, transparent 62%)`,
+      `linear-gradient(165deg, ${soft} 0%, ${mix(accent, 8, "#ffffff")} 58%, #ffffff 100%)`,
+    ].join(", "),
+    ...lightInk,
+  };
 }
 
 /** CSS custom properties the cover body reads for its type colours. */
@@ -239,7 +282,10 @@ export function CoverOrnament({
   const corners = (
     <>
       <Frame inset={inset} color={design.line} />
-      <Frame inset={inset + 7} color={design.dark ? "rgba(255,255,255,0.12)" : "rgba(27,36,48,0.12)"} />
+      <Frame
+        inset={inset + 7}
+        color={design.dark ? "rgba(255,255,255,0.12)" : "rgba(27,36,48,0.12)"}
+      />
     </>
   );
 
@@ -339,13 +385,13 @@ export function CoverOrnament({
       <>
         {corners}
         {/* crop marks */}
-        {[
-          "top-left",
-          "top-right",
-          "bottom-left",
-          "bottom-right",
-        ].map((corner) => (
-          <div key={corner} aria-hidden className="pointer-events-none absolute" style={{ inset: 16 }}>
+        {["top-left", "top-right", "bottom-left", "bottom-right"].map((corner) => (
+          <div
+            key={corner}
+            aria-hidden
+            className="pointer-events-none absolute"
+            style={{ inset: 16 }}
+          >
             <div
               style={{
                 position: "absolute",
@@ -580,9 +626,18 @@ export function CoverOrnament({
             <path d="M60 112C60 70 60 40 60 8" />
             {/* accent may be a var() or a color-mix(), so a hex suffix would be
                 invalid here — mix with transparent instead */}
-            <path d="M60 44c-14-2-24-12-26-26 14 2 24 12 26 26z" fill={mix(accent, 22, "transparent")} />
-            <path d="M60 62c14-2 24-12 26-26-14 2-24 12-26 26z" fill={mix(accent, 22, "transparent")} />
-            <path d="M60 84c-12-2-20-10-22-22 12 2 20 10 22 22z" fill={mix(accent, 22, "transparent")} />
+            <path
+              d="M60 44c-14-2-24-12-26-26 14 2 24 12 26 26z"
+              fill={mix(accent, 22, "transparent")}
+            />
+            <path
+              d="M60 62c14-2 24-12 26-26-14 2-24 12-26 26z"
+              fill={mix(accent, 22, "transparent")}
+            />
+            <path
+              d="M60 84c-12-2-20-10-22-22 12 2 20 10 22 22z"
+              fill={mix(accent, 22, "transparent")}
+            />
           </g>
         </svg>
       </>
@@ -626,7 +681,10 @@ export function CoverOrnament({
   };
 
   return (
-    <div aria-hidden className="cover-ornament pointer-events-none absolute inset-0 overflow-hidden">
+    <div
+      aria-hidden
+      className="cover-ornament pointer-events-none absolute inset-0 overflow-hidden"
+    >
       {ornaments[theme ?? "classic"] ?? ornaments.classic}
     </div>
   );

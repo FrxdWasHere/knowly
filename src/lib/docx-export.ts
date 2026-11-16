@@ -1353,52 +1353,43 @@ function examQuestionChildren(
 ): (Paragraph | Table)[] {
   const children: (Paragraph | Table)[] = [];
 
-  const answer = printableAnswer(question);
   const typeLabel = TYPE_LABELS[question.type] || question.type;
-  const meta = [typeLabel, `${pointsPerQuestion} point${pointsPerQuestion === 1 ? "" : "s"}`]
-    .filter(Boolean)
-    .join(" · ");
 
-  // Question number and meta
+  // Question number and text on same line (cleaner)
   children.push(
     new Paragraph({
-      spacing: { before: 120, after: 40 },
+      spacing: { before: 120, after: 80 },
       children: [
         new TextRun({
           text: `${index}. `,
           bold: true,
           color: design.accent,
         }),
-        new TextRun({
-          text: meta,
-          size: 16,
-          color: design.muted,
-        }),
+        ...inlineRuns(question.question),
       ],
     }),
   );
 
-  // Question text
-  children.push(
-    new Paragraph({
-      spacing: { after: 100 },
-      children: inlineRuns(question.question),
-    }),
-  );
-
-  // Options for multiple choice or other interactive types
+  // Options for multiple choice
   if (question.options?.length) {
     const cols = question.options.length > 3 ? 2 : 1;
     children.push(examOptionsTable(question.options, cols, design));
-  } else if (question.items?.length) {
-    // Ordering
+  } 
+  // Ordering questions
+  else if (question.items?.length) {
     children.push(
       new Paragraph({
-        spacing: { after: 80 },
-        children: [new TextRun({ text: "Arrange in order:", italics: true })],
+        spacing: { before: 60, after: 60 },
+        children: [
+          new TextRun({
+            text: "Arrange in order:",
+            italics: true,
+            color: design.muted,
+          }),
+        ],
       }),
     );
-    question.items.forEach((item, i) => {
+    question.items.forEach((item) => {
       children.push(
         new Paragraph({
           bullet: { level: 0 },
@@ -1407,35 +1398,53 @@ function examQuestionChildren(
         }),
       );
     });
-  } else if (question.pairs?.length) {
-    // Matching
+  } 
+  // Matching questions
+  else if (question.pairs?.length) {
     children.push(
       new Paragraph({
-        spacing: { after: 80 },
-        children: [new TextRun({ text: "Match each item:", italics: true })],
+        spacing: { before: 60, after: 60 },
+        children: [
+          new TextRun({
+            text: "Match each item:",
+            italics: true,
+            color: design.muted,
+          }),
+        ],
       }),
     );
-    question.pairs.forEach((pair) => {
+    question.pairs.forEach((pair, i) => {
       children.push(
         new Paragraph({
-          bullet: { level: 0 },
           spacing: { after: 40 },
-          children: [new TextRun(`${pair.left} ↔ ${pair.right}`)],
+          children: [
+            new TextRun({
+              text: `${String.fromCharCode(65 + i)}. ${pair.left}`,
+              bold: true,
+            }),
+            new TextRun({ text: " ↔ " }),
+            new TextRun({
+              text: pair.right,
+              italics: true,
+            }),
+          ],
         }),
       );
     });
-  } else if (question.blanks?.length) {
-    // Word bank
-    const bank = question.wordBank?.join(", ") || question.blanks.join(", ");
+  } 
+  // Word bank questions
+  else if (question.blanks?.length) {
     children.push(
       new Paragraph({
-        spacing: { after: 80 },
+        spacing: { before: 60, after: 80 },
         children: [
           new TextRun({
-            text: `Word bank: ${bank}`,
+            text: "Fill in the blanks. Word bank: ",
             italics: true,
-            color: design.muted,
-            size: 18,
+          }),
+          new TextRun({
+            text: question.wordBank?.join(", ") || question.blanks.join(", "),
+            bold: true,
           }),
         ],
       }),
@@ -1496,12 +1505,15 @@ function examOptionsTable(options: string[], cols: number, design: DocxPaperDesi
  */
 function examAnswerLines(questions: Question[], design: DocxPaperDesign): Paragraph[] {
   const lines: Paragraph[] = [];
+  
   questions.forEach((question, index) => {
     const answer = printableAnswer(question);
     const typeLabel = TYPE_LABELS[question.type] || question.type;
+    
+    // Question number and answer
     lines.push(
       new Paragraph({
-        spacing: { before: 80, after: 80 },
+        spacing: { before: 80, after: 40 },
         children: [
           new TextRun({
             text: `${index + 1}. `,
@@ -1513,29 +1525,34 @@ function examAnswerLines(questions: Question[], design: DocxPaperDesign): Paragr
             bold: true,
           }),
           new TextRun({
-            text: ` (${typeLabel})`,
+            text: ` — ${typeLabel}`,
             color: design.muted,
-            size: 18,
+            size: 16,
+            italics: true,
           }),
         ],
       }),
     );
+    
+    // Explanation if available
     if (question.explanation) {
       lines.push(
         new Paragraph({
-          spacing: { after: 60 },
-          indent: { left: 40 },
+          spacing: { after: 80 },
+          indent: { left: 360 },
           children: [
             new TextRun({
               text: question.explanation,
               italics: true,
               color: design.muted,
+              size: 18,
             }),
           ],
         }),
       );
     }
   });
+  
   return lines;
 }
 
@@ -1562,33 +1579,105 @@ export async function examDocxBlob(
 
   const children: (Paragraph | Table)[] = [];
 
-  // Header
+  // Title
+  children.push(
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 40 },
+      children: [
+        new TextRun({
+          text: options.title,
+          bold: true,
+          size: 28,
+          color: design.ink,
+        }),
+      ],
+    }),
+  );
+
+  // Subject
+  if (options.subject) {
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 120 },
+        children: [
+          new TextRun({
+            text: options.subject,
+            italics: true,
+            size: 18,
+            color: design.muted,
+          }),
+        ],
+      }),
+    );
+  }
+
+  // Student info (simple lines, not a table)
+  if (options.showNameLines) {
+    children.push(
+      new Paragraph({
+        spacing: { after: 40 },
+        children: [
+          new TextRun({
+            text: "Name: _______________________________     Date: ",
+            size: 18,
+          }),
+          new TextRun({
+            text: options.date || "_________",
+            size: 18,
+          }),
+        ],
+      }),
+    );
+    if (options.studentClass) {
+      children.push(
+        new Paragraph({
+          spacing: { after: 120 },
+          children: [
+            new TextRun({
+              text: `Class/Period: ${options.studentClass}`,
+              size: 18,
+            }),
+          ],
+        }),
+      );
+    }
+  } else if (options.date) {
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.RIGHT,
+        spacing: { after: 120 },
+        children: [
+          new TextRun({
+            text: `Date: ${options.date}`,
+            size: 18,
+            italics: true,
+          }),
+        ],
+      }),
+    );
+  }
+
+  // Instructions
   if (options.showInstructions && options.instructions) {
     onStatus?.("Adding instructions…");
     children.push(
       new Paragraph({
-        heading: HeadingLevel.HEADING_1,
-        spacing: { after: 120 },
+        heading: HeadingLevel.HEADING_2,
+        spacing: { after: 80, before: 80 },
         children: [new TextRun("Instructions")],
       }),
     );
     children.push(
       new Paragraph({
-        spacing: { after: 200 },
+        spacing: { after: 120 },
         children: [new TextRun(options.instructions)],
       }),
     );
   }
 
-  // Questions section
-  children.push(
-    new Paragraph({
-      heading: HeadingLevel.HEADING_1,
-      spacing: { after: 120, before: 120 },
-      children: [new TextRun("Questions")],
-    }),
-  );
-
+  // Questions header
   const totalPoints = options.pointsPerQuestion * questions.length;
   const headerMeta = [
     `${questions.length} question${questions.length === 1 ? "" : "s"}`,
@@ -1599,10 +1688,27 @@ export async function examDocxBlob(
 
   children.push(
     new Paragraph({
-      spacing: { after: 160 },
-      children: [new TextRun({ text: headerMeta, color: design.muted, size: 16, allCaps: true })],
+      heading: HeadingLevel.HEADING_2,
+      spacing: { after: 80, before: 80 },
+      children: [new TextRun("Questions")],
     }),
   );
+
+  if (headerMeta) {
+    children.push(
+      new Paragraph({
+        spacing: { after: 120 },
+        children: [
+          new TextRun({
+            text: headerMeta,
+            color: design.muted,
+            size: 16,
+            italics: true,
+          }),
+        ],
+      }),
+    );
+  }
 
   // Questions — render with progress reporting every 25 questions
   onStatus?.(`Formatting ${questions.length} questions…`);

@@ -58,6 +58,9 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
           xpEnabled: true,
           instantFeedback: false,
           bookmarkedOnly: false,
+          roundPauses: false,
+          questionsPerRound: 10,
+          pauseAutoAdvanceSeconds: null,
         }
       : state.settings.defaultQuizConfig,
   );
@@ -415,6 +418,52 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
           </div>
 
           {!exam && (
+            <div className="space-y-3 rounded-xl border border-border bg-surface/50 p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <Label className="text-sm">Round pauses</Label>
+                  <p className="text-[11px] text-muted-foreground">Take a break every N questions</p>
+                </div>
+                <Switch
+                  checked={config.roundPauses}
+                  onCheckedChange={(v) => toggle("roundPauses", v)}
+                />
+              </div>
+              
+              {config.roundPauses && (
+                <div className="space-y-3 border-t border-border pt-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Questions per round</Label>
+                    <Input
+                      type="number"
+                      min={2}
+                      max={100}
+                      value={config.questionsPerRound}
+                      onChange={(e) => {
+                        const val = e.target.value ? Math.max(2, parseInt(e.target.value, 10)) : 10;
+                        toggle("questionsPerRound", val);
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Auto-advance after (seconds, leave empty for manual)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="off"
+                      value={config.pauseAutoAdvanceSeconds ?? ""}
+                      onChange={(e) =>
+                        toggle("pauseAutoAdvanceSeconds", e.target.value ? Number(e.target.value) : null)
+                      }
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!exam && (
             <Button
               variant="outline"
               size="sm"
@@ -484,6 +533,8 @@ function QuizRun({
   const [elapsed, setElapsed] = useState(0);
   const [questionElapsed, setQuestionElapsed] = useState(0);
   const [confirmQuit, setConfirmQuit] = useState(false);
+  const [pauseScreenVisible, setPauseScreenVisible] = useState(false);
+  const [pauseCountdown, setPauseCountdown] = useState<number | null>(null);
   const coarsePointer = useCoarsePointer();
   const started = useRef(Date.now());
   const questionStart = useRef(Date.now());
@@ -527,6 +578,16 @@ function QuizRun({
         setSelected(null);
         questionStart.current = Date.now();
         setQuestionElapsed(0);
+        
+        // Check if we should show a round pause
+        if (config.roundPauses && nextAnswers.length % config.questionsPerRound === 0 && nextAnswers.length < total) {
+          setPauseScreenVisible(true);
+          if (config.pauseAutoAdvanceSeconds !== null && config.pauseAutoAdvanceSeconds > 0) {
+            setPauseCountdown(config.pauseAutoAdvanceSeconds);
+          }
+          return;
+        }
+        
         if (index + 1 >= total) {
           onFinish(
             nextAnswers,
@@ -570,14 +631,23 @@ function QuizRun({
     return () => window.clearInterval(id);
   }, []);
 
-  // Cancel a pending instant-feedback advance if the quiz unmounts (e.g. quit)
-  // so an abandoned quiz can never be recorded.
-  useEffect(
-    () => () => {
-      if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
-    },
-    [],
-  );
+  // Pause auto-advance countdown
+  useEffect(() => {
+    if (!pauseCountdown || pauseCountdown <= 0) return;
+    const timer = window.setTimeout(() => {
+      setPauseCountdown((c) => (c ? c - 1 : null));
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [pauseCountdown]);
+
+  // Auto-advance pause when countdown reaches 0
+  useEffect(() => {
+    if (pauseCountdown === 0) {
+      setPauseScreenVisible(false);
+      setPauseCountdown(null);
+      setIndex((i) => i + 1);
+    }
+  }, [pauseCountdown]);
 
   // Focus the answer box as soon as a question that has one appears, and again
   // after instant feedback re-enables it. Touch devices are skipped so the
@@ -608,6 +678,69 @@ function QuizRun({
         <Button className="mt-4" onClick={onQuit}>
           Back to setup
         </Button>
+      </div>
+    );
+  }
+
+  // Show round pause screen
+  if (pauseScreenVisible) {
+    const answered = answers.filter((a) => !a.skipped).length;
+    const correctCount = answers.filter((a) => a.correct).length;
+    const accuracy = answered ? Math.round((correctCount / answered) * 100) : 0;
+
+    return (
+      <div className="mx-auto max-w-3xl">
+        <div className="grid place-items-center gap-6 rounded-2xl border-2 border-border bg-surface p-12 text-center">
+          <div>
+            <h2 className="font-display text-3xl font-bold">Round Complete!</h2>
+            <p className="mt-2 text-muted-foreground">You've completed {answers.length} questions</p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 w-full">
+            <div className="rounded-lg border border-border bg-background/50 p-4">
+              <p className="text-[11px] uppercase text-muted-foreground">Correct</p>
+              <p className="mt-2 font-display text-2xl font-bold text-success">{correctCount}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-background/50 p-4">
+              <p className="text-[11px] uppercase text-muted-foreground">Accuracy</p>
+              <p className="mt-2 font-display text-2xl font-bold text-primary">{accuracy}%</p>
+            </div>
+            <div className="rounded-lg border border-border bg-background/50 p-4">
+              <p className="text-[11px] uppercase text-muted-foreground">Remaining</p>
+              <p className="mt-2 font-display text-2xl font-bold">{total - answers.length}</p>
+            </div>
+          </div>
+
+          <div className="w-full space-y-3">
+            <Button
+              className="w-full"
+              onClick={() => {
+                setPauseScreenVisible(false);
+                setPauseCountdown(null);
+                setIndex((i) => i + 1);
+              }}
+            >
+              Continue Quiz
+              {pauseCountdown ? ` (${pauseCountdown}s)` : ""}
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                setResult(null);
+                onQuit();
+              }}
+            >
+              Save & Exit
+            </Button>
+          </div>
+
+          {config.pauseAutoAdvanceSeconds && pauseCountdown ? (
+            <p className="text-xs text-muted-foreground">
+              Auto-advancing in {pauseCountdown} second{pauseCountdown === 1 ? "" : "s"}...
+            </p>
+          ) : null}
+        </div>
       </div>
     );
   }

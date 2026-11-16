@@ -335,9 +335,9 @@ function Landing() {
   }
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[#FFFBF5] text-black">
+    <div className="min-h-screen overflow-hidden bg-[#FFFBF5] dark:bg-background text-black dark:text-white">
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b-4 border-black bg-[#FFFBF5]">
+      <header className="sticky top-0 z-40 border-b-4 border-black bg-[#FFFBF5] text-black dark:border-border dark:bg-surface dark:text-white">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-5 sm:px-8">
           <Link to="/" className="group flex items-center gap-3">
             <span className="grid size-14 place-items-center rounded-2xl border-4 border-black bg-gradient-to-br from-[#FF6B6B] to-[#A855F7] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all group-hover:translate-x-[2px] group-hover:translate-y-[2px] group-hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
@@ -386,7 +386,7 @@ function Landing() {
       <main>
         {/* Hero Section */}
         <section
-          className="relative px-5 pb-20 pt-16 sm:px-8 sm:pb-32 sm:pt-24"
+          className="relative px-5 pb-20 pt-16 sm:px-8 sm:pb-32 sm:pt-24 bg-[#FFFBF5] text-black dark:bg-background dark:text-white"
           style={{
             backgroundImage: "radial-gradient(rgba(0,0,0,0.09) 1px, transparent 1px)",
             backgroundSize: "28px 28px",
@@ -499,7 +499,7 @@ function Landing() {
         </section>
 
         {/* Stats Bar */}
-        <section className="border-y-4 border-black bg-gradient-to-r from-[#FF6B6B] via-[#A855F7] to-[#FFE66D] py-12">
+        <section className="border-y-4 border-black bg-gradient-to-r from-[#FF6B6B] via-[#A855F7] to-[#FFE66D] py-12 dark:border-border dark:from-primary dark:via-purple-600 dark:to-yellow-600">
           <div className="mx-auto max-w-7xl px-5 sm:px-8">
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {STUDENT_STATS.map((stat, index) => (
@@ -525,7 +525,7 @@ function Landing() {
         </section>
 
         {/* Pain Points Section */}
-        <section className="px-5 py-20 sm:px-8 sm:py-32">
+        <section className="px-5 py-20 sm:px-8 sm:py-32 bg-[#FFFBF5] text-black dark:bg-background/30 dark:text-white">
           <div className="mx-auto max-w-7xl">
             <Reveal>
               <div className="text-center">
@@ -586,7 +586,7 @@ function Landing() {
         {/* How It Works Section */}
         <section
           id="how-it-works"
-          className="border-y-4 border-black bg-white px-5 py-20 sm:px-8 sm:py-32"
+          className="border-y-4 border-black bg-white text-black px-5 py-20 sm:px-8 sm:py-32 dark:border-border dark:bg-surface dark:text-white"
         >
           <div className="mx-auto max-w-7xl">
             <Reveal>
@@ -662,7 +662,7 @@ function Landing() {
         </section>
 
         {/* Features Section */}
-        <section id="features" className="bg-[#FFFBF5] px-5 py-20 sm:px-8 sm:py-32">
+        <section id="features" className="bg-[#FFFBF5] text-black px-5 py-20 sm:px-8 sm:py-32 dark:bg-background dark:text-white">
           <div className="mx-auto max-w-7xl">
             <Reveal>
               <div className="text-center">
@@ -730,7 +730,7 @@ function Landing() {
         {/* For Students Section */}
         <section
           id="for-you"
-          className="relative overflow-hidden px-5 py-20 sm:px-8 sm:py-28"
+          className="relative overflow-hidden px-5 py-20 sm:px-8 sm:py-28 bg-[#FFFBF5] text-black dark:bg-background dark:text-white"
           style={{
             backgroundImage: "radial-gradient(rgba(0,0,0,0.13) 1px, transparent 1px)",
             backgroundSize: "26px 26px",
@@ -1020,7 +1020,7 @@ function Landing() {
         </section>
       </main>
 
-      <footer className="border-t-4 border-black bg-white">
+      <footer className="border-t-4 border-black bg-white text-black dark:border-border dark:bg-surface dark:text-white">
         <div className="mx-auto grid max-w-7xl gap-12 px-5 py-16 sm:px-8 md:grid-cols-[1.2fr_1.8fr]">
           <div>
             <Link to="/" className="inline-flex items-center gap-3">

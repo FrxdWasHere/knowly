@@ -604,46 +604,24 @@ function PrintExamPage() {
             </div>
             <div className="space-y-2">
               <Label className="text-xs">Document theme</Label>
-              <div className="grid gap-2">
-                {EXAM_THEMES.map((theme) => (
-                  <button
-                    key={theme.id}
-                    type="button"
-                    onClick={() =>
-                      set({
-                        theme: theme.id,
-                        palette:
-                          options.palette &&
-                          options.palette !== "theme" &&
-                          THEME_PALETTES[theme.id].includes(options.palette)
-                            ? options.palette
-                            : "theme",
-                      })
-                    }
-                    aria-pressed={options.theme === theme.id}
-                    className={cn(
-                      "flex items-start gap-3 rounded-lg border p-3 text-left transition-colors",
-                      options.theme === theme.id
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/40",
-                    )}
-                  >
-                    <span
-                      aria-hidden
-                      className="mt-0.5 size-6 shrink-0 rounded-md border"
-                      style={{
-                        backgroundImage: `linear-gradient(135deg, ${theme.soft}, ${theme.accent})`,
-                        borderColor: theme.border,
-                      }}
-                    />
-                    <span className="min-w-0">
-                      <span className="block text-xs font-semibold">{theme.label}</span>
-                      <span className="mt-0.5 block text-[11px] leading-4 text-muted-foreground">
-                        {theme.description}
-                      </span>
-                    </span>
-                  </button>
-                ))}
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <div className="px-3 py-2 rounded-lg border border-border bg-muted/30">
+                    <p className="text-xs font-medium text-foreground">{activeTheme.label}</p>
+                    <p className="text-[11px] text-muted-foreground line-clamp-1">
+                      {activeTheme.description}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setMarketplaceOpen(true)}
+                  className="flex-shrink-0"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Browse
+                </Button>
               </div>
             </div>
             <div className="space-y-2">

@@ -42,6 +42,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { AvatarCropDialog } from "@/components/avatar-crop-dialog";
 import { AVATAR_EMOJIS, GRADE_LEVELS, STUDY_REASONS, SUBJECT_SUGGESTIONS } from "@/lib/defaults";
 import { fileToWallpaperDataUrl } from "@/lib/wallpaper";
 import { fileToAvatarDataUrl } from "@/lib/avatar-store";
@@ -312,6 +313,8 @@ function SettingsPage() {
   const avatarRef = useRef<HTMLInputElement>(null);
   const [confirmWipe, setConfirmWipe] = useState(false);
   const [usage, setUsage] = useState<StorageUsage | null>(null);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [pendingCropImage, setPendingCropImage] = useState<string | null>(null);
 
   // Re-measure whenever the sizeable parts of the state change.
   useEffect(() => {
@@ -427,9 +430,9 @@ function SettingsPage() {
                   e.target.value = "";
                   if (!file) return;
                   try {
-                    const next = await fileToAvatarDataUrl(file);
-                    setAvatar(next);
-                    toast.success("Avatar updated");
+                    const dataUrl = await fileToAvatarDataUrl(file);
+                    setPendingCropImage(dataUrl);
+                    setCropDialogOpen(true);
                   } catch (err) {
                     toast.error((err as Error).message);
                   }
@@ -1030,7 +1033,7 @@ function SettingsPage() {
           <div className="px-4 py-3 space-y-3">
             <div>
               <p className="text-[13px] text-muted-foreground mb-1">Version</p>
-              <p className="text-[15px] font-medium">4.0.0</p>
+              <p className="text-[15px] font-medium">4.1.0</p>
             </div>
             <div>
               <p className="text-[13px] text-muted-foreground mb-1">About Knowly</p>
@@ -1053,6 +1056,20 @@ function SettingsPage() {
           </p>
         </div>
       </div>
+
+      {/* Avatar crop dialog */}
+      <AvatarCropDialog
+        open={cropDialogOpen}
+        onOpenChange={setCropDialogOpen}
+        imageUrl={pendingCropImage || ""}
+        onCropComplete={(croppedDataUrl) => {
+          setAvatar(croppedDataUrl);
+          toast.success("Avatar updated");
+        }}
+        onCancel={() => {
+          setPendingCropImage(null);
+        }}
+      />
     </div>
   );
 }

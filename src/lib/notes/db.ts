@@ -57,9 +57,18 @@ export async function getNotebook(id: string): Promise<NotebookMeta | undefined>
   return (await getDb()).get("notebooks", id);
 }
 
-export async function putNotebook(notebook: NotebookMeta): Promise<void> {
+export async function putNotebook(notebook: NotebookMeta, retries = 3): Promise<void> {
   if (!available()) return;
-  await (await getDb()).put("notebooks", notebook);
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      await (await getDb()).put("notebooks", notebook);
+      return;
+    } catch (error) {
+      if (attempt === retries - 1) throw error;
+      // Exponential backoff: 100ms, 200ms, 400ms
+      await new Promise((resolve) => setTimeout(resolve, 100 * Math.pow(2, attempt)));
+    }
+  }
 }
 
 export async function deleteNotebook(id: string): Promise<void> {
@@ -86,9 +95,18 @@ export async function getPage(id: string): Promise<NotePage | undefined> {
   return (await getDb()).get("pages", id);
 }
 
-export async function putPage(page: NotePage): Promise<void> {
+export async function putPage(page: NotePage, retries = 3): Promise<void> {
   if (!available()) return;
-  await (await getDb()).put("pages", page);
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      await (await getDb()).put("pages", page);
+      return;
+    } catch (error) {
+      if (attempt === retries - 1) throw error;
+      // Exponential backoff: 100ms, 200ms, 400ms
+      await new Promise((resolve) => setTimeout(resolve, 100 * Math.pow(2, attempt)));
+    }
+  }
 }
 
 export async function deletePage(id: string): Promise<void> {
@@ -102,33 +120,50 @@ export interface NoteSearchHit {
   snippet: string;
 }
 
-export async function searchNotes(query: string): Promise<NoteSearchHit[]> {
+export async function searchNotes(
+  query: string,
+  limit = 80,
+  offset = 0,
+): Promise<{ hits: NoteSearchHit[]; total: number }> {
   const term = query.trim().toLowerCase();
-  if (!term || !available()) return [];
+  if (!term || !available()) return { hits: [], total: 0 };
+
   const db = await getDb();
   const [notebooks, pages] = await Promise.all([db.getAll("notebooks"), db.getAll("pages")]);
   const notebookById = new Map(notebooks.map((notebook) => [notebook.id, notebook]));
+
   const hits: NoteSearchHit[] = [];
+  let total = 0;
+
   for (const page of pages) {
     const notebook = notebookById.get(page.notebookId);
     if (!notebook) continue;
-    const parts = [notebook.title, notebook.subject, notebook.tags.join(" ")];
+
+    const parts = [notebook.title, notebook.subject, ...notebook.tags];
     if (page.searchText) parts.push(page.searchText);
+
+    // Every text-bearing element is searched: stopping at the first ten used
+    // to hide typed notes further down the page.
     for (const element of page.elements) {
       if (element.type === "text" || element.type === "sticky") parts.push(element.text);
-      if (element.type === "tape" && element.label) parts.push(element.label);
+      else if (element.type === "tape" && element.label) parts.push(element.label);
     }
+
     const haystack = parts.join("\n");
     const index = haystack.toLowerCase().indexOf(term);
     if (index === -1) continue;
-    hits.push({
-      notebook,
-      page,
-      snippet: haystack.slice(Math.max(0, index - 45), index + term.length + 75).trim(),
-    });
-    if (hits.length >= 80) break;
+
+    total += 1;
+    if (total > offset && hits.length < limit) {
+      hits.push({
+        notebook,
+        page,
+        snippet: haystack.slice(Math.max(0, index - 45), index + term.length + 75).trim(),
+      });
+    }
   }
-  return hits;
+
+  return { hits, total };
 }
 
 export async function storageEstimate(): Promise<{ usage: number; quota: number } | null> {
@@ -171,6 +206,9 @@ export async function importNotebookBundle(raw: string): Promise<NotebookMeta | 
   const rawNotebook = bundle.notebook as Partial<NotebookMeta>;
   if (typeof rawNotebook.title !== "string" || !rawNotebook.title.trim()) return null;
 
+  // Declared before the section mapping below reads it for missing timestamps.
+  const now = Date.now();
+
   // Sections carry over; unknown/garbage entries fall back to one default tab.
   const sections: NotebookSection[] | undefined = Array.isArray(rawNotebook.sections)
     ? rawNotebook.sections
@@ -190,7 +228,6 @@ export async function importNotebookBundle(raw: string): Promise<NotebookMeta | 
         }))
     : undefined;
 
-  const now = Date.now();
   const notebookId = newId("nb");
   const pageIdMap = new Map<string, string>();
   const elementTypes = new Set<NoteElement["type"]>([

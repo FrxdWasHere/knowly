@@ -552,6 +552,527 @@ export function pageWashSvg(design: DocxPaperDesign, dims: PaperDims): string {
       );
       layers.push(`<rect width="${w}" height="${h}" fill="url(#wash)"/>`);
       break;
+    case "minimalist":
+      defs.push(
+        linearGradient(
+          "wash",
+          180,
+          [
+            { color: soft, at: 0 },
+            { color: WHITE, at: 250 / h },
+            { color: WHITE, at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(`<rect width="${w}" height="${h}" fill="url(#wash)"/>`);
+      break;
+    case "retro":
+      defs.push(
+        `<pattern id="noise" width="2" height="2" patternUnits="userSpaceOnUse"><rect width="1" height="1" fill="${border}" opacity="0.15"/></pattern>`,
+        linearGradient(
+          "wash",
+          96,
+          [
+            { color: soft, at: 0 },
+            { color: WHITE, at: 0.3 },
+            { color: WHITE, at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#wash)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#noise)"/>`,
+      );
+      break;
+    case "neon":
+      defs.push(
+        linearGradient(
+          "wash",
+          135,
+          [
+            { color: soft, at: 0 },
+            { color: "#1a1a2e", at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(`<rect width="${w}" height="${h}" fill="url(#wash)"/>`);
+      break;
+    case "watercolor":
+      defs.push(
+        radialGradient(
+          "wash-a",
+          [w * 0.2, h * 0.15],
+          [w * 0.6, h * 0.5],
+          [
+            { color: accent, at: 0, alpha: 0.08 },
+            { color: accent, at: 1, alpha: 0 },
+          ],
+        ),
+        radialGradient(
+          "wash-b",
+          [w * 0.85, h * 0.8],
+          [w * 0.5, h * 0.4],
+          [
+            { color: accent, at: 0, alpha: 0.06 },
+            { color: accent, at: 1, alpha: 0 },
+          ],
+        ),
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="${soft}"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#wash-a)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#wash-b)"/>`,
+      );
+      break;
+    case "leather":
+      defs.push(
+        `<pattern id="grain" width="3" height="3" patternUnits="userSpaceOnUse"><rect width="2" height="1" fill="${border}" opacity="0.15"/></pattern>`,
+        linearGradient(
+          "wash",
+          165,
+          [
+            { color: soft, at: 0 },
+            { color: mixHex(accent, "#3a2a20", 0.12), at: 0.5 },
+            { color: "#ddc7ae", at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#wash)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#grain)" opacity="0.4"/>`,
+      );
+      break;
+    case "chalkboard":
+      defs.push(
+        `<pattern id="chalk" width="1" height="1" patternUnits="userSpaceOnUse"><rect width="1" height="1" fill="${accent}" opacity="0.04"/></pattern>`,
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="${soft}"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#chalk)"/>`,
+      );
+      break;
+    case "denim":
+      defs.push(
+        `<pattern id="weave" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="2" height="2" fill="${border}" opacity="0.2"/><rect x="2" y="2" width="2" height="2" fill="${border}" opacity="0.2"/></pattern>`,
+        linearGradient(
+          "wash",
+          180,
+          [
+            { color: soft, at: 0 },
+            { color: WHITE, at: 260 / h },
+            { color: WHITE, at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#wash)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#weave)" opacity="0.3"/>`,
+      );
+      break;
+    case "marble":
+      defs.push(
+        radialGradient(
+          "vein-a",
+          [w * 0.3, h * 0.4],
+          [w * 0.4, h * 0.3],
+          [
+            { color: border, at: 0, alpha: 0.15 },
+            { color: border, at: 1, alpha: 0 },
+          ],
+        ),
+        radialGradient(
+          "vein-b",
+          [w * 0.7, h * 0.6],
+          [w * 0.35, h * 0.35],
+          [
+            { color: border, at: 0, alpha: 0.1 },
+            { color: border, at: 1, alpha: 0 },
+          ],
+        ),
+        linearGradient(
+          "wash",
+          160,
+          [
+            { color: soft, at: 0 },
+            { color: WHITE, at: 200 / h },
+            { color: WHITE, at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#wash)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#vein-a)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#vein-b)"/>`,
+      );
+      break;
+    case "vintage-map":
+      defs.push(
+        `<pattern id="topolines" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M0 4Q2 2 4 4T8 4" fill="none" stroke="${border}" stroke-width="0.5" opacity="0.3"/></pattern>`,
+        linearGradient(
+          "wash",
+          180,
+          [
+            { color: soft, at: 0 },
+            { color: WHITE, at: 220 / h },
+            { color: WHITE, at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#wash)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#topolines)"/>`,
+      );
+      break;
+    case "forest-green":
+      defs.push(
+        `<pattern id="woodgrain" width="2" height="1" patternUnits="userSpaceOnUse"><rect width="1" height="1" fill="${border}" opacity="0.1"/></pattern>`,
+        linearGradient(
+          "wash",
+          180,
+          [
+            { color: soft, at: 0 },
+            { color: WHITE, at: 250 / h },
+            { color: WHITE, at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#wash)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#woodgrain)" opacity="0.5"/>`,
+      );
+      break;
+    case "sunset":
+      defs.push(
+        linearGradient(
+          "wash",
+          180,
+          [
+            { color: soft, at: 0 },
+            { color: "#ffe4b5", at: 0.4 },
+            { color: WHITE, at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(`<rect width="${w}" height="${h}" fill="url(#wash)"/>`);
+      break;
+    case "ocean":
+      defs.push(
+        `<pattern id="waves" width="12" height="4" patternUnits="userSpaceOnUse"><path d="M0 2Q3 0 6 2T12 2" fill="none" stroke="${border}" stroke-width="0.5" opacity="0.25"/></pattern>`,
+        linearGradient(
+          "wash",
+          180,
+          [
+            { color: soft, at: 0 },
+            { color: WHITE, at: 240 / h },
+            { color: WHITE, at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#wash)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#waves)"/>`,
+      );
+      break;
+    case "desert":
+      defs.push(
+        `<pattern id="sand" width="1" height="1" patternUnits="userSpaceOnUse"><rect width="1" height="1" fill="${border}" opacity="0.08"/></pattern>`,
+        linearGradient(
+          "wash",
+          180,
+          [
+            { color: soft, at: 0 },
+            { color: WHITE, at: 240 / h },
+            { color: WHITE, at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#wash)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#sand)"/>`,
+      );
+      break;
+    case "arctic":
+      defs.push(
+        linearGradient(
+          "wash",
+          180,
+          [
+            { color: soft, at: 0 },
+            { color: WHITE, at: 260 / h },
+            { color: WHITE, at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(`<rect width="${w}" height="${h}" fill="url(#wash)"/>`);
+      break;
+    case "autumn":
+      defs.push(
+        `<pattern id="leaves" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.8" fill="${border}" opacity="0.15"/></pattern>`,
+        linearGradient(
+          "wash",
+          180,
+          [
+            { color: soft, at: 0 },
+            { color: WHITE, at: 240 / h },
+            { color: WHITE, at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#wash)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#leaves)"/>`,
+      );
+      break;
+    case "cherry-blossom":
+      defs.push(
+        radialGradient(
+          "bloom",
+          [w * 0.5, h * 0.3],
+          [w * 0.6, h * 0.4],
+          [
+            { color: accent, at: 0, alpha: 0.12 },
+            { color: accent, at: 1, alpha: 0 },
+          ],
+        ),
+        linearGradient(
+          "wash",
+          180,
+          [
+            { color: soft, at: 0 },
+            { color: WHITE, at: 250 / h },
+            { color: WHITE, at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#wash)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#bloom)"/>`,
+      );
+      break;
+    case "concrete":
+      defs.push(
+        `<pattern id="speckle" width="2" height="2" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.5" fill="${border}" opacity="0.15"/></pattern>`,
+        linearGradient(
+          "wash",
+          180,
+          [
+            { color: soft, at: 0 },
+            { color: WHITE, at: 220 / h },
+            { color: WHITE, at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#wash)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#speckle)"/>`,
+      );
+      break;
+    case "gold-leaf":
+      defs.push(
+        radialGradient(
+          "shimmer-a",
+          [w * 0.1, h * 0.1],
+          [w * 0.5, h * 0.5],
+          [
+            { color: accent, at: 0, alpha: 0.12 },
+            { color: accent, at: 1, alpha: 0 },
+          ],
+        ),
+        radialGradient(
+          "shimmer-b",
+          [w * 0.9, h * 0.9],
+          [w * 0.45, h * 0.45],
+          [
+            { color: accent, at: 0, alpha: 0.08 },
+            { color: accent, at: 1, alpha: 0 },
+          ],
+        ),
+        linearGradient(
+          "wash",
+          180,
+          [
+            { color: soft, at: 0 },
+            { color: WHITE, at: 240 / h },
+            { color: WHITE, at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#wash)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#shimmer-a)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#shimmer-b)"/>`,
+      );
+      break;
+    case "indigo":
+      defs.push(
+        `<pattern id="dots-indigo" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="0.8" fill="${border}" opacity="0.12"/></pattern>`,
+        linearGradient(
+          "wash",
+          180,
+          [
+            { color: soft, at: 0 },
+            { color: WHITE, at: 250 / h },
+            { color: WHITE, at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#wash)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#dots-indigo)"/>`,
+      );
+      break;
+    case "coral":
+      defs.push(
+        `<pattern id="splatter-coral" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="${border}" opacity="0.1"/><circle cx="6" cy="5" r="0.6" fill="${border}" opacity="0.08"/></pattern>`,
+        linearGradient(
+          "wash",
+          165,
+          [
+            { color: soft, at: 0 },
+            { color: WHITE, at: 230 / h },
+            { color: WHITE, at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#wash)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#splatter-coral)"/>`,
+      );
+      break;
+    case "sage":
+      defs.push(
+        `<pattern id="crosshatch-sage" width="4" height="4" patternUnits="userSpaceOnUse"><path d="M0 0L4 4M4 0L0 4" stroke="${border}" stroke-width="0.5" opacity="0.15"/></pattern>`,
+        linearGradient(
+          "wash",
+          180,
+          [
+            { color: soft, at: 0 },
+            { color: WHITE, at: 240 / h },
+            { color: WHITE, at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#wash)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#crosshatch-sage)"/>`,
+      );
+      break;
+    case "charcoal":
+      defs.push(
+        `<pattern id="smoke-charcoal" width="3" height="3" patternUnits="userSpaceOnUse"><rect width="1" height="1" fill="${border}" opacity="0.2"/><rect x="2" y="1" width="1" height="1" fill="${border}" opacity="0.12"/></pattern>`,
+        linearGradient(
+          "wash",
+          180,
+          [
+            { color: soft, at: 0 },
+            { color: WHITE, at: 250 / h },
+            { color: WHITE, at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#wash)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#smoke-charcoal)"/>`,
+      );
+      break;
+    case "mint":
+      defs.push(
+        radialGradient(
+          "glow-mint-a",
+          [0, h * 0.5],
+          [w * 0.4, h * 0.3],
+          [
+            { color: accent, at: 0, alpha: 0.08 },
+            { color: accent, at: 1, alpha: 0 },
+          ],
+        ),
+        radialGradient(
+          "glow-mint-b",
+          [w, h * 0.3],
+          [w * 0.35, h * 0.35],
+          [
+            { color: accent, at: 0, alpha: 0.06 },
+            { color: accent, at: 1, alpha: 0 },
+          ],
+        ),
+        linearGradient(
+          "wash",
+          180,
+          [
+            { color: soft, at: 0 },
+            { color: WHITE, at: 245 / h },
+            { color: WHITE, at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#wash)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#glow-mint-a)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#glow-mint-b)"/>`,
+      );
+      break;
+    case "burnt-sienna":
+      defs.push(
+        `<pattern id="texture-sienna" width="2" height="2" patternUnits="userSpaceOnUse"><rect width="1" height="2" fill="${border}" opacity="0.13"/></pattern>`,
+        linearGradient(
+          "wash",
+          175,
+          [
+            { color: soft, at: 0 },
+            { color: mixHex(soft, accent, 0.06), at: 0.4 },
+            { color: WHITE, at: 1 },
+          ],
+          w,
+          h,
+        ),
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#wash)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#texture-sienna)"/>`,
+      );
+      break;
     default:
       break;
   }
@@ -740,6 +1261,402 @@ export function coverArtSvg(design: DocxPaperDesign, dims: PaperDims): string {
         `<rect width="${w}" height="${h}" fill="url(#bg)"/>`,
         `<rect width="${w}" height="${h}" fill="url(#glow-a)"/>`,
         `<rect width="${w}" height="${h}" fill="url(#glow-b)"/>`,
+      );
+      break;
+    case "minimalist":
+      addLinear("bg", 180, [
+        { color: WHITE, at: 0 },
+        { color: mixHex("#f7fafc", accent, 0.08), at: 1 },
+      ]);
+      layers.push(`<rect width="${w}" height="${h}" fill="url(#bg)"/>`);
+      break;
+    case "retro":
+      addLinear("bg", 160, [
+        { color: mixHex("#fef3e2", accent, 0.06), at: 0 },
+        { color: mixHex("#f5e4cf", accent, 0.1), at: 1 },
+      ]);
+      layers.push(`<rect width="${w}" height="${h}" fill="url(#bg)"/>`);
+      break;
+    case "neon":
+      addLinear("bg", 135, [
+        { color: "#1a1a2e", at: 0 },
+        { color: mixHex("#0a0e27", accent, 0.15), at: 1 },
+      ]);
+      addRadial(
+        "glow",
+        [w * 0.5, h * 0.5],
+        [w * 0.8, h * 0.6],
+        [
+          { color: mixHex(accent, "#1a1a2e", 0.4), at: 0, alpha: 0.7 },
+          { color: mixHex(accent, "#1a1a2e", 0.4), at: 1, alpha: 0 },
+        ],
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#bg)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#glow)"/>`,
+      );
+      break;
+    case "watercolor":
+      addLinear("bg", 170, [
+        { color: mixHex("#f0f4ff", accent, 0.08), at: 0 },
+        { color: "#e8f0ff", at: 1 },
+      ]);
+      addRadial(
+        "flow",
+        [w * 0.5, h * 0.3],
+        [w * 0.6, h * 0.5],
+        [
+          { color: mixHex(accent, "#f0f4ff", 0.5), at: 0, alpha: 0.4 },
+          { color: mixHex(accent, "#f0f4ff", 0.5), at: 1, alpha: 0 },
+        ],
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#bg)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#flow)"/>`,
+      );
+      break;
+    case "leather":
+      addLinear("bg", 165, [
+        { color: mixHex("#ede4d3", accent, 0.08), at: 0 },
+        { color: mixHex("#ddc7ae", accent, 0.12), at: 1 },
+      ]);
+      addRadial(
+        "shine",
+        [w * 0.2, h * 0.15],
+        [w * 0.45, h * 0.35],
+        [
+          { color: mixHex("#fdf7e8", "#000", 0.8), at: 0, alpha: 0.15 },
+          { color: mixHex("#fdf7e8", "#000", 0.8), at: 1, alpha: 0 },
+        ],
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#bg)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#shine)"/>`,
+      );
+      break;
+    case "chalkboard":
+      addLinear("bg", 180, [
+        { color: mixHex("#2d3e50", accent, 0.1), at: 0 },
+        { color: "#2d3e50", at: 1 },
+      ]);
+      addRadial(
+        "dust",
+        [w * 0.3, h * 0.3],
+        [w * 0.7, h * 0.6],
+        [
+          { color: accent, at: 0, alpha: 0.3 },
+          { color: accent, at: 1, alpha: 0 },
+        ],
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#bg)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#dust)"/>`,
+      );
+      break;
+    case "denim":
+      addLinear("bg", 165, [
+        { color: mixHex("#ecf0f9", accent, 0.1), at: 0 },
+        { color: mixHex("#d9e8f5", accent, 0.15), at: 1 },
+      ]);
+      layers.push(`<rect width="${w}" height="${h}" fill="url(#bg)"/>`);
+      break;
+    case "marble":
+      addLinear("bg", 158, [
+        { color: "#fbfbfb", at: 0 },
+        { color: "#f5f5f5", at: 1 },
+      ]);
+      addRadial(
+        "vein",
+        [w * 0.5, h * 0.5],
+        [w * 0.55, h * 0.5],
+        [
+          { color: mixHex("#d9d9d9", "#000", 0.7), at: 0, alpha: 0.2 },
+          { color: mixHex("#d9d9d9", "#000", 0.7), at: 1, alpha: 0 },
+        ],
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#bg)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#vein)"/>`,
+      );
+      break;
+    case "vintage-map":
+      addLinear("bg", 160, [
+        { color: mixHex("#f4ead5", accent, 0.1), at: 0 },
+        { color: "#ede2d1", at: 1 },
+      ]);
+      layers.push(`<rect width="${w}" height="${h}" fill="url(#bg)"/>`);
+      break;
+    case "forest-green":
+      addLinear("bg", 170, [
+        { color: mixHex("#e8f3f0", accent, 0.1), at: 0 },
+        { color: mixHex("#dde9e5", accent, 0.08), at: 1 },
+      ]);
+      addRadial(
+        "depth",
+        [0, 0],
+        [w * 0.5, h * 0.4],
+        [
+          { color: accent, at: 0, alpha: 0.15 },
+          { color: accent, at: 1, alpha: 0 },
+        ],
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#bg)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#depth)"/>`,
+      );
+      break;
+    case "sunset":
+      addLinear("bg", 140, [
+        { color: mixHex("#fef2e8", accent, 0.08), at: 0 },
+        { color: mixHex("#fde5d3", accent, 0.12), at: 1 },
+      ]);
+      addRadial(
+        "warm",
+        [w * 0.6, h * 0.3],
+        [w * 0.7, h * 0.5],
+        [
+          { color: mixHex("#ffb366", "#000", 0.5), at: 0, alpha: 0.2 },
+          { color: mixHex("#ffb366", "#000", 0.5), at: 1, alpha: 0 },
+        ],
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#bg)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#warm)"/>`,
+      );
+      break;
+    case "ocean":
+      addLinear("bg", 175, [
+        { color: mixHex("#ecf8fa", accent, 0.12), at: 0 },
+        { color: mixHex("#d4f0f7", accent, 0.18), at: 1 },
+      ]);
+      addRadial(
+        "wave",
+        [w, h * 0.5],
+        [w * 0.6, h * 0.5],
+        [
+          { color: accent, at: 0, alpha: 0.15 },
+          { color: accent, at: 1, alpha: 0 },
+        ],
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#bg)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#wave)"/>`,
+      );
+      break;
+    case "desert":
+      addLinear("bg", 160, [
+        { color: mixHex("#fef5f0", accent, 0.1), at: 0 },
+        { color: mixHex("#fce5d7", accent, 0.14), at: 1 },
+      ]);
+      addRadial(
+        "heat",
+        [w * 0.7, h * 0.4],
+        [w * 0.65, h * 0.5],
+        [
+          { color: mixHex(accent, "#fff", 0.6), at: 0, alpha: 0.18 },
+          { color: mixHex(accent, "#fff", 0.6), at: 1, alpha: 0 },
+        ],
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#bg)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#heat)"/>`,
+      );
+      break;
+    case "arctic":
+      addLinear("bg", 180, [
+        { color: WHITE, at: 0 },
+        { color: mixHex("#f0f9fc", accent, 0.12), at: 1 },
+      ]);
+      addRadial(
+        "ice",
+        [w * 0.5, 0],
+        [w * 0.7, h * 0.4],
+        [
+          { color: accent, at: 0, alpha: 0.1 },
+          { color: accent, at: 1, alpha: 0 },
+        ],
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#bg)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#ice)"/>`,
+      );
+      break;
+    case "autumn":
+      addLinear("bg", 165, [
+        { color: mixHex("#fff0e6", accent, 0.1), at: 0 },
+        { color: mixHex("#f5dcc8", accent, 0.12), at: 1 },
+      ]);
+      addRadial(
+        "leaf",
+        [w * 0.3, h * 0.4],
+        [w * 0.5, h * 0.4],
+        [
+          { color: mixHex(accent, "#fff", 0.5), at: 0, alpha: 0.2 },
+          { color: mixHex(accent, "#fff", 0.5), at: 1, alpha: 0 },
+        ],
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#bg)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#leaf)"/>`,
+      );
+      break;
+    case "cherry-blossom":
+      addLinear("bg", 180, [
+        { color: mixHex("#ffe4e6", accent, 0.1), at: 0 },
+        { color: mixHex("#ffd4db", accent, 0.12), at: 1 },
+      ]);
+      addRadial(
+        "petal",
+        [w * 0.5, h * 0.35],
+        [w * 0.55, h * 0.45],
+        [
+          { color: accent, at: 0, alpha: 0.25 },
+          { color: accent, at: 1, alpha: 0 },
+        ],
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#bg)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#petal)"/>`,
+      );
+      break;
+    case "concrete":
+      addLinear("bg", 180, [
+        { color: WHITE, at: 0 },
+        { color: mixHex("#f5f5f5", accent, 0.06), at: 1 },
+      ]);
+      layers.push(`<rect width="${w}" height="${h}" fill="url(#bg)"/>`);
+      break;
+    case "gold-leaf":
+      addLinear("bg", 160, [
+        { color: mixHex("#fef8e8", accent, 0.1), at: 0 },
+        { color: mixHex("#f5ead5", accent, 0.15), at: 1 },
+      ]);
+      addRadial(
+        "shine",
+        [w * 0.8, h * 0.2],
+        [w * 0.6, h * 0.5],
+        [
+          { color: accent, at: 0, alpha: 0.3 },
+          { color: accent, at: 1, alpha: 0 },
+        ],
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#bg)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#shine)"/>`,
+      );
+      break;
+    case "indigo":
+      addLinear("bg", 175, [
+        { color: mixHex("#f0f4fc", accent, 0.1), at: 0 },
+        { color: mixHex("#e8f0f9", accent, 0.12), at: 1 },
+      ]);
+      addRadial(
+        "depth",
+        [w * 0.5, h * 0.5],
+        [w * 0.65, h * 0.5],
+        [
+          { color: accent, at: 0, alpha: 0.12 },
+          { color: accent, at: 1, alpha: 0 },
+        ],
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#bg)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#depth)"/>`,
+      );
+      break;
+    case "coral":
+      addLinear("bg", 165, [
+        { color: mixHex("#fff5f3", accent, 0.1), at: 0 },
+        { color: mixHex("#fde6e0", accent, 0.14), at: 1 },
+      ]);
+      addRadial(
+        "warmth",
+        [w * 0.3, h * 0.4],
+        [w * 0.5, h * 0.45],
+        [
+          { color: mixHex(accent, "#fff", 0.4), at: 0, alpha: 0.2 },
+          { color: mixHex(accent, "#fff", 0.4), at: 1, alpha: 0 },
+        ],
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#bg)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#warmth)"/>`,
+      );
+      break;
+    case "sage":
+      addLinear("bg", 170, [
+        { color: mixHex("#f5f9f5", accent, 0.08), at: 0 },
+        { color: mixHex("#eef5ec", accent, 0.1), at: 1 },
+      ]);
+      addRadial(
+        "calm",
+        [w * 0.2, h * 0.6],
+        [w * 0.55, h * 0.4],
+        [
+          { color: accent, at: 0, alpha: 0.1 },
+          { color: accent, at: 1, alpha: 0 },
+        ],
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#bg)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#calm)"/>`,
+      );
+      break;
+    case "charcoal":
+      addLinear("bg", 180, [
+        { color: "#fafafa", at: 0 },
+        { color: "#f5f5f5", at: 1 },
+      ]);
+      addRadial(
+        "shadow",
+        [w * 0.5, h * 0.5],
+        [w * 0.6, h * 0.55],
+        [
+          { color: mixHex("#333333", "#fff", 0.6), at: 0, alpha: 0.08 },
+          { color: mixHex("#333333", "#fff", 0.6), at: 1, alpha: 0 },
+        ],
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#bg)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#shadow)"/>`,
+      );
+      break;
+    case "mint":
+      addLinear("bg", 175, [
+        { color: mixHex("#f5fdf8", accent, 0.08), at: 0 },
+        { color: mixHex("#f0faf5", accent, 0.1), at: 1 },
+      ]);
+      addRadial(
+        "freshness",
+        [w * 0.8, h * 0.3],
+        [w * 0.5, h * 0.4],
+        [
+          { color: accent, at: 0, alpha: 0.15 },
+          { color: accent, at: 1, alpha: 0 },
+        ],
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#bg)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#freshness)"/>`,
+      );
+      break;
+    case "burnt-sienna":
+      addLinear("bg", 170, [
+        { color: mixHex("#faf3f0", accent, 0.1), at: 0 },
+        { color: mixHex("#f5e4d9", accent, 0.14), at: 1 },
+      ]);
+      addRadial(
+        "warmglow",
+        [w * 0.6, h * 0.4],
+        [w * 0.5, h * 0.45],
+        [
+          { color: mixHex(accent, "#fff", 0.3), at: 0, alpha: 0.2 },
+          { color: mixHex(accent, "#fff", 0.3), at: 1, alpha: 0 },
+        ],
+      );
+      layers.push(
+        `<rect width="${w}" height="${h}" fill="url(#bg)"/>`,
+        `<rect width="${w}" height="${h}" fill="url(#warmglow)"/>`,
       );
       break;
     case "classic":

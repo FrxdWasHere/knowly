@@ -88,6 +88,13 @@ import {
   collectNotebookText,
 } from "@/lib/notes/study";
 import {
+  broadcastNotebookUpdate,
+  broadcastPageUpdate,
+  closeTabSync,
+  initTabSync,
+  subscribeToSync,
+} from "@/lib/notes/tab-sync";
+import {
   emptyPage,
   clampTemplateOpacity,
   HIGHLIGHTER_COLORS,
@@ -369,6 +376,54 @@ function NotebookEditorPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notebookId]);
 
+  /**
+   * A save from another tab must never be silently overwritten. This tab only
+   * offers to reload, and refuses while it has unsaved work of its own.
+   */
+  const refreshFromDisk = async () => {
+    if (pendingPages.current.size) {
+      toast.info("This tab still has unsaved changes", {
+        description: "Wait for the badge to say Saved, then reload.",
+      });
+      return;
+    }
+    const [meta, loaded] = await Promise.all([getNotebook(notebookId), listPages(notebookId)]);
+    const byId = new Map(loaded.map((page) => [page.id, page]));
+    const ordered = [
+      ...(meta?.pageIds ?? [])
+        .map((id) => byId.get(id))
+        .filter((page): page is NotePage => Boolean(page)),
+      ...loaded.filter((page) => !(meta?.pageIds ?? []).includes(page.id)),
+    ];
+    if (meta) {
+      notebookRef.current = meta;
+      setNotebook(meta);
+    }
+    setPages(ordered);
+    setCurrentId((current) =>
+      ordered.some((page) => page.id === current) ? current : (ordered[0]?.id ?? ""),
+    );
+    toast.success("Notebook reloaded");
+  };
+
+  useEffect(() => {
+    initTabSync(notebookId);
+    const unsubscribe = subscribeToSync((message) => {
+      if (message.notebookId !== notebookId) return;
+      toast.info("This notebook was saved in another tab", {
+        id: `notes-remote-${notebookId}`,
+        description: "Reload to bring in the other tab's pages.",
+        action: { label: "Reload", onClick: () => void refreshFromDisk() },
+      });
+    });
+    return () => {
+      unsubscribe();
+      closeTabSync();
+    };
+    // The subscription belongs to the notebook that was open when it started.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notebookId]);
+
   useEffect(() => {
     if (!pageParam || !pages.some((page) => page.id === pageParam)) return;
     const key = `${notebookId}:${pageParam}`;
@@ -425,29 +480,40 @@ function NotebookEditorPage() {
     };
   }, [currentPage]);
 
-  // Render all thumbnails once when the page list changes, then keep only the
-  // active page's thumbnail fresh while drawing.
+  // Render only the thumbnails that are missing. Adding one page used to redraw
+  // every thumbnail in the notebook, which stalled long notebooks.
   useEffect(() => {
-    if (!pages.length) return;
+    const missing = pages.filter((page) => !thumbnails[page.id]);
+    if (!missing.length) return;
     let cancelled = false;
     const timer = window.setTimeout(() => {
       void Promise.all(
-        pages.map(async (page) => ({
+        missing.map(async (page) => ({
           id: page.id,
           src: await renderPageToDataUrl(page, 0.24, "image/jpeg"),
         })),
       ).then((items) => {
         if (cancelled) return;
-        setThumbnails(
-          Object.fromEntries(items.filter((item) => item.src).map((item) => [item.id, item.src])),
+        const rendered = Object.fromEntries(
+          items.filter((item) => item.src).map((item) => [item.id, item.src]),
         );
+        setThumbnails((current) => {
+          // Keep page order and drop entries for pages that no longer exist.
+          const next: Record<string, string> = {};
+          for (const page of pages) {
+            const src = rendered[page.id] ?? current[page.id];
+            if (src) next[page.id] = src;
+          }
+          return next;
+        });
       });
     }, 350);
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
     };
-    // Re-run only when pages are added, removed or reordered.
+    // Re-run when pages are added, removed or reordered; known thumbnails are
+    // reused rather than regenerated.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageSignature]);
 
@@ -640,7 +706,18 @@ function NotebookEditorPage() {
     setNotebook(next);
     if (notebookTimer.current) window.clearTimeout(notebookTimer.current);
     notebookTimer.current = window.setTimeout(() => {
-      void putNotebook(next).catch(() => setSaveState("error"));
+      void putNotebook(next)
+        .then(() => {
+          setSaveState("saved");
+          broadcastNotebookUpdate(next.id, next.updatedAt);
+        })
+        .catch((error) => {
+          setSaveState("error");
+          console.error("Failed to save notebook:", error);
+          toast.error("Couldn't save notebook changes", {
+            description: "Check your internet connection and storage space.",
+          });
+        });
     }, 500);
   };
 
@@ -649,20 +726,35 @@ function NotebookEditorPage() {
     pendingPages.current.set(page.id, page);
     const existing = saveTimers.current.get(page.id);
     if (existing) window.clearTimeout(existing);
-    const timer = window.setTimeout(() => {
+    const timer = window.setTimeout(async () => {
       saveTimers.current.delete(page.id);
-      pendingPages.current.delete(page.id);
-      void putPage(page)
-        .then(() => {
+
+      /* One retry ladder per save burst. Every attempt writes the freshest
+         queued copy of the page, so a late retry can never replace newer
+         strokes with older ones. */
+      const attemptSave = async (attempt = 0): Promise<void> => {
+        const latest = pendingPages.current.get(page.id) ?? page;
+        try {
+          await putPage(latest);
+          if (pendingPages.current.get(page.id) === latest) pendingPages.current.delete(page.id);
           setSaveState("saved");
           touchNotebook();
-        })
-        .catch(() => {
+          broadcastPageUpdate(latest.notebookId, latest.id, latest.updatedAt);
+        } catch (error) {
           setSaveState("error");
-          toast.error("Couldn't save this page", {
-            description: "Knowly may be out of room to save. Export a backup and free some space.",
-          });
-        });
+          console.error("Save failed:", error);
+          if (attempt >= 3) {
+            toast.error("Couldn't save this page", {
+              description: "Your changes are unsaved. Check storage space or export a backup.",
+            });
+            return;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 100 * Math.pow(2, attempt)));
+          await attemptSave(attempt + 1);
+        }
+      };
+
+      await attemptSave();
     }, 450);
     saveTimers.current.set(page.id, timer);
   };

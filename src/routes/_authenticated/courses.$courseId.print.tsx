@@ -417,18 +417,10 @@ function CoursePrintPage() {
                     baseLabel="Course colour"
                     onTheme={(theme) => patch({ theme })}
                     onPalette={(palette) => patch({ palette })}
+                    onBrowseMarketplace={() => setMarketplaceOpen(true)}
                   />
                 </div>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setMarketplaceOpen(true)}
-                className="w-full"
-              >
-                <Sparkles className="w-4 h-4" />
-                Browse marketplace
-              </Button>
             </OptionGroup>
 
             <OptionGroup icon={<Printer className="size-4 text-primary" />} label="Print style">

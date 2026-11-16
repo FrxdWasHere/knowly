@@ -127,6 +127,7 @@ function NotesLibraryPage() {
   const tour = useFeatureTour("knowly.notes.tour.v1");
   const [notebooks, setNotebooks] = useState<NotebookMeta[]>([]);
   const [hits, setHits] = useState<NoteSearchHit[]>([]);
+  const [hitTotal, setHitTotal] = useState(0);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [newOpen, setNewOpen] = useState(false);
@@ -148,12 +149,16 @@ function NotesLibraryPage() {
   useEffect(() => {
     if (!query.trim()) {
       setHits([]);
+      setHitTotal(0);
       return;
     }
     let cancelled = false;
     const timer = window.setTimeout(() => {
       void searchNotes(query).then((results) => {
-        if (!cancelled) setHits(results);
+        if (cancelled) return;
+        // `searchNotes` answers with { hits, total }, not a bare array.
+        setHits(results.hits);
+        setHitTotal(results.total);
       });
     }, 220);
     return () => {
@@ -355,7 +360,13 @@ function NotesLibraryPage() {
 
       {query.trim() && hits.length > 0 && (
         <section className="mt-8">
-          <h2 className="mb-3 font-display text-xl font-semibold">Inside your notes</h2>
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-display text-xl font-semibold">Inside your notes</h2>
+            <span className="text-xs text-muted-foreground">
+              {hitTotal} matching {hitTotal === 1 ? "page" : "pages"}
+              {hitTotal > hits.length ? ` · showing ${hits.length}` : ""}
+            </span>
+          </div>
           <div className="space-y-2">
             {hits.map((hit) => (
               <Link

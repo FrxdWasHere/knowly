@@ -261,6 +261,25 @@ export interface QuizConfig {
   instantFeedback: boolean;
   /** only use questions bookmarked in their deck */
   bookmarkedOnly: boolean;
+  /** Enable round pauses after N questions */
+  roundPauses: boolean;
+  /** Questions per round before showing a pause screen */
+  questionsPerRound: number;
+  /** Auto-advance after N seconds (0 = manual button press only) */
+  pauseAutoAdvanceSeconds: number | null;
+}
+
+/** Quiz session saved mid-quiz for resuming later */
+export interface SavedQuizSession {
+  id: string;
+  savedAt: number;
+  pool: Question[];
+  config: QuizConfig;
+  answers: AnswerRecord[];
+  currentIndex: number;
+  totalElapsedMs: number;
+  deckIds: string[];
+  deckTitles: string[];
 }
 
 export interface QuizResult {
