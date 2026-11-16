@@ -12,6 +12,15 @@ describe("validateDeckJson", () => {
     expect(result.ok).toBe(true);
     expect(result.deck?.questions).toHaveLength(8);
     expect(result.deck?.title).toContain("Cell Biology");
+    const multipleChoice = result.deck?.questions.find(
+      (question) => question.type === "multiple-choice",
+    );
+    expect(multipleChoice?.tutor?.whyCorrect).toBeTruthy();
+    expect(multipleChoice?.tutor?.whyWrong).toHaveLength(3);
+    const singleAnswer = result.deck?.questions.find(
+      (question) => question.type === "short-answer",
+    );
+    expect(singleAnswer?.incorrectExplanation).toBeTruthy();
   });
 
   it("rejects malformed JSON", () => {
@@ -51,6 +60,32 @@ describe("validateDeckJson", () => {
     expect(result.errors.join(" ")).toMatch(/ordering/);
   });
 
+  it("warns when answer rationales are missing", () => {
+    const result = validateDeckJson(
+      JSON.stringify({
+        title: "Rationales",
+        questions: [
+          {
+            type: "multiple-choice",
+            question: "Choose one",
+            options: ["A", "B"],
+            answer: "A",
+          },
+          {
+            type: "short-answer",
+            question: "Explain one",
+            answer: "A",
+          },
+        ],
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.warnings.join(" ")).toMatch(/why the correct option is right/i);
+    expect(result.warnings.join(" ")).toMatch(/every incorrect option/i);
+    expect(result.warnings.join(" ")).toMatch(/incorrectExplanation/i);
+  });
+
   it("flags a word-bank blank/placeholder mismatch", () => {
     const result = validateDeckJson(
       JSON.stringify({
@@ -72,7 +107,7 @@ describe("validateQuestionsJson", () => {
   it("accepts the bundled question pack", () => {
     const result = validateQuestionsJson(SAMPLE_QUESTIONS_JSON);
     expect(result.ok).toBe(true);
-    expect(result.questions).toHaveLength(2);
+    expect(result.questions).toHaveLength(3);
   });
 
   it("warns about questions already in the deck", () => {

@@ -29,6 +29,7 @@ import {
   PageOrientation,
   Packer,
   Paragraph,
+  type ParagraphChild,
   ShadingType,
   TabStopType,
   Table,
@@ -41,11 +42,13 @@ import {
   VerticalPositionRelativeFrom,
   WidthType,
 } from "docx";
-import { LETTERS, printableAnswer } from "@/lib/exam-print";
+import { LETTERS, examOptionLabel, examQuestionLabel, printableAnswer } from "@/lib/exam-print";
 import { TYPE_LABELS } from "@/lib/answers";
 import { courseStats, decksForCourse } from "@/lib/courses";
 import {
   buildDocxPaperArt,
+  DOCX_FONT_SIZE_HALF_POINTS,
+  resolveDocxExamAppearance,
   resolveDocxDesign,
   type DocxPaperDesign,
   type PaperDims,
@@ -81,6 +84,8 @@ import {
   type BorderLeft,
 } from "@/lib/docx-utils";
 import { type ExamOptions } from "@/lib/exam-print";
+import { splitMath } from "@/lib/math";
+import { latexToDocxMath } from "@/lib/docx-math";
 
 /* ================================================================== *
  * MARKDOWN-TO-DOCX CONVERSION
@@ -91,29 +96,43 @@ import { type ExamOptions } from "@/lib/exam-print";
  * Moved to module scope to avoid recompilation on every call.
  */
 const MARKDOWN_INLINE_PATTERN =
-  /\$\$([^\$]+)\$\$|\$([^\$\n]+)\$|\*\*\*([^*]+)\*\*\*|___([^_]+)___|\*\*([^*]+)\*\*|__([^_]+)__|~~([^~]+)~~|`([^`]+)`|\[([^\]]+)\]\(([^)]+)\)|\*([^*]+)\*|_([^_]+)_/g;
+  /\*\*\*([^*]+)\*\*\*|___([^_]+)___|\*\*([^*]+)\*\*|__([^_]+)__|~~([^~]+)~~|`([^`]+)`|\[([^\]]+)\]\(([^)]+)\)|\*([^*]+)\*|_([^_]+)_/g;
+
+type InlineRunStyle = FlowStyle & {
+  allCaps?: boolean;
+  bold?: boolean;
+  characterSpacing?: number;
+  color?: string;
+  font?: string;
+  size?: number;
+};
 
 /**
- * Enhanced inline markdown parser supporting:
+ * Parse inline Markdown formatting from a plain-text segment supporting:
  * - Bold: **text** or __text__
  * - Italic: *text* or _text_
  * - Code: `text`
  * - Links: [text](url)
- * - LaTeX inline: $...$
- * - LaTeX display: $$...$$
  * - Strikethrough: ~~...~~
  */
-function inlineRuns(text: string, style: FlowStyle = {}): TextRun[] {
+function markdownTextRuns(text: string, style: InlineRunStyle = {}): TextRun[] {
   const runs: TextRun[] = [];
+  const inheritedStyle = {
+    ...(style.bold === undefined ? {} : { bold: style.bold }),
+    ...(style.italics === undefined ? {} : { italics: style.italics }),
+    ...(style.color ? { color: style.color } : {}),
+    ...(style.characterSpacing === undefined ? {} : { characterSpacing: style.characterSpacing }),
+    ...(style.font ? { font: style.font } : {}),
+    ...(style.size === undefined ? {} : { size: style.size }),
+    ...(style.allCaps === undefined ? {} : { allCaps: style.allCaps }),
+  };
 
   // Pattern that matches (in priority order to avoid conflicts):
-  // - LaTeX display: $$...$$
-  // - LaTeX inline: $...$
   // - Bold: **...** or __...__
   // - Italic: *...* or _..._
   // - Strikethrough: ~~...~~
   // - Code: `...`
-  // - Links: [...](...) 
+  // - Links: [...](...)
   const pattern = MARKDOWN_INLINE_PATTERN;
 
   let last = 0;
@@ -122,68 +141,59 @@ function inlineRuns(text: string, style: FlowStyle = {}): TextRun[] {
   while ((match = pattern.exec(text))) {
     // Add plain text before this match
     if (match.index > last) {
-      runs.push(new TextRun({ text: text.slice(last, match.index), size: 22 }));
+      runs.push(new TextRun({ text: text.slice(last, match.index), ...inheritedStyle }));
     }
 
-    // LaTeX display: $$...$$ (group 1)
+    // Bold-italic: ***...***
     if (match[1] != null) {
-      runs.push(
-        new TextRun({
-          text: `\n[LaTeX: ${match[1]}]\n`,
-          font: "Consolas",
-          size: 18,
-          color: "7C3AED",
-          italics: true,
-        }),
-      );
+      runs.push(new TextRun({ ...inheritedStyle, text: match[1], bold: true, italics: true }));
     }
-    // LaTeX inline: $...$ (group 2)
+    // Bold-italic: ___...___
     else if (match[2] != null) {
+      runs.push(new TextRun({ ...inheritedStyle, text: match[2], bold: true, italics: true }));
+    }
+    // Bold: **text**
+    else if (match[3] != null) {
       runs.push(
         new TextRun({
-          text: `[${match[2]}]`,
-          font: "Consolas",
-          size: 18,
-          color: "7C3AED",
-          italics: true,
+          ...inheritedStyle,
+          text: match[3],
+          bold: true,
         }),
-      );
-    }
-    // Bold-italic: ***...*** (group 3)
-    else if (match[3] != null) {
-      runs.push(new TextRun({ text: match[3], bold: true, italics: true }));
-    }
-    // Bold-italic: ___....___ (group 4)
-    else if (match[4] != null) {
-      runs.push(new TextRun({ text: match[4], bold: true, italics: true }));
-    }
-    // Bold: **...** (group 5)
-    else if (match[5] != null) {
-      runs.push(
-        new TextRun({ text: match[5], bold: true, italics: style.italics }),
       );
     }
     // Bold: __...__ (group 6)
-    else if (match[6] != null) {
+    else if (match[4] != null) {
       runs.push(
-        new TextRun({ text: match[6], bold: true, italics: style.italics }),
+        new TextRun({
+          ...inheritedStyle,
+          text: match[4],
+          bold: true,
+        }),
       );
     }
     // Strikethrough: ~~...~~ (group 7)
-    else if (match[7] != null) {
-      runs.push(new TextRun({ text: match[7], strike: true }));
+    else if (match[5] != null) {
+      runs.push(
+        new TextRun({
+          ...inheritedStyle,
+          text: match[5],
+          strike: true,
+        }),
+      );
     }
     // Code: `...` (group 8)
-    else if (match[8] != null) {
+    else if (match[6] != null) {
       runs.push(
-        new TextRun({ text: match[8], font: "Consolas", size: 20, color: "1E293B" }),
+        new TextRun({ ...inheritedStyle, text: match[6], font: "Consolas", color: "1E293B" }),
       );
     }
     // Link: [text](url) (groups 9-10)
-    else if (match[9] != null && match[10] != null) {
+    else if (match[7] != null && match[8] != null) {
       runs.push(
         new TextRun({
-          text: `${match[9]} (${match[10]})`,
+          ...inheritedStyle,
+          text: `${match[7]} (${match[8]})`,
           style: "Hyperlink",
           color: "0563C1",
           underline: { type: "single" },
@@ -191,12 +201,12 @@ function inlineRuns(text: string, style: FlowStyle = {}): TextRun[] {
       );
     }
     // Italic: *...* (group 11)
-    else if (match[11] != null) {
-      runs.push(new TextRun({ text: match[11], italics: true }));
+    else if (match[9] != null) {
+      runs.push(new TextRun({ ...inheritedStyle, text: match[9], italics: true }));
     }
     // Italic: _..._ (group 12)
-    else if (match[12] != null) {
-      runs.push(new TextRun({ text: match[12], italics: true }));
+    else if (match[10] != null) {
+      runs.push(new TextRun({ ...inheritedStyle, text: match[10], italics: true }));
     }
 
     last = pattern.lastIndex;
@@ -204,8 +214,25 @@ function inlineRuns(text: string, style: FlowStyle = {}): TextRun[] {
 
   // Add remaining text
   if (last < text.length) {
-    runs.push(new TextRun({ text: text.slice(last), size: 22 }));
+    runs.push(new TextRun({ text: text.slice(last), ...inheritedStyle }));
   }
+
+  return runs.length > 0 ? runs : [new TextRun("")];
+}
+
+function inlineRuns(text: string, style: InlineRunStyle = {}): ParagraphChild[] {
+  const runs: ParagraphChild[] = [];
+  const segments = splitMath(text);
+
+  segments.forEach((segment, index) => {
+    if (segment.kind === "math") {
+      if (segment.display && runs.length > 0) runs.push(new TextRun({ break: 1 }));
+      runs.push(latexToDocxMath(segment.source));
+      if (segment.display && index < segments.length - 1) runs.push(new TextRun({ break: 1 }));
+    } else {
+      runs.push(...markdownTextRuns(segment.source, style));
+    }
+  });
 
   return runs.length > 0 ? runs : [new TextRun("")];
 }
@@ -230,12 +257,12 @@ function mdTable(header: string[], rows: string[][], design: DocxPaperDesign): T
             borders,
             shading: isHeader ? { type: ShadingType.CLEAR, fill: headerFill } : undefined,
             margins: { top: 40, bottom: 40, left: 50, right: 50 },
-            children: [new Paragraph({ 
-              children: isHeader 
-                ? [new TextRun({ text: cell, bold: true, color: design.ink })]
-                : inlineRuns(cell),
-              spacing: { line: 300, lineRule: "auto" },
-            })],
+            children: [
+              new Paragraph({
+                children: inlineRuns(cell, isHeader ? { bold: true, color: design.ink } : {}),
+                spacing: { line: 300, lineRule: "auto" },
+              }),
+            ],
             verticalAlign: VerticalAlign.CENTER,
           }),
       ),
@@ -339,7 +366,9 @@ function markdownToDocx(
         out.push(
           new Paragraph({
             indent: { left: 360 },
-            border: { left: { style: BorderStyle.SINGLE, size: 18, color: design.accent, space: 10 } },
+            border: {
+              left: { style: BorderStyle.SINGLE, size: 18, color: design.accent, space: 10 },
+            },
             children: inlineRuns(lines[i].replace(/^\s*>\s?/, ""), { italics: true }),
             spacing: { before: 60, after: 60, line: 300, lineRule: "auto" },
           }),
@@ -387,7 +416,9 @@ function markdownToDocx(
     if (/^\s*(---+|\*\*\*+|___+)\s*$/.test(line)) {
       out.push(
         new Paragraph({
-          border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: design.accent, space: 4 } },
+          border: {
+            bottom: { style: BorderStyle.SINGLE, size: 12, color: design.accent, space: 4 },
+          },
           spacing: { before: 160, after: 160 },
           children: [],
         }),
@@ -412,7 +443,7 @@ function markdownToDocx(
         shading,
         border,
         indent: style.fill ? { left: 40 } : undefined,
-        spacing: { 
+        spacing: {
           before: style.fill ? 40 : 80,
           after: style.fill ? 60 : 120,
           line: 300,
@@ -441,7 +472,7 @@ function metaRun(q: Question, design: DocxPaperDesign): TextRun {
  */
 function questionChildren(q: Question, number: number, design: DocxPaperDesign): Paragraph[] {
   const out: Paragraph[] = [];
-  
+
   // Styled question number with background
   out.push(
     new Paragraph({
@@ -495,7 +526,7 @@ function questionChildren(q: Question, number: number, design: DocxPaperDesign):
         out.push(
           new Paragraph({
             indent: { left: 360 },
-            children: [new TextRun("________  "), new TextRun(pair.left)],
+            children: [new TextRun("________  "), ...inlineRuns(pair.left)],
           }),
         ),
       );
@@ -505,7 +536,7 @@ function questionChildren(q: Question, number: number, design: DocxPaperDesign):
             indent: { left: 360 },
             children: [
               new TextRun({ text: `${LETTERS[index] ?? index + 1}. `, bold: true }),
-              new TextRun(pair.right),
+              ...inlineRuns(pair.right),
             ],
           }),
         ),
@@ -519,7 +550,7 @@ function questionChildren(q: Question, number: number, design: DocxPaperDesign):
             indent: { left: 360 },
             children: [
               new TextRun({ text: "Word bank: ", bold: true }),
-              new TextRun(q.wordBank.join(" · ")),
+              ...inlineRuns(q.wordBank.join(" · ")),
             ],
           }),
         );
@@ -566,15 +597,12 @@ function answerLines(questions: Question[], design: DocxPaperDesign): Paragraph[
         spacing: { after: 50 },
         children: [
           new TextRun({ text: `${index + 1}. `, bold: true }),
-          new TextRun(printableAnswer(question)),
+          ...inlineRuns(printableAnswer(question), { bold: true }),
           ...(question.explanation
-            ? [
-                new TextRun({
-                  text: ` — ${question.explanation}`,
-                  italics: true,
-                  color: design.muted,
-                }),
-              ]
+            ? inlineRuns(` — ${question.explanation}`, {
+                italics: true,
+                color: design.muted,
+              })
             : []),
         ],
       }),
@@ -679,7 +707,9 @@ async function blockChildren(
       // Better styled divider with more breathing room
       out.push(
         new Paragraph({
-          border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: design.accent, space: 4 } },
+          border: {
+            bottom: { style: BorderStyle.SINGLE, size: 12, color: design.accent, space: 4 },
+          },
           spacing: { before: 160, after: 160 },
           children: [],
         }),
@@ -723,18 +753,20 @@ function coverChildren(
       spacing: { after: 40 },
       children: [
         new TextRun({ text: `${course.emoji || "📘"}  `, size: 44 * 2 }),
-        new TextRun({ text: subject, bold: true, color: ink, size: 22 * 2, allCaps: true }),
+        ...inlineRuns(subject, { bold: true, color: ink, size: 22 * 2, allCaps: true }),
       ],
     }),
     new Paragraph({
       spacing: { after: 0 },
-      children: [new TextRun({ text: "Knowly study pack", color: muted, size: 18 * 2, allCaps: true })],
+      children: [
+        new TextRun({ text: "Knowly study pack", color: muted, size: 18 * 2, allCaps: true }),
+      ],
     }),
     // breathing room, so the title block sits where the cover centres it
     new Paragraph({ spacing: { before: Math.round(dims.height * 0.2 * 15) }, children: [] }),
     new Paragraph({
       spacing: { after: 240, line: 320, lineRule: "auto" },
-      children: [new TextRun({ text: course.title, bold: true, color: ink, size: 64 * 2 })],
+      children: inlineRuns(course.title, { bold: true, color: ink, size: 64 * 2 }),
     }),
   );
 
@@ -742,9 +774,7 @@ function coverChildren(
     out.push(
       new Paragraph({
         spacing: { after: 160 },
-        children: [
-          new TextRun({ text: course.description, italics: true, color: muted, size: 24 }),
-        ],
+        children: [...inlineRuns(course.description, { italics: true, color: muted, size: 24 })],
       }),
     );
   }
@@ -758,7 +788,7 @@ function coverChildren(
           indent: { left: 240, hanging: 240 },
           children: [
             new TextRun({ text: "•  ", color: design.accent, bold: true }),
-            new TextRun({ text: objective, color: design.ink, size: 21 }),
+            ...inlineRuns(objective, { color: design.ink, size: 21 }),
           ],
         }),
       );
@@ -787,7 +817,9 @@ function coverChildren(
     statRuns.push(new TextRun({ text: String(value), bold: true, color: ink, size: 24 * 2 }));
     statRuns.push(new TextRun({ text: ` ${label}`, color: muted, size: 18 * 2, allCaps: true }));
   });
-  out.push(new Paragraph({ spacing: { after: 100, line: 300, lineRule: "auto" }, children: statRuns }));
+  out.push(
+    new Paragraph({ spacing: { after: 100, line: 300, lineRule: "auto" }, children: statRuns }),
+  );
 
   if (course.tags.length > 0) {
     out.push(
@@ -795,7 +827,7 @@ function coverChildren(
         spacing: { after: 80 },
         children: course.tags.flatMap((tag, index) => [
           ...(index > 0 ? [new TextRun({ text: "  ·  ", color: muted, size: 18 })] : []),
-          new TextRun({ text: tag, color: ink, size: 18 }),
+          ...inlineRuns(tag, { color: ink, size: 18 }),
         ]),
       }),
     );
@@ -892,14 +924,14 @@ export async function courseDocxBlob(
           heading: HeadingLevel.HEADING_3,
           pageBreakBefore: breakBeforeLessons,
           spacing: { before: 200, after: 40 },
-          children: [new TextRun(`Practice deck · ${deck.title}`)],
+          children: inlineRuns(`Practice deck · ${deck.title}`),
         }),
       );
       if (deck.description) {
         children.push(
           new Paragraph({
             spacing: { after: 80 },
-            children: [new TextRun({ text: deck.description, color: design.muted })],
+            children: inlineRuns(deck.description, { color: design.muted }),
           }),
         );
       }
@@ -911,13 +943,15 @@ export async function courseDocxBlob(
 
   for (const [moduleIndex, module] of course.modules.entries()) {
     const progressPercent = Math.round((moduleIndex / course.modules.length) * 40 + 10); // 10-50%
-    onStatus?.(`Processing content: ${progressPercent}% (Module ${moduleIndex + 1}/${course.modules.length})`);
+    onStatus?.(
+      `Processing content: ${progressPercent}% (Module ${moduleIndex + 1}/${course.modules.length})`,
+    );
     children.push(
       new Paragraph({
         heading: HeadingLevel.HEADING_1,
         pageBreakBefore: true,
         spacing: { after: 80 },
-        children: [new TextRun(`Module ${moduleIndex + 1} · ${module.title}`)],
+        children: inlineRuns(`Module ${moduleIndex + 1} · ${module.title}`),
       }),
     );
     if (module.summary) {
@@ -939,7 +973,7 @@ export async function courseDocxBlob(
           heading: HeadingLevel.HEADING_2,
           pageBreakBefore: options.breaks === "lessons",
           spacing: { before: 240, after: 60 },
-          children: [new TextRun(`Lesson ${lessonIndex + 1} · ${lesson.title}`)],
+          children: inlineRuns(`Lesson ${lessonIndex + 1} · ${lesson.title}`),
         }),
       );
       const meta = [
@@ -993,7 +1027,7 @@ export async function courseDocxBlob(
           heading: HeadingLevel.HEADING_2,
           spacing: { before: 240, after: 40 },
           pageBreakBefore: options.breaks === "lessons",
-          children: [new TextRun(`Module quiz · ${module.quiz.title}`)],
+          children: inlineRuns(`Module quiz · ${module.quiz.title}`),
         }),
       );
       children.push(
@@ -1024,7 +1058,7 @@ export async function courseDocxBlob(
         heading: HeadingLevel.HEADING_1,
         pageBreakBefore: true,
         spacing: { after: 40 },
-        children: [new TextRun(`Final exam · ${course.finalExam.title}`)],
+        children: inlineRuns(`Final exam · ${course.finalExam.title}`),
       }),
       new Paragraph({
         spacing: { after: 100 },
@@ -1061,7 +1095,7 @@ export async function courseDocxBlob(
         new Paragraph({
           heading: HeadingLevel.HEADING_2,
           spacing: { before: 200, after: 40 },
-          children: [new TextRun(`Module ${moduleIndex + 1} · ${module.title}`)],
+          children: inlineRuns(`Module ${moduleIndex + 1} · ${module.title}`),
         }),
       );
       module.lessons.forEach((lesson) => {
@@ -1070,7 +1104,7 @@ export async function courseDocxBlob(
           new Paragraph({
             heading: HeadingLevel.HEADING_3,
             spacing: { before: 140, after: 40 },
-            children: [new TextRun(`Lesson · ${lesson.title}`)],
+            children: inlineRuns(`Lesson · ${lesson.title}`),
           }),
         );
         children.push(...answerLines(lesson.questions, design));
@@ -1080,7 +1114,7 @@ export async function courseDocxBlob(
           new Paragraph({
             heading: HeadingLevel.HEADING_3,
             spacing: { before: 140, after: 40 },
-            children: [new TextRun(`Module quiz · ${module.quiz.title}`)],
+            children: inlineRuns(`Module quiz · ${module.quiz.title}`),
           }),
         );
         children.push(...answerLines(module.quiz.questions, design));
@@ -1093,7 +1127,7 @@ export async function courseDocxBlob(
           new Paragraph({
             heading: HeadingLevel.HEADING_3,
             spacing: { before: 140, after: 40 },
-            children: [new TextRun(`Practice deck · ${deck.title}`)],
+            children: inlineRuns(`Practice deck · ${deck.title}`),
           }),
         );
         children.push(...answerLines(deck.questions, design));
@@ -1104,7 +1138,7 @@ export async function courseDocxBlob(
         new Paragraph({
           heading: HeadingLevel.HEADING_2,
           spacing: { before: 200, after: 40 },
-          children: [new TextRun(`Final exam · ${course.finalExam.title}`)],
+          children: inlineRuns(`Final exam · ${course.finalExam.title}`),
         }),
       );
       children.push(...answerLines(course.finalExam.questions, design));
@@ -1117,7 +1151,7 @@ export async function courseDocxBlob(
         new Paragraph({
           heading: HeadingLevel.HEADING_2,
           spacing: { before: 200, after: 40 },
-          children: [new TextRun(`Practice deck · ${deck.title}`)],
+          children: inlineRuns(`Practice deck · ${deck.title}`),
         }),
       );
       children.push(...answerLines(deck.questions, design));
@@ -1204,18 +1238,14 @@ export async function moduleDocxBlob(
     new Paragraph({
       heading: HeadingLevel.HEADING_1,
       spacing: { before: 120, after: 60 },
-      children: [new TextRun({ text: module.title, bold: true, color: titleInk })],
+      children: inlineRuns(module.title, { bold: true, color: titleInk }),
     }),
     new Paragraph({
       spacing: { after: 160 },
-      children: [
-        new TextRun({
-          text: `${module.subject} · ${module.questions.length} questions · ${module.estimatedMinutes} min`,
-          color: titleMuted,
-          size: 16,
-          allCaps: true,
-        }),
-      ],
+      children: inlineRuns(
+        `${module.subject} · ${module.questions.length} questions · ${module.estimatedMinutes} min`,
+        { color: titleMuted, size: 16, allCaps: true },
+      ),
     }),
   );
 
@@ -1234,7 +1264,7 @@ export async function moduleDocxBlob(
           spacing: { after: 40 },
           children: [
             new TextRun({ text: "•  ", color: design.accent, bold: true }),
-            new TextRun({ text: objective, color: titleInk, size: 21 }),
+            ...inlineRuns(objective, { color: titleInk, size: 21 }),
           ],
         }),
       );
@@ -1286,7 +1316,7 @@ export async function moduleDocxBlob(
       new Paragraph({
         heading: HeadingLevel.HEADING_3,
         spacing: { before: 200, after: 40 },
-        children: [new TextRun(`Practice deck · ${deck.title}`)],
+        children: inlineRuns(`Practice deck · ${deck.title}`),
       }),
     );
     deck.questions.forEach((question, index) =>
@@ -1311,7 +1341,7 @@ export async function moduleDocxBlob(
         new Paragraph({
           heading: HeadingLevel.HEADING_3,
           spacing: { before: 140, after: 40 },
-          children: [new TextRun(`Practice deck · ${deck.title}`)],
+          children: inlineRuns(`Practice deck · ${deck.title}`),
         }),
         ...answerLines(deck.questions, design),
       );
@@ -1349,210 +1379,236 @@ function examQuestionChildren(
   question: Question,
   index: number,
   design: DocxPaperDesign,
-  pointsPerQuestion: number,
-): (Paragraph | Table)[] {
-  const children: (Paragraph | Table)[] = [];
+  options: ExamOptions,
+): Paragraph[] {
+  const children: Paragraph[] = [];
+  const compact = options.spacing === "compact";
+  const before = compact ? 60 : 160;
+  const after = compact ? 30 : 100;
+  const optionAfter = compact ? 20 : 60;
+  const answerLineCount = Math.max(0, Math.trunc(options.answerLines));
+  const hasFollowup =
+    question.type === "multiple-choice"
+      ? (question.options?.length ?? 0) > 0
+      : question.type === "true-false" ||
+        question.type === "ordering" ||
+        question.type === "matching" ||
+        question.type === "word-bank" ||
+        answerLineCount > 0;
 
-  const typeLabel = TYPE_LABELS[question.type] || question.type;
-
-  // Question number and text on same line (cleaner)
   children.push(
     new Paragraph({
-      spacing: { before: 120, after: 80 },
+      spacing: { before, after: hasFollowup ? optionAfter : after },
       children: [
         new TextRun({
-          text: `${index}. `,
+          text: `${examQuestionLabel(index - 1, options.numberStyle)} `,
           bold: true,
           color: design.accent,
         }),
         ...inlineRuns(question.question),
+        ...(options.showPoints
+          ? [
+              new TextRun({
+                text: ` [${options.pointsPerQuestion} ${options.pointsPerQuestion === 1 ? "pt" : "pts"}]`,
+                color: design.muted,
+                italics: true,
+              }),
+            ]
+          : []),
       ],
     }),
   );
 
-  // Options for multiple choice
-  if (question.options?.length) {
-    const cols = question.options.length > 3 ? 2 : 1;
-    children.push(examOptionsTable(question.options, cols, design));
-  } 
-  // Ordering questions
-  else if (question.items?.length) {
+  const appendLine = (runs: ParagraphChild[], indent = 360, spacingAfter = optionAfter) => {
     children.push(
       new Paragraph({
-        spacing: { before: 60, after: 60 },
-        children: [
-          new TextRun({
-            text: "Arrange in order:",
-            italics: true,
-            color: design.muted,
-          }),
-        ],
+        indent: { left: indent },
+        spacing: { after: spacingAfter },
+        children: runs,
       }),
     );
-    question.items.forEach((item) => {
-      children.push(
-        new Paragraph({
-          bullet: { level: 0 },
-          spacing: { after: 40 },
-          children: [new TextRun(item)],
-        }),
-      );
-    });
-  } 
-  // Matching questions
-  else if (question.pairs?.length) {
-    children.push(
-      new Paragraph({
-        spacing: { before: 60, after: 60 },
-        children: [
-          new TextRun({
-            text: "Match each item:",
-            italics: true,
-            color: design.muted,
-          }),
-        ],
-      }),
-    );
-    question.pairs.forEach((pair, i) => {
-      children.push(
-        new Paragraph({
-          spacing: { after: 40 },
-          children: [
+  };
+
+  switch (question.type) {
+    case "multiple-choice":
+      (question.options ?? []).forEach((option, optionIndex, allOptions) =>
+        appendLine(
+          [
             new TextRun({
-              text: `${String.fromCharCode(65 + i)}. ${pair.left}`,
+              text: `${examOptionLabel(optionIndex, options.optionCase)}. `,
               bold: true,
+              color: design.accent,
             }),
-            new TextRun({ text: " ↔ " }),
-            new TextRun({
-              text: pair.right,
-              italics: true,
-            }),
+            ...inlineRuns(option),
           ],
-        }),
+          360,
+          optionIndex === allOptions.length - 1 ? after : optionAfter,
+        ),
       );
-    });
-  } 
-  // Word bank questions
-  else if (question.blanks?.length) {
-    children.push(
-      new Paragraph({
-        spacing: { before: 60, after: 80 },
-        children: [
-          new TextRun({
-            text: "Fill in the blanks. Word bank: ",
-            italics: true,
-          }),
-          new TextRun({
-            text: question.wordBank?.join(", ") || question.blanks.join(", "),
-            bold: true,
-          }),
-        ],
-      }),
-    );
+      break;
+    case "true-false":
+      appendLine([new TextRun("◯ True        ◯ False")], 360, after);
+      break;
+    case "ordering":
+      {
+        const items = question.items ?? [];
+        appendLine(
+          [new TextRun({ text: "Arrange in order:", italics: true, color: design.muted })],
+          0,
+          items.length > 0 ? optionAfter : after,
+        );
+        items.forEach((item, itemIndex) =>
+          appendLine(
+            [new TextRun("________  "), ...inlineRuns(item)],
+            360,
+            itemIndex === items.length - 1 ? after : optionAfter,
+          ),
+        );
+      }
+      break;
+    case "matching": {
+      const pairs = question.pairs ?? [];
+      appendLine(
+        [new TextRun({ text: "Match each item:", italics: true, color: design.muted })],
+        0,
+        pairs.length > 0 ? optionAfter : after,
+      );
+      pairs.forEach((pair, pairIndex) =>
+        appendLine(
+          [new TextRun(`${pairIndex + 1}. ________  `), ...inlineRuns(pair.left)],
+          360,
+          optionAfter,
+        ),
+      );
+      pairs.forEach((pair, pairIndex) =>
+        appendLine(
+          [
+            new TextRun({
+              text: `${examOptionLabel(pairIndex, options.optionCase)}. `,
+              bold: true,
+              color: design.accent,
+            }),
+            ...inlineRuns(pair.right),
+          ],
+          360,
+          pairIndex === pairs.length - 1 ? after : optionAfter,
+        ),
+      );
+      break;
+    }
+    case "word-bank": {
+      if (question.wordBank?.length) {
+        appendLine(
+          [
+            new TextRun({ text: "Word bank: ", bold: true }),
+            ...inlineRuns(question.wordBank.join(", ")),
+          ],
+          360,
+          optionAfter,
+        );
+      }
+      const blankCount = Math.max(1, question.blanks?.length ?? 1);
+      for (let blank = 0; blank < blankCount; blank++) {
+        appendLine(
+          [new TextRun("____________________")],
+          360,
+          blank === blankCount - 1 ? after : optionAfter,
+        );
+      }
+      break;
+    }
+    default:
+      for (let line = 0; line < answerLineCount; line++) {
+        appendLine(
+          [new TextRun("______________________________")],
+          360,
+          line === answerLineCount - 1 ? after : optionAfter,
+        );
+      }
+      break;
   }
 
   return children;
 }
 
-/**
- * Create a table for multiple choice options in exam format.
- */
-function examOptionsTable(options: string[], cols: number, design: DocxPaperDesign): Table {
+/** Lay out question blocks in two columns when requested by the exam settings. */
+function examQuestionsTable(questionBlocks: Paragraph[][]): Table {
   const rows: TableRow[] = [];
-  for (let i = 0; i < options.length; i += cols) {
-    const rowCells: TableCell[] = [];
-    for (let j = 0; j < cols; j++) {
-      const optionIndex = i + j;
-      if (optionIndex < options.length) {
-        rowCells.push(
-          new TableCell({
-            width: { size: 100 / cols, type: WidthType.PERCENTAGE },
-            verticalAlign: VerticalAlign.CENTER,
-            margins: { top: 40, bottom: 40, left: 40, right: 40 },
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `${LETTERS[optionIndex]}. `,
-                    bold: true,
-                  }),
-                  ...inlineRuns(options[optionIndex]!),
-                ],
-              }),
-            ],
-          }),
-        );
-      } else {
-        rowCells.push(
-          new TableCell({
-            width: { size: 100 / cols, type: WidthType.PERCENTAGE },
-            children: [new Paragraph({ text: "" })],
-          }),
-        );
-      }
-    }
-    rows.push(new TableRow({ height: { value: 400, rule: "atLeast" }, children: rowCells }));
+  for (let i = 0; i < questionBlocks.length; i += 2) {
+    const cells = [questionBlocks[i], questionBlocks[i + 1]].map(
+      (block) =>
+        new TableCell({
+          width: { size: 50, type: WidthType.PERCENTAGE },
+          verticalAlign: VerticalAlign.TOP,
+          margins: { top: 0, bottom: 0, left: 100, right: 100 },
+          children: block ?? [new Paragraph({ children: [] })],
+        }),
+    );
+    rows.push(new TableRow({ children: cells }));
   }
 
+  const noBorder = { style: BorderStyle.NIL, size: 0, color: "FFFFFF", space: 0 };
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: {
+      top: noBorder,
+      bottom: noBorder,
+      left: noBorder,
+      right: noBorder,
+      insideHorizontal: noBorder,
+      insideVertical: noBorder,
+    },
     rows,
   });
 }
 
 /**
- * Build answer lines for exam answer key.
+ * Build answer lines with the same numbering and typography as the paper.
  */
-function examAnswerLines(questions: Question[], design: DocxPaperDesign): Paragraph[] {
+function examAnswerLines(
+  questions: Question[],
+  design: DocxPaperDesign,
+  options: ExamOptions,
+): Paragraph[] {
   const lines: Paragraph[] = [];
-  
+
   questions.forEach((question, index) => {
     const answer = printableAnswer(question);
     const typeLabel = TYPE_LABELS[question.type] || question.type;
-    
-    // Question number and answer
+
     lines.push(
       new Paragraph({
         spacing: { before: 80, after: 40 },
         children: [
           new TextRun({
-            text: `${index + 1}. `,
+            text: `${examQuestionLabel(index, options.numberStyle)} `,
             bold: true,
             color: design.accent,
           }),
-          new TextRun({
-            text: answer,
-            bold: true,
-          }),
+          ...inlineRuns(answer, { bold: true }),
           new TextRun({
             text: ` — ${typeLabel}`,
             color: design.muted,
-            size: 16,
             italics: true,
           }),
         ],
       }),
     );
-    
-    // Explanation if available
+
     if (question.explanation) {
       lines.push(
         new Paragraph({
           spacing: { after: 80 },
           indent: { left: 360 },
-          children: [
-            new TextRun({
-              text: question.explanation,
-              italics: true,
-              color: design.muted,
-              size: 18,
-            }),
-          ],
+          children: inlineRuns(question.explanation, {
+            italics: true,
+            color: design.muted,
+          }),
         }),
       );
     }
   });
-  
+
   return lines;
 }
 
@@ -1567,99 +1623,72 @@ export async function examDocxBlob(
   courseColor?: string,
   onStatus?: (message: string) => void,
 ): Promise<Blob> {
-  const design = resolveDocxDesign({
-    theme: coursePrintOptions.theme,
-    palette: coursePrintOptions.palette,
-    fallbackAccent: courseColor ? resolveHex(courseColor) : undefined,
-    style: coursePrintOptions.printStyle,
-  });
+  const appearance = resolveDocxExamAppearance(
+    options,
+    coursePrintOptions,
+    courseColor ? resolveHex(courseColor) : undefined,
+  );
+  const design = appearance.design;
   const dims = getPaperDims(coursePrintOptions.paper, coursePrintOptions.orientation);
+  const baseFontSizeHalfPoints = appearance.fontSizeHalfPoints;
+  const scaledFontSize = (factor: number) => Math.round(baseFontSizeHalfPoints * factor);
 
   onStatus?.("Building the exam…");
 
   const children: (Paragraph | Table)[] = [];
+  const titleAlignment =
+    options.headerAlign === "center" ? AlignmentType.CENTER : AlignmentType.LEFT;
 
-  // Title
   children.push(
     new Paragraph({
-      alignment: AlignmentType.CENTER,
+      alignment: titleAlignment,
       spacing: { after: 40 },
       children: [
-        new TextRun({
-          text: options.title,
+        ...inlineRuns(options.title || title, {
           bold: true,
-          size: 28,
+          size: scaledFontSize(1.6),
           color: design.ink,
         }),
       ],
     }),
   );
 
-  // Subject
   if (options.subject) {
     children.push(
       new Paragraph({
-        alignment: AlignmentType.CENTER,
+        alignment: titleAlignment,
         spacing: { after: 120 },
-        children: [
-          new TextRun({
-            text: options.subject,
-            italics: true,
-            size: 18,
-            color: design.muted,
-          }),
-        ],
+        children: inlineRuns(options.subject, {
+          italics: true,
+          size: scaledFontSize(0.9),
+          color: design.muted,
+        }),
       }),
     );
   }
 
-  // Student info (simple lines, not a table)
   if (options.showNameLines) {
     children.push(
       new Paragraph({
         spacing: { after: 40 },
         children: [
-          new TextRun({
-            text: "Name: _______________________________     Date: ",
-            size: 18,
-          }),
-          new TextRun({
-            text: options.date || "_________",
-            size: 18,
-          }),
+          ...inlineRuns(`Name: ${options.studentName || "________________"}    `),
+          ...inlineRuns(`Class: ${options.studentClass || "________________"}    `),
+          ...inlineRuns(`Date: ${options.date || "________________"}    `),
+          new TextRun("Score: ______"),
         ],
       }),
     );
-    if (options.studentClass) {
-      children.push(
-        new Paragraph({
-          spacing: { after: 120 },
-          children: [
-            new TextRun({
-              text: `Class/Period: ${options.studentClass}`,
-              size: 18,
-            }),
-          ],
-        }),
-      );
-    }
   } else if (options.date) {
     children.push(
       new Paragraph({
         alignment: AlignmentType.RIGHT,
         spacing: { after: 120 },
-        children: [
-          new TextRun({
-            text: `Date: ${options.date}`,
-            size: 18,
-            italics: true,
-          }),
-        ],
+        children: inlineRuns(`Date: ${options.date}`, { italics: true }),
       }),
     );
   }
 
-  // Instructions
   if (options.showInstructions && options.instructions) {
     onStatus?.("Adding instructions…");
     children.push(
@@ -1672,12 +1701,11 @@ export async function examDocxBlob(
     children.push(
       new Paragraph({
         spacing: { after: 120 },
-        children: [new TextRun(options.instructions)],
+        children: inlineRuns(options.instructions),
       }),
     );
   }
 
-  // Questions header
   const totalPoints = options.pointsPerQuestion * questions.length;
   const headerMeta = [
     `${questions.length} question${questions.length === 1 ? "" : "s"}`,
@@ -1702,7 +1730,6 @@ export async function examDocxBlob(
           new TextRun({
             text: headerMeta,
             color: design.muted,
-            size: 16,
             italics: true,
           }),
         ],
@@ -1710,16 +1737,20 @@ export async function examDocxBlob(
     );
   }
 
-  // Questions — render with progress reporting every 25 questions
+  const questionBlocks: Paragraph[][] = [];
   onStatus?.(`Formatting ${questions.length} questions…`);
   questions.forEach((question, index) => {
     if (index > 0 && index % 25 === 0) {
       onStatus?.(`Formatting questions: ${index} of ${questions.length}`);
     }
-    children.push(...examQuestionChildren(question, index + 1, design, options.pointsPerQuestion));
+    questionBlocks.push(examQuestionChildren(question, index + 1, design, options));
   });
+  if (options.columns === 2) {
+    if (questionBlocks.length) children.push(examQuestionsTable(questionBlocks));
+  } else {
+    children.push(...questionBlocks.flat());
+  }
 
-  // Answer key
   if (options.includeAnswerKey) {
     onStatus?.("Generating answer key…");
     children.push(new Paragraph({ children: [new PageBreak()] }));
@@ -1730,7 +1761,7 @@ export async function examDocxBlob(
         children: [new TextRun("Answer key")],
       }),
     );
-    children.push(...examAnswerLines(questions, design));
+    children.push(...examAnswerLines(questions, design, options));
   }
 
   onStatus?.("Rendering the paper design (20%)…");
@@ -1743,11 +1774,13 @@ export async function examDocxBlob(
   return assembleDocx({
     title,
     children,
-    options: coursePrintOptions,
+    options: { ...coursePrintOptions, fontScale: options.fontSize },
     design,
     art,
-    footerLeft: title,
-    runningHeader: null,
+    footerLeft: options.footerText?.trim() || title,
+    runningHeader: options.headerText?.trim() || null,
+    fontFamilyOverride: appearance.fontFamily,
+    headerAlignment: titleAlignment,
     coverDark: false,
     onStatus,
   });
@@ -1765,6 +1798,8 @@ function pageFooter(
   left: string,
   color: string,
   contentWidth: number,
+  fontSizeHalfPoints: number,
+  fontFamily: string,
 ): Footer | undefined {
   if (style === "none") return undefined;
   const numbers: string[] =
@@ -1778,8 +1813,21 @@ function pageFooter(
       new Paragraph({
         tabStops: [{ type: TabStopType.RIGHT, position: contentWidth }],
         children: [
-          ...(left ? [new TextRun({ text: left, size: 16, color })] : []),
-          new TextRun({ children: ["\t", ...numbers], size: 16, color }),
+          ...(left
+            ? [
+                ...inlineRuns(left, {
+                  size: Math.round(fontSizeHalfPoints * 0.8),
+                  font: fontFamily,
+                  color,
+                }),
+              ]
+            : []),
+          new TextRun({
+            children: ["\t", ...numbers],
+            size: Math.round(fontSizeHalfPoints * 0.8),
+            font: fontFamily,
+            color,
+          }),
         ],
       }),
     ],
@@ -1796,9 +1844,12 @@ function pageHeader(
   dims: PaperDims,
   runningHeader: string | null,
   color: string,
+  fontSizeHalfPoints: number,
+  fontFamily: string,
+  alignment: (typeof AlignmentType)[keyof typeof AlignmentType],
 ): Header | undefined {
   if (!data && !runningHeader) return undefined;
-  const children: (TextRun | ImageRun)[] = [];
+  const children: ParagraphChild[] = [];
   if (data) {
     children.push(
       new ImageRun({
@@ -1818,9 +1869,9 @@ function pageHeader(
   }
   if (runningHeader) {
     children.push(
-      new TextRun({
-        text: runningHeader,
-        size: 14,
+      ...inlineRuns(runningHeader, {
+        size: Math.round(fontSizeHalfPoints * 0.8),
+        font: fontFamily,
         bold: true,
         allCaps: true,
         characterSpacing: 60,
@@ -1831,7 +1882,7 @@ function pageHeader(
   return new Header({
     children: [
       new Paragraph({
-        alignment: AlignmentType.CENTER,
+        alignment,
         spacing: { before: 0, after: 0 },
         children,
       }),
@@ -1852,6 +1903,8 @@ async function assembleDocx({
   art,
   footerLeft,
   runningHeader,
+  fontFamilyOverride,
+  headerAlignment = AlignmentType.CENTER,
   coverDark,
   onStatus,
 }: {
@@ -1870,16 +1923,23 @@ async function assembleDocx({
   art: { cover?: Uint8Array; wash?: Uint8Array };
   footerLeft: string;
   runningHeader: string | null;
+  fontFamilyOverride?: string;
+  headerAlignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
   /** true when page one carries the dark/light themed cover art */
   coverDark: boolean;
   onStatus?: (message: string) => void;
 }): Promise<Blob> {
   const dims = getPaperDims(options.paper, options.orientation);
   const contentWidth = px(dims.width - PRINT_MARGIN_PX * 2);
-  const fontFamily = options.typeface === "serif" ? "Georgia" : "Calibri";
-  const fontSizes = { small: 18, normal: 20, large: 22 } as const;
+  const bodyFontSizeHalfPoints = DOCX_FONT_SIZE_HALF_POINTS[options.fontScale];
+  const fontFamily = fontFamilyOverride ?? (options.typeface === "serif" ? "Georgia" : "Calibri");
   const lineSpacing = { compact: 280, normal: 320, relaxed: 360 } as const;
-  const headingSizes = { 1: 36, 2: 28, 3: 24, 4: 20 } as const;
+  const headingSizes = {
+    1: Math.round(bodyFontSizeHalfPoints * 1.8),
+    2: Math.round(bodyFontSizeHalfPoints * 1.4),
+    3: Math.round(bodyFontSizeHalfPoints * 1.2),
+    4: bodyFontSizeHalfPoints,
+  };
 
   const headingStyle = (level: 1 | 2 | 3 | 4) => ({
     id: `Heading${level}`,
@@ -1889,7 +1949,7 @@ async function assembleDocx({
     quickFormat: true,
     run: {
       font: fontFamily,
-      size: headingSizes[level] * 2, // docx uses half-points
+      size: headingSizes[level],
       bold: true,
       color: design.ink,
     },
@@ -1911,11 +1971,43 @@ async function assembleDocx({
     },
   });
 
-  const bodyHeader = pageHeader(art.wash, dims, runningHeader, design.muted);
-  const bodyFooter = pageFooter(options.footerStyle, footerLeft, design.muted, contentWidth);
-  const coverHeader = coverDark ? pageHeader(art.cover, dims, null, design.cover.muted) : undefined;
+  const bodyHeader = pageHeader(
+    art.wash,
+    dims,
+    runningHeader,
+    design.muted,
+    bodyFontSizeHalfPoints,
+    fontFamily,
+    headerAlignment,
+  );
+  const bodyFooter = pageFooter(
+    options.footerStyle,
+    footerLeft,
+    design.muted,
+    contentWidth,
+    bodyFontSizeHalfPoints,
+    fontFamily,
+  );
+  const coverHeader = coverDark
+    ? pageHeader(
+        art.cover,
+        dims,
+        null,
+        design.cover.muted,
+        bodyFontSizeHalfPoints,
+        fontFamily,
+        headerAlignment,
+      )
+    : undefined;
   const coverFooter = coverDark
-    ? pageFooter(options.footerStyle, footerLeft, design.cover.muted, contentWidth)
+    ? pageFooter(
+        options.footerStyle,
+        footerLeft,
+        design.cover.muted,
+        contentWidth,
+        bodyFontSizeHalfPoints,
+        fontFamily,
+      )
     : undefined;
 
   const docxDocument = new Document({
@@ -1926,12 +2018,12 @@ async function assembleDocx({
     styles: {
       default: {
         document: {
-          run: { font: fontFamily, size: fontSizes[options.fontScale] * 2, color: design.ink },
-          paragraph: { 
-            spacing: { 
+          run: { font: fontFamily, size: bodyFontSizeHalfPoints, color: design.ink },
+          paragraph: {
+            spacing: {
               line: lineSpacing[options.spacing],
               lineRule: "auto",
-            } 
+            },
           },
         },
       },

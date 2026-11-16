@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SrsRing } from "@/components/srs/srs-ring";
 import { MathText } from "@/components/math/math-text";
+import { QuestionRationales } from "@/components/questions/question-rationales";
 import { LabelChips, LabelPickerDialog } from "@/components/binder/label-picker";
 import { TYPE_LABELS } from "@/lib/answers";
 import { cardStage, deckSrs, formatDue, formatInterval, STAGE_META } from "@/lib/srs";
@@ -388,32 +389,13 @@ function DeckDetail() {
               <p className="mt-3 break-words font-medium">
                 <MathText text={q.question} />
               </p>
-              {q.options && (
-                <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
-                  {q.options.map((o) => (
-                    <li
-                      key={o}
-                      className={cn(
-                        "break-words rounded-md border border-border px-3 py-1.5 text-xs",
-                        o === q.answer && "border-success/60 text-success",
-                      )}
-                    >
-                      <MathText text={o} />
-                    </li>
-                  ))}
-                </ul>
-              )}
               <p className="mt-3 text-sm">
                 <span className="text-muted-foreground">Answer: </span>
                 <span className="text-success">
                   <MathText text={q.answer} />
                 </span>
               </p>
-              {q.explanation && (
-                <p className="mt-2 text-xs text-muted-foreground">
-                  <MathText text={q.explanation} />
-                </p>
-              )}
+              <QuestionRationales question={q} />
               {deck.notes[q.id] && (
                 <p className="mt-2 rounded-md bg-surface-2/60 px-3 py-2 text-xs">
                   <span className="text-muted-foreground">Your note: </span>

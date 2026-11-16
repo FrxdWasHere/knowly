@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { checkAnswer, dayKey, formatDuration, shuffleArray, similarity } from "./answers";
+import {
+  checkAnswer,
+  dayKey,
+  formatDuration,
+  questionFeedbackExplanation,
+  questionOptionExplanation,
+  shuffleArray,
+  similarity,
+} from "./answers";
 import type { Question } from "./types";
 
 const make = (over: Partial<Question>): Question => ({
@@ -67,6 +75,42 @@ describe("checkAnswer", () => {
     const q = make({ type: "ordering", items: ["a", "b", "c"], answer: "a | b | c" });
     expect(checkAnswer(q, "a | b | c")).toBe(true);
     expect(checkAnswer(q, "c | b | a")).toBe(false);
+  });
+});
+
+describe("question feedback explanations", () => {
+  it("uses the matching rationale for each multiple-choice option", () => {
+    const q = make({
+      type: "multiple-choice",
+      answer: "Correct",
+      options: ["Correct", "Common misconception"],
+      tutor: {
+        whyCorrect: "This choice follows the evidence.",
+        whyWrong: [{ option: "Common misconception", why: "It confuses cause and effect." }],
+      },
+    });
+
+    expect(questionFeedbackExplanation(q, "Correct", true)).toBe(
+      "This choice follows the evidence.",
+    );
+    expect(questionFeedbackExplanation(q, "common misconception", false)).toBe(
+      "It confuses cause and effect.",
+    );
+    expect(questionOptionExplanation(q, "Correct")).toBe("This choice follows the evidence.");
+  });
+
+  it("selects the correct or misconception explanation for a single-answer response", () => {
+    const q = make({
+      explanation: "The answer follows from the definition.",
+      incorrectExplanation: "A common mistake is to confuse the two related terms.",
+    });
+
+    expect(questionFeedbackExplanation(q, "answer", true)).toBe(
+      "The answer follows from the definition.",
+    );
+    expect(questionFeedbackExplanation(q, "wrong", false)).toBe(
+      "A common mistake is to confuse the two related terms.",
+    );
   });
 });
 

@@ -1,9 +1,10 @@
 import {
   EXAM_FONTS,
-  LETTERS,
   EXAM_THEMES,
   EXAM_PALETTES,
   THEME_PALETTES,
+  examOptionLabel,
+  examQuestionLabel,
   printableAnswer,
   type ExamOptions,
   type QuestionEdit,
@@ -96,17 +97,6 @@ function Editable({
   );
 }
 
-function letter(i: number, options: ExamOptions) {
-  const l = LETTERS[i] ?? String(i + 1);
-  return options.optionCase === "lower" ? l.toLowerCase() : l;
-}
-
-function numberLabel(i: number, options: ExamOptions) {
-  if (options.numberStyle === "q") return `Q${i + 1}.`;
-  if (options.numberStyle === "paren") return `(${i + 1})`;
-  return `${i + 1}.`;
-}
-
 function QuestionBody({
   q,
   options,
@@ -124,12 +114,12 @@ function QuestionBody({
         <ol className="mt-2 space-y-1.5">
           {(q.options ?? []).map((opt, i) => (
             <li key={`${opt}-${i}`} className="flex gap-2">
-              <span className="font-semibold">{letter(i, options)}.</span>
+              <span className="font-semibold">{examOptionLabel(i, options.optionCase)}.</span>
               <Editable
                 value={opt}
                 enabled={editing}
                 onCommit={onEditOption ? (v) => onEditOption(i, v) : undefined}
-                placeholder={`Option ${letter(i, options)}`}
+                placeholder={`Option ${examOptionLabel(i, options.optionCase)}`}
                 math
               />
             </li>
@@ -174,7 +164,8 @@ function QuestionBody({
           <ol className="space-y-1.5">
             {rights.map((r, i) => (
               <li key={`${r}-${i}`}>
-                <span className="font-semibold">{letter(i, options)}.</span> <MathText text={r} />
+                <span className="font-semibold">{examOptionLabel(i, options.optionCase)}.</span>{" "}
+                <MathText text={r} />
               </li>
             ))}
           </ol>
@@ -384,7 +375,7 @@ export function ExamPaper({
                   themed && "text-[var(--exam-accent)]",
                 )}
               >
-                {numberLabel(i, options)}
+                {examQuestionLabel(i, options.numberStyle)}
               </span>
               <div className="min-w-0 flex-1">
                 <p className="exam-question-prompt font-medium">
@@ -450,7 +441,7 @@ export function ExamPaper({
           <ol className="mt-3 space-y-2 text-[0.85em]">
             {questions.map((q, i) => (
               <li key={q.id} className="break-inside-avoid">
-                <span className="font-bold">{numberLabel(i, options)}</span>{" "}
+                <span className="font-bold">{examQuestionLabel(i, options.numberStyle)}</span>{" "}
                 <MathText text={printableAnswer(q)} />
                 {q.explanation && (
                   <span className="italic">

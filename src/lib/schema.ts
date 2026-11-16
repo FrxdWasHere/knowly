@@ -32,6 +32,7 @@ export const questionSchema = z.object({
     .transform((v) => (v === undefined ? undefined : String(v))),
   options: z.array(z.string()).optional(),
   explanation: z.string().optional(),
+  incorrectExplanation: z.string().optional(),
   difficulty: z.enum(["easy", "medium", "hard"]).default("medium"),
   concept: z.string().optional(),
   hint: z.string().optional(),
@@ -43,6 +44,7 @@ export const questionSchema = z.object({
   tutor: z
     .object({
       simple: z.string().optional(),
+      whyCorrect: z.string().optional(),
       mnemonic: z.string().optional(),
       example: z.string().optional(),
       whyWrong: z.array(z.object({ option: z.string().min(1), why: z.string().min(1) })).optional(),
@@ -69,11 +71,37 @@ function buildQuestion(
       } else if (!q.options.includes(answer)) {
         errors.push(`questions[${i}]: the correct answer isn't one of the options you listed.`);
       }
+      if (!q.tutor?.whyCorrect?.trim()) {
+        warnings.push(
+          `questions[${i}]: multiple-choice questions should explain why the correct option is right.`,
+        );
+      }
+      const wrongOptions = (q.options ?? []).filter((option) => option !== answer);
+      const missingReasons = wrongOptions.filter(
+        (option) =>
+          !q.tutor?.whyWrong?.some((entry) => entry.option === option && entry.why.trim()),
+      );
+      if (missingReasons.length) {
+        warnings.push(
+          `questions[${i}]: add a tutor.whyWrong explanation for every incorrect option.`,
+        );
+      }
       break;
     }
     case "true-false": {
       if (!["true", "false"].includes(answer.toLowerCase())) {
         errors.push(`questions[${i}]: a true/false answer must be exactly "true" or "false".`);
+      }
+      if (!q.tutor?.whyCorrect?.trim()) {
+        warnings.push(
+          `questions[${i}]: true/false questions should explain why the correct option is right.`,
+        );
+      }
+      const wrongOption = answer.toLowerCase() === "true" ? "false" : "true";
+      if (!q.tutor?.whyWrong?.some((entry) => entry.option.toLowerCase() === wrongOption)) {
+        warnings.push(
+          `questions[${i}]: add a tutor.whyWrong explanation for the incorrect true/false option.`,
+        );
       }
       break;
     }
@@ -132,6 +160,13 @@ function buildQuestion(
   if (!answer && q.type !== "ordering" && q.type !== "matching" && q.type !== "word-bank") {
     errors.push(`questions[${i}]: this ${q.type} question is missing its correct answer.`);
   }
+  if (q.type !== "multiple-choice" && q.type !== "true-false") {
+    if (!q.incorrectExplanation?.trim()) {
+      warnings.push(
+        `questions[${i}]: add an incorrectExplanation describing common mistakes or misconceptions.`,
+      );
+    }
+  }
 
   const built: Question = {
     id,
@@ -140,6 +175,7 @@ function buildQuestion(
     answer,
     options: q.options,
     explanation: q.explanation,
+    incorrectExplanation: q.incorrectExplanation,
     difficulty: q.difficulty,
     concept: q.concept,
     hint: q.hint,
@@ -257,6 +293,7 @@ export const SAMPLE_DECK_JSON = `{
       "hint": "The name describes proteins drifting in a sea of lipid.",
       "tutor": {
         "simple": "The membrane is not a wall. It is a moving soup of fat with protein chunks floating around in it, so it can bend, seal and let things through.",
+        "whyCorrect": "The fluid mosaic model explains both the flexible lipid bilayer and the proteins that move within it.",
         "mnemonic": "MOSAIC = Molecules On the Surface And Inside Constantly — the pieces are always shuffling.",
         "example": "Think of oil and water in a jar that never fully settles: the oil slides around, and little protein droplets travel through it.",
         "whyWrong": [
@@ -286,6 +323,7 @@ export const SAMPLE_DECK_JSON = `{
       "hint": "The word 'facilitated' means helped, not powered.",
       "tutor": {
         "simple": "Facilitated diffusion means a channel protein helps a molecule cross the membrane, but the molecule still goes downhill — following the concentration gradient. No energy is paid.",
+        "whyCorrect": "Facilitated diffusion follows the concentration gradient, so it does not spend ATP.",
         "mnemonic": "Facilitated = helped by a channel. Diffusion = still goes downhill. No ATP paid.",
         "example": "Glucose entering a red blood cell through GLUT1 is facilitated diffusion: the channel helps it cross, but glucose flows from high concentration outside the cell to low concentration inside.",
         "whyWrong": [
@@ -302,6 +340,7 @@ export const SAMPLE_DECK_JSON = `{
       "question": "The sodium-potassium pump moves ___ sodium ions out per cycle.",
       "answer": "3",
       "explanation": "3 Na+ out, 2 K+ in, per ATP hydrolysed.",
+      "incorrectExplanation": "A common mistake is reversing the 3:2 ratio or assuming the same number of each ion moves. The pump exports three sodium ions and imports two potassium ions per ATP.",
       "difficulty": "medium",
       "concept": "Active transport",
       "hint": "Think about why it is called the sodium-potassium pump: how many sodiums versus how many potassiums?",
@@ -318,6 +357,7 @@ export const SAMPLE_DECK_JSON = `{
       "question": "Define osmosis in one sentence.",
       "answer": "The movement of water across a semipermeable membrane from low to high solute concentration.",
       "explanation": "Water follows the solute gradient.",
+      "incorrectExplanation": "A common misconception is that water moves toward the lower solute concentration. It moves toward the side with more solute, where water concentration is lower.",
       "difficulty": "medium",
       "concept": "Osmosis",
       "tutor": {
@@ -340,6 +380,7 @@ export const SAMPLE_DECK_JSON = `{
         "whyWrong": []
       },
       "explanation": "Hypertonic solutions have more dissolved particles outside the cell than inside, causing water to move out by osmosis.",
+      "incorrectExplanation": "A common mix-up is reversing hypertonic and hypotonic. Hypertonic means more solute outside the cell, so water leaves the cell.",
       "tags": ["tonicity", "osmosis"]
     },
     {
@@ -353,6 +394,7 @@ export const SAMPLE_DECK_JSON = `{
         "The pump returns to its original shape, releasing K+ inside"
       ],
       "explanation": "Each conformational change is driven by phosphorylation then dephosphorylation.",
+      "incorrectExplanation": "A common mistake is placing potassium binding before sodium is released. The pump first binds and exports sodium, then binds potassium and resets.",
       "difficulty": "hard",
       "concept": "Active transport",
       "hint": "ATP binding and hydrolysis cause the shape changes; potassium comes in after sodium goes out.",
@@ -376,6 +418,7 @@ export const SAMPLE_DECK_JSON = `{
       "difficulty": "medium",
       "concept": "Transport mechanisms",
       "explanation": "Each mechanism has a distinct energy requirement and purpose.",
+      "incorrectExplanation": "A common mistake is treating all transport as passive. Active transport spends energy to move substances against a gradient, while osmosis and facilitated diffusion follow gradients.",
       "hint": "Two are passive, one uses ATP, one uses vesicles. Look for keywords like 'water', 'protein', 'ATP', 'vesicle'.",
       "tutor": {
         "simple": "Osmosis is water following salt. Facilitated diffusion is molecules following their gradient through a channel (passive, no energy). Active transport is molecules being pushed against their gradient (costs ATP). Endocytosis is a vesicle engulfing material (also costs ATP).",
@@ -391,6 +434,7 @@ export const SAMPLE_DECK_JSON = `{
       "blanks": ["hypotonic", "hypertonic"],
       "wordBank": ["hypotonic", "hypertonic", "isotonic", "amphipathic"],
       "explanation": "Water always moves toward the higher solute concentration.",
+      "incorrectExplanation": "A common misconception is that water moves away from solute. Water moves toward the higher solute concentration, so the cell swells in hypotonic solution and shrinks in hypertonic solution.",
       "difficulty": "medium",
       "concept": "Tonicity",
       "hint": "Hypo- means less salt (cell swells as water enters), hyper- means more salt (cell shrinks as water leaves).",
@@ -459,6 +503,24 @@ export const FIELD_DOCS: { field: string; type: string; required: boolean; note:
     type: "string",
     required: false,
     note: "Shown after answering. Strongly recommended.",
+  },
+  {
+    field: "questions[].incorrectExplanation",
+    type: "string",
+    required: false,
+    note: "Common wrong answers and the misconceptions behind them for single-answer questions.",
+  },
+  {
+    field: "questions[].tutor.whyCorrect",
+    type: "string",
+    required: false,
+    note: "For multiple-choice or true/false, explain why the correct option is right.",
+  },
+  {
+    field: "questions[].tutor.whyWrong",
+    type: "{ option: string; why: string }[]",
+    required: false,
+    note: "One entry per incorrect multiple-choice or true/false option.",
   },
   {
     field: "questions[].difficulty",
@@ -559,6 +621,7 @@ export const SAMPLE_QUESTIONS_JSON = `{
       "hint": "Channels let ions fall down their gradient; this one spends energy to push back.",
       "tutor": {
         "simple": "A pump is the only transport protein that pays ATP to shove ions the wrong way — uphill, against their gradient.",
+        "whyCorrect": "A pump hydrolyses ATP to move ions against their concentration or electrical gradient.",
         "mnemonic": "Pumps PUSH and PAY.",
         "example": "The sodium-potassium pump spends one ATP to push 3 Na+ out and 2 K+ in, both against their gradients.",
         "whyWrong": [
@@ -583,6 +646,7 @@ export const SAMPLE_QUESTIONS_JSON = `{
       "question": "What drives secondary active transport?",
       "answer": "The electrochemical gradient created by primary active transport.",
       "explanation": "It borrows energy stored in an existing ion gradient.",
+      "incorrectExplanation": "A common misconception is that secondary active transport uses ATP directly. It actually uses the stored energy in an ion gradient created by primary active transport.",
       "difficulty": "hard",
       "concept": "Active transport",
       "hint": "Think about what primary active transport creates that secondary active transport can use.",
@@ -600,6 +664,7 @@ export const SAMPLE_QUESTIONS_JSON = `{
       "blanks": ["hypotonic", "hypertonic"],
       "wordBank": ["hypotonic", "hypertonic", "isotonic", "amphipathic"],
       "explanation": "Water always moves toward the higher solute concentration.",
+      "incorrectExplanation": "A common mistake is to reverse hypotonic and hypertonic. Less solute outside makes water enter and the cell swell; more solute outside makes water leave and the cell shrink.",
       "difficulty": "medium",
       "concept": "Tonicity",
       "hint": "Hypo- means less dissolved particles outside (water enters), hyper- means more (water leaves).",
@@ -665,6 +730,15 @@ export const SAMPLE_COURSE_JSON = `{
               "question": "Which organelle is unique to plant cells?",
               "options": ["Mitochondria", "Chloroplast", "Nucleus", "Ribosome"],
               "answer": "Chloroplast",
+              "explanation": "Chloroplasts capture light energy and carry out photosynthesis.",
+              "tutor": {
+                "whyCorrect": "Chloroplasts contain chlorophyll and are the site of photosynthesis in plant cells.",
+                "whyWrong": [
+                  { "option": "Mitochondria", "why": "Mitochondria are found in both plant and animal cells." },
+                  { "option": "Nucleus", "why": "Both plant and animal cells have a nucleus to hold their DNA." },
+                  { "option": "Ribosome", "why": "Ribosomes make proteins and are present in both plant and animal cells." }
+                ]
+              },
               "difficulty": "easy",
               "concept": "Plant Cell Structure"
             }
@@ -686,6 +760,15 @@ export const SAMPLE_COURSE_JSON = `{
         "question": "What is the primary function of chloroplasts?",
         "options": ["Energy production", "Photosynthesis", "Protein synthesis", "Water storage"],
         "answer": "Photosynthesis",
+        "explanation": "Chloroplasts convert light energy into chemical energy during photosynthesis.",
+        "tutor": {
+          "whyCorrect": "Chloroplasts contain chlorophyll and the membrane systems that carry out photosynthesis.",
+          "whyWrong": [
+            { "option": "Energy production", "why": "This is too broad; chloroplasts specifically capture light to build sugars." },
+            { "option": "Protein synthesis", "why": "Ribosomes assemble proteins; that is not the chloroplast's primary role." },
+            { "option": "Water storage", "why": "The large central vacuole stores water in plant cells." }
+          ]
+        },
         "difficulty": "medium",
         "concept": "Photosynthesis"
       }
@@ -740,6 +823,15 @@ export const SAMPLE_MODULE_JSON = `{
       "question": "Where do the light-dependent reactions occur?",
       "options": ["Stroma", "Thylakoid membrane", "Grana", "Chloroplast matrix"],
       "answer": "Thylakoid membrane",
+      "explanation": "The light-dependent reactions take place in the thylakoid membranes.",
+      "tutor": {
+        "whyCorrect": "Chlorophyll and the electron transport chain are embedded in thylakoid membranes.",
+        "whyWrong": [
+          { "option": "Stroma", "why": "The stroma is where the Calvin cycle takes place." },
+          { "option": "Grana", "why": "Grana are stacks of thylakoids, not the membrane location itself." },
+          { "option": "Chloroplast matrix", "why": "Chloroplasts have stroma rather than a matrix; the reactions occur in thylakoid membranes." }
+        ]
+      },
       "difficulty": "medium",
       "concept": "Light-Dependent Reactions"
     },
@@ -748,6 +840,8 @@ export const SAMPLE_MODULE_JSON = `{
       "type": "short-answer",
       "question": "What are the two products of the light-dependent reactions?",
       "answer": "ATP and NADPH",
+      "explanation": "The light reactions produce ATP and NADPH to power the Calvin cycle.",
+      "incorrectExplanation": "A common mistake is including oxygen as an energy carrier. Oxygen is released as a by-product, while ATP and NADPH carry energy to the Calvin cycle.",
       "difficulty": "medium",
       "concept": "Light-Dependent Reactions"
     }

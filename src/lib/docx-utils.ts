@@ -3,7 +3,7 @@
  * Extracted to eliminate duplication between course-docx.ts and exam-docx.ts
  */
 
-import { ShadingType, TextRun, type ITextStyleOptions } from "docx";
+import { ShadingType, TextRun, type IBorderOptions, type IRunOptions } from "docx";
 
 const GRAY_LIGHT = "94A3B8";
 
@@ -124,7 +124,7 @@ export interface Shading {
 }
 
 export interface BorderLeft {
-  left: { style: string; size: number; color: string; space: number };
+  left: IBorderOptions;
 }
 
 /**
@@ -133,7 +133,7 @@ export interface BorderLeft {
  */
 export function styledRun(
   text: string,
-  options: ITextStyleOptions = {},
+  options: Omit<IRunOptions, "text" | "children" | "break"> = {},
 ): TextRun {
   return new TextRun({
     text,

@@ -279,6 +279,7 @@ export const SAMPLE_MODULE_JSON = `{
       "question": "Which gas do plants release during photosynthesis?",
       "answer": "Oxygen",
       "explanation": "Oxygen is split out of water molecules when light energy breaks them apart during the light reactions.",
+      "incorrectExplanation": "A common misconception is that plants release carbon dioxide during photosynthesis. Carbon dioxide is consumed to build sugars; oxygen is released when water is split in the light reactions.",
       "difficulty": "easy",
       "concept": "Light reactions",
       "hint": "It is the gas animals need to breathe in.",
@@ -301,6 +302,7 @@ export const SAMPLE_MODULE_JSON = `{
       "hint": "Think about the word: CHLOROphyll in the CHLOROnoplast.",
       "tutor": {
         "simple": "Chloroplasts are the green factories in a leaf cell. They hold chlorophyll, which catches sunlight and starts photosynthesis.",
+        "whyCorrect": "Chloroplasts contain chlorophyll and the structures where the photosynthesis reactions take place.",
         "mnemonic": "CHLOROphyll lives in the CHLOROplast — same CHLORO, same job.",
         "example": "A spinach leaf looks green because you are seeing millions of chloroplasts reflecting green light they cannot absorb.",
         "whyWrong": [
@@ -330,8 +332,15 @@ export const SAMPLE_MODULE_JSON = `{
       "hint": "What do the light reactions create that the Calvin cycle can use?",
       "tutor": {
         "simple": "The light reactions happen in the day and make ATP and NADPH. The Calvin cycle uses these energy carriers to make glucose. In darkness the light reactions stop, but a little glucose can still be made if there is enough stored ATP and NADPH.",
+        "whyCorrect": "The light reactions need light directly, but the Calvin cycle can briefly continue using stored ATP and NADPH.",
         "mnemonic": "Light reactions = the day shift. Calvin cycle = works on whatever the day shift made.",
-        "example": "If you put a plant in the dark right after bright sunlight, it will still make a tiny bit more glucose from the ATP and NADPH left over."
+        "example": "If you put a plant in the dark right after bright sunlight, it will still make a tiny bit more glucose from the ATP and NADPH left over.",
+        "whyWrong": [
+          {
+            "option": "true",
+            "why": "The Calvin cycle does not require light directly; it can use ATP and NADPH made earlier by the light reactions."
+          }
+        ]
       }
     },
     {
@@ -339,6 +348,7 @@ export const SAMPLE_MODULE_JSON = `{
       "question": "The energy carriers made in the light reactions are ___ and ___.",
       "answer": "ATP and NADPH",
       "explanation": "Both are produced when light hits chlorophyll and water is split. They fuel the Calvin cycle.",
+      "incorrectExplanation": "A common mistake is naming oxygen as an energy carrier. Oxygen is released as a by-product; ATP and NADPH carry energy and electrons to the Calvin cycle.",
       "difficulty": "medium",
       "concept": "Light reactions",
       "hint": "One is a nucleotide, the other is a coenzyme.",
@@ -359,6 +369,7 @@ export const SAMPLE_MODULE_JSON = `{
         "Carbon dioxide is fixed and glucose is made"
       ],
       "explanation": "Light reactions (steps 1–3) must happen first to power the Calvin cycle (steps 4–5).",
+      "incorrectExplanation": "A common mistake is placing the Calvin cycle before the light reactions. The light reactions make ATP and NADPH, which the Calvin cycle needs to fix carbon dioxide.",
       "difficulty": "hard",
       "concept": "Photosynthesis overview",
       "hint": "Light comes first and must happen before carbon dioxide is used.",
@@ -378,6 +389,7 @@ export const SAMPLE_MODULE_JSON = `{
         { "left": "Glucose", "right": "Sugar product of photosynthesis" }
       ],
       "explanation": "Each structure or molecule has a specific role in photosynthesis.",
+      "incorrectExplanation": "A common mistake is swapping the locations of the two stages: light reactions happen in the thylakoid membranes, while the Calvin cycle occurs in the stroma.",
       "difficulty": "medium",
       "concept": "Photosynthesis structures",
       "hint": "Think about where each reaction happens and what each molecule does.",
@@ -393,6 +405,7 @@ export const SAMPLE_MODULE_JSON = `{
       "blanks": ["water", "ATP", "NADPH", "oxygen"],
       "wordBank": ["water", "ATP", "NADPH", "oxygen", "glucose", "carbon dioxide", "chlorophyll"],
       "explanation": "Water is the source of electrons and protons; ATP and NADPH carry energy forward; oxygen is an unwanted by-product from the perspective of the plant (but essential for us!).",
+      "incorrectExplanation": "A common misconception is that carbon dioxide is split in the light reactions. Water is split to provide electrons and release oxygen; carbon dioxide is fixed later in the Calvin cycle.",
       "difficulty": "medium",
       "concept": "Light reactions",
       "hint": "Water + light → energy carriers + a gas we breathe.",

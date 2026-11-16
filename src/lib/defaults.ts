@@ -71,6 +71,7 @@ export const DEFAULT_QUIZ_CONFIG: QuizConfig = {
   passingScore: 70,
   xpEnabled: true,
   instantFeedback: true,
+  feedbackOnNextQuestion: false,
   bookmarkedOnly: false,
   roundPauses: false,
   questionsPerRound: 10,
@@ -127,6 +128,7 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   xpEnabled: true,
   achievementPopups: true,
+  developerMode: false,
   hiddenWidgets: [],
 };
 

@@ -72,6 +72,19 @@ describe("buildSampleProfile", () => {
     }
   });
 
+  it("demonstrates answer rationales for choices and common single-answer mistakes", () => {
+    const questions = profile.decks.flatMap((deck) => deck.questions);
+    const multipleChoice = questions.find((question) => question.type === "multiple-choice");
+    const singleAnswer = questions.find((question) => question.type === "short-answer");
+
+    expect(multipleChoice?.tutor?.whyCorrect).toBeTruthy();
+    expect(multipleChoice?.options).toBeDefined();
+    expect(multipleChoice?.tutor?.whyWrong?.map(({ option }) => option)).toEqual(
+      multipleChoice?.options?.filter((option) => option !== multipleChoice?.answer),
+    );
+    expect(singleAnswer?.incorrectExplanation).toBeTruthy();
+  });
+
   it("provides a resumable quiz checkpoint with a valid next question", () => {
     const saved = profile.savedQuizSessions[0];
     expect(saved.currentIndex).toBe(saved.answers.length);

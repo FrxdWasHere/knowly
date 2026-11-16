@@ -161,7 +161,10 @@ function normalizeState(parsed: Partial<AppState>): AppState {
     timetable: state.timetable ?? [],
     labels: state.labels ?? [],
     papers: state.papers ?? [],
-    savedQuizSessions: state.savedQuizSessions ?? [],
+    savedQuizSessions: (state.savedQuizSessions ?? []).map((session) => ({
+      ...session,
+      config: { ...DEFAULT_SETTINGS.defaultQuizConfig, ...session.config },
+    })),
     progress: normalizeProgress({ ...DEFAULT_PROGRESS, ...state.progress }),
   };
 }
@@ -336,8 +339,7 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
           saveErrorShown.current = true;
           toast.error("Couldn't save your work — storage unavailable", {
             id: "storage-full",
-            description:
-              "Check your browser's storage quota or try exporting a backup.",
+            description: "Check your browser's storage quota or try exporting a backup.",
           });
         }
       }
@@ -962,7 +964,10 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
         void saveAvatar(dataUrl);
       },
       resetSettings: () => {
-        setState((s) => ({ ...s, settings: DEFAULT_SETTINGS }));
+        setState((s) => ({
+          ...s,
+          settings: { ...DEFAULT_SETTINGS, developerMode: s.settings.developerMode },
+        }));
         void saveWallpaper(null);
         void saveAvatar(null);
       },
@@ -1004,7 +1009,11 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
       deletePaper,
       addPaperSitting,
       resetAll: () => {
-        setState(() => ({ ...DEFAULT_STATE, onboardingComplete: true }));
+        setState((s) => ({
+          ...DEFAULT_STATE,
+          onboardingComplete: true,
+          settings: { ...DEFAULT_SETTINGS, developerMode: s.settings.developerMode },
+        }));
         void saveWallpaper(null);
       },
       exportState: () => JSON.stringify(state, null, 2),
@@ -1013,7 +1022,13 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
           const parsed = JSON.parse(json) as Partial<AppState> | null;
           if (!parsed || typeof parsed !== "object") return false;
           const next = normalizeState(parsed);
-          setState(() => next);
+          setState((current) => ({
+            ...next,
+            settings: {
+              ...next.settings,
+              developerMode: current.settings.developerMode,
+            },
+          }));
           void saveWallpaper(next.settings.wallpaper ?? null);
           return true;
         } catch {

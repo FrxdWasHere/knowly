@@ -1,4 +1,11 @@
-import { resolveThemePalette, type ExamPaletteId, type ExamTheme } from "./exam-print";
+import type { CoursePrintOptions } from "@/components/print/course-paper";
+import {
+  resolveThemePalette,
+  type ExamFont,
+  type ExamOptions,
+  type ExamPaletteId,
+  type ExamTheme,
+} from "./exam-print";
 import { readableAccent } from "./print-colors";
 import { normalizeHex } from "./themes";
 
@@ -47,6 +54,8 @@ export interface DocxPaperDesign {
   rule: string;
   cover: DocxCoverInk;
 }
+
+export const DOCX_FONT_SIZE_HALF_POINTS = { small: 18, normal: 20, large: 22 } as const;
 
 export interface PaperDims {
   width: number;
@@ -263,6 +272,37 @@ export function resolveDocxDesign(input: {
           fill: bare(WHITE),
         }
       : coverInk(theme.id, accent),
+  };
+}
+
+const DOCX_EXAM_FONTS: Record<ExamFont, string> = {
+  default: "Calibri",
+  classic: "Times New Roman",
+  serif: "Georgia",
+  sans: "Arial",
+  rounded: "Trebuchet MS",
+  mono: "Courier New",
+  handwritten: "Comic Sans MS",
+};
+
+/** Resolve the quiz's visible paper settings into Word-compatible values. */
+export function resolveDocxExamAppearance(
+  exam: Pick<ExamOptions, "theme" | "palette" | "printStyle" | "fontFamily" | "fontSize">,
+  defaults: Pick<CoursePrintOptions, "theme" | "palette" | "printStyle">,
+  fallbackAccent?: string,
+): { design: DocxPaperDesign; fontFamily: string; fontSizeHalfPoints: number } {
+  const design = resolveDocxDesign({
+    theme: exam.theme ?? defaults.theme,
+    palette: exam.palette ?? defaults.palette,
+    fallbackAccent,
+    style: exam.printStyle ?? defaults.printStyle,
+  });
+  const fontSizeHalfPoints = DOCX_FONT_SIZE_HALF_POINTS[exam.fontSize];
+
+  return {
+    design,
+    fontFamily: DOCX_EXAM_FONTS[exam.fontFamily],
+    fontSizeHalfPoints,
   };
 }
 
@@ -1896,33 +1936,33 @@ export async function buildDocxPaperArt(
   options: { cover: boolean; wash: boolean },
 ): Promise<{ cover?: Uint8Array; wash?: Uint8Array }> {
   if (design.style === "friendly") return {};
-  
+
   // Render SVGs in parallel instead of sequentially for better performance
   const tasks: Promise<[string, Uint8Array | null]>[] = [];
-  
+
   if (options.wash) {
     tasks.push(
       svgToPng(pageWashSvg(design, dims), dims.width, dims.height, 1.5, WHITE).then(
-        (result) => ["wash", result] as const
-      )
+        (result) => ["wash", result] as const,
+      ),
     );
   }
-  
+
   if (options.cover) {
     tasks.push(
       svgToPng(coverArtSvg(design, dims), dims.width, dims.height, 2).then(
-        (result) => ["cover", result] as const
-      )
+        (result) => ["cover", result] as const,
+      ),
     );
   }
-  
+
   const results = await Promise.all(tasks);
   const art: { cover?: Uint8Array; wash?: Uint8Array } = {};
-  
+
   for (const [key, data] of results) {
     if (data && key === "wash") art.wash = data;
     if (data && key === "cover") art.cover = data;
   }
-  
+
   return art;
 }

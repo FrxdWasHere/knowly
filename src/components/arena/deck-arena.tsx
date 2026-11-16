@@ -15,7 +15,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { checkAnswer, formatDuration, shuffleArray, TYPE_LABELS } from "@/lib/answers";
+import {
+  checkAnswer,
+  formatDuration,
+  questionFeedbackExplanation,
+  shuffleArray,
+  TYPE_LABELS,
+} from "@/lib/answers";
 import { displayAnswer, isInteractive } from "@/lib/interactive";
 import {
   InteractiveQuestion,
@@ -68,6 +74,9 @@ export function DeckArena({ deckId }: { deckId: string }) {
   const floatId = useRef(0);
 
   const question = queue[index];
+  const feedbackExplanation = question
+    ? questionFeedbackExplanation(question, input, Boolean(wasCorrect))
+    : undefined;
   const shuffledOptions = useMemo(
     () => (question?.options ? shuffleArray(question.options) : []),
     [question],
@@ -453,9 +462,9 @@ export function DeckArena({ deckId }: { deckId: string }) {
             >
               {wasCorrect ? "Correct" : `Answer: ${displayAnswer(question)}`}
             </p>
-            {question.explanation && (
+            {feedbackExplanation && (
               <p className="mt-2 text-sm text-muted-foreground">
-                <MathText text={question.explanation} />
+                <MathText text={feedbackExplanation} />
               </p>
             )}
             <Button className="press anim-pop mt-5" onClick={next}>

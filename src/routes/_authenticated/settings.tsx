@@ -16,8 +16,11 @@ import {
   Keyboard,
   Lightbulb,
   ListChecks,
+  KeyRound,
+  PartyPopper,
   RotateCcw,
   ShieldCheck,
+  Sparkles,
   Shuffle,
   SlidersHorizontal,
   Target,
@@ -39,9 +42,20 @@ import { AppPage } from "@/components/app-page";
 import { ThemePicker } from "@/components/theme-picker";
 import { PageHeader } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { AvatarCropDialog } from "@/components/avatar-crop-dialog";
 import { AVATAR_EMOJIS, GRADE_LEVELS, STUDY_REASONS, SUBJECT_SUGGESTIONS } from "@/lib/defaults";
 import { fileToWallpaperDataUrl } from "@/lib/wallpaper";
@@ -53,6 +67,7 @@ import { useKnowly } from "@/store/knowly";
 import { cn } from "@/lib/utils";
 import type { Settings } from "@/lib/types";
 import { DEFAULT_SIDEBAR_GROUPS } from "@/lib/sidebar-preferences";
+import { buildSampleProfile } from "@/lib/sample-profile";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -303,8 +318,16 @@ function Chip({
 /* ------------------------------------------------------------------ */
 
 function SettingsPage() {
-  const { state, updateSettings, setWallpaper, setAvatar, resetSettings, resetAll, exportState, importState } =
-    useKnowly();
+  const {
+    state,
+    updateSettings,
+    setWallpaper,
+    setAvatar,
+    resetSettings,
+    resetAll,
+    exportState,
+    importState,
+  } = useKnowly();
   const s = state.settings;
   const wallpaperUrl = useWallpaperUrl(s.wallpaper);
   const avatarUrl = useAvatarUrl(s.avatarImage);
@@ -315,6 +338,12 @@ function SettingsPage() {
   const [usage, setUsage] = useState<StorageUsage | null>(null);
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [pendingCropImage, setPendingCropImage] = useState<string | null>(null);
+  const [versionTaps, setVersionTaps] = useState(0);
+  const [secretRevealed, setSecretRevealed] = useState(false);
+  const [demoPassAnswer, setDemoPassAnswer] = useState("");
+  const [demoPassSolved, setDemoPassSolved] = useState(false);
+  const [demoPassError, setDemoPassError] = useState(false);
+  const [confirmDemoLoad, setConfirmDemoLoad] = useState(false);
 
   // Re-measure whenever the sizeable parts of the state change.
   useEffect(() => {
@@ -345,6 +374,31 @@ function SettingsPage() {
     a.click();
     URL.revokeObjectURL(url);
     toast.success("Backup downloaded");
+  };
+
+  const answerDemoPassQuestion = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const answer = demoPassAnswer.trim().toLowerCase().replace(/\s+/g, " ");
+    const isCorrect = ["Teagues", "Ms. Teagues", "teagues"].includes(answer);
+    setDemoPassError(!isCorrect);
+    setDemoPassSolved(isCorrect);
+    if (isCorrect) toast.success("Riddle solved! The demo hatch is open.");
+  };
+
+  const replaceWithDemoProfile = () => {
+    const sample = buildSampleProfile();
+    if (!importState(JSON.stringify(sample))) {
+      toast.error("Couldn't load the demo profile");
+      return;
+    }
+    setConfirmDemoLoad(false);
+    setSecretRevealed(false);
+    setDemoPassSolved(false);
+    setDemoPassAnswer("");
+    setVersionTaps(0);
+    toast.success(
+      `Demo profile loaded — ${sample.decks.length} decks, ${sample.courses.length} courses, and ${sample.modules.length} modules ready to explore.`,
+    );
   };
 
   const profileSubtitle =
@@ -1029,22 +1083,104 @@ function SettingsPage() {
           </div>
         </Group>
 
+        {secretRevealed && (
+          <Group title="The Knowledge Attic">
+            <div className="flex gap-3 px-4 py-4">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                <Sparkles className="size-4" aria-hidden="true" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">You found a secret hatch!</p>
+                <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                  A busy little study world is behind this riddle: What's the last name of the best
+                  teacher in Abbott Elementary? Hint: She's the entire reason Abbott is still
+                  standing.
+                </p>
+                {s.developerMode && (
+                  <p className="mt-2 text-xs font-medium text-primary">
+                    Developer mode is permanently enabled on this device.
+                  </p>
+                )}
+                <form
+                  onSubmit={answerDemoPassQuestion}
+                  className="mt-3 flex flex-col gap-2 sm:flex-row"
+                >
+                  <Input
+                    value={demoPassAnswer}
+                    onChange={(event) => {
+                      setDemoPassAnswer(event.target.value);
+                      setDemoPassError(false);
+                    }}
+                    aria-label="Answer to the secret passquestion"
+                    placeholder="Your answer…"
+                    autoComplete="off"
+                    disabled={demoPassSolved}
+                  />
+                  <Button type="submit" disabled={demoPassSolved || !demoPassAnswer.trim()}>
+                    <KeyRound />
+                    Unlock
+                  </Button>
+                </form>
+                {demoPassError && (
+                  <p role="alert" className="mt-2 text-sm text-destructive">
+                    Not quite — the hatch stays locked. Try another answer!
+                  </p>
+                )}
+                {demoPassSolved && (
+                  <div className="mt-3 flex flex-col gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      Correct! The demo-profile portal is yours.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setConfirmDemoLoad(true)}
+                    >
+                      <PartyPopper />
+                      Load demo profile
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Group>
+        )}
+
         <Group title="About">
           <div className="px-4 py-3 space-y-3">
             <div>
               <p className="text-[13px] text-muted-foreground mb-1">Version</p>
-              <p className="text-[15px] font-medium">4.1.0</p>
+              <button
+                type="button"
+                aria-label="Knowly version"
+                onClick={() => {
+                  if (versionTaps >= 6) {
+                    setVersionTaps(0);
+                    setSecretRevealed(true);
+                    if (!s.developerMode) updateSettings({ developerMode: true });
+                    toast.success("Lucky seven! You found a secret hatch.");
+                  } else {
+                    setVersionTaps((count) => count + 1);
+                  }
+                }}
+                className="rounded-sm text-[15px] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+              >
+                4.1.0
+              </button>
             </div>
             <div>
               <p className="text-[13px] text-muted-foreground mb-1">About Knowly</p>
               <p className="text-[13px] leading-5">
-                Knowly is a local-first study workspace designed to make learning personal and effective. All your data stays on your device — no accounts, no cloud syncing, no tracking.
+                Knowly is a local-first study workspace designed to make learning personal and
+                effective. All your data stays on your device — no accounts, no cloud syncing, no
+                tracking.
               </p>
             </div>
             <div>
               <p className="text-[13px] text-muted-foreground mb-1">Made with love</p>
               <p className="text-[13px] leading-5">
-                Made with love by Frederic Liam De Guzman, for the kind students of the School of Our Lady of La Salette. All rights reserved. To God be all the glory!
+                Made with love by Frederic Liam De Guzman, for the kind students of the School of
+                Our Lady of La Salette. All rights reserved. To God be all the glory!
               </p>
             </div>
           </div>
@@ -1056,6 +1192,28 @@ function SettingsPage() {
           </p>
         </div>
       </div>
+
+      <AlertDialog open={confirmDemoLoad} onOpenChange={setConfirmDemoLoad}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Replace your profile with the demo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This replaces all Knowly data on this device with the demo profile, including your
+              decks, courses, settings, progress, and history. This can’t be undone. Export a backup
+              first if you want to keep your current profile.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep my profile</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={replaceWithDemoProfile}
+            >
+              Replace with demo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Avatar crop dialog */}
       <AvatarCropDialog

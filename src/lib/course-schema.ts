@@ -314,6 +314,7 @@ export const SAMPLE_COURSE_JSON = `{
               "hint": "Water is polar — which end of the lipid is polar too?",
               "tutor": {
                 "simple": "A phospholipid has a water-loving head and two water-fearing tails. The heads face the watery inside and outside of the cell; the tails hide in the middle.",
+                "whyCorrect": "The hydrophilic head is polar and interacts with the watery environment, while the hydrophobic tails point inward.",
                 "mnemonic": "Heads shake hands with water, tails run away.",
                 "example": "Drop oil into water: the oil gathers into a ball so its water-fearing parts stay together, exactly like the bilayer's tails.",
                 "whyWrong": [
@@ -338,6 +339,15 @@ export const SAMPLE_COURSE_JSON = `{
               "question": "Membrane proteins are fixed in one position.",
               "answer": "false",
               "explanation": "Many proteins move laterally within the fluid bilayer.",
+              "tutor": {
+                "whyCorrect": "The fluid mosaic model describes proteins moving laterally through the flexible membrane.",
+                "whyWrong": [
+                  {
+                    "option": "true",
+                    "why": "Membrane proteins are not all fixed; many can drift laterally within the fluid lipid bilayer."
+                  }
+                ]
+              },
               "difficulty": "easy",
               "concept": "Membrane structure"
             },
@@ -347,6 +357,7 @@ export const SAMPLE_COURSE_JSON = `{
               "blanks": ["hypotonic", "hypertonic"],
               "wordBank": ["hypotonic", "hypertonic", "isotonic", "amphipathic"],
               "explanation": "Water always moves toward the higher solute concentration.",
+              "incorrectExplanation": "A common mistake is to reverse hypotonic and hypertonic. Less solute outside makes water enter and the cell swell; more solute outside makes water leave and the cell shrink.",
               "difficulty": "medium",
               "concept": "Tonicity"
             }
@@ -370,6 +381,7 @@ export const SAMPLE_COURSE_JSON = `{
               "The pump resets, releasing K+ inside"
             ],
             "explanation": "Each shape change is driven by phosphorylation then dephosphorylation.",
+            "incorrectExplanation": "A common mistake is putting potassium binding before sodium is released. The pump binds and exports sodium first, then binds potassium and resets.",
             "difficulty": "hard",
             "concept": "Active transport"
           }
@@ -392,6 +404,7 @@ export const SAMPLE_COURSE_JSON = `{
           { "left": "Active transport", "right": "Solutes move against a gradient using ATP" }
         ],
         "explanation": "Only active transport spends energy to move solutes uphill.",
+        "incorrectExplanation": "A common mistake is treating all transport as passive. Active transport moves solutes uphill using energy; osmosis and facilitated diffusion follow gradients.",
         "difficulty": "medium",
         "concept": "Transport mechanisms"
       }

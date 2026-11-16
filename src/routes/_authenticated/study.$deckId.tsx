@@ -30,6 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { InteractiveQuestion } from "@/components/questions/interactive-question";
+import { QuestionRationales } from "@/components/questions/question-rationales";
 import { MathKeypad, MathText } from "@/components/math/math-text";
 import { checkAnswer, formatDuration, TYPE_LABELS } from "@/lib/answers";
 import { displayAnswer, isInteractive } from "@/lib/interactive";
@@ -1035,47 +1036,15 @@ function RoundsSession() {
             )}
             {explainOpen && (
               <div className="mt-3 space-y-2 border-t border-border/60 pt-3">
-                {question.explanation ? (
-                  <p className="text-sm text-muted-foreground">
-                    <MathText text={question.explanation} />
-                  </p>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    No explanation is saved for this card yet.
-                  </p>
-                )}
-                {question.options && (
-                  <ul className="mt-2 grid gap-1.5 text-xs">
-                    {question.options.map((option) => {
-                      const why = question.tutor?.whyWrong?.find(
-                        (entry) => entry.option === option,
-                      )?.why;
-                      return (
-                        <li
-                          key={option}
-                          className={cn(
-                            "flex gap-2",
-                            option === question.answer ? "text-success" : "text-muted-foreground",
-                          )}
-                        >
-                          {option === question.answer ? (
-                            <Check className="mt-0.5 size-3.5 shrink-0" />
-                          ) : (
-                            <X className="mt-0.5 size-3.5 shrink-0" />
-                          )}
-                          <span>
-                            <MathText text={option} />
-                            {why && (
-                              <span className="mt-0.5 block opacity-80">
-                                <MathText text={why} />
-                              </span>
-                            )}
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
+                <QuestionRationales question={question} />
+                {!question.explanation &&
+                  !question.incorrectExplanation &&
+                  !question.tutor?.whyCorrect &&
+                  !question.tutor?.whyWrong?.length && (
+                    <p className="text-sm text-muted-foreground">
+                      No explanation is saved for this card yet.
+                    </p>
+                  )}
               </div>
             )}
           </div>
@@ -1195,9 +1164,6 @@ function RoundsSession() {
  */
 function TutorPanel({ question, onClose }: { question: Question; onClose: () => void }) {
   const tutor = question.tutor;
-  const wrong = (tutor?.whyWrong ?? []).filter(
-    (entry) => entry.option !== question.answer && entry.why.trim(),
-  );
 
   return (
     <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-4">
@@ -1214,7 +1180,7 @@ function TutorPanel({ question, onClose }: { question: Question; onClose: () => 
         </button>
       </div>
 
-      {!tutor && !question.explanation && (
+      {!tutor && !question.explanation && !question.incorrectExplanation && (
         <p className="mt-3 text-sm text-muted-foreground">
           This card was written without tutor notes. Add a few in Deck tools and they will appear
           here while you study.
@@ -1250,34 +1216,7 @@ function TutorPanel({ question, onClose }: { question: Question; onClose: () => 
         </div>
       )}
 
-      {wrong.length > 0 && (
-        <div className="mt-3">
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-            Why the others are wrong
-          </p>
-          <ul className="mt-1 grid gap-1.5 text-sm">
-            {wrong.map((entry) => (
-              <li key={entry.option} className="flex gap-2">
-                <X className="mt-0.5 size-3.5 shrink-0 text-destructive" />
-                <span>
-                  <span className="font-medium">
-                    <MathText text={entry.option} />
-                  </span>{" "}
-                  <span className="text-muted-foreground">
-                    <MathText text={entry.why} />
-                  </span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {!tutor && question.explanation && (
-        <p className="mt-3 text-sm text-muted-foreground">
-          <MathText text={question.explanation} />
-        </p>
-      )}
+      <QuestionRationales question={question} />
     </div>
   );
 }

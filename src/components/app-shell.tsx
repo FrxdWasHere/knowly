@@ -67,6 +67,7 @@ import { Logo } from "@/components/brand/logo";
 import { CommandPalette, useCommandPalette } from "@/components/command-palette";
 import { ImportPanel } from "@/components/import-panel";
 import { openImportPanel } from "@/lib/import-panel";
+import { DeveloperDashboard } from "@/components/developer-dashboard";
 
 interface NavItem {
   to: string;
@@ -437,9 +438,7 @@ function NavRow({ item, active, dueCount }: { item: NavItem; active: boolean; du
           <span
             className={cn(
               "mt-0.5 block truncate text-[10px] leading-tight transition-colors",
-              active
-                ? "text-ink/60"
-                : "text-muted-foreground/70 group-hover:text-muted-foreground",
+              active ? "text-ink/60" : "text-muted-foreground/70 group-hover:text-muted-foreground",
             )}
           >
             {item.hint}
@@ -828,6 +827,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         onOpenChange={palette.setOpen}
         targets={navItems.map((item) => ({ to: item.to, label: item.label }))}
       />
+      {state.settings.developerMode && <DeveloperDashboard />}
     </div>
   );
 }

@@ -56,7 +56,7 @@ describe("validateCourseJson", () => {
     expect(result.ok).toBe(true);
     expect(result.course?.modules).toHaveLength(1);
     expect(result.course?.modules[0].lessons).toHaveLength(1);
-    expect(result.course?.modules[0].lessons[0].questions).toHaveLength(2);
+    expect(result.course?.modules[0].lessons[0].questions).toHaveLength(3);
     expect(result.course?.modules[0].lessons[0].questions[0].id).toBeTruthy();
   });
 

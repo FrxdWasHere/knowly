@@ -1,9 +1,8 @@
-import { 
-  SAMPLE_DECK_JSON, 
+import {
+  SAMPLE_DECK_JSON,
   SAMPLE_QUESTIONS_JSON,
   SAMPLE_COURSE_JSON,
   SAMPLE_MODULE_JSON,
-  DECK_SCHEMA_TEXT as DECK_SCHEMA_FROM_SCHEMA,
   COURSE_FIELD_DOCS,
   MODULE_FIELD_DOCS,
 } from "./schema";
@@ -44,6 +43,7 @@ export const QUESTION_SCHEMA_TEXT = `{
   "question": string,                             // required — the prompt the learner sees
   "answer": string,                               // required for flashcard, multiple-choice, true-false, fill-blank and short-answer
   "options": string[],                            // required for multiple-choice only — 2-6 options; "answer" must match one exactly
+  "incorrectExplanation": string,                 // required for single-answer questions — common wrong answers and misconceptions
   "items": string[],                              // required for ordering only — 3-6 steps in the CORRECT order (the app shuffles them)
   "pairs": [{ "left": string, "right": string }], // required for matching only — 3-5 couples, every "right" unique
   "blanks": string[],                             // required for word-bank only — the correct word for each ___ in "question", in order
@@ -54,6 +54,7 @@ export const QUESTION_SCHEMA_TEXT = `{
   "hint": string,                                  // required — one-line nudge that never gives the answer away
   "tutor": {
     "simple": string,                              // required — the idea in plain words, no jargon
+    "whyCorrect": string,                          // required for multiple-choice and true-false — why the correct option is right
     "mnemonic": string,                            // required — a memory hook the learner can recall under pressure
     "example": string,                             // required — one concrete example or analogy
     "whyWrong": [{ "option": string, "why": string }] // required for multiple-choice and true-false only — one entry per incorrect option
@@ -67,9 +68,12 @@ export const QUESTION_SCHEMA_TEXT = `{
  */
 export const TUTOR_RULES = `- Every question carries pre-written tutor notes in "tutor". They stand in for a tutor chat, so they must be useful on their own — the learner reads them mid-session without leaving the quiz.
 - "simple": 1-2 short sentences restating the idea in plain language a beginner understands; no jargon carried over from the question.
+- "incorrectExplanation": for single-answer types, describe common wrong answers and the misconception behind each; explain why the learner's likely reasoning is tempting but wrong. Do not claim to know the learner's personal history.
+- "whyCorrect": for multiple-choice and true-false, explain specifically why the correct option is correct, not just restate it.
 - "mnemonic": one memory hook — acronym, rhyme, image, rhyme or a tiny story. It must be specific to this fact, not generic advice like "review regularly".
 - "example": optional; one concrete case, number or analogy that makes the idea stick.
-- "whyWrong": multiple-choice and true-false questions need one { "option", "why" } entry for EVERY incorrect option. Copy the option text exactly and explain the specific misconception that makes it wrong — never just say "incorrect".`;
+- "whyWrong": multiple-choice and true-false questions need one { "option", "why" } entry for EVERY incorrect option. Copy the option text exactly and explain the specific misconception that makes it wrong — never just say "incorrect".
+- For multiple-choice questions, include both "whyCorrect" and complete "whyWrong" entries so every option has a rationale.`;
 
 /** The full deck object. */
 export const DECK_SCHEMA_TEXT = `{

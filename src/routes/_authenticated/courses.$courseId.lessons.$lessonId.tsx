@@ -29,7 +29,7 @@ import {
   InteractiveQuestion,
   isInteractiveComplete,
 } from "@/components/questions/interactive-question";
-import { checkAnswer, TYPE_LABELS } from "@/lib/answers";
+import { checkAnswer, questionFeedbackExplanation, TYPE_LABELS } from "@/lib/answers";
 import { findLesson, allLessons, lessonProgress } from "@/lib/courses";
 import { createId } from "@/lib/id";
 import { emptyPage, NOTE_COLORS } from "@/lib/notes/types";
@@ -557,6 +557,8 @@ function Checkpoint({
   const [revealed, setRevealed] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const interactive = ["ordering", "matching", "word-bank"].includes(question.type);
+  const feedbackExplanation =
+    result === null ? undefined : questionFeedbackExplanation(question, value, result);
 
   const submit = (given: string, forced?: boolean) => {
     const correct = forced ?? checkAnswer(question, given);
@@ -708,9 +710,9 @@ function Checkpoint({
               <MathText text={question.answer} />
             </span>
           </p>
-          {question.explanation && (
+          {feedbackExplanation && (
             <p className="mt-1 text-muted-foreground">
-              <MathText text={question.explanation} />
+              <MathText text={feedbackExplanation} />
             </p>
           )}
           <Button

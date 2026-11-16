@@ -102,6 +102,24 @@ export function buildSampleProfile(now = Date.now()): AppState {
       options: ["Nucleus", "Mitochondrion", "Ribosome", "Golgi apparatus"],
       explanation:
         "Mitochondria generate most of the cell's ATP through oxidative phosphorylation.",
+      tutor: {
+        whyCorrect:
+          "Mitochondria carry out aerobic respiration, transferring energy from nutrients into ATP the cell can use.",
+        whyWrong: [
+          {
+            option: "Nucleus",
+            why: "The nucleus stores DNA and controls gene expression; it does not produce most cellular ATP.",
+          },
+          {
+            option: "Ribosome",
+            why: "Ribosomes build proteins from mRNA; they do not carry out cellular respiration.",
+          },
+          {
+            option: "Golgi apparatus",
+            why: "The Golgi modifies and ships proteins and lipids, rather than generating ATP.",
+          },
+        ],
+      },
       concept: "Organelles",
       hint: "Think ATP.",
     }),
@@ -118,6 +136,8 @@ export function buildSampleProfile(now = Date.now()): AppState {
       question: "Name the jelly-like substance that fills the cell and suspends the organelles.",
       answer: "Cytoplasm",
       explanation: "The cytoplasm also contains the cytoskeleton and dissolved solutes.",
+      incorrectExplanation:
+        "A common mix-up is calling the cytoplasm just the cytosol. Cytoplasm includes the cytosol and the structures suspended in it, but not the nucleus.",
       concept: "Cell structure",
       hint: "Starts with C.",
     }),
@@ -159,6 +179,24 @@ export function buildSampleProfile(now = Date.now()): AppState {
       question: "Which structure modifies, packages and ships proteins out of the cell?",
       answer: "Golgi apparatus",
       options: ["Golgi apparatus", "Lysosome", "Nucleolus", "Vacuole"],
+      tutor: {
+        whyCorrect:
+          "The Golgi modifies, sorts and packages proteins into vesicles for delivery to their destinations.",
+        whyWrong: [
+          {
+            option: "Lysosome",
+            why: "Lysosomes digest materials; they do not sort and ship proteins out of the cell.",
+          },
+          {
+            option: "Nucleolus",
+            why: "The nucleolus assembles ribosome components inside the nucleus.",
+          },
+          {
+            option: "Vacuole",
+            why: "Vacuoles mainly store water and other substances, rather than package proteins for export.",
+          },
+        ],
+      },
       concept: "Endomembrane system",
     }),
     bio("q-bio-09", {
@@ -2297,6 +2335,7 @@ export function buildSampleProfile(now = Date.now()): AppState {
       passingScore: 70,
       xpEnabled: true,
       instantFeedback: false,
+      feedbackOnNextQuestion: false,
       bookmarkedOnly: false,
       roundPauses: false,
       questionsPerRound: 10,
@@ -2402,6 +2441,7 @@ export function buildSampleProfile(now = Date.now()): AppState {
     passingScore: 70,
     xpEnabled: true,
     instantFeedback: false,
+    feedbackOnNextQuestion: false,
     bookmarkedOnly: false,
     roundPauses: false,
     questionsPerRound: 10,
@@ -2727,6 +2767,7 @@ export function buildSampleProfile(now = Date.now()): AppState {
     dailyGoal: 30,
     theme: "light",
     sidebarCollapsed: false,
+    developerMode: false,
     hiddenWidgets: [],
   };
 

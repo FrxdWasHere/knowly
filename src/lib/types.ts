@@ -22,6 +22,8 @@ export interface MatchPair {
 export interface TutorNotes {
   /** the idea in plain words, as if explaining to a beginner */
   simple?: string;
+  /** why the correct multiple-choice or true/false option is right */
+  whyCorrect?: string;
   /** a memory hook: acronym, rhyme, image or story */
   mnemonic?: string;
   /** a tiny concrete example or analogy */
@@ -37,6 +39,8 @@ export interface Question {
   answer: string;
   options?: string[];
   explanation?: string;
+  /** common incorrect answers and the misconceptions behind them */
+  incorrectExplanation?: string;
   difficulty: Difficulty;
   concept?: string;
   hint?: string;
@@ -259,6 +263,7 @@ export interface QuizConfig {
   passingScore: number;
   xpEnabled: boolean;
   instantFeedback: boolean;
+  feedbackOnNextQuestion: boolean;
   /** only use questions bookmarked in their deck */
   bookmarkedOnly: boolean;
   /** Enable round pauses after N questions */
@@ -422,6 +427,8 @@ export interface Settings {
   // gamification
   xpEnabled: boolean;
   achievementPopups: boolean;
+  /** One-way local unlock for the developer dashboard. */
+  developerMode: boolean;
   // dashboard
   hiddenWidgets: string[];
 }

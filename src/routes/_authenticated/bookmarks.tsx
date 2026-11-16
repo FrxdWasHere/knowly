@@ -4,6 +4,7 @@ import { Bookmark, ChevronDown, NotebookPen, Star, X } from "lucide-react";
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
 import { MathText } from "@/components/math/math-text";
+import { QuestionRationales } from "@/components/questions/question-rationales";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useKnowly } from "@/store/knowly";
@@ -226,11 +227,7 @@ function BookmarksPage() {
                     <p className="mt-1 text-sm">
                       <MathText text={displayAnswer(q)} />
                     </p>
-                    {q.explanation && (
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        <MathText text={q.explanation} />
-                      </p>
-                    )}
+                    <QuestionRationales question={q} />
                     <div className="mt-4">
                       <p className="text-xs uppercase tracking-wide text-muted-foreground">
                         Your note

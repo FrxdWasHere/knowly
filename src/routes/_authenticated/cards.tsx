@@ -4,6 +4,7 @@ import { Bookmark, ChevronDown, Search, Table2 } from "lucide-react";
 import { AppPage } from "@/components/app-page";
 import { PageHeader } from "@/components/app-shell";
 import { MathText } from "@/components/math/math-text";
+import { QuestionRationales } from "@/components/questions/question-rationales";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -345,27 +346,7 @@ function CardBrowserPage() {
                     <p className="mt-1 text-sm">
                       <MathText text={displayAnswer(q)} />
                     </p>
-                    {q.explanation && (
-                      <>
-                        <p className="mt-3 text-xs uppercase tracking-wide text-muted-foreground">
-                          Explanation
-                        </p>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          <MathText text={q.explanation} />
-                        </p>
-                      </>
-                    )}
-                    {q.options && (
-                      <p className="mt-3 text-xs text-muted-foreground">
-                        Options:{" "}
-                        {q.options.map((opt, i) => (
-                          <span key={`${opt}-${i}`}>
-                            {i > 0 && " · "}
-                            <MathText text={opt} />
-                          </span>
-                        ))}
-                      </p>
-                    )}
+                    <QuestionRationales question={q} />
                     <div className="mt-4 flex gap-2">
                       <Link
                         to="/decks/$deckId"

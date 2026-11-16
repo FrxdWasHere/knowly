@@ -10,6 +10,8 @@ import {
   ArrowRight,
   Settings2,
   Trash2,
+  Check,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +29,12 @@ import {
 import { MathKeypad, MathText } from "@/components/math/math-text";
 import { useKnowly } from "@/store/knowly";
 import { useCoarsePointer } from "@/hooks/use-mobile";
-import { checkAnswer, shuffleArray, TYPE_LABELS } from "@/lib/answers";
+import {
+  checkAnswer,
+  questionFeedbackExplanation,
+  shuffleArray,
+  TYPE_LABELS,
+} from "@/lib/answers";
 import { displayAnswer, isInteractive } from "@/lib/interactive";
 import { xpForAnswer, comboMultiplier } from "@/lib/gamification";
 import { questionTypes } from "@/lib/schema";
@@ -49,6 +56,13 @@ import type {
 
 type Phase = "setup" | "running" | "report";
 
+type QuizFeedback = {
+  question: Question;
+  correct: boolean;
+  skipped: boolean;
+  given?: string;
+};
+
 export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
   const { state, updateSettings, recordSession, saveQuizSession, deleteSavedQuizSession } =
     useKnowly();
@@ -69,6 +83,7 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
           passingScore: 60,
           xpEnabled: true,
           instantFeedback: false,
+          feedbackOnNextQuestion: false,
           bookmarkedOnly: false,
           roundPauses: false,
           questionsPerRound: 10,
@@ -204,7 +219,7 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
             deckTitles,
           });
           setResumeSession(null);
-          setPhase("setup");
+          navigate({ to: "/decks" });
         }}
         onFinish={(answers, durationMs, bestCombo, xpEarned) => {
           const answered = answers.filter((a) => !a.skipped).length;
@@ -430,7 +445,16 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
           {[
             { key: "unlimited", label: "Unlimited mode", hint: "Use every matching question" },
             { key: "shuffle", label: "Shuffle questions", hint: "Randomize order" },
-            { key: "instantFeedback", label: "Instant feedback", hint: "Reveal after each answer" },
+            {
+              key: "instantFeedback",
+              label: "Instant feedback",
+              hint: "Pause briefly to reveal each answer",
+            },
+            {
+              key: "feedbackOnNextQuestion",
+              label: "Feedback on next question",
+              hint: "Advance immediately; show the result while answering the next question",
+            },
             {
               key: "bookmarkedOnly",
               label: "Bookmarked only",
@@ -438,7 +462,10 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
             },
             { key: "xpEnabled", label: "Award XP", hint: "Earn XP and combos" },
           ]
-            .filter((row) => !exam || row.key !== "instantFeedback")
+            .filter(
+              (row) =>
+                !exam || (row.key !== "instantFeedback" && row.key !== "feedbackOnNextQuestion"),
+            )
             .map((row) => (
               <div key={row.key} className="flex items-center justify-between gap-4">
                 <div>
@@ -447,7 +474,23 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
                 </div>
                 <Switch
                   checked={config[row.key as keyof QuizConfig] as boolean}
-                  onCheckedChange={(v) => toggle(row.key as keyof QuizConfig, v as never)}
+                  onCheckedChange={(v) => {
+                    if (v && row.key === "instantFeedback") {
+                      setConfig((current) => ({
+                        ...current,
+                        instantFeedback: true,
+                        feedbackOnNextQuestion: false,
+                      }));
+                    } else if (v && row.key === "feedbackOnNextQuestion") {
+                      setConfig((current) => ({
+                        ...current,
+                        instantFeedback: false,
+                        feedbackOnNextQuestion: true,
+                      }));
+                    } else {
+                      toggle(row.key as keyof QuizConfig, v as never);
+                    }
+                  }}
                 />
               </div>
             ))}
@@ -574,6 +617,126 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
   );
 }
 
+function QuizFeedbackPanel({
+  feedback,
+  previousQuestion = false,
+  showExplanation = true,
+}: {
+  feedback: QuizFeedback;
+  previousQuestion?: boolean;
+  showExplanation?: boolean;
+}) {
+  const status = feedback.correct ? "Correct" : feedback.skipped ? "Skipped" : "Not quite";
+  const explanation = questionFeedbackExplanation(
+    feedback.question,
+    feedback.given,
+    feedback.correct,
+  );
+  const explanationLabel = feedback.skipped
+    ? "Answer explanation"
+    : feedback.question.type === "multiple-choice" || feedback.question.type === "true-false"
+      ? feedback.correct
+        ? "Why this option is correct"
+        : "Why this option is incorrect"
+      : feedback.correct
+        ? "Why this answer is correct"
+        : "Common misconception";
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className={cn(
+        previousQuestion ? "mb-6 anim-fade-up" : "mt-6",
+        "overflow-hidden rounded-xl border shadow-sm",
+        feedback.correct
+          ? "border-success/30 bg-success/5"
+          : "border-destructive/30 bg-destructive/5",
+      )}
+    >
+      <div
+        className={cn(
+          "flex gap-3 border-l-4 p-4 sm:gap-4 sm:p-5",
+          feedback.correct ? "border-success" : "border-destructive",
+        )}
+      >
+        <div
+          className={cn(
+            "grid size-9 shrink-0 place-items-center rounded-lg",
+            feedback.correct ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive",
+          )}
+        >
+          {feedback.correct ? (
+            <Check aria-hidden="true" className="size-4" />
+          ) : feedback.skipped ? (
+            <SkipForward aria-hidden="true" className="size-4" />
+          ) : (
+            <X aria-hidden="true" className="size-4" />
+          )}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            {previousQuestion && (
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Previous question
+              </span>
+            )}
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                feedback.correct
+                  ? "bg-success/10 text-success"
+                  : "bg-destructive/10 text-destructive",
+              )}
+            >
+              {status}
+            </span>
+          </div>
+
+          {previousQuestion && (
+            <p className="mt-1.5 break-words text-sm font-medium leading-relaxed">
+              <MathText text={feedback.question.question} />
+            </p>
+          )}
+
+          {!feedback.correct && (
+            <div
+              className={cn(
+                "flex flex-wrap gap-x-4 gap-y-1 text-xs",
+                previousQuestion ? "mt-2" : "mt-1",
+              )}
+            >
+              <p>
+                Correct answer:{" "}
+                <span className="font-semibold text-foreground">
+                  <MathText text={displayAnswer(feedback.question)} />
+                </span>
+              </p>
+              {!feedback.skipped && feedback.given && (
+                <p className="text-muted-foreground">
+                  Your answer: <MathText text={feedback.given} />
+                </p>
+              )}
+            </div>
+          )}
+
+          {showExplanation && explanation && (
+            <div className="mt-3 border-t border-border/70 pt-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {explanationLabel}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                <MathText text={explanation} />
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function QuizRun({
   pool,
   config,
@@ -610,7 +773,21 @@ function QuizRun({
   const [answers, setAnswers] = useState<AnswerRecord[]>(initialSession?.answers ?? []);
   const [input, setInput] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<null | { correct: boolean }>(null);
+  const [feedback, setFeedback] = useState<QuizFeedback | null>(null);
+  const [previousFeedback, setPreviousFeedback] = useState<QuizFeedback | null>(() => {
+    if (!initialSession?.config.feedbackOnNextQuestion || initialSession.currentIndex < 1) {
+      return null;
+    }
+    const previousAnswer = initialSession.answers[initialSession.answers.length - 1];
+    const previousQuestion = initialSession.pool[initialSession.currentIndex - 1];
+    if (!previousAnswer || !previousQuestion) return null;
+    return {
+      question: previousQuestion,
+      correct: previousAnswer.correct,
+      skipped: previousAnswer.skipped,
+      given: previousAnswer.given,
+    };
+  });
   const [combo, setCombo] = useState(initialSession?.combo ?? 0);
   const [bestCombo, setBestCombo] = useState(initialSession?.bestCombo ?? 0);
   const [xp, setXp] = useState(initialSession?.xp ?? 0);
@@ -651,6 +828,12 @@ function QuizRun({
       const gained = config.xpEnabled ? xpForAnswer(record, combo) : 0;
       const nextCombo = correct ? combo + 1 : 0;
       const nextAnswers = [...answers, record];
+      const questionFeedback: QuizFeedback = {
+        question,
+        correct,
+        skipped,
+        given: given ?? undefined,
+      };
       setAnswers(nextAnswers);
       setCombo(nextCombo);
       setBestCombo((b) => Math.max(b, nextCombo));
@@ -658,6 +841,7 @@ function QuizRun({
 
       const advance = () => {
         setFeedback(null);
+        if (config.feedbackOnNextQuestion) setPreviousFeedback(questionFeedback);
         setInput("");
         setSelected(null);
         questionStart.current = Date.now();
@@ -684,8 +868,10 @@ function QuizRun({
         }
       };
 
-      if (config.instantFeedback && !skipped) {
-        setFeedback({ correct });
+      if (config.feedbackOnNextQuestion) {
+        advance();
+      } else if (config.instantFeedback && !skipped) {
+        setFeedback(questionFeedback);
         if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
         advanceTimer.current = window.setTimeout(advance, 1400);
       } else {
@@ -696,7 +882,11 @@ function QuizRun({
       answers,
       bestCombo,
       combo,
+      config.feedbackOnNextQuestion,
       config.instantFeedback,
+      config.pauseAutoAdvanceSeconds,
+      config.questionsPerRound,
+      config.roundPauses,
       config.xpEnabled,
       index,
       onFinish,
@@ -755,6 +945,19 @@ function QuizRun({
     }
   }, [answers, bestCombo, totalMinutes, elapsed, onFinish, xp]);
 
+  const saveAndExit = (currentIndex = index) => {
+    onSaveAndExit({
+      pool,
+      config,
+      answers,
+      currentIndex,
+      totalElapsedMs: Date.now() - started.current,
+      combo,
+      bestCombo,
+      xp,
+    });
+  };
+
   if (!question) {
     return (
       <div className="panel grid place-items-center p-16 text-center">
@@ -812,16 +1015,7 @@ function QuizRun({
               className="w-full"
               onClick={() => {
                 setPauseCountdown(null);
-                onSaveAndExit({
-                  pool,
-                  config,
-                  answers,
-                  currentIndex: index + 1,
-                  totalElapsedMs: Date.now() - started.current,
-                  combo,
-                  bestCombo,
-                  xp,
-                });
+                saveAndExit(index + 1);
               }}
             >
               Save & Exit
@@ -865,19 +1059,24 @@ function QuizRun({
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-4 flex items-center justify-between">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            if (settings.confirmBeforeExit && answers.length > 0) {
-              setConfirmQuit(true);
-              return;
-            }
-            onQuit();
-          }}
-        >
-          Quit quiz
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              if (settings.confirmBeforeExit && answers.length > 0) {
+                setConfirmQuit(true);
+                return;
+              }
+              onQuit();
+            }}
+          >
+            Quit quiz
+          </Button>
+          <Button variant="outline" size="sm" disabled={!!feedback} onClick={() => saveAndExit()}>
+            Save & Exit
+          </Button>
+        </div>
         <div className="flex gap-2 text-[11px]">
           {widgets.difficulty && (
             <Badge variant="outline" className="capitalize">
@@ -913,6 +1112,13 @@ function QuizRun({
       )}
 
       <article className="panel p-8">
+        {previousFeedback && config.feedbackOnNextQuestion && (
+          <QuizFeedbackPanel
+            feedback={previousFeedback}
+            previousQuestion
+            showExplanation={settings.showExplanations}
+          />
+        )}
         <Badge variant="outline" className="text-[11px]">
           {TYPE_LABELS[question.type]}
         </Badge>
@@ -1026,29 +1232,7 @@ function QuizRun({
         )}
 
         {feedback && (
-          <div
-            className={cn(
-              "mt-6 rounded-xl border p-5",
-              feedback.correct
-                ? "border-success/40 bg-success/10"
-                : "border-destructive/40 bg-destructive/10",
-            )}
-          >
-            <p
-              className={cn(
-                "text-sm font-semibold",
-                feedback.correct ? "text-success" : "text-destructive",
-              )}
-            >
-              {feedback.correct ? "Correct" : <span>Answer: </span>}
-              {feedback.correct ? null : <MathText text={displayAnswer(question)} />}
-            </p>
-            {question.explanation && settings.showExplanations && (
-              <p className="mt-1 text-xs text-muted-foreground">
-                <MathText text={question.explanation} />
-              </p>
-            )}
-          </div>
+          <QuizFeedbackPanel feedback={feedback} showExplanation={settings.showExplanations} />
         )}
 
         <div className="mt-8 flex gap-2">

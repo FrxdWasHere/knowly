@@ -40,6 +40,43 @@ export function checkAnswer(question: Question, given: string): boolean {
   }
 }
 
+export function questionFeedbackExplanation(
+  question: Question,
+  given: string | undefined,
+  correct: boolean,
+): string | undefined {
+  if (question.type === "multiple-choice" || question.type === "true-false") {
+    if (correct) {
+      return question.tutor?.whyCorrect || question.explanation;
+    }
+
+    const normalizedGiven = given?.trim().toLowerCase();
+    const optionExplanation = normalizedGiven
+      ? question.tutor?.whyWrong?.find(
+          (entry) => entry.option.trim().toLowerCase() === normalizedGiven,
+        )?.why
+      : undefined;
+    return optionExplanation || question.incorrectExplanation || question.explanation;
+  }
+
+  return correct ? question.explanation : question.incorrectExplanation || question.explanation;
+}
+
+export function questionOptionExplanation(question: Question, option: string): string | undefined {
+  const isCorrect = option.trim().toLowerCase() === question.answer.trim().toLowerCase();
+  if (isCorrect) {
+    return question.tutor?.whyCorrect || question.explanation;
+  }
+  const normalizedOption = option.trim().toLowerCase();
+  const wrongOptionExplanation = question.tutor?.whyWrong?.find(
+    (entry) => entry.option.trim().toLowerCase() === normalizedOption,
+  )?.why;
+  return (
+    wrongOptionExplanation ||
+    (question.type === "true-false" ? question.incorrectExplanation : undefined)
+  );
+}
+
 export function shuffleArray<T>(arr: T[]): T[] {
   const copy = [...arr];
   for (let i = copy.length - 1; i > 0; i--) {

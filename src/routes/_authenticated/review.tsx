@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { GradeButtons } from "@/components/srs/grade-buttons";
 import { InteractiveQuestion } from "@/components/questions/interactive-question";
+import { QuestionRationales } from "@/components/questions/question-rationales";
 import { MathKeypad, MathText } from "@/components/math/math-text";
 import { displayAnswer, isInteractive } from "@/lib/interactive";
 import { TYPE_LABELS, formatDuration } from "@/lib/answers";
@@ -369,11 +370,7 @@ function ReviewSession() {
               <p className="mt-2 text-lg font-medium">
                 <MathText text={displayAnswer(question)} />
               </p>
-              {question.explanation && settings.showExplanations && (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  <MathText text={question.explanation} />
-                </p>
-              )}
+              {settings.showExplanations && <QuestionRationales question={question} />}
             </div>
             <p className="mt-6 text-xs text-muted-foreground">
               How well did you recall it? Your answer sets the next review date.
