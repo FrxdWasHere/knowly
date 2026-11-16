@@ -4,9 +4,13 @@ import type {
   CourseProgress,
   Deck,
   JournalEntry,
+  Module,
+  ModuleProgress,
   Progress,
   Question,
+  QuizConfig,
   QuizResult,
+  SavedQuizSession,
   SessionSummary,
   Settings,
 } from "./types";
@@ -21,13 +25,11 @@ const HOUR = 3_600_000;
 
 /**
  * Builds a complete "lived-in" profile that touches every corner of Knowly:
- * five decks in various states of study (mastered, mid-schedule, fresh —
- * including STEM decks with real LaTeX equations), an in-progress course with
- * real progress plus an untouched one, a weekly timetable, colour-coded binder
- * labels, saved past papers with sitting scores, six weeks of history, quiz
- * results, journal entries, templates, streaks and achievements. Timestamps
- * are generated relative to `now`, so the profile always looks freshly used on
- * import.
+ * five varied decks, three structured courses, standalone lessons, resumable
+ * quiz state, rich learning progress, a weekly timetable, colour-coded binder
+ * labels, saved past papers with multiple sittings, six weeks of history, quiz
+ * results, journal entries, templates, streaks and achievements. Timestamps are
+ * generated relative to `now`, so the profile always looks freshly used on import.
  */
 export function buildSampleProfile(now = Date.now()): AppState {
   const yesterday = now - DAY;
@@ -1043,7 +1045,8 @@ export function buildSampleProfile(now = Date.now()): AppState {
     id: "course-chem",
     title: "Chemistry Foundations: Atoms to Reactions",
     subject: "Chemistry",
-    description: "Planned for next term — warming up with the stoichiometry deck first.",
+    description:
+      "A worked, example-led path from the structure of atoms to balanced equations and quantitative reaction problems.",
     level: "Grade 11",
     color: "var(--deck-2)",
     emoji: "🧪",
@@ -1057,13 +1060,13 @@ export function buildSampleProfile(now = Date.now()): AppState {
       "Balance chemical equations",
       "Do mole conversions fluently",
     ],
-    estimatedMinutes: 300,
+    estimatedMinutes: 540,
     sources: [
       {
         id: "src-chem-1",
         title: "Term 3 syllabus summary",
         content:
-          "Atoms, periodic trends, ionic vs covalent bonding, moles, and the four reaction types.",
+          "Term 3 course pack: atomic structure and isotope notation; electron shells and periodic trends; ionic and covalent bonding; formula writing; balancing equations; the mole and molar mass; limiting reactants; theoretical yield and percentage yield. Lab examples use measured masses, significant figures and explicit unit conversions.",
       },
     ],
     modules: [
@@ -1128,10 +1131,411 @@ export function buildSampleProfile(now = Date.now()): AppState {
           },
         ],
       },
+      {
+        id: "mod-chem-2",
+        title: "Stoichiometry & limiting reactants",
+        summary:
+          "Translate a balanced reaction into quantities, identify the limiting reactant, and check a yield calculation.",
+        objectives: [
+          "Convert measured mass to moles",
+          "Apply the coefficients as a mole ratio",
+          "Calculate theoretical and percentage yield",
+        ],
+        linkedDeckIds: ["deck-chem"],
+        lessons: [
+          {
+            id: "lesson-chem-3",
+            title: "The mole as a counting unit",
+            summary: "Connect particle scale to measurable laboratory quantities.",
+            objectives: [
+              "Use Avogadro's constant with units",
+              "Calculate molar mass from a formula",
+              "Show a dimensional-analysis conversion",
+            ],
+            estimatedMinutes: 35,
+            blocks: [
+              {
+                id: "blk-c4",
+                type: "markdown",
+                markdown:
+                  "## Why chemists count in moles\n\nAtoms and molecules are too small to count individually, so the mole bridges particle scale and the laboratory balance. One mole contains $6.022 \\times 10^{23}$ specified particles. One mole of sodium atoms and one mole of water molecules contain the same number of entities but have different masses.\n\nThe conversion chain is **grams → moles → particles**. Calculate molar mass from the chemical formula, divide measured mass by that molar mass, then multiply moles by Avogadro's constant to find a particle count. Carry units through every line so unwanted units cancel.",
+              },
+              {
+                id: "blk-c5",
+                type: "example",
+                title: "Worked example: water molecules",
+                markdown:
+                  "A sample contains 36.0 g of water. Its molar mass is $18.0\\;\\mathrm{g\\,mol^{-1}}$, so $n = 36.0 / 18.0 = 2.00\\;\\mathrm{mol}$. The sample contains $2.00 \\times 6.022 \\times 10^{23} = 1.20 \\times 10^{24}$ water molecules. The units confirm that grams divide out first and moles cancel in the second step.",
+              },
+              { id: "blk-c6", type: "checkpoint", questionId: "q-chemx-3", title: "Quick check" },
+              {
+                id: "blk-c7",
+                type: "activity",
+                title: "Practice mole conversions",
+                markdown: "deck-chem",
+              },
+            ],
+            questions: [
+              cp(
+                "q-chemx-3",
+                "short-answer",
+                "How many moles are in 9.00 g of water? Use a molar mass of 18.0 g/mol.",
+                "0.500 mol",
+                {
+                  explanation: "Divide mass by molar mass: 9.00 g ÷ 18.0 g/mol = 0.500 mol.",
+                  concept: "The mole",
+                  difficulty: "easy",
+                },
+              ),
+            ],
+            linkedDeckIds: ["deck-chem"],
+          },
+          {
+            id: "lesson-chem-4",
+            title: "Limiting reactants and yield",
+            summary: "Use the balanced equation to determine what runs out first.",
+            objectives: [
+              "Compare reactants using the balanced mole ratio",
+              "Calculate a theoretical product amount",
+              "Explain why actual yield is usually lower",
+            ],
+            estimatedMinutes: 40,
+            blocks: [
+              {
+                id: "blk-c8",
+                type: "markdown",
+                markdown:
+                  "## A recipe written as an equation\n\nFor $2H_2 + O_2 \\rightarrow 2H_2O$, every two moles of hydrogen react with one mole of oxygen. If starting amounts do not match that ratio, one reactant is consumed first: the **limiting reactant**. The other remains in excess.\n\nTo identify it, calculate how much product each reactant could make on its own. Convert each reactant to moles, apply the coefficient ratio, and compare the product amounts. The smaller amount sets the theoretical yield. Never compare raw gram amounts because substances have different molar masses and equation coefficients.",
+              },
+              {
+                id: "blk-c9",
+                type: "example",
+                title: "Worked example: making water",
+                markdown:
+                  "With 5.0 mol $H_2$ and 2.0 mol $O_2$, the oxygen can consume 4.0 mol of hydrogen and produce 4.0 mol of water. Oxygen is limiting and hydrogen remains in excess. If the experiment produces only 3.2 mol of water, percentage yield is $(3.2 / 4.0) \\times 100 = 80\\%$.",
+              },
+              {
+                id: "blk-c10",
+                type: "callout",
+                tone: "tip",
+                title: "A reliable routine",
+                markdown:
+                  "Balance first, convert to moles second, compare possible product amounts third, and round only at the end. Name the limiting reactant in words as well as showing the calculation.",
+              },
+              { id: "blk-c11", type: "checkpoint", questionId: "q-chemx-5", title: "Quick check" },
+            ],
+            questions: [
+              cp(
+                "q-chemx-5",
+                "short-answer",
+                "For 2H₂ + O₂ → 2H₂O, which reactant limits the reaction when 5 mol H₂ react with 2 mol O₂?",
+                "Oxygen (O₂)",
+                {
+                  explanation:
+                    "Two moles of oxygen react with four moles of hydrogen, leaving one mole of hydrogen in excess.",
+                  concept: "Limiting reagents",
+                  difficulty: "hard",
+                },
+              ),
+              cp(
+                "q-chemx-6",
+                "fill-blank",
+                "A reaction has a theoretical yield of 12 g and an actual yield of 9 g. Its percentage yield is ______%.",
+                "75",
+                { concept: "Yield", difficulty: "medium" },
+              ),
+            ],
+            linkedDeckIds: ["deck-chem"],
+          },
+        ],
+        quiz: {
+          id: "quiz-mod-chem-2",
+          title: "Moles and reaction quantities",
+          questions: [
+            cp("q-chemx-3", "short-answer", "How many moles are in 9.00 g of water?", "0.500 mol"),
+            cp(
+              "q-chemx-5",
+              "short-answer",
+              "Which reactant limits 5 mol H₂ + 2 mol O₂ → water?",
+              "Oxygen (O₂)",
+            ),
+            cp("q-chemx-6", "fill-blank", "12 g theoretical, 9 g actual: yield = ______%.", "75"),
+          ],
+          passingScore: 70,
+          timeLimitMinutes: 20,
+        },
+      },
     ],
+    finalExam: {
+      id: "exam-course-chem",
+      title: "Atoms to reactions final",
+      questions: [
+        cp(
+          "q-chemx-1",
+          "multiple-choice",
+          "Which particle determines an element's identity?",
+          "Proton",
+          { options: ["Proton", "Neutron", "Electron", "Nucleus"] },
+        ),
+        cp("q-chemx-2", "short-answer", "How many neutrons does carbon-14 have?", "8"),
+        cp("q-chemx-3", "short-answer", "How many moles are in 9.00 g of water?", "0.500 mol"),
+        cp(
+          "q-chemx-5",
+          "short-answer",
+          "Which reactant limits 5 mol H₂ + 2 mol O₂ → water?",
+          "Oxygen (O₂)",
+        ),
+      ],
+      passingScore: 70,
+      timeLimitMinutes: 35,
+    },
     linkedDeckIds: ["deck-chem"],
     createdAt: now - 6 * DAY,
     updatedAt: now - 6 * DAY,
+  };
+
+  const courseStats: Course = {
+    id: "course-stats",
+    title: "Statistics for Real Decisions",
+    subject: "Statistics",
+    description:
+      "A practical introduction to probability, expected value and the limits of conclusions drawn from data.",
+    level: "Grade 10",
+    color: "var(--deck-5)",
+    emoji: "📊",
+    tags: ["Statistics", "probability", "data literacy"],
+    isSTEM: true,
+    needsEquations: true,
+    needsGraphs: true,
+    labelIds: ["label-l3"],
+    objectives: [
+      "Represent uncertain events with probability notation",
+      "Distinguish independent, mutually exclusive and conditional events",
+      "Calculate expected value and interpret it in context",
+      "Explain how sample design affects a statistical claim",
+    ],
+    estimatedMinutes: 360,
+    sources: [
+      {
+        id: "src-stats-1",
+        title: "Probability workshop notes",
+        content:
+          "Class notes covering sample spaces, tree diagrams, complementary events, two-way tables, expected value and the binomial model. Examples include dice, quality checks and survey sampling.",
+      },
+      {
+        id: "src-stats-2",
+        title: "Data-literacy checklist",
+        content:
+          "Before accepting a headline, record who was sampled, how they were selected, when the data were collected, what was measured and whether the comparison group is appropriate. A precise calculation cannot repair a biased sample.",
+      },
+    ],
+    modules: [
+      {
+        id: "mod-stats-1",
+        title: "Probability models & decisions",
+        summary: "Build a model, calculate its consequences and explain what the number means.",
+        objectives: [
+          "Use complements and event notation",
+          "Calculate expected values",
+          "Interpret a long-run average without predicting one trial",
+        ],
+        linkedDeckIds: ["deck-stats"],
+        lessons: [
+          {
+            id: "lesson-stats-1",
+            title: "From sample space to probability",
+            summary: "List outcomes carefully before assigning a probability.",
+            objectives: [
+              "Define a sample space for a compound experiment",
+              "Use a complement to simplify a calculation",
+              "Check that probabilities are between zero and one",
+            ],
+            estimatedMinutes: 30,
+            blocks: [
+              {
+                id: "blk-s1",
+                type: "markdown",
+                markdown:
+                  "## Describe the experiment first\n\nA probability model starts with a clear experiment and a set of possible outcomes. For two fair coin tosses, the equally likely ordered outcomes are $\\{HH, HT, TH, TT\\}$. The event “exactly one head” contains two of the four outcomes, so its probability is $2/4 = 1/2$. Keeping outcomes ordered avoids accidentally treating $HT$ and $TH$ as the same result when the order matters.\n\nFor equally likely outcomes, probability is the number of outcomes in the event divided by the number in the sample space. For events that are not equally likely, use the structure of the experiment instead of counting outcomes blindly. In every model, $0 \\leq P(A) \\leq 1$, and the probabilities of all mutually exclusive outcomes in a complete sample space add to one.",
+              },
+              {
+                id: "blk-s2",
+                type: "example",
+                title: "Use the complement",
+                markdown:
+                  "A fair die is rolled. Rather than add the probabilities of 2, 4 and 6 to find an even result, note that the complement of “even” is “odd.” Both sets contain three of the six outcomes, so $P(\\text{even}) = 1 - P(\\text{odd}) = 1 - 3/6 = 1/2$. The complement method is especially useful when the event “at least one” has many cases but “none” has only one.",
+              },
+              {
+                id: "blk-s3",
+                type: "callout",
+                tone: "warning",
+                title: "Independence is not the same as exclusivity",
+                markdown:
+                  "Mutually exclusive events cannot occur together. Independent events do not change one another's probabilities. Two events with positive probability that are mutually exclusive are **not** independent.",
+              },
+              {
+                id: "blk-s4",
+                type: "checkpoint",
+                questionId: "q-stats-course-1",
+                title: "Quick check",
+              },
+            ],
+            questions: [
+              cp(
+                "q-stats-course-1",
+                "multiple-choice",
+                "Two fair coins are tossed. What is the probability of exactly one head?",
+                "1/2",
+                {
+                  options: ["1/4", "1/2", "3/4", "1"],
+                  explanation: "HT and TH are two of four equally likely ordered outcomes.",
+                  concept: "Sample spaces",
+                  difficulty: "easy",
+                },
+              ),
+              cp(
+                "q-stats-course-2",
+                "true-false",
+                "If two events are mutually exclusive, both can still happen on the same trial.",
+                "false",
+                { concept: "Events", difficulty: "easy" },
+              ),
+            ],
+            linkedDeckIds: ["deck-stats"],
+          },
+          {
+            id: "lesson-stats-2",
+            title: "Expected value and fair choices",
+            summary: "Use a weighted average to describe the long-run result of a random process.",
+            objectives: [
+              "Calculate the expected value of a discrete random variable",
+              "Compare a game's expected return with its entry cost",
+              "State why expectation is not a guarantee for one attempt",
+            ],
+            estimatedMinutes: 35,
+            blocks: [
+              {
+                id: "blk-s5",
+                type: "markdown",
+                markdown:
+                  "## A long-run average, not a promise\n\nFor a discrete random variable, multiply each possible value by its probability and add the products: $E(X) = \\sum xP(X=x)$. The expected value is the average result we would approach over many repetitions under the same model. It does not have to be a result that can occur on a single trial. A fair six-sided die has expected value $(1+2+3+4+5+6)/6 = 3.5$, even though 3.5 is never rolled.\n\nExpected value can compare choices with different outcomes. If a game pays 10 points with probability 0.2 and zero otherwise, its expected payout is $10(0.2)+0(0.8)=2$ points. An entry fee of 3 points makes the expected net value $-1$ point per play. That does not determine what happens in the next game; it describes the average of many plays.",
+              },
+              {
+                id: "blk-s6",
+                type: "example",
+                title: "Quality-control decision",
+                markdown:
+                  "A factory checks one item from a batch. If a defect is found, the batch is inspected at a cost of 40 credits; if not, the check costs 2 credits. Suppose the defect probability is 0.05. The expected checking cost is $40(0.05)+2(0.95)=3.90$ credits per batch. A proposed screening step costing 1 credit is worthwhile only if its reduction in expected downstream loss exceeds that cost. The probabilities and costs must come from reliable data for the comparison to be useful.",
+              },
+              {
+                id: "blk-s7",
+                type: "callout",
+                tone: "tip",
+                title: "Interpret before you conclude",
+                markdown:
+                  "Write down the unit and the time scale of an expected value. “3.5” alone is not an interpretation; “an average of 3.5 points per play over many plays” is.",
+              },
+              {
+                id: "blk-s8",
+                type: "checkpoint",
+                questionId: "q-stats-course-3",
+                title: "Quick check",
+              },
+              {
+                id: "blk-s9",
+                type: "activity",
+                title: "Practice probability",
+                markdown: "deck-stats",
+              },
+            ],
+            questions: [
+              cp(
+                "q-stats-course-3",
+                "short-answer",
+                "A fair die is rolled. What is its expected value?",
+                "3.5",
+                {
+                  explanation: "The mean of 1, 2, 3, 4, 5 and 6 is 3.5.",
+                  concept: "Expected value",
+                  difficulty: "easy",
+                },
+              ),
+              cp(
+                "q-stats-course-4",
+                "short-answer",
+                "A game pays 10 points with probability 0.2 and zero otherwise. What is the expected payout?",
+                "2 points",
+                { concept: "Expected value", difficulty: "medium" },
+              ),
+            ],
+            linkedDeckIds: ["deck-stats"],
+          },
+        ],
+        quiz: {
+          id: "quiz-mod-stats-1",
+          title: "Probability and expected value",
+          questions: [
+            cp(
+              "q-stats-course-1",
+              "multiple-choice",
+              "Two fair coins are tossed. What is the probability of exactly one head?",
+              "1/2",
+              { options: ["1/4", "1/2", "3/4", "1"] },
+            ),
+            cp(
+              "q-stats-course-3",
+              "short-answer",
+              "What is the expected value of a fair die roll?",
+              "3.5",
+            ),
+            cp(
+              "q-stats-course-4",
+              "short-answer",
+              "A game pays 10 points with probability 0.2. What is its expected payout?",
+              "2 points",
+            ),
+          ],
+          passingScore: 70,
+          timeLimitMinutes: 18,
+        },
+      },
+    ],
+    finalExam: {
+      id: "exam-course-stats",
+      title: "Statistics for Real Decisions final",
+      questions: [
+        cp(
+          "q-stats-course-1",
+          "multiple-choice",
+          "Two fair coins are tossed. What is the probability of exactly one head?",
+          "1/2",
+          { options: ["1/4", "1/2", "3/4", "1"] },
+        ),
+        cp(
+          "q-stat-07",
+          "flashcard",
+          "State the binomial probability of exactly k successes.",
+          "$P(X = k) = \\binom{n}{k}p^k(1-p)^{n-k}$",
+        ),
+        cp(
+          "q-stats-course-3",
+          "short-answer",
+          "What is the expected value of a fair die roll?",
+          "3.5",
+        ),
+        cp(
+          "q-stats-course-4",
+          "short-answer",
+          "A game pays 10 points with probability 0.2. What is its expected payout?",
+          "2 points",
+        ),
+      ],
+      passingScore: 70,
+      timeLimitMinutes: 30,
+    },
+    linkedDeckIds: ["deck-stats"],
+    createdAt: now - 20 * DAY,
+    updatedAt: now - 2 * DAY,
   };
 
   const lessonDone = (completedAt: number): CourseProgress["lessons"][string] => ({
@@ -1191,6 +1595,407 @@ export function buildSampleProfile(now = Date.now()): AppState {
           },
         ],
       },
+    },
+    "course-chem": {
+      courseId: "course-chem",
+      startedAt: now - 6 * DAY,
+      lastStudiedAt: now - 2 * DAY,
+      lessons: {
+        "lesson-chem-1": {
+          status: "completed",
+          openedAt: now - 6 * DAY,
+          completedAt: now - 5 * DAY,
+          srs: { "q-chemx-1": weekOut },
+          notes: "Remember: proton count is the atomic number and fixes the element.",
+          bookmarks: ["q-chemx-1"],
+        },
+        "lesson-chem-2": {
+          status: "completed",
+          openedAt: now - 5 * DAY,
+          completedAt: now - 4 * DAY,
+          srs: { "q-chemx-2": dueSoon },
+          notes: "For a neutral atom, electrons equal protons.",
+          bookmarks: [],
+        },
+        "lesson-chem-3": {
+          status: "completed",
+          openedAt: now - 3 * DAY,
+          completedAt: now - 2 * DAY,
+          srs: { "q-chemx-3": tomorrow },
+          notes:
+            "Write the units on every conversion line; it catches the divide/multiply reversal.",
+          bookmarks: [],
+        },
+        "lesson-chem-4": {
+          status: "in-progress",
+          openedAt: now - 2 * DAY,
+          srs: { "q-chemx-5": dueNow, "q-chemx-6": dueSoon },
+          notes: "Recheck the limiting reagent calculation before attempting the quiz.",
+          bookmarks: ["q-chemx-5"],
+        },
+      },
+      questionStats: {
+        "q-chemx-1": { attempts: 2, correct: 2, lastSeen: now - 5 * DAY },
+        "q-chemx-2": { attempts: 2, correct: 1, lastSeen: now - 4 * DAY },
+        "q-chemx-3": { attempts: 3, correct: 2, lastSeen: now - 2 * DAY },
+        "q-chemx-5": { attempts: 2, correct: 1, lastSeen: now - DAY },
+      },
+      assessments: {
+        "quiz-mod-chem-2": [
+          {
+            id: "ar-chem-1",
+            assessmentId: "quiz-mod-chem-2",
+            createdAt: now - DAY,
+            score: 2,
+            total: 3,
+            percentage: 67,
+            passed: false,
+            durationMs: 11 * 60_000,
+          },
+        ],
+      },
+    },
+    "course-stats": {
+      courseId: "course-stats",
+      startedAt: now - 14 * DAY,
+      lastStudiedAt: now - 2 * DAY,
+      lessons: {
+        "lesson-stats-1": {
+          status: "completed",
+          openedAt: now - 12 * DAY,
+          completedAt: now - 10 * DAY,
+          srs: { "q-stats-course-1": weekOut, "q-stats-course-2": fortnight },
+          notes: "List ordered outcomes before counting; HT and TH are different sequences.",
+          bookmarks: ["q-stats-course-1"],
+        },
+        "lesson-stats-2": {
+          status: "in-progress",
+          openedAt: now - 2 * DAY,
+          srs: { "q-stats-course-3": dueSoon, "q-stats-course-4": tomorrow },
+          notes: "Expected value describes a long-run average, not the next individual result.",
+          bookmarks: [],
+        },
+      },
+      questionStats: {
+        "q-stats-course-1": { attempts: 2, correct: 2, lastSeen: now - 10 * DAY },
+        "q-stats-course-2": { attempts: 1, correct: 1, lastSeen: now - 10 * DAY },
+        "q-stats-course-3": { attempts: 2, correct: 1, lastSeen: now - 2 * DAY },
+        "q-stats-course-4": { attempts: 1, correct: 0, lastSeen: now - 2 * DAY },
+      },
+      assessments: {
+        "quiz-mod-stats-1": [
+          {
+            id: "ar-stats-1",
+            assessmentId: "quiz-mod-stats-1",
+            createdAt: now - 2 * DAY,
+            score: 2,
+            total: 3,
+            percentage: 67,
+            passed: false,
+            durationMs: 8 * 60_000,
+          },
+        ],
+      },
+    },
+  };
+
+  const modules: Module[] = [
+    {
+      id: "module-stat-decisions",
+      title: "Probability in Everyday Decisions",
+      subject: "Statistics",
+      color: "var(--deck-5)",
+      emoji: "🎲",
+      tags: ["probability", "decision-making", "expected value"],
+      isSTEM: true,
+      needsEquations: true,
+      needsGraphs: false,
+      objectives: [
+        "Describe a random experiment with an explicit sample space",
+        "Use complements and event notation",
+        "Compare choices using expected value",
+      ],
+      estimatedMinutes: 45,
+      difficulty: 2,
+      linkedDeckIds: ["deck-stats"],
+      blocks: [
+        {
+          id: "module-stat-blk-1",
+          type: "markdown",
+          markdown:
+            "## Start with the experiment\n\nA probability is only meaningful after the experiment and the set of outcomes are clear. For two coin tosses, the ordered sample space is $\\{HH, HT, TH, TT\\}$. “Exactly one head” is the event $\\{HT, TH\\}$, so its probability is $2/4$. Keeping the order visible prevents a common mistake: treating the two different sequences as one outcome.\n\nWhen outcomes are equally likely, count the outcomes in the event and divide by the count in the complete sample space. If they are not equally likely, use the actual probability model instead. A quick check is that an event's probability must be between zero and one and the probabilities of all outcomes in a complete sample space must total one.",
+        },
+        {
+          id: "module-stat-blk-2",
+          type: "example",
+          title: "A useful shortcut: the complement",
+          markdown:
+            "Suppose a fair die is rolled and we want the probability of getting at least one six in two rolls. The complement is getting no sixes: $(5/6)(5/6)=25/36$. Therefore the desired probability is $1-25/36=11/36$. This is shorter and less error-prone than listing every sequence containing a six.",
+        },
+        {
+          id: "module-stat-blk-3",
+          type: "callout",
+          tone: "warning",
+          title: "Do not confuse independence with exclusivity",
+          markdown:
+            "Mutually exclusive events cannot happen together. Independent events do not change one another's probabilities. If two events with positive probability are mutually exclusive, learning that one occurred makes the other impossible, so they are not independent.",
+        },
+        {
+          id: "module-stat-blk-4",
+          type: "checkpoint",
+          questionId: "q-module-stat-1",
+          title: "Check your sample space",
+        },
+        {
+          id: "module-stat-blk-5",
+          type: "activity",
+          title: "Review probability cards",
+          markdown: "deck-stats",
+        },
+      ],
+      questions: [
+        cp(
+          "q-module-stat-1",
+          "multiple-choice",
+          "Two fair coins are tossed. What is the probability of exactly one head?",
+          "1/2",
+          {
+            options: ["1/4", "1/2", "3/4", "1"],
+            explanation: "HT and TH are two of four equally likely ordered outcomes.",
+            concept: "Sample spaces",
+            difficulty: "easy",
+          },
+        ),
+        cp(
+          "q-module-stat-2",
+          "short-answer",
+          "A fair die is rolled twice. What is the probability of at least one six?",
+          "11/36",
+          {
+            explanation: "Use the complement: 1 - (5/6 × 5/6) = 11/36.",
+            concept: "Complements",
+            difficulty: "hard",
+          },
+        ),
+        cp(
+          "q-module-stat-3",
+          "true-false",
+          "Two events that are mutually exclusive and both have positive probability are independent.",
+          "false",
+          { concept: "Events", difficulty: "medium" },
+        ),
+      ],
+      createdAt: now - 12 * DAY,
+      updatedAt: now - DAY,
+    },
+    {
+      id: "module-spanish-travel",
+      title: "Travel Spanish: Getting Help",
+      subject: "Spanish",
+      color: "var(--deck-4)",
+      emoji: "🧳",
+      tags: ["Spanish", "travel", "conversation"],
+      isSTEM: false,
+      needsEquations: false,
+      needsGraphs: false,
+      objectives: [
+        "Ask for clarification politely",
+        "Give a short explanation of a travel problem",
+        "Understand common airport and hotel follow-up questions",
+      ],
+      estimatedMinutes: 35,
+      difficulty: 1,
+      linkedDeckIds: ["deck-span"],
+      blocks: [
+        {
+          id: "module-span-blk-1",
+          type: "markdown",
+          markdown:
+            "## Make the conversation easier\n\nYou do not need a perfect sentence to solve a travel problem. Begin with a polite opener such as **Perdone** or **Disculpe**, state the key noun, then add a short detail. At an airport, *Tengo un problema con mi equipaje* (I have a problem with my luggage) gives the staff a clear topic. At a hotel, *No funciona la llave de mi habitación* explains exactly what is wrong.\n\nIf you do not understand the reply, ask the speaker to repeat or slow down: *¿Puede repetirlo, por favor?* and *¿Puede hablar más despacio?* are useful, polite requests. Listen for familiar anchor words such as *puerta* (gate), *retrasado* (delayed), *reserva* (reservation) and *documento* (document).",
+        },
+        {
+          id: "module-span-blk-2",
+          type: "example",
+          title: "At the airport desk",
+          markdown:
+            "**Viajera:** Disculpe, mi vuelo está retrasado. ¿A qué hora sale ahora?  \n**Agente:** Sale a las seis y media por la puerta doce.  \n**Viajera:** ¿Puede repetir la puerta, por favor?  \nThe learner confirms the crucial detail rather than pretending to understand it. In real conversation, repeating a number back is a useful accuracy check.",
+        },
+        {
+          id: "module-span-blk-3",
+          type: "callout",
+          tone: "tip",
+          title: "Use a repair phrase",
+          markdown:
+            "A repair phrase keeps the conversation moving: *No entiendo* (I don't understand), *¿Qué significa…?* (What does … mean?) or *¿Puede escribirlo?* (Can you write it down?).",
+        },
+        {
+          id: "module-span-blk-4",
+          type: "checkpoint",
+          questionId: "q-module-span-1",
+          title: "Choose the useful phrase",
+        },
+        {
+          id: "module-span-blk-5",
+          type: "activity",
+          title: "Review the travel vocabulary deck",
+          markdown: "deck-span",
+        },
+      ],
+      questions: [
+        cp(
+          "q-module-span-1",
+          "multiple-choice",
+          "How would you politely ask someone to repeat the gate number?",
+          "¿Puede repetir la puerta, por favor?",
+          {
+            options: [
+              "¿Puede repetir la puerta, por favor?",
+              "¿Dónde está mi habitación?",
+              "Quisiera pagar ahora.",
+              "Tengo una reserva para mañana.",
+            ],
+            concept: "Travel conversation",
+            difficulty: "medium",
+          },
+        ),
+        cp(
+          "q-module-span-2",
+          "matching",
+          "Match each travel phrase to its meaning.",
+          "retrasado–delayed, equipaje–luggage, puerta–gate",
+          {
+            pairs: [
+              { left: "retrasado", right: "delayed" },
+              { left: "equipaje", right: "luggage" },
+              { left: "puerta", right: "gate" },
+            ],
+            concept: "Airport",
+          },
+        ),
+      ],
+      createdAt: now - 8 * DAY,
+      updatedAt: now - 3 * DAY,
+    },
+    {
+      id: "module-history-sources",
+      title: "Reading Historical Sources",
+      subject: "History",
+      color: "var(--deck-3)",
+      emoji: "🗞️",
+      tags: ["history", "source analysis", "evidence"],
+      isSTEM: false,
+      needsEquations: false,
+      needsGraphs: false,
+      objectives: [
+        "Distinguish a source's content from its provenance",
+        "Use context to evaluate a claim",
+        "Support a conclusion with both evidence and reasoning",
+      ],
+      estimatedMinutes: 40,
+      difficulty: 2,
+      linkedDeckIds: ["deck-hist"],
+      blocks: [
+        {
+          id: "module-hist-blk-1",
+          type: "markdown",
+          markdown:
+            "## Treat a source as evidence, not as the whole story\n\nA source can be accurate about one thing and limited about another. Begin by recording who created it, when, where, for whom and for what purpose. These details are its **provenance**. Then separate what the source explicitly says from what you infer. A government speech may reliably show how officials wanted the public to understand a policy, but it does not automatically prove that every citizen agreed.\n\nContext helps explain why a source uses particular language. Compare its claims with evidence from a different perspective, such as a private letter, a newspaper report or a later set of statistics. Agreement between independent sources can strengthen a conclusion; disagreement may reveal whose experience is missing. Avoid using the word “biased” as a complete evaluation. Explain the direction of a perspective and how it affects the specific claim you are investigating.",
+        },
+        {
+          id: "module-hist-blk-2",
+          type: "example",
+          title: "Build a short source evaluation",
+          markdown:
+            "A 1930 campaign poster promises that a new policy will restore jobs. Its date makes it useful evidence of what campaigners emphasized during the Depression, and its intended audience helps explain its confident tone. It is not, by itself, evidence that jobs were actually restored. To assess that outcome, compare the promise with employment records and accounts from people affected by the policy.",
+        },
+        {
+          id: "module-hist-blk-3",
+          type: "callout",
+          tone: "definition",
+          title: "A strong evidence paragraph",
+          markdown:
+            "**Claim → evidence → reasoning → limitation.** State a focused answer, quote or describe a precise detail, explain how that detail supports the claim, then note what the source cannot establish.",
+        },
+        {
+          id: "module-hist-blk-4",
+          type: "checkpoint",
+          questionId: "q-module-hist-1",
+          title: "Evaluate the claim",
+        },
+        {
+          id: "module-hist-blk-5",
+          type: "activity",
+          title: "Review the interwar timeline",
+          markdown: "deck-hist",
+        },
+      ],
+      questions: [
+        cp(
+          "q-module-hist-1",
+          "multiple-choice",
+          "A campaign poster promises to reduce unemployment. What can it show most directly?",
+          "What campaigners wanted the audience to believe",
+          {
+            options: [
+              "What campaigners wanted the audience to believe",
+              "The exact number of jobs created",
+              "That every voter supported the policy",
+              "The policy's long-term economic result",
+            ],
+            explanation:
+              "The poster is direct evidence of campaign messaging; outcomes need corroborating evidence.",
+            concept: "Source purpose",
+            difficulty: "medium",
+          },
+        ),
+        cp(
+          "q-module-hist-2",
+          "ordering",
+          "Order the steps in a concise source-based argument.",
+          "Claim → Evidence → Reasoning → Limitation",
+          {
+            items: ["Claim", "Evidence", "Reasoning", "Limitation"],
+            concept: "Historical writing",
+            difficulty: "easy",
+          },
+        ),
+      ],
+      createdAt: now - 18 * DAY,
+      updatedAt: now - 5 * DAY,
+    },
+  ];
+
+  const moduleProgress: Record<string, ModuleProgress> = {
+    "module-stat-decisions": {
+      moduleId: "module-stat-decisions",
+      status: "in-progress",
+      openedAt: now - 2 * DAY,
+      questionStats: {
+        "q-module-stat-1": { attempts: 2, correct: 2, lastAnsweredAt: now - DAY },
+        "q-module-stat-2": { attempts: 1, correct: 0, lastAnsweredAt: now - DAY },
+      },
+      notes: "The complement method is faster for 'at least one' questions.",
+      bookmarks: ["module-stat-blk-3"],
+    },
+    "module-spanish-travel": {
+      moduleId: "module-spanish-travel",
+      status: "completed",
+      openedAt: now - 7 * DAY,
+      completedAt: now - 3 * DAY,
+      questionStats: {
+        "q-module-span-1": { attempts: 2, correct: 2, lastAnsweredAt: now - 3 * DAY },
+        "q-module-span-2": { attempts: 1, correct: 1, lastAnsweredAt: now - 3 * DAY },
+      },
+      notes: "Repeat key numbers and ask the speaker to confirm them.",
+      bookmarks: ["module-span-blk-2"],
+    },
+    "module-history-sources": {
+      moduleId: "module-history-sources",
+      status: "not-started",
+      openedAt: now - 5 * DAY,
+      questionStats: {},
+      notes: "",
+      bookmarks: [],
     },
   };
 
@@ -1493,6 +2298,9 @@ export function buildSampleProfile(now = Date.now()): AppState {
       xpEnabled: true,
       instantFeedback: false,
       bookmarkedOnly: false,
+      roundPauses: false,
+      questionsPerRound: 10,
+      pauseAutoAdvanceSeconds: null,
     },
     answers: [],
     durationMs: minutes * 60_000,
@@ -1580,6 +2388,64 @@ export function buildSampleProfile(now = Date.now()): AppState {
       11,
       ["multiple-choice", "short-answer", "flashcard"],
     ),
+  ];
+
+  const savedQuizConfig: QuizConfig = {
+    deckIds: ["deck-bio"],
+    questionCount: 6,
+    types: ["multiple-choice", "true-false", "short-answer"],
+    difficulties: ["easy", "medium", "hard"],
+    shuffle: false,
+    perQuestionSeconds: null,
+    totalMinutes: null,
+    unlimited: false,
+    passingScore: 70,
+    xpEnabled: true,
+    instantFeedback: false,
+    bookmarkedOnly: false,
+    roundPauses: false,
+    questionsPerRound: 10,
+    pauseAutoAdvanceSeconds: null,
+  };
+
+  const savedQuizSessions: SavedQuizSession[] = [
+    {
+      id: "saved-quiz-bio-demo",
+      savedAt: now - 30 * 60_000,
+      pool: deckBio.questions.slice(0, 6).map((question) => ({ ...question, deckId: deckBio.id })),
+      config: savedQuizConfig,
+      answers: [
+        {
+          questionId: "q-bio-01",
+          deckId: "deck-bio",
+          type: "multiple-choice",
+          difficulty: "medium",
+          concept: "Organelles",
+          correct: true,
+          skipped: false,
+          timeMs: 4200,
+          given: "Mitochondrion",
+        },
+        {
+          questionId: "q-bio-02",
+          deckId: "deck-bio",
+          type: "true-false",
+          difficulty: "easy",
+          concept: "Organelles",
+          correct: true,
+          skipped: false,
+          timeMs: 3100,
+          given: "true",
+        },
+      ],
+      currentIndex: 2,
+      totalElapsedMs: 46_000,
+      deckIds: ["deck-bio"],
+      deckTitles: ["Cell Biology — Unit 2"],
+      combo: 2,
+      bestCombo: 2,
+      xp: 18,
+    },
   ];
 
   const templates = [
@@ -1867,17 +2733,18 @@ export function buildSampleProfile(now = Date.now()): AppState {
   /* -------------------------------------------------------- bundle */
 
   return {
-    version: 5,
+    version: 6,
     onboardingComplete: true,
     decks: [deckBio, deckChem, deckSpan, deckHist, deckStats],
-    courses: [courseBio, courseChem],
+    courses: [courseBio, courseChem, courseStats],
     courseProgress,
-    modules: [],
-    moduleProgress: {},
+    modules,
+    moduleProgress,
     settings: settings as Settings,
     progress,
     history,
     results,
+    savedQuizSessions,
     templates,
     journal,
     timetable,

@@ -4,6 +4,7 @@ export type NoteTool =
   | "highlighter"
   | "eraser"
   | "select"
+  | "move"
   | "text"
   | "sticky"
   | "tape"

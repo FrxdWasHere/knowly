@@ -280,6 +280,9 @@ export interface SavedQuizSession {
   totalElapsedMs: number;
   deckIds: string[];
   deckTitles: string[];
+  combo: number;
+  bestCombo: number;
+  xp: number;
 }
 
 export interface QuizResult {
@@ -459,6 +462,7 @@ export interface AppState {
   progress: Progress;
   history: SessionSummary[];
   results: QuizResult[];
+  savedQuizSessions: SavedQuizSession[];
   templates: PromptTemplate[];
   journal: JournalEntry[];
   /** weekly class schedule */

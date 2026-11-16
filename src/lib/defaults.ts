@@ -72,6 +72,9 @@ export const DEFAULT_QUIZ_CONFIG: QuizConfig = {
   xpEnabled: true,
   instantFeedback: true,
   bookmarkedOnly: false,
+  roundPauses: false,
+  questionsPerRound: 10,
+  pauseAutoAdvanceSeconds: null,
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -154,7 +157,7 @@ export const DEFAULT_PROGRESS: Progress = {
  * in a way that older saves need repair; add a matching entry to the migration
  * table in `src/store/knowly.tsx`.
  */
-export const STATE_VERSION = 5;
+export const STATE_VERSION = 6;
 
 export const DEFAULT_STATE: AppState = {
   version: STATE_VERSION,
@@ -168,6 +171,7 @@ export const DEFAULT_STATE: AppState = {
   progress: DEFAULT_PROGRESS,
   history: [],
   results: [],
+  savedQuizSessions: [],
   templates: [],
   journal: [],
   timetable: [],

@@ -56,7 +56,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   ),
 });
 
-/** Bright brand blocks, always with black ink. Used for headline numbers. */
+/** Brand blocks used for headline numbers. */
 const BLOCK_TONES = {
   coral: "bg-block-coral",
   lemon: "bg-block-lemon",
@@ -89,32 +89,34 @@ function Widget({
   return (
     <section
       className={cn(
-        "group relative p-5",
+        "group relative min-w-0 rounded-2xl p-4 transition-shadow",
         tone
           ? cn(
-              "rounded-2xl border-[3px] border-border text-ink shadow-[4px_4px_0_0_var(--shadow-ink)]",
+              "border-2 border-border text-ink shadow-[3px_3px_0_0_var(--shadow-ink)] dark:text-foreground",
               BLOCK_TONES[tone],
             )
-          : "panel",
+          : "panel border border-border/70 shadow-sm hover:shadow-md",
         className,
       )}
     >
-      <div className="mb-4 flex items-center justify-between gap-2">
+      <div className="mb-3 flex items-center justify-between gap-2">
         <h2
           className={cn(
             "flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em]",
-            tone ? "text-ink/75" : "text-muted-foreground",
+            tone ? "text-ink/75 dark:text-foreground/75" : "text-muted-foreground",
           )}
         >
-          <Icon className={cn("size-4", tone ? "text-ink" : "text-primary")} />
+          <Icon className={cn("size-4", tone ? "text-ink dark:text-foreground" : "text-primary")} />
           {title}
         </h2>
         <button
           aria-label={`Hide ${title} widget`}
           onClick={() => onHide(id)}
           className={cn(
-            "grid min-h-[44px] min-w-[44px] place-items-center opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100",
-            tone ? "text-ink/80 hover:text-ink" : "text-muted-foreground hover:text-foreground",
+            "grid size-9 shrink-0 place-items-center rounded-lg opacity-100 transition-colors hover:bg-black/5 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 dark:hover:bg-white/10",
+            tone
+              ? "text-ink/80 hover:text-ink dark:text-foreground/80 dark:hover:text-foreground"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           <EyeOff className="size-3.5" />
@@ -231,23 +233,26 @@ function Dashboard() {
 
   return (
     <div>
-      <div className="anim-fade-up mb-7 flex flex-col gap-4 border-b-[3px] border-border pb-6 lg:flex-row lg:items-end lg:justify-between lg:gap-6 lg:pb-7">
-        <div className="min-w-0 flex-1 flex items-center gap-4">
-          <div className="flex-shrink-0">
+      <div className="anim-fade-up mb-5 flex flex-col gap-3 rounded-2xl border border-border/70 bg-surface/70 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="shrink-0">
             {avatarUrl ? (
               <img
                 src={avatarUrl}
                 alt="Your avatar"
-                className="size-20 rounded-lg object-cover border-[3px] border-border shadow-[3px_3px_0_0_var(--shadow-ink)]"
+                className="size-12 rounded-xl border border-border object-cover sm:size-14"
               />
             ) : (
-              <span className="grid size-20 place-items-center rounded-lg border-[3px] border-border bg-block-lemon text-5xl text-ink shadow-[3px_3px_0_0_var(--shadow-ink)]">
+              <span className="grid size-12 place-items-center rounded-xl bg-primary/10 text-2xl text-primary sm:size-14 sm:text-3xl">
                 {settings.avatarEmoji || "🌊"}
               </span>
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="break-words font-display text-3xl font-bold leading-[1.05] tracking-tight sm:text-4xl">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">
+              Your learning space
+            </p>
+            <h1 className="mt-0.5 break-words font-display text-2xl font-bold leading-tight tracking-tight sm:text-3xl">
               {hello}
             </h1>
             {(() => {
@@ -261,7 +266,9 @@ function Dashboard() {
                 .filter(Boolean)
                 .join(" · ");
               return desc ? (
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">{desc}</p>
+                <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground sm:text-sm">
+                  {desc}
+                </p>
               ) : null;
             })()}
           </div>
@@ -289,14 +296,14 @@ function Dashboard() {
             </Button>
           );
           return actionNode ? (
-            <div className="flex w-full min-w-0 flex-wrap items-center gap-2 lg:w-auto lg:max-w-[52%] lg:justify-end">
+            <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:max-w-[45%] sm:justify-end">
               {actionNode}
             </div>
           ) : null;
         })()}
       </div>
 
-      <div className="grid grid-flow-row-dense gap-4 md:grid-cols-2 xl:grid-cols-12 stagger">
+      <div className="grid grid-flow-row-dense gap-3 md:grid-cols-2 xl:grid-cols-12 stagger">
         {show("srs") && decks.length > 0 && (
           <Widget
             id="srs"
@@ -315,7 +322,7 @@ function Dashboard() {
             title="Continue studying"
             icon={Play}
             onHide={hide}
-            className="md:col-span-2 xl:col-span-8 anim-fade-up"
+            className="md:col-span-2 xl:col-span-7 anim-fade-up"
           >
             <div className="grid grid-cols-1 items-center gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
               <div className="min-w-0">
@@ -359,19 +366,30 @@ function Dashboard() {
             title="Today's goal"
             icon={Target}
             onHide={hide}
-            className="xl:col-span-4 widget-sky anim-fade-up"
+            className="xl:order-[-4] xl:col-span-3 widget-sky anim-fade-up"
             tone="sky"
           >
-            <p className="font-display text-4xl font-bold tabular-nums anim-pop">
+            <p className="font-display text-3xl font-bold tabular-nums anim-pop">
               {todayCount}
-              <span className="text-base text-ink/60"> / {settings.dailyGoal}</span>
+              <span className="text-base text-ink/60 dark:text-foreground/70">
+                {" "}
+                / {settings.dailyGoal}
+              </span>
             </p>
             {settings.showProgressBars && (
-              <div className="mt-3 h-2.5 overflow-hidden rounded-full border-[2px] border-border bg-ink/15">
-                <div className="h-full rounded-full bg-ink anim-fade-up" style={{ width: `${goalPct}%` }} />
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-ink/15 dark:bg-black/15">
+                <div
+                  className="h-full rounded-full bg-ink anim-fade-up dark:bg-foreground"
+                  style={{ width: `${goalPct}%` }}
+                />
               </div>
             )}
-            <p className={cn("mt-2 text-xs font-bold", goalMet ? "text-ink" : "text-ink/70")}>
+            <p
+              className={cn(
+                "mt-2 text-xs font-bold dark:text-foreground/80",
+                goalMet ? "text-ink dark:text-foreground" : "text-ink/70",
+              )}
+            >
               {goalMet
                 ? "Goal reached today 🎉"
                 : `${settings.dailyGoal - todayCount} more question${settings.dailyGoal - todayCount === 1 ? "" : "s"} to go`}
@@ -385,7 +403,7 @@ function Dashboard() {
             title="Your subjects"
             icon={BookOpen}
             onHide={hide}
-            className="md:col-span-2 xl:col-span-8 anim-fade-up"
+            className="md:col-span-2 xl:col-span-5 anim-fade-up"
           >
             <div className="grid gap-3 sm:grid-cols-2 stagger">
               {subjectRows.map((s) => (
@@ -393,7 +411,7 @@ function Dashboard() {
                   key={s.subject}
                   to="/decks"
                   search={{ q: s.subject }}
-                  className="rounded-xl border-[2px] border-border bg-surface p-3 shadow-[2px_2px_0_0_var(--shadow-ink)] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_var(--shadow-ink)] anim-fade-up hover:anim-float press"
+                  className="rounded-xl border border-border/70 bg-surface p-2.5 transition-all hover:border-primary/40 hover:bg-surface-hover anim-fade-up press"
                 >
                   <p className="text-sm font-bold">{s.subject}</p>
                   <p className="mt-1 text-xs font-medium text-muted-foreground">
@@ -421,21 +439,26 @@ function Dashboard() {
             title="Level & XP"
             icon={Zap}
             onHide={hide}
-            className="xl:col-span-4 widget-grape anim-fade-up"
+            className="xl:order-[-3] xl:col-span-3 widget-grape anim-fade-up"
             tone="grape"
           >
-            <div className="flex items-baseline gap-2">
-              <span className="font-display text-4xl font-bold tabular-nums anim-pop">Lv {level}</span>
-              <span className="text-xs font-bold text-ink/70">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0">
+              <span className="font-display text-3xl font-bold tabular-nums anim-pop">
+                Lv {level}
+              </span>
+              <span className="text-xs font-bold text-ink/70 dark:text-foreground/80">
                 {intoLevel}/{needed} XP
               </span>
             </div>
             {settings.showProgressBars && (
-              <div className="mt-3 h-2.5 overflow-hidden rounded-full border-[2px] border-border bg-ink/15">
-                <div className="h-full rounded-full bg-ink" style={{ width: `${pct}%` }} />
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-ink/15 dark:bg-black/15">
+                <div
+                  className="h-full rounded-full bg-ink dark:bg-foreground"
+                  style={{ width: `${pct}%` }}
+                />
               </div>
             )}
-            <p className="mt-2 text-xs font-bold text-ink/70">
+            <p className="mt-2 text-xs font-bold text-ink/70 dark:text-foreground/80">
               {progress.lifetimeXp.toLocaleString()} lifetime XP
             </p>
           </Widget>
@@ -447,11 +470,13 @@ function Dashboard() {
             title="Study streak"
             icon={Flame}
             onHide={hide}
-            className="xl:col-span-4 widget-coral anim-fade-up"
+            className="xl:order-[-2] xl:col-span-3 widget-coral anim-fade-up"
             tone="coral"
           >
-            <p className="font-display text-4xl font-bold tabular-nums anim-pop">{progress.streak} days</p>
-            <p className="mt-2 text-xs font-bold text-ink/70">
+            <p className="font-display text-3xl font-bold tabular-nums anim-pop">
+              {progress.streak} days
+            </p>
+            <p className="mt-2 text-xs font-bold text-ink/70 dark:text-foreground/80">
               Longest {progress.longestStreak} · {formatDuration(progress.studyTimeMs)} studied
             </p>
           </Widget>
@@ -463,17 +488,17 @@ function Dashboard() {
             title="Cards due"
             icon={Clock}
             onHide={hide}
-            className="xl:col-span-4 widget-lemon anim-fade-up"
+            className="xl:order-[-1] xl:col-span-3 widget-lemon anim-fade-up"
             tone="lemon"
           >
-            <p className="font-display text-4xl font-bold tabular-nums anim-pop">{dueNow}</p>
-            <p className="mt-2 text-xs font-bold text-ink/70">
+            <p className="font-display text-3xl font-bold tabular-nums anim-pop">{dueNow}</p>
+            <p className="mt-2 text-xs font-bold text-ink/70 dark:text-foreground/80">
               due now · {unmastered} still unmastered · {accuracy}% lifetime accuracy
             </p>
             {dueNow > 0 && (
               <Link
                 to="/review"
-                className="mt-2 inline-block text-xs font-bold text-ink underline underline-offset-4 anim-fade-up hover:anim-float"
+                className="mt-2 inline-block text-xs font-bold text-ink underline underline-offset-4 anim-fade-up hover:anim-float dark:text-foreground"
               >
                 Start review →
               </Link>
@@ -487,14 +512,14 @@ function Dashboard() {
             title="Recent activity"
             icon={BarChart3}
             onHide={hide}
-            className="md:col-span-2 xl:col-span-8 anim-fade-up"
+            className="md:col-span-2 xl:col-span-7 anim-fade-up"
           >
             {history.length ? (
               <ul className="space-y-2 stagger">
                 {history.slice(0, 5).map((h) => (
                   <li
                     key={h.id}
-                    className="flex items-center justify-between rounded-lg border-[2px] border-border bg-surface-2 px-3 py-2 text-sm anim-fade-up transition-all hover:shadow-[2px_2px_0_0_var(--shadow-ink)] press"
+                    className="flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-surface-2 px-3 py-1.5 text-sm anim-fade-up transition-colors hover:bg-surface-hover press"
                   >
                     <span className="truncate">
                       <span className="font-bold capitalize">{h.mode}</span> ·{" "}
@@ -518,12 +543,15 @@ function Dashboard() {
             title="Weak topics"
             icon={TrendingDown}
             onHide={hide}
-            className="xl:col-span-4 widget-pink anim-fade-up"
+            className="xl:col-span-5 widget-pink anim-fade-up"
           >
             {weak.length ? (
               <ul className="space-y-2 text-sm stagger">
                 {weak.map((w) => (
-                  <li key={w.concept} className="flex items-center justify-between gap-2 anim-fade-up">
+                  <li
+                    key={w.concept}
+                    className="flex items-center justify-between gap-2 anim-fade-up"
+                  >
                     <span className="truncate">
                       <MathText text={w.concept} />
                     </span>
@@ -558,7 +586,7 @@ function Dashboard() {
                     key={d.id}
                     to="/decks/$deckId"
                     params={{ deckId: d.id }}
-                    className="flex items-center gap-3 rounded-xl border-[2px] border-border bg-surface p-3 shadow-[2px_2px_0_0_var(--shadow-ink)] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_var(--shadow-ink)] anim-fade-up press"
+                    className="flex min-w-0 items-center gap-3 rounded-xl border border-border/70 bg-surface p-2.5 transition-all hover:border-primary/40 hover:bg-surface-hover anim-fade-up press"
                   >
                     <span
                       className="size-9 shrink-0 rounded-lg border-[2px] border-border"
@@ -585,7 +613,7 @@ function Dashboard() {
             onHide={hide}
             className="xl:col-span-4 anim-fade-up"
           >
-            <p className="font-display text-3xl font-bold anim-pop">
+            <p className="font-display text-2xl font-bold anim-pop">
               {unlocked.length}
               <span className="text-base text-muted-foreground"> / {ACHIEVEMENTS.length}</span>
             </p>
@@ -606,7 +634,7 @@ function Dashboard() {
             onHide={hide}
             className="md:col-span-2 xl:col-span-4 anim-fade-up"
           >
-            <dl className="grid grid-cols-2 gap-3 text-sm stagger">
+            <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm stagger">
               <div className="anim-fade-up">
                 <dt className="text-xs text-muted-foreground">Answered</dt>
                 <dd className="font-semibold">{progress.totalAnswered}</dd>

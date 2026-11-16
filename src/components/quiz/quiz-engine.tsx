@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Play, Timer, Zap, Flame, Target, SkipForward, ArrowRight, Settings2 } from "lucide-react";
+import {
+  Play,
+  Timer,
+  Zap,
+  Flame,
+  Target,
+  SkipForward,
+  ArrowRight,
+  Settings2,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -32,6 +42,7 @@ import type {
   QuestionType,
   QuizConfig,
   QuizResult,
+  SavedQuizSession,
   QuizWidgets,
   Settings,
 } from "@/lib/types";
@@ -39,7 +50,8 @@ import type {
 type Phase = "setup" | "running" | "report";
 
 export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
-  const { state, updateSettings, recordSession } = useKnowly();
+  const { state, updateSettings, recordSession, saveQuizSession, deleteSavedQuizSession } =
+    useKnowly();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("setup");
   const [config, setConfig] = useState<QuizConfig>(() =>
@@ -66,6 +78,7 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
   );
   const [pool, setPool] = useState<Question[]>([]);
   const [result, setResult] = useState<QuizResult | null>(null);
+  const [resumeSession, setResumeSession] = useState<SavedQuizSession | null>(null);
 
   const decks = state.decks;
   const widgets = state.settings.quizWidgets;
@@ -86,11 +99,19 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
   const start = (questions?: Question[]) => {
     const base = questions ?? availableQuestions;
     const ordered = config.shuffle ? shuffleArray(base) : base;
+    setResumeSession(null);
     setPool(config.unlimited ? ordered : ordered.slice(0, config.questionCount));
     setPhase("running");
   };
 
-  if (!decks.length) {
+  const resume = (session: SavedQuizSession) => {
+    setConfig(session.config);
+    setResumeSession(session);
+    setPool(session.pool);
+    setPhase("running");
+  };
+
+  if (!decks.length && !state.savedQuizSessions.length) {
     return (
       <div className="panel grid place-items-center p-16 text-center">
         <p className="font-medium">No decks yet</p>
@@ -152,6 +173,7 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
       <QuizRun
         pool={pool}
         config={config}
+        initialSession={resumeSession}
         widgets={widgets}
         settings={state.settings}
         exam={exam}
@@ -165,6 +187,25 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
           );
         })()}
         onQuit={() => setPhase("setup")}
+        onSaveAndExit={(session) => {
+          const deckIds = Array.from(
+            new Set(
+              session.pool
+                .map((q) => (q as Question & { deckId?: string }).deckId)
+                .filter((id): id is string => Boolean(id)),
+            ),
+          );
+          const deckTitles = decks.filter((d) => deckIds.includes(d.id)).map((d) => d.title);
+          saveQuizSession({
+            ...session,
+            id: resumeSession?.id ?? createId(),
+            savedAt: Date.now(),
+            deckIds,
+            deckTitles,
+          });
+          setResumeSession(null);
+          setPhase("setup");
+        }}
         onFinish={(answers, durationMs, bestCombo, xpEarned) => {
           const answered = answers.filter((a) => !a.skipped).length;
           const correct = answers.filter((a) => a.correct).length;
@@ -213,6 +254,8 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
             conceptStats,
             result: quizResult,
           });
+          if (resumeSession) deleteSavedQuizSession(resumeSession.id);
+          setResumeSession(null);
           setResult(quizResult);
           setPhase("report");
         }}
@@ -243,6 +286,41 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
           </Button>
         }
       />
+
+      {!exam && state.savedQuizSessions.length > 0 && (
+        <section className="panel mb-6 space-y-3 p-5">
+          <h2 className="text-sm font-semibold">Saved quizzes</h2>
+          {state.savedQuizSessions.map((session) => (
+            <div
+              key={session.id}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3"
+            >
+              <div>
+                <p className="text-sm font-medium">
+                  {session.deckTitles.join(" · ") || "Mixed decks"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {session.answers.length} of {session.pool.length} questions · Saved{" "}
+                  {new Date(session.savedAt).toLocaleString()}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={() => resume(session)}>
+                  <Play /> Resume
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Delete saved quiz"
+                  onClick={() => deleteSavedQuizSession(session.id)}
+                >
+                  <Trash2 />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
 
       <div className="grid items-start gap-6 lg:grid-cols-2">
         <section className="panel space-y-5 p-6">
@@ -499,15 +577,18 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
 function QuizRun({
   pool,
   config,
+  initialSession,
   widgets,
   settings,
   exam = false,
   mathMode = false,
   onFinish,
   onQuit,
+  onSaveAndExit,
 }: {
   pool: Question[];
   config: QuizConfig;
+  initialSession: SavedQuizSession | null;
   widgets: QuizWidgets;
   settings: Settings;
   /** exam mode: no hints, exam-styled quit prompt */
@@ -521,22 +602,25 @@ function QuizRun({
     xpEarned: number,
   ) => void;
   onQuit: () => void;
+  onSaveAndExit: (
+    session: Omit<SavedQuizSession, "id" | "savedAt" | "deckIds" | "deckTitles">,
+  ) => void;
 }) {
-  const [index, setIndex] = useState(0);
-  const [answers, setAnswers] = useState<AnswerRecord[]>([]);
+  const [index, setIndex] = useState(initialSession?.currentIndex ?? 0);
+  const [answers, setAnswers] = useState<AnswerRecord[]>(initialSession?.answers ?? []);
   const [input, setInput] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<null | { correct: boolean }>(null);
-  const [combo, setCombo] = useState(0);
-  const [bestCombo, setBestCombo] = useState(0);
-  const [xp, setXp] = useState(0);
-  const [elapsed, setElapsed] = useState(0);
+  const [combo, setCombo] = useState(initialSession?.combo ?? 0);
+  const [bestCombo, setBestCombo] = useState(initialSession?.bestCombo ?? 0);
+  const [xp, setXp] = useState(initialSession?.xp ?? 0);
+  const [elapsed, setElapsed] = useState(initialSession?.totalElapsedMs ?? 0);
   const [questionElapsed, setQuestionElapsed] = useState(0);
   const [confirmQuit, setConfirmQuit] = useState(false);
   const [pauseScreenVisible, setPauseScreenVisible] = useState(false);
   const [pauseCountdown, setPauseCountdown] = useState<number | null>(null);
   const coarsePointer = useCoarsePointer();
-  const started = useRef(Date.now());
+  const started = useRef(Date.now() - (initialSession?.totalElapsedMs ?? 0));
   const questionStart = useRef(Date.now());
   const advanceTimer = useRef<number | null>(null);
   const answerInput = useRef<HTMLInputElement>(null);
@@ -727,8 +811,17 @@ function QuizRun({
               variant="outline"
               className="w-full"
               onClick={() => {
-                setResult(null);
-                onQuit();
+                setPauseCountdown(null);
+                onSaveAndExit({
+                  pool,
+                  config,
+                  answers,
+                  currentIndex: index + 1,
+                  totalElapsedMs: Date.now() - started.current,
+                  combo,
+                  bestCombo,
+                  xp,
+                });
               }}
             >
               Save & Exit

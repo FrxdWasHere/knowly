@@ -40,6 +40,7 @@ import type {
   Progress,
   Question,
   QuizResult,
+  SavedQuizSession,
   SessionSummary,
   Settings,
   PromptTemplate,
@@ -101,6 +102,8 @@ const MIGRATIONS: Partial<Record<number, Migration>> = {
     modules: state.modules ?? [],
     moduleProgress: state.moduleProgress ?? {},
   }),
+  // v5 → v6: resumable quiz checkpoints.
+  5: (state) => ({ ...state, savedQuizSessions: state.savedQuizSessions ?? [] }),
 };
 
 /** Applies every migration needed to bring `parsed` up to `STATE_VERSION`. */
@@ -158,6 +161,7 @@ function normalizeState(parsed: Partial<AppState>): AppState {
     timetable: state.timetable ?? [],
     labels: state.labels ?? [],
     papers: state.papers ?? [],
+    savedQuizSessions: state.savedQuizSessions ?? [],
     progress: normalizeProgress({ ...DEFAULT_PROGRESS, ...state.progress }),
   };
 }
@@ -218,6 +222,8 @@ interface Ctx {
   /** spend banked XP (heart refills). Returns false when there isn't enough. */
   spendXp: (amount: number) => boolean;
   recordSession: (input: RecordSessionInput) => void;
+  saveQuizSession: (session: SavedQuizSession) => void;
+  deleteSavedQuizSession: (id: string) => void;
   saveTemplate: (t: PromptTemplate) => void;
   deleteTemplate: (id: string) => void;
   completeOnboarding: () => void;
@@ -918,6 +924,29 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
     [flushAchievements, setState],
   );
 
+  const saveQuizSession = useCallback(
+    (session: SavedQuizSession) => {
+      setState((s) => ({
+        ...s,
+        savedQuizSessions: [
+          session,
+          ...s.savedQuizSessions.filter((saved) => saved.id !== session.id),
+        ],
+      }));
+    },
+    [setState],
+  );
+
+  const deleteSavedQuizSession = useCallback(
+    (id: string) => {
+      setState((s) => ({
+        ...s,
+        savedQuizSessions: s.savedQuizSessions.filter((session) => session.id !== id),
+      }));
+    },
+    [setState],
+  );
+
   const value = useMemo<Ctx>(
     () => ({
       state,
@@ -956,6 +985,8 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
       reviewQuestion,
       spendXp,
       recordSession,
+      saveQuizSession,
+      deleteSavedQuizSession,
       saveTemplate: (t) =>
         setState((s) => ({
           ...s,
@@ -1013,6 +1044,8 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
       reviewQuestion,
       spendXp,
       recordSession,
+      saveQuizSession,
+      deleteSavedQuizSession,
       upsertSlot,
       deleteSlot,
       upsertLabel,

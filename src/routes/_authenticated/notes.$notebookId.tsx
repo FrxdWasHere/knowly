@@ -24,6 +24,7 @@ import {
   Maximize2,
   Mic,
   MicOff,
+  Move,
   NotebookPen,
   Palette,
   PenLine,
@@ -139,6 +140,7 @@ const TOOLS: { id: NoteTool; label: string; icon: typeof PenLine }[] = [
   { id: "highlighter", label: "Highlighter", icon: Highlighter },
   { id: "eraser", label: "Eraser", icon: Eraser },
   { id: "select", label: "Select / lasso", icon: LassoSelect },
+  { id: "move", label: "Move", icon: Move },
   { id: "text", label: "Text", icon: Type },
   { id: "sticky", label: "Sticky note", icon: StickyNote },
   { id: "tape", label: "Study tape", icon: RectangleHorizontal },
@@ -160,6 +162,7 @@ type DragMode =
   | "shape"
   | "tape"
   | "select-move"
+  | "move"
   | "select-resize"
   | "text-create"
   | "lasso"
@@ -297,8 +300,7 @@ function NotebookEditorPage() {
     chunks: Blob[];
     stream: MediaStream;
   } | null>(null);
-  /** id of an element placed this gesture — editing starts on pointer-up, so the
-   * browser's mousedown focus change can't blur (and instantly delete) it. */
+  /** Sticky-note editing starts on pointer-up, after its creation gesture ends. */
   const pendingEditRef = useRef<string | null>(null);
   const moveFrameRef = useRef<number | null>(null);
   const eraseFrameRef = useRef<number | null>(null);
@@ -1045,12 +1047,16 @@ function NotebookEditorPage() {
     if (next === "highlighter" && !HIGHLIGHTER_COLORS.includes(color)) {
       setColor(HIGHLIGHTER_COLORS[0]!);
     } else if (
-      (next === "pen" || next === "pencil" || next === "text" || next === "shape") &&
+      (next === "pen" ||
+        next === "pencil" ||
+        next === "text" ||
+        next === "shape" ||
+        next === "move") &&
       HIGHLIGHTER_COLORS.includes(color)
     ) {
       setColor(PEN_COLORS[0]!);
     }
-    setSelectedIds([]);
+    if (next !== "move") setSelectedIds([]);
     setEditingId(null);
     setTool(next);
   };
@@ -1281,8 +1287,7 @@ function NotebookEditorPage() {
     if (tool === "text") {
       const hit = topElementAt(page, point.x, point.y);
       if (hit && (hit.type === "text" || hit.type === "sticky")) {
-        // Clicking an existing box with the text tool edits it in place
-        // instead of stacking a new empty box on top of it.
+        // A separate click enters an existing text box after its sizing drag.
         setSelectedIds([hit.id]);
         startEditing(hit);
         dragRef.current = drag;
@@ -1372,6 +1377,33 @@ function NotebookEditorPage() {
         drag.points = [point.x, point.y, 0.5];
       }
       dragRef.current = drag;
+    }
+
+    if (tool === "move") {
+      const hit = topElementAt(page, point.x, point.y);
+      if (!hit) {
+        setSelectedIds([]);
+        dragRef.current = drag;
+        return;
+      }
+      const additive = event.shiftKey || event.ctrlKey || event.metaKey;
+      const alreadySelected = selectedIds.includes(hit.id);
+      const selection = additive
+        ? alreadySelected
+          ? selectedIds.filter((id) => id !== hit.id)
+          : [...selectedIds, hit.id]
+        : alreadySelected
+          ? selectedIds
+          : [hit.id];
+      setSelectedIds(selection);
+      if (selection.includes(hit.id)) {
+        drag.mode = "move";
+        drag.selection = selection;
+        drag.snapshot = page.elements;
+        drag.elements = page.elements;
+      }
+      dragRef.current = drag;
+      return;
     }
   };
 
@@ -1465,11 +1497,14 @@ function NotebookEditorPage() {
         drag.elements = drag.elements.map((element) => {
           if (element.id !== drag.createId) return element;
           if (element.type === "text") {
-            // Dragging right/down defines the box; the origin stays put.
+            const x = Math.min(drag.startX, point.x);
+            const y = Math.min(drag.startY, point.y);
             return {
               ...element,
-              width: Math.max(60, point.x - element.x),
-              height: Math.max(56, point.y - element.y),
+              x,
+              y,
+              width: Math.max(60, Math.abs(point.x - drag.startX)),
+              height: Math.max(56, Math.abs(point.y - drag.startY)),
             };
           }
           if (element.type !== "sticky") return element;
@@ -1496,7 +1531,7 @@ function NotebookEditorPage() {
       return;
     }
 
-    if (drag.mode === "select-move") {
+    if (drag.mode === "select-move" || drag.mode === "move") {
       const dx = point.x - drag.lastX;
       const dy = point.y - drag.lastY;
       if (!dx && !dy) return;
@@ -1609,13 +1644,18 @@ function NotebookEditorPage() {
       }
     } else if (drag.mode === "text-create") {
       const created = drag.elements.find((element) => element.id === drag.createId);
-      if (created) {
+      const draggedEnough =
+        Math.abs(point.x - drag.startX) > 6 || Math.abs(point.y - drag.startY) > 6;
+      if (created && (created.type === "sticky" || draggedEnough)) {
         commitElements(drag.elements, drag.snapshot);
         setSelectedIds([created.id]);
-        // pointer-up tail switches into the editor for this box
-        pendingEditRef.current = created.id;
+        if (created.type === "sticky") pendingEditRef.current = created.id;
       }
-    } else if (drag.mode === "select-move" || drag.mode === "select-resize") {
+    } else if (
+      drag.mode === "select-move" ||
+      drag.mode === "move" ||
+      drag.mode === "select-resize"
+    ) {
       pushHistory(page.id, drag.snapshot);
       const fit = ensurePageFits(page, drag.elements);
       scheduleSave({ ...fit, elements: drag.elements, updatedAt: Date.now() });
@@ -2574,9 +2614,11 @@ function NotebookEditorPage() {
                           ? "grab"
                           : tool === "text"
                             ? "text"
-                            : tool === "select"
-                              ? "default"
-                              : "crosshair",
+                            : tool === "move"
+                              ? "move"
+                              : tool === "select"
+                                ? "default"
+                                : "crosshair",
                     }}
                     onPointerDown={handlePointerDown}
                     onPointerMove={handlePointerMove}

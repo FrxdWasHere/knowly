@@ -50,19 +50,19 @@ export function SrsDashboardWidget({ decks }: { decks: Deck[] }) {
   ].filter((s) => s.count > 0);
 
   return (
-    <div className="space-y-6">
-      <div className="grid items-center gap-6 xl:grid-cols-[minmax(260px,0.8fr)_minmax(420px,1.2fr)]">
-        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-5">
+    <div className="space-y-4">
+      <div className="grid items-center gap-4 xl:grid-cols-[minmax(260px,0.8fr)_minmax(420px,1.2fr)]">
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4">
           <SrsRing
             value={due.length ? Math.min(100, (due.length / Math.max(1, totals.total)) * 100) : 100}
-            size={86}
-            stroke={7}
+            size={72}
+            stroke={6}
             color={due.length ? "var(--primary)" : "var(--success)"}
           >
             <span className="text-center">
               {due.length ? (
                 <>
-                  <span className="block font-display text-xl font-bold leading-none">
+                  <span className="block font-display text-lg font-bold leading-none">
                     {due.length}
                   </span>
                   <span className="block text-[9px] text-muted-foreground">due</span>
@@ -86,7 +86,7 @@ export function SrsDashboardWidget({ decks }: { decks: Deck[] }) {
                   ? `Next card is ready ${formatDue(nextUp, now)} · you remember ${retention}% of your reviews`
                   : "Study a deck to get your review plan started."}
             </p>
-            <Button size="sm" className="press mt-3" asChild>
+            <Button size="sm" className="press mt-2 h-8" asChild>
               <Link to="/review">
                 <Play /> {due.length ? "Start review" : "Review ahead"}
               </Link>
@@ -95,7 +95,7 @@ export function SrsDashboardWidget({ decks }: { decks: Deck[] }) {
         </div>
 
         {/* 7 day forecast */}
-        <div className="min-w-0 border-t border-border pt-5 xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0">
+        <div className="min-w-0 border-t border-border pt-4 xl:border-l xl:border-t-0 xl:pl-5 xl:pt-0">
           <p className="text-[11px] font-medium text-muted-foreground">Next 7 days</p>
           <div className="mt-2 grid grid-cols-7 items-end gap-1.5">
             {days.map((d) => (
@@ -106,7 +106,7 @@ export function SrsDashboardWidget({ decks }: { decks: Deck[] }) {
                     "w-full min-w-3 rounded-t-md transition-all duration-500",
                     d.isToday ? "bg-primary" : "bg-primary/35",
                   )}
-                  style={{ height: `${Math.max(3, (d.count / peak) * 68)}px` }}
+                  style={{ height: `${Math.max(3, (d.count / peak) * 48)}px` }}
                   title={`${d.count} card${d.count === 1 ? "" : "s"} on ${d.key}`}
                 />
                 <span
@@ -126,16 +126,16 @@ export function SrsDashboardWidget({ decks }: { decks: Deck[] }) {
       {(stages.length > 0 || perDeck.length > 0) && (
         <div
           className={cn(
-            "grid gap-5 border-t border-border pt-5",
+            "grid gap-4 border-t border-border pt-4",
             stages.length > 0 &&
               perDeck.length > 0 &&
-              "lg:grid-cols-[minmax(240px,0.75fr)_minmax(0,1.25fr)]",
+              "lg:grid-cols-[minmax(220px,0.75fr)_minmax(0,1.25fr)]",
           )}
         >
           {/* maturity mix */}
           {stages.length > 0 && (
             <div className="min-w-0">
-              <p className="mb-2 text-[11px] font-medium text-muted-foreground">
+              <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">
                 How well you know your cards
               </p>
               <div className="flex h-2 overflow-hidden rounded-full bg-secondary">
@@ -168,8 +168,8 @@ export function SrsDashboardWidget({ decks }: { decks: Deck[] }) {
           {/* per-deck queue */}
           {perDeck.length > 0 && (
             <div className="min-w-0">
-              <p className="mb-2 text-[11px] font-medium text-muted-foreground">Due by deck</p>
-              <ul className="grid gap-1.5 sm:grid-cols-2">
+              <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">Due by deck</p>
+              <ul className="grid gap-1 sm:grid-cols-2">
                 {perDeck.map(({ deck, srs }) => (
                   <li key={deck.id} className="min-w-0">
                     <Link

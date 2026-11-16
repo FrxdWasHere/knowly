@@ -242,14 +242,15 @@ function Onboarding() {
       return;
     }
     setSampleArmed(false);
-    const ok = importState(JSON.stringify(buildSampleProfile()));
+    const sample = buildSampleProfile();
+    const ok = importState(JSON.stringify(sample));
     if (!ok) {
       toast.error("Couldn't build the sample profile");
       return;
     }
     completeOnboarding();
     toast.success(
-      "Sample profile loaded — 5 decks, 2 courses, a full timetable and two practice papers. Explore freely!",
+      `Sample profile loaded — ${sample.decks.length} decks, ${sample.courses.length} courses, ${sample.modules.length} standalone modules, a quiz ready to resume, a full timetable and ${sample.papers.length} practice papers. Explore freely!`,
     );
     navigate({ to: "/dashboard" });
   };
