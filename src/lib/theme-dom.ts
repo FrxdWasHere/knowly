@@ -40,9 +40,18 @@ export function applyThemeToRoot(settings: Settings) {
   if (typeof document === "undefined") return;
   const theme = resolveTheme(settings);
   const root = document.documentElement;
+  const isSharedView =
+    typeof window !== "undefined" &&
+    window.location.pathname.startsWith("/share/") &&
+    typeof window.matchMedia === "function";
+  const mode = isSharedView
+    ? window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light"
+    : theme.mode;
 
-  root.classList.toggle("light", theme.mode === "light");
-  root.classList.toggle("dark", theme.mode === "dark");
+  root.classList.toggle("light", mode === "light");
+  root.classList.toggle("dark", mode === "dark");
   root.classList.toggle("contrast-high", theme.highContrast);
   root.classList.toggle("colorblind", theme.colorblindPalette);
   root.classList.toggle("reduce-motion", theme.reducedMotion);
@@ -77,4 +86,4 @@ export function applyThemeToRoot(settings: Settings) {
  * hydrates, so the bootstrap doesn't wait for IndexedDB. Fallback to localStorage
  * (which contains the last cached theme) is acceptable for the initial paint.
  */
-export const THEME_BOOTSTRAP_SCRIPT = `(()=>{try{const s=localStorage.getItem('${THEME_CACHE_KEY}')||localStorage.getItem('${LEGACY_THEME_CACHE_KEY}')||'null';const t=JSON.parse(s);if(!t)return;const r=document.documentElement;r.classList.toggle('light',t.mode==='light');r.classList.toggle('dark',t.mode==='dark');r.classList.toggle('contrast-high',!!t.highContrast);r.classList.toggle('colorblind',!!t.colorblindPalette);r.classList.toggle('reduce-motion',!!t.reducedMotion);r.classList.toggle('focus-strong',!!t.focusIndicators);if(t.buttonSize)r.dataset.btn=t.buttonSize;if(Number.isFinite(t.fontScale))r.style.setProperty('--font-scale',String(t.fontScale));if(Number.isFinite(t.radius))r.style.setProperty('--radius',t.radius+'rem');if(Number.isFinite(t.animationSpeed))r.style.setProperty('--speed',String(t.animationSpeed));}catch{}})();`;
+export const THEME_BOOTSTRAP_SCRIPT = `(()=>{try{const r=document.documentElement;if(location.pathname.startsWith('/share/')&&window.matchMedia){const d=window.matchMedia('(prefers-color-scheme: dark)').matches;r.classList.toggle('light',!d);r.classList.toggle('dark',d);return;}const s=localStorage.getItem('${THEME_CACHE_KEY}')||localStorage.getItem('${LEGACY_THEME_CACHE_KEY}')||'null';const t=JSON.parse(s);if(!t)return;r.classList.toggle('light',t.mode==='light');r.classList.toggle('dark',t.mode==='dark');r.classList.toggle('contrast-high',!!t.highContrast);r.classList.toggle('colorblind',!!t.colorblindPalette);r.classList.toggle('reduce-motion',!!t.reducedMotion);r.classList.toggle('focus-strong',!!t.focusIndicators);if(t.buttonSize)r.dataset.btn=t.buttonSize;if(Number.isFinite(t.fontScale))r.style.setProperty('--font-scale',String(t.fontScale));if(Number.isFinite(t.radius))r.style.setProperty('--radius',t.radius+'rem');if(Number.isFinite(t.animationSpeed))r.style.setProperty('--speed',String(t.animationSpeed));}catch{}})();`;

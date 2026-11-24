@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { Course, CourseAssessment, CourseBlock, Deck, Module, Question } from "@/lib/types";
 import type { ExamOptions, ExamTheme } from "@/lib/exam-print";
 import { shuffleArray } from "@/lib/answers";
+import { validateQuestionsJson } from "@/lib/schema";
 
 export const SHARE_RESOURCE_TYPES = [
   "deck",
@@ -88,6 +89,7 @@ const shareSnapshotSchema = z.object({
   title: z.string().min(1),
   subject: z.string().optional(),
   description: z.string().optional(),
+  color: z.string().optional(),
   theme: z.string().optional(),
   stages: z.array(sharedStageSchema).optional(),
   blocks: z.array(sharedBlockSchema).optional(),
@@ -116,6 +118,44 @@ export interface SharedResource {
   title: string;
   resourceType: ShareResourceType;
   payload: ShareSnapshot;
+}
+
+export type ViewerDeckCopyResult = { ok: true; deck: Deck } | { ok: false; error: string };
+
+export function createViewerDeckCopy(
+  resource: SharedResource,
+  id: string,
+  createdAt = Date.now(),
+): ViewerDeckCopyResult {
+  if (resource.resourceType !== "deck" || resource.payload.resourceType !== "deck") {
+    return { ok: false, error: "Only shared decks can be added to your library." };
+  }
+
+  const validation = validateQuestionsJson(JSON.stringify(resource.payload.questions ?? []));
+  if (!validation.ok || !validation.questions?.length) {
+    return {
+      ok: false,
+      error: validation.errors[0] ?? "The deck does not contain valid practice questions.",
+    };
+  }
+
+  return {
+    ok: true,
+    deck: {
+      id,
+      title: resource.title,
+      subject: resource.payload.subject ?? "General",
+      description: resource.payload.description,
+      color: resource.payload.color ?? "#5477e8",
+      tags: ["shared"],
+      createdAt,
+      favorite: false,
+      questions: validation.questions,
+      masteredIds: [],
+      bookmarks: [],
+      notes: {},
+    },
+  };
 }
 
 function publicQuestion(question: Question, includeAnswer = true): SharedQuestion {
@@ -186,6 +226,7 @@ export function buildDeckShareSnapshot(deck: Deck, theme?: ExamTheme): ShareSnap
     title: deck.title,
     subject: deck.subject,
     description: deck.description,
+    color: deck.color,
     theme,
     stages: learningPath?.stages.map((stage) => ({
       title: stage.title,

@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { defaultExamOptions } from "./exam-print";
 import {
+  createViewerDeckCopy,
+  buildDeckShareSnapshot,
   buildPrintExamShareSnapshot,
   normalizeInviteEmails,
   parseShareSnapshot,
 } from "./share-content";
-import type { Question } from "./types";
+import type { Deck, Question } from "./types";
 
 const matchingQuestion: Question = {
   id: "matching-1",
@@ -20,6 +22,59 @@ const matchingQuestion: Question = {
 };
 
 describe("share content", () => {
+  it("preserves a deck's color in its validated share snapshot", () => {
+    const deck: Deck = {
+      id: "deck-1",
+      title: "Biology",
+      subject: "Biology",
+      color: "#3158a7",
+      tags: [],
+      createdAt: 1,
+      favorite: false,
+      questions: [matchingQuestion],
+      masteredIds: [],
+      bookmarks: [],
+      notes: {},
+    };
+
+    const snapshot = buildDeckShareSnapshot(deck);
+
+    expect(snapshot.color).toBe("#3158a7");
+    expect(parseShareSnapshot(snapshot)?.color).toBe("#3158a7");
+  });
+
+  it("creates an isolated local practice copy without carrying learner progress", () => {
+    const deck: Deck = {
+      id: "deck-1",
+      title: "Biology",
+      subject: "Biology",
+      color: "#3158a7",
+      tags: [],
+      createdAt: 1,
+      favorite: false,
+      questions: [matchingQuestion],
+      masteredIds: [matchingQuestion.id],
+      bookmarks: [matchingQuestion.id],
+      notes: { [matchingQuestion.id]: "Private note" },
+    };
+    const resource = {
+      title: deck.title,
+      resourceType: "deck" as const,
+      payload: buildDeckShareSnapshot(deck),
+    };
+    const result = createViewerDeckCopy(resource, "shared-copy", 123);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.deck.id).toBe("shared-copy");
+    expect(result.deck.questions[0]?.id).not.toBe(matchingQuestion.id);
+    expect(result.deck.color).toBe(deck.color);
+    expect(result.deck.createdAt).toBe(123);
+    expect(result.deck.masteredIds).toEqual([]);
+    expect(result.deck.bookmarks).toEqual([]);
+    expect(result.deck.notes).toEqual({});
+  });
+
   it("omits exam answers and student details when the answer key is disabled", () => {
     const options = {
       ...defaultExamOptions("Biology Exam", "Biology"),

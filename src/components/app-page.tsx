@@ -8,7 +8,10 @@ export function AppPage({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (hydrated && !state.onboardingComplete) navigate({ to: "/onboarding" });
+    if (hydrated && !state.onboardingComplete) {
+      const returnTo = `${window.location.pathname}${window.location.search}`;
+      navigate({ to: "/onboarding", search: { returnTo }, replace: true });
+    }
   }, [hydrated, state.onboardingComplete, navigate]);
 
   if (!hydrated) {

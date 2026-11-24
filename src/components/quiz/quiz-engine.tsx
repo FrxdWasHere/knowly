@@ -29,12 +29,7 @@ import {
 import { MathKeypad, MathText } from "@/components/math/math-text";
 import { useKnowly } from "@/store/knowly";
 import { useCoarsePointer } from "@/hooks/use-mobile";
-import {
-  checkAnswer,
-  questionFeedbackExplanation,
-  shuffleArray,
-  TYPE_LABELS,
-} from "@/lib/answers";
+import { checkAnswer, questionFeedbackExplanation, shuffleArray, TYPE_LABELS } from "@/lib/answers";
 import { displayAnswer, isInteractive } from "@/lib/interactive";
 import { xpForAnswer, comboMultiplier } from "@/lib/gamification";
 import { questionTypes } from "@/lib/schema";
@@ -63,7 +58,10 @@ type QuizFeedback = {
   given?: string;
 };
 
-export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
+export function QuizEngine({
+  exam = false,
+  initialDeckId,
+}: { exam?: boolean; initialDeckId?: string } = {}) {
   const { state, updateSettings, recordSession, saveQuizSession, deleteSavedQuizSession } =
     useKnowly();
   const navigate = useNavigate();
@@ -89,8 +87,12 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
           questionsPerRound: 10,
           pauseAutoAdvanceSeconds: null,
         }
-      : state.settings.defaultQuizConfig,
+      : {
+          ...state.settings.defaultQuizConfig,
+          ...(initialDeckId ? { deckIds: [initialDeckId] } : {}),
+        },
   );
+
   const [pool, setPool] = useState<Question[]>([]);
   const [result, setResult] = useState<QuizResult | null>(null);
   const [resumeSession, setResumeSession] = useState<SavedQuizSession | null>(null);
@@ -544,14 +546,16 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <Label className="text-sm">Round pauses</Label>
-                  <p className="text-[11px] text-muted-foreground">Take a break every N questions</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Take a break every N questions
+                  </p>
                 </div>
                 <Switch
                   checked={config.roundPauses}
                   onCheckedChange={(v) => toggle("roundPauses", v)}
                 />
               </div>
-              
+
               {config.roundPauses && (
                 <div className="space-y-3 border-t border-border pt-3">
                   <div className="space-y-1.5">
@@ -567,16 +571,21 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
                       }}
                     />
                   </div>
-                  
+
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Auto-advance after (seconds, leave empty for manual)</Label>
+                    <Label className="text-xs">
+                      Auto-advance after (seconds, leave empty for manual)
+                    </Label>
                     <Input
                       type="number"
                       min={0}
                       placeholder="off"
                       value={config.pauseAutoAdvanceSeconds ?? ""}
                       onChange={(e) =>
-                        toggle("pauseAutoAdvanceSeconds", e.target.value ? Number(e.target.value) : null)
+                        toggle(
+                          "pauseAutoAdvanceSeconds",
+                          e.target.value ? Number(e.target.value) : null,
+                        )
                       }
                     />
                   </div>
@@ -847,16 +856,20 @@ function QuizRun({
         setSelected(null);
         questionStart.current = Date.now();
         setQuestionElapsed(0);
-        
+
         // Check if we should show a round pause
-        if (config.roundPauses && nextAnswers.length % config.questionsPerRound === 0 && nextAnswers.length < total) {
+        if (
+          config.roundPauses &&
+          nextAnswers.length % config.questionsPerRound === 0 &&
+          nextAnswers.length < total
+        ) {
           setPauseScreenVisible(true);
           if (config.pauseAutoAdvanceSeconds !== null && config.pauseAutoAdvanceSeconds > 0) {
             setPauseCountdown(config.pauseAutoAdvanceSeconds);
           }
           return;
         }
-        
+
         if (index + 1 >= total) {
           onFinish(
             nextAnswers,
@@ -981,7 +994,9 @@ function QuizRun({
         <div className="grid place-items-center gap-6 rounded-2xl border-2 border-border bg-surface p-12 text-center">
           <div>
             <h2 className="font-display text-3xl font-bold">Round Complete!</h2>
-            <p className="mt-2 text-muted-foreground">You've completed {answers.length} questions</p>
+            <p className="mt-2 text-muted-foreground">
+              You've completed {answers.length} questions
+            </p>
           </div>
 
           <div className="grid grid-cols-3 gap-4 w-full">

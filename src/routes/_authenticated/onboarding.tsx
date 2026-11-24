@@ -52,6 +52,8 @@ import { buildSampleProfile } from "@/lib/sample-profile";
 import { ThemePicker } from "@/components/theme-picker";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
+  validateSearch: (search: Record<string, unknown>) =>
+    typeof search.returnTo === "string" ? { returnTo: search.returnTo } : {},
   head: () => ({
     meta: [
       { title: "Welcome to Knowly" },
@@ -171,6 +173,7 @@ function previewBackup(
 }
 
 function Onboarding() {
+  const { returnTo } = Route.useSearch();
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState(1);
   const { state, hydrated, completeOnboarding, updateSettings, addDeck, importState, setAvatar } =
@@ -273,6 +276,48 @@ function Onboarding() {
 
   const finish = (to: "/dashboard" | "/generate" | "/format" | "/decks") => {
     completeOnboarding();
+    const [path, query = ""] = (returnTo ?? "").split("?", 2);
+    const search = new URLSearchParams(query);
+    const decodedDeckId = (value: string) => {
+      try {
+        return decodeURIComponent(value);
+      } catch {
+        return "";
+      }
+    };
+
+    if (path.startsWith("/study/")) {
+      const deckId = decodedDeckId(path.slice("/study/".length));
+      if (deckId) {
+        navigate({
+          to: "/study/$deckId",
+          params: { deckId },
+          search: {
+            part: search.get("part") ?? undefined,
+            stageId: search.get("stageId") ?? undefined,
+            activityId: search.get("activityId") ?? undefined,
+          },
+          replace: true,
+        });
+        return;
+      }
+    }
+    if (path.startsWith("/arena/")) {
+      const deckId = decodedDeckId(path.slice("/arena/".length));
+      if (deckId) {
+        navigate({ to: "/arena/$deckId", params: { deckId }, replace: true });
+        return;
+      }
+    }
+    if (path === "/quiz") {
+      const deckId = search.get("deckId") ?? undefined;
+      navigate({
+        to: "/quiz",
+        search: deckId ? { deckId } : {},
+        replace: true,
+      });
+      return;
+    }
     navigate({ to });
   };
 

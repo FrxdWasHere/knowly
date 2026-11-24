@@ -59,7 +59,7 @@ function SharedResourcePage() {
   }, [authLoading, token, user?.id]);
 
   if (state.status === "ready") {
-    return <SharedResourceView resource={state.resource} />;
+    return <SharedResourceView resource={state.resource} shareId={token} />;
   }
 
   return (

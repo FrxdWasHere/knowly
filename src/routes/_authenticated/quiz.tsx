@@ -3,6 +3,8 @@ import { AppPage } from "@/components/app-page";
 import { QuizEngine } from "@/components/quiz/quiz-engine";
 
 export const Route = createFileRoute("/_authenticated/quiz")({
+  validateSearch: (search: Record<string, unknown>) =>
+    typeof search.deckId === "string" ? { deckId: search.deckId } : {},
   head: () => ({
     meta: [
       { title: "Practice Quiz — Configurable Offline Quiz Engine | Knowly" },
@@ -18,9 +20,14 @@ export const Route = createFileRoute("/_authenticated/quiz")({
       },
     ],
   }),
-  component: () => (
-    <AppPage>
-      <QuizEngine />
-    </AppPage>
-  ),
+  component: PracticeQuizRoute,
 });
+
+function PracticeQuizRoute() {
+  const { deckId } = Route.useSearch();
+  return (
+    <AppPage>
+      <QuizEngine key={deckId ?? "all-decks"} initialDeckId={deckId} />
+    </AppPage>
+  );
+}

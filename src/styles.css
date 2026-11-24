@@ -2389,3 +2389,53 @@ body {
 .print-friendly .paper-flow .print-page > footer * {
   color: #4b5563 !important;
 }
+
+@media print {
+  .shared-resource-layout {
+    display: block !important;
+  }
+
+  .shared-resource-sidebar {
+    display: none !important;
+  }
+
+  .shared-resource-reader-shell {
+    padding: 0 !important;
+  }
+
+  .shared-resource-article {
+    max-width: none !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    color: #111111 !important;
+    box-shadow: none !important;
+  }
+
+  .shared-resource-article,
+  .shared-resource-article * {
+    color: #111111 !important;
+    border-color: #d1d5db !important;
+  }
+
+  .shared-resource-article * {
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+  }
+
+  .shared-resource-header,
+  .shared-resource-footer {
+    background: transparent !important;
+    color: #4b5563 !important;
+  }
+
+  .shared-answer-details > summary {
+    display: none !important;
+  }
+
+  .shared-answer-details > div {
+    display: block !important;
+  }
+}

@@ -60,6 +60,8 @@ import type {
 } from "@/lib/types";
 import type { BinderLabel } from "@/lib/labels";
 import type { PaperRecord } from "@/lib/papers";
+import { SpeedInsights } from "@vercel/speed-insights/next"
+import { Analytics } from "@vercel/analytics/next"
 
 const STORAGE_KEY = "studyforge.state.v1";
 const HISTORY_LIMIT = 200;
