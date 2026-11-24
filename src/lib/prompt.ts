@@ -7,15 +7,11 @@ import {
   MODULE_FIELD_DOCS,
 } from "./schema";
 import type { Difficulty, QuestionType } from "./types";
-<<<<<<< HEAD
 import {
   getLengthInstructions,
   lengthBudgetForPreset,
   presetForSliderValue,
 } from "./length-detail";
-=======
-import { getLengthInstructions, lengthBudgetForPreset } from "./length-detail";
->>>>>>> 4356d87774549d8fc1f4271d8e44ba482a79a15a
 import {
   LEARNING_PATH_SCHEMA_TEXT,
   buildLearningPathInstructions,
@@ -201,11 +197,7 @@ export function deckSizeLine(auto: boolean | undefined, requested: number, mater
       ? "- Choose a suitable number of cards for the supplied material (~1 card per 25 words as a rough guide); do not force a minimum or pad."
       : `- Write exactly ${requested} cards, as requested.`,
     "- Prefer many small cards that test one fact, definition, step or distinction each. Never pad, repeat a question in different words, or split a single idea into filler — if the material is short, write fewer, sharper cards rather than variations.",
-<<<<<<< HEAD
     `- Give each card a consistent, specific "concept" label. Use only as many concepts as the material supports; the Learning Path groups related concepts into stages.`,
-=======
-    `- Spread the cards across at least four distinct "concept" labels (15-40 cards each) so the app can build coherent stages and short rounds.`,
->>>>>>> 4356d87774549d8fc1f4271d8e44ba482a79a15a
   ];
   if (!auto && fromMaterial !== requested) {
     lines.push(
@@ -250,10 +242,7 @@ export function buildPrompt(o: PromptOptions) {
     sliderValue,
     ...o.learningPath,
   };
-<<<<<<< HEAD
   const lengthPreset = pathOptions.lengthPreset ?? presetForSliderValue(sliderValue);
-=======
->>>>>>> 4356d87774549d8fc1f4271d8e44ba482a79a15a
 
   return `You are an expert curriculum designer. Convert the study material below into a Knowly deck built around a Learning Path.
 

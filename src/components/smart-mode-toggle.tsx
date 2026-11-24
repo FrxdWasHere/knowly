@@ -29,14 +29,7 @@ export function SmartModeToggle({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1 flex-1">
           <div className="flex items-center gap-2">
-<<<<<<< HEAD
             <Label htmlFor="smart-mode-toggle" className="cursor-pointer font-semibold">
-=======
-            <Label
-              htmlFor="smart-mode-toggle"
-              className="cursor-pointer font-semibold"
-            >
->>>>>>> 4356d87774549d8fc1f4271d8e44ba482a79a15a
               Smart Mode
             </Label>
             <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold">
@@ -45,11 +38,7 @@ export function SmartModeToggle({
           </div>
           <p className="text-sm text-muted-foreground">
             {enabled
-<<<<<<< HEAD
               ? `Knowly reads ${fileCount} source file(s) and suggests a starting setup.`
-=======
-              ? `AI analyzes ${fileCount} file(s) and auto-configures your content.`
->>>>>>> 4356d87774549d8fc1f4271d8e44ba482a79a15a
               : "Configure content manually."}
           </p>
         </div>
@@ -59,7 +48,6 @@ export function SmartModeToggle({
             {enabled && fileCount > 0 && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <FileText className="size-3.5" />
-<<<<<<< HEAD
                 <span>
                   {fileCount} file{fileCount !== 1 ? "s" : ""} uploaded
                 </span>
@@ -67,17 +55,6 @@ export function SmartModeToggle({
             )}
           </div>
           <Switch id="smart-mode-toggle" checked={enabled} onCheckedChange={onToggle} />
-=======
-                <span>{fileCount} file{fileCount !== 1 ? "s" : ""} uploaded</span>
-              </div>
-            )}
-          </div>
-          <Switch
-            id="smart-mode-toggle"
-            checked={enabled}
-            onCheckedChange={onToggle}
-          />
->>>>>>> 4356d87774549d8fc1f4271d8e44ba482a79a15a
         </div>
       </div>
 
@@ -88,20 +65,12 @@ export function SmartModeToggle({
             <Info className="size-4 mt-0.5 flex-shrink-0" />
             <div className="space-y-1">
               <p>
-<<<<<<< HEAD
                 <strong>Smart Mode</strong> extracts and analyzes your uploaded files on this device
                 to suggest topics, titles, and learning objectives.
               </p>
               <p>
                 Your chosen AI receives the copied prompt and source text. Review and edit the
                 suggestions before using them.
-=======
-                <strong>Smart Mode</strong> automatically analyzes your uploaded files
-                to suggest titles, descriptions, learning objectives, and other settings.
-              </p>
-              <p>
-                You can still edit any suggestions before generating your content.
->>>>>>> 4356d87774549d8fc1f4271d8e44ba482a79a15a
               </p>
             </div>
           </div>
@@ -124,15 +93,9 @@ export function SmartModeIntro({ className }: { className?: string }) {
         <div className="space-y-1">
           <h3 className="font-semibold text-foreground">Introducing Smart Mode</h3>
           <p className="text-sm text-muted-foreground">
-<<<<<<< HEAD
             Smart Mode uses AI to analyze your source materials and automatically configure your
             content. Upload files, review AI-generated suggestions, adjust length and detail, then
             generate your educational resource.
-=======
-            Smart Mode uses AI to analyze your source materials and automatically
-            configure your content. Upload files, review AI-generated suggestions,
-            adjust length and detail, then generate your educational resource.
->>>>>>> 4356d87774549d8fc1f4271d8e44ba482a79a15a
           </p>
         </div>
       </div>

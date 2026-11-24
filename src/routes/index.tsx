@@ -319,11 +319,11 @@ function Landing() {
   const { state, hydrated } = useKnowly();
   const { loading: authLoading, user } = useAuth();
 
-  // The landing page always renders. The path is landing → sign in →
-  // onboarding → app, so every call to action leads to the account step.
+  // First-time visitors choose sign-in or local setup; returning local users
+  // can continue straight into their device-stored workspace.
   const openApp = () => {
     if (authLoading) return;
-    if (!user || !hydrated) {
+    if (!hydrated || (!user && !state.onboardingComplete)) {
       void navigate({ to: "/login" });
       return;
     }

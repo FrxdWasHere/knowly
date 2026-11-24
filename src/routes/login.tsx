@@ -163,6 +163,25 @@ function LoginPage() {
   };
 
   const copy = MODE_COPY[mode];
+  const localAccountOption = (
+    <div className="space-y-2 border-t-2 border-border pt-4">
+      <Button
+        type="button"
+        variant="outline"
+        size="lg"
+        className="w-full"
+        onClick={() =>
+          void navigate({ to: state.onboardingComplete ? "/dashboard" : "/onboarding" })
+        }
+      >
+        Continue with a local account <ArrowRight />
+      </Button>
+      <p className="text-center text-xs leading-5 text-muted-foreground">
+        No email or password needed. Your library stays on this device. You can set up login later
+        from Account &amp; sync.
+      </p>
+    </div>
+  );
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background">
@@ -282,13 +301,16 @@ function LoginPage() {
 
             <div className="space-y-5 p-5 sm:p-6">
               {!configured ? (
-                <div
-                  role="alert"
-                  className="rounded-xl border-2 border-destructive/40 bg-destructive/10 p-4 text-sm"
-                >
-                  Supabase isn’t configured for this build. Add the Vite Supabase URL and
-                  publishable key to the app environment, then restart or redeploy.
-                </div>
+                <>
+                  <div
+                    role="alert"
+                    className="rounded-xl border-2 border-destructive/40 bg-destructive/10 p-4 text-sm"
+                  >
+                    Supabase isn’t configured for this build. Add the Vite Supabase URL and
+                    publishable key to the app environment, then restart or redeploy.
+                  </div>
+                  {localAccountOption}
+                </>
               ) : loading ? (
                 <div className="grid min-h-40 place-items-center" aria-label="Checking sign-in">
                   <div className="size-7 animate-spin rounded-full border-2 border-border border-t-primary" />
@@ -467,6 +489,8 @@ function LoginPage() {
                       Back to sign in
                     </button>
                   )}
+
+                  {localAccountOption}
 
                   <div className="flex items-start gap-2 border-t-2 border-border pt-4 text-[11px] leading-5 text-muted-foreground">
                     <NotebookPen className="mt-0.5 size-3.5 shrink-0" />
