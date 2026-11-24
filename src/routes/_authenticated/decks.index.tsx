@@ -16,6 +16,7 @@ import {
 import { SrsStatusBadge } from "@/components/srs/srs-status-badge";
 import { LabelChips } from "@/components/binder/label-picker";
 import { deckSrs } from "@/lib/srs";
+import { pathStats } from "@/lib/learning-paths";
 import { openImportPanel } from "@/lib/import-panel";
 import { useKnowly } from "@/store/knowly";
 import { cn } from "@/lib/utils";
@@ -192,6 +193,7 @@ function DeckLibrary() {
           {decks.map((d) => {
             const pct = Math.round((d.masteredIds.length / Math.max(1, d.questions.length)) * 100);
             const srs = deckSrs(d);
+            const stageId = d.learningPath ? pathStats(d.learningPath).currentStage?.id : undefined;
             return (
               <div key={d.id} className="panel group relative overflow-hidden p-0">
                 <div className="h-20 w-full" style={{ background: d.color, opacity: 0.85 }} />
@@ -261,7 +263,7 @@ function DeckLibrary() {
                       <Link
                         to="/study/$deckId"
                         params={{ deckId: d.id }}
-                        search={{ part: undefined }}
+                        search={{ part: undefined, stageId, activityId: undefined }}
                       >
                         Study
                       </Link>

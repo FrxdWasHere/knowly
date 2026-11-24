@@ -36,6 +36,7 @@ import { checkAnswer, formatDuration, TYPE_LABELS } from "@/lib/answers";
 import { displayAnswer, isInteractive } from "@/lib/interactive";
 import { xpForAnswer } from "@/lib/gamification";
 import { gradeFromOutcome } from "@/lib/srs";
+import { isStageUnlocked, purposeLabel } from "@/lib/learning-paths";
 import {
   bossHealth,
   buildRounds,
@@ -58,6 +59,8 @@ import type { AnswerRecord, Question } from "@/lib/types";
 export const Route = createFileRoute("/_authenticated/study/$deckId")({
   validateSearch: (search: Record<string, unknown>) => ({
     part: typeof search.part === "string" ? search.part : undefined,
+    stageId: typeof search.stageId === "string" ? search.stageId : undefined,
+    activityId: typeof search.activityId === "string" ? search.activityId : undefined,
   }),
   head: () => ({
     meta: [
@@ -85,8 +88,20 @@ type Phase = "plan" | "run" | "recap" | "failed" | "done";
 
 function RoundsSession() {
   const { deckId } = Route.useParams();
-  const { part: requestedPart } = Route.useSearch();
-  const { state, updateDeck, recordSession, reviewQuestion, spendXp } = useKnowly();
+  const {
+    part: requestedPart,
+    stageId: requestedStageId,
+    activityId: requestedActivityId,
+  } = Route.useSearch();
+  const {
+    state,
+    updateDeck,
+    recordSession,
+    reviewQuestion,
+    spendXp,
+    markStageStarted,
+    updateStageProgress,
+  } = useKnowly();
   const navigate = useNavigate();
   const deck = state.decks.find((d) => d.id === deckId);
   const settings = state.settings;
@@ -94,7 +109,43 @@ function RoundsSession() {
   const parts = useMemo(() => (deck ? fragmentDeck(deck) : []), [deck]);
   const [partId, setPartId] = useState<string | null>(requestedPart ?? null);
 
-  const part = parts.find((p) => p.id === partId) ?? (deck ? nextPart(parts) : undefined);
+  const legacyPart = parts.find((p) => p.id === partId) ?? (deck ? nextPart(parts) : undefined);
+  const selectedStage = deck?.learningPath?.stages.find((stage) => stage.id === requestedStageId);
+  const selectedActivity = selectedStage?.activities.find(
+    (activity) => activity.id === requestedActivityId,
+  );
+  const pathQuestions = useMemo(() => {
+    if (!deck || !selectedStage) return [];
+    const references = selectedActivity
+      ? selectedActivity.questions
+      : selectedStage.activities.flatMap((activity) => activity.questions);
+    const seen = new Set<string>();
+    return references
+      .filter((reference) => {
+        if (seen.has(reference.questionId)) return false;
+        seen.add(reference.questionId);
+        return true;
+      })
+      .map((reference) => deck.questions.find((question) => question.id === reference.questionId))
+      .filter((question): question is Question => Boolean(question));
+  }, [deck, selectedActivity, selectedStage]);
+  const pathPart =
+    selectedStage && pathQuestions.length
+      ? {
+          id: selectedActivity?.id ?? selectedStage.id,
+          title: selectedActivity?.title ?? selectedStage.title,
+          questions: pathQuestions,
+          mastered: pathQuestions.filter((question) => deck?.masteredIds.includes(question.id))
+            .length,
+          due: pathQuestions.filter((question) => {
+            const card = deck?.srs?.[question.id];
+            return !card || card.due <= Date.now();
+          }).length,
+          masteryPct: selectedActivity?.masteryPct ?? selectedStage.masteryPct,
+          roundCount: Math.max(1, Math.ceil(pathQuestions.length / ROUND_SIZE)),
+        }
+      : undefined;
+  const part = pathPart ?? legacyPart;
 
   const [phase, setPhase] = useState<Phase>("plan");
   const [mode, setMode] = useState<RoundMode>("normal");
@@ -206,11 +257,14 @@ function RoundsSession() {
         setBossMax(hp);
         bossHits.current = new Set();
       }
+      if (selectedStage && selectedActivity) {
+        markStageStarted(deck.id, selectedStage.id);
+      }
       startedAt.current = Date.now();
       resetQuestionUi();
       setPhase("run");
     },
-    [deck, part, resetQuestionUi, xp],
+    [deck, markStageStarted, part, resetQuestionUi, selectedActivity, selectedStage, xp],
   );
 
   const commit = useCallback(
@@ -230,6 +284,15 @@ function RoundsSession() {
       };
       const grade = gradeFromOutcome(outcome, record.timeMs);
       if (grade) reviewQuestion(deck.id, question.id, grade);
+      if (selectedStage && selectedActivity) {
+        updateStageProgress(
+          deck.id,
+          selectedStage.id,
+          question.id,
+          outcome === "correct",
+          selectedActivity.id,
+        );
+      }
 
       const nextCombo = outcome === "correct" ? combo + 1 : 0;
       const gained =
@@ -256,7 +319,17 @@ function RoundsSession() {
         setBossHp((hp) => Math.max(0, hp - 1));
       }
     },
-    [combo, deck, isBoss, modeMeta.xpMultiplier, question, reviewQuestion],
+    [
+      combo,
+      deck,
+      isBoss,
+      modeMeta.xpMultiplier,
+      question,
+      reviewQuestion,
+      selectedActivity,
+      selectedStage,
+      updateStageProgress,
+    ],
   );
 
   const advance = useCallback(() => {
@@ -437,62 +510,186 @@ function RoundsSession() {
     </div>
   );
 
+  if (selectedStage && deck.learningPath && !isStageUnlocked(deck.learningPath, selectedStage.id)) {
+    return shell(
+      <div className="panel p-8 text-center">
+        <h1 className="font-display text-2xl font-bold">This stage is still locked</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Complete the previous stage or reach 60% mastery to continue.
+        </p>
+        <Button
+          className="mt-5"
+          onClick={() => navigate({ to: "/decks/$deckId", params: { deckId: deck.id } })}
+        >
+          View Learning Path
+        </Button>
+      </div>,
+    );
+  }
+
   /* ---------------------------------------------------------------- */
   /* Plan                                                             */
   /* ---------------------------------------------------------------- */
 
   if (phase === "plan") {
+    if (selectedStage && !selectedActivity) {
+      return shell(
+        <div>
+          <PageHeader
+            title={selectedStage.title}
+            description={`${purposeLabel(selectedStage.purpose)} · ${selectedStage.masteryPct}% mastered · ${selectedStage.estimatedMinutes} min`}
+          />
+          {selectedStage.description && (
+            <p className="panel mb-4 p-4 text-sm text-muted-foreground">
+              {selectedStage.description}
+            </p>
+          )}
+          {selectedStage.objectives.length > 0 && (
+            <section className="panel mb-4 p-5">
+              <h2 className="text-sm font-semibold">By the end of this stage, you can…</h2>
+              <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                {selectedStage.objectives.map((objective) => (
+                  <li key={objective}>{objective}</li>
+                ))}
+              </ul>
+              {selectedStage.prerequisiteConcepts?.length ? (
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Builds on: {selectedStage.prerequisiteConcepts.join(", ")}
+                </p>
+              ) : null}
+            </section>
+          )}
+          <section className="panel p-5">
+            <h2 className="text-sm font-semibold">Choose a learning activity</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Work through these activities to build toward stage mastery.
+            </p>
+            <ul className="mt-4 space-y-2">
+              {selectedStage.activities.map((activity, index) => {
+                const questions = activity.questions
+                  .map((reference) =>
+                    deck.questions.find((candidate) => candidate.id === reference.questionId),
+                  )
+                  .filter((question): question is Question => Boolean(question));
+                return (
+                  <li key={activity.id}>
+                    <Link
+                      to="/study/$deckId"
+                      params={{ deckId: deck.id }}
+                      search={{
+                        part: undefined,
+                        stageId: selectedStage.id,
+                        activityId: activity.id,
+                      }}
+                      className="flex items-center gap-3 rounded-xl border border-border p-3 transition-colors hover:border-primary/50"
+                    >
+                      <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                        {activity.completed ? <Check className="size-4" /> : index + 1}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-medium">{activity.title}</span>
+                        <span className="mt-1 block text-xs text-muted-foreground">
+                          {activity.objective ?? activity.description} · {questions.length}{" "}
+                          questions · {activity.estimatedMinutes} min
+                        </span>
+                      </span>
+                      <Badge variant={activity.completed ? "default" : "outline"}>
+                        {activity.completed ? "Complete" : `${activity.masteryPct}%`}
+                      </Badge>
+                      <ArrowRight className="size-4 text-muted-foreground" />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        </div>,
+      );
+    }
+
     return shell(
       <div>
         <PageHeader
           title={part.title}
-          description={`${part.questions.length} cards in this part · ${part.roundCount} round${
-            part.roundCount === 1 ? "" : "s"
-          } · ${part.masteryPct}% mastered`}
+          description={
+            selectedStage && selectedActivity
+              ? `${selectedStage.title} · ${selectedActivity.objective ?? selectedActivity.description ?? "Learning activity"}`
+              : `${part.questions.length} cards in this part · ${part.roundCount} round${
+                  part.roundCount === 1 ? "" : "s"
+                } · ${part.masteryPct}% mastered`
+          }
           action={
             <Button size="lg" className="min-h-[44px]" onClick={() => startRound("normal")}>
-              <Play /> Start round
+              <Play /> {selectedActivity ? "Start activity" : "Start round"}
             </Button>
           }
         />
 
-        <div className="mb-6 grid gap-3 sm:grid-cols-3">
-          <Button
-            variant="outline"
-            className="h-auto justify-start gap-3 py-3 text-left"
-            onClick={() => startRound("normal")}
-          >
-            <Play className="size-4 text-primary" />
-            <span>
-              <span className="block text-sm font-medium">{ROUND_MODE_META.normal.blurb}</span>
-              <span className="block text-xs text-muted-foreground">Rounds of {ROUND_SIZE}</span>
-            </span>
-          </Button>
-          <Button
-            variant="outline"
-            className="h-auto justify-start gap-3 py-3 text-left"
-            onClick={() => startRound("hard")}
-          >
-            <Flame className="size-4 text-primary" />
-            <span>
-              <span className="block text-sm font-medium">Hard round</span>
-              <span className="block text-xs text-muted-foreground">Only the hard cards</span>
-            </span>
-          </Button>
-          <Button
-            variant="outline"
-            className="h-auto justify-start gap-3 py-3 text-left"
-            onClick={() => startRound("speed")}
-          >
-            <Timer className="size-4 text-primary" />
-            <span>
-              <span className="block text-sm font-medium">Speed run</span>
-              <span className="block text-xs text-muted-foreground">
-                {SPEED_SECONDS}s per card · 2× XP
+        {selectedStage && selectedActivity && (
+          <div className="panel mb-4 flex flex-wrap items-center justify-between gap-3 p-4">
+            <p className="text-sm">
+              Stage {selectedStage.index + 1}:{" "}
+              <span className="font-medium">{selectedStage.title}</span>
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                navigate({
+                  to: "/study/$deckId",
+                  params: { deckId: deck.id },
+                  search: {
+                    part: undefined,
+                    stageId: selectedStage.id,
+                    activityId: undefined,
+                  },
+                })
+              }
+            >
+              All stage activities
+            </Button>
+          </div>
+        )}
+
+        {!selectedActivity && (
+          <div className="mb-6 grid gap-3 sm:grid-cols-3">
+            <Button
+              variant="outline"
+              className="h-auto justify-start gap-3 py-3 text-left"
+              onClick={() => startRound("normal")}
+            >
+              <Play className="size-4 text-primary" />
+              <span>
+                <span className="block text-sm font-medium">{ROUND_MODE_META.normal.blurb}</span>
+                <span className="block text-xs text-muted-foreground">Rounds of {ROUND_SIZE}</span>
               </span>
-            </span>
-          </Button>
-        </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto justify-start gap-3 py-3 text-left"
+              onClick={() => startRound("hard")}
+            >
+              <Flame className="size-4 text-primary" />
+              <span>
+                <span className="block text-sm font-medium">Hard round</span>
+                <span className="block text-xs text-muted-foreground">Only the hard cards</span>
+              </span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto justify-start gap-3 py-3 text-left"
+              onClick={() => startRound("speed")}
+            >
+              <Timer className="size-4 text-primary" />
+              <span>
+                <span className="block text-sm font-medium">Speed run</span>
+                <span className="block text-xs text-muted-foreground">
+                  {SPEED_SECONDS}s per card · 2× XP
+                </span>
+              </span>
+            </Button>
+          </div>
+        )}
 
         <div className="panel mb-6 flex flex-wrap items-center justify-between gap-3 p-4">
           <div>
@@ -510,44 +707,45 @@ function RoundsSession() {
           </Button>
         </div>
 
-        <section className="panel p-5">
-          <h2 className="text-sm font-semibold">Parts of this deck</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Big decks are split by concept so you never face all {deck.questions.length} cards at
-            once.
-          </p>
-          <ul className="mt-4 grid gap-2">
-            {parts.map((p) => (
-              <li key={p.id}>
-                <button
-                  onClick={() => setPartId(p.id)}
-                  className={cn(
-                    "w-full rounded-xl border p-3 text-left transition-colors",
-                    p.id === part.id
-                      ? "border-primary bg-primary/10"
-                      : "border-border hover:border-primary/50",
-                  )}
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium">{p.title}</span>
-                    {partCleared(p) && (
-                      <Badge className="bg-success text-success-foreground">Cleared</Badge>
+        {!selectedActivity && (
+          <section className="panel p-5">
+            <h2 className="text-sm font-semibold">Parts of this deck</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Quick topic-based practice, separate from the guided Learning Path.
+            </p>
+            <ul className="mt-4 grid gap-2">
+              {parts.map((p) => (
+                <li key={p.id}>
+                  <button
+                    onClick={() => setPartId(p.id)}
+                    className={cn(
+                      "w-full rounded-xl border p-3 text-left transition-colors",
+                      p.id === part.id
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:border-primary/50",
                     )}
-                    <span className="ml-auto text-xs text-muted-foreground">
-                      {p.questions.length} cards · {p.due} due
-                    </span>
-                  </div>
-                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary">
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{ width: `${p.masteryPct}%` }}
-                    />
-                  </div>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-medium">{p.title}</span>
+                      {partCleared(p) && (
+                        <Badge className="bg-success text-success-foreground">Cleared</Badge>
+                      )}
+                      <span className="ml-auto text-xs text-muted-foreground">
+                        {p.questions.length} cards · {p.due} due
+                      </span>
+                    </div>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary">
+                      <div
+                        className="h-full rounded-full bg-primary"
+                        style={{ width: `${p.masteryPct}%` }}
+                      />
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>,
     );
   }
@@ -562,8 +760,12 @@ function RoundsSession() {
     const pct = done.length ? Math.round((right / done.length) * 100) : 0;
     const roundXp = xp - roundStartXp;
     const moreRounds = roundIndex + 1 < rounds.length;
-    const bossAvailable = mode === "normal" || mode === "hard";
+    const bossAvailable = !selectedActivity && (mode === "normal" || mode === "hard");
     const bossQuestions = hardestQuestions(deck, 6, part.questions);
+    const activityIndex =
+      selectedStage?.activities.findIndex((activity) => activity.id === selectedActivity?.id) ?? -1;
+    const followingActivity =
+      activityIndex >= 0 ? selectedStage?.activities[activityIndex + 1] : undefined;
 
     return shell(
       <div>
@@ -596,15 +798,15 @@ function RoundsSession() {
                   startRound("normal");
                 }}
               >
-                <RotateCcw /> Study this part again
+                <RotateCcw /> {selectedActivity ? "Repeat activity" : "Study this part again"}
               </Button>
             )}
-            {!moreRounds && (
+            {!moreRounds && !selectedActivity && (
               <Button variant="outline" className="min-h-[44px]" onClick={() => startRound("hard")}>
                 <Flame /> Try a hard round
               </Button>
             )}
-            {!moreRounds && (
+            {!moreRounds && !selectedActivity && (
               <Button
                 variant="outline"
                 className="min-h-[44px]"
@@ -615,12 +817,52 @@ function RoundsSession() {
             )}
             {!moreRounds && (
               <Button variant="secondary" className="min-h-[44px]" onClick={endSession}>
-                <Check /> Finish session
+                <Check /> {selectedActivity ? "Finish activity" : "Finish session"}
               </Button>
             )}
-            <Button variant="ghost" className="min-h-[44px]" onClick={() => leaveSession(null)}>
-              Choose another part
-            </Button>
+            {!moreRounds && followingActivity && selectedStage && (
+              <Button
+                className="min-h-[44px]"
+                onClick={() => {
+                  endSession();
+                  navigate({
+                    to: "/study/$deckId",
+                    params: { deckId: deck.id },
+                    search: {
+                      part: undefined,
+                      stageId: selectedStage.id,
+                      activityId: followingActivity.id,
+                    },
+                  });
+                }}
+              >
+                Next activity <ArrowRight />
+              </Button>
+            )}
+            {selectedStage ? (
+              <Button
+                variant="ghost"
+                className="min-h-[44px]"
+                onClick={() => {
+                  endSession();
+                  navigate({
+                    to: "/study/$deckId",
+                    params: { deckId: deck.id },
+                    search: {
+                      part: undefined,
+                      stageId: selectedStage.id,
+                      activityId: undefined,
+                    },
+                  });
+                }}
+              >
+                Back to stage
+              </Button>
+            ) : (
+              <Button variant="ghost" className="min-h-[44px]" onClick={() => leaveSession(null)}>
+                Choose another part
+              </Button>
+            )}
           </div>
         </div>
 
@@ -710,11 +952,23 @@ function RoundsSession() {
           <Button
             onClick={() => {
               resetSession();
-              setPartId(null);
-              setPhase("plan");
+              if (selectedStage) {
+                navigate({
+                  to: "/study/$deckId",
+                  params: { deckId: deck.id },
+                  search: {
+                    part: undefined,
+                    stageId: selectedStage.id,
+                    activityId: undefined,
+                  },
+                });
+              } else {
+                setPartId(null);
+                setPhase("plan");
+              }
             }}
           >
-            <Play /> Study another part
+            <Play /> {selectedStage ? "Back to activities" : "Study another part"}
           </Button>
           <Button
             variant="outline"
@@ -1034,7 +1288,7 @@ function RoundsSession() {
                 <MathText text={displayAnswer(question)} />
               </p>
             )}
-            {explainOpen && (
+            {(explainOpen || (feedback && !feedback.correct)) && (
               <div className="mt-3 space-y-2 border-t border-border/60 pt-3">
                 <QuestionRationales question={question} />
                 {!question.explanation &&

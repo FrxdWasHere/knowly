@@ -12,6 +12,8 @@ describe("validateDeckJson", () => {
     expect(result.ok).toBe(true);
     expect(result.deck?.questions).toHaveLength(8);
     expect(result.deck?.title).toContain("Cell Biology");
+    expect(result.deck?.learningPath?.lengthPreset).toBe("regular");
+    expect(result.deck?.learningPath?.stages.length).toBeGreaterThan(1);
     const multipleChoice = result.deck?.questions.find(
       (question) => question.type === "multiple-choice",
     );

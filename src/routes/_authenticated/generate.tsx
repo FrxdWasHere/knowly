@@ -6,18 +6,43 @@ import { AppPage } from "@/components/app-page";
 import { PromptStudioNav } from "@/components/prompt-studio-nav";
 import { PageHeader } from "@/components/app-shell";
 import { AutoChoice } from "@/components/auto-choice";
+import { LengthDetailControl } from "@/components/length-detail-control";
+import { SmartModeToggle } from "@/components/smart-mode-toggle";
+import { SourceFileUpload } from "@/components/source-file-upload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
+import { useSmartMode } from "@/hooks/useSmartMode";
+import { presetForSliderValue } from "@/lib/length-detail";
 import { buildAppendPrompt, buildPrompt, deckSizeTarget, estimateQuestions } from "@/lib/prompt";
+import { buildSmartPrompt } from "@/lib/smart-prompt-builder";
 import { TYPE_LABELS } from "@/lib/answers";
 import { createId } from "@/lib/id";
 import { questionTypes } from "@/lib/schema";
+import {
+  activityLabel,
+  LEARNING_ACTIVITY_TYPES,
+  LEARNING_PURPOSE_META,
+  LEARNING_STAGE_PURPOSES,
+} from "@/lib/learning-paths";
 import { useKnowly } from "@/store/knowly";
-import type { Difficulty, QuestionType } from "@/lib/types";
+import type { ActivityType, Difficulty, QuestionType, StagePurpose } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+interface ManualStageDraft {
+  title: string;
+  purpose: StagePurpose;
+  concepts: string;
+  activityTypes: ActivityType[];
+}
+
+const initialManualStages: ManualStageDraft[] = [
+  { title: "", purpose: "concept-exposure", concepts: "", activityTypes: [] },
+  { title: "", purpose: "active-recall", concepts: "", activityTypes: [] },
+  { title: "", purpose: "mastery", concepts: "", activityTypes: [] },
+];
 
 export const Route = createFileRoute("/_authenticated/generate")({
   head: () => ({
@@ -44,6 +69,7 @@ export const Route = createFileRoute("/_authenticated/generate")({
 
 function GeneratePage() {
   const { state, saveTemplate, deleteTemplate } = useKnowly();
+  const smartMode = useSmartMode();
   const [mode, setMode] = useState<"new" | "append">("new");
   const [targetId, setTargetId] = useState(state.decks[0]?.id ?? "");
   const [material, setMaterial] = useState("");
@@ -69,9 +95,20 @@ function GeneratePage() {
   const [countAuto, setCountAuto] = useState(false);
   const [typesAuto, setTypesAuto] = useState(false);
   const [distAuto, setDistAuto] = useState(false);
+  const [lengthSliderValue, setLengthSliderValue] = useState(50);
+  const [customLearningPath, setCustomLearningPath] = useState(false);
+  const [stageCount, setStageCount] = useState(3);
+  const [manualStages, setManualStages] = useState(initialManualStages);
 
   const target = state.decks.find((d) => d.id === targetId);
-  const suggestedCards = deckSizeTarget(countAuto, count, material);
+  const effectiveMaterial = useMemo(
+    () =>
+      [material.trim(), smartMode.config.enabled ? smartMode.material.trim() : ""]
+        .filter(Boolean)
+        .join("\n\n"),
+    [material, smartMode.config.enabled, smartMode.material],
+  );
+  const suggestedCards = deckSizeTarget(countAuto, count, effectiveMaterial);
 
   // keep the math toggles in step with the deck being expanded
   useEffect(() => {
@@ -84,9 +121,27 @@ function GeneratePage() {
   }, [mode, targetId]);
 
   const prompt = useMemo(() => {
+    const learningPath = {
+      sliderValue: lengthSliderValue,
+      ...(customLearningPath
+        ? {
+            stageCount,
+            customStages: manualStages.slice(0, stageCount).map((stage) => ({
+              title: stage.title,
+              purpose: stage.purpose,
+              concepts: stage.concepts
+                .split(",")
+                .map((concept) => concept.trim())
+                .filter(Boolean),
+              activityTypes: stage.activityTypes,
+            })),
+          }
+        : {}),
+    };
+
     if (mode === "append" && target) {
       return buildAppendPrompt({
-        material,
+        material: effectiveMaterial,
         deckTitle: target.title,
         subject: target.subject,
         count,
@@ -105,12 +160,14 @@ function GeneratePage() {
         countAuto,
         typesAuto,
         distributionAuto: distAuto,
+        lengthSliderValue,
       });
     }
-    return buildPrompt({
-      material,
-      title,
-      subject,
+
+    const promptOptions = {
+      material: effectiveMaterial,
+      title: title || (smartMode.config.enabled ? (smartMode.suggestions.title ?? "") : ""),
+      subject: subject || (smartMode.config.enabled ? (smartMode.suggestions.subject ?? "") : ""),
       count,
       distribution: dist,
       types,
@@ -123,11 +180,41 @@ function GeneratePage() {
       countAuto,
       typesAuto,
       distributionAuto: distAuto,
-    });
+      lengthSliderValue,
+      learningPath: {
+        ...learningPath,
+        lengthPreset: smartMode.config.enabled ? smartMode.config.lengthPreset : undefined,
+      },
+    };
+
+    return smartMode.config.enabled
+      ? buildSmartPrompt({
+          content_type: "deck",
+          title: promptOptions.title,
+          subject: promptOptions.subject,
+          material: promptOptions.material,
+          suggestions: smartMode.suggestions,
+          autoConfigure: smartMode.config.autoConfigure,
+          lengthPreset: smartMode.config.lengthPreset,
+          lengthSliderValue,
+          questionTypes: promptOptions.types,
+          difficultyDistribution: promptOptions.distribution,
+          isSTEM,
+          needsEquations,
+          needsGraphs,
+          count,
+          countAuto,
+          typesAuto,
+          distributionAuto: distAuto,
+          learningPath,
+          extra,
+          level: state.settings.gradeLevel,
+        })
+      : buildPrompt(promptOptions);
   }, [
     mode,
     target,
-    material,
+    effectiveMaterial,
     title,
     subject,
     count,
@@ -140,8 +227,14 @@ function GeneratePage() {
     countAuto,
     typesAuto,
     distAuto,
+    lengthSliderValue,
+    customLearningPath,
+    stageCount,
+    manualStages,
     state.settings.gradeLevel,
     state.settings.studyReason,
+    smartMode.config,
+    smartMode.suggestions,
   ]);
 
   const toggleType = (t: QuestionType) =>
@@ -159,7 +252,32 @@ function GeneratePage() {
     setTitle("");
     setSubject("");
     setExtra("");
+    smartMode.clearFiles();
     toast("Cleared");
+  };
+
+  const resizeManualStages = (nextCount: number) => {
+    const bounded = Math.max(1, Math.min(8, Math.round(nextCount)));
+    setStageCount(bounded);
+    setManualStages((current) =>
+      Array.from(
+        { length: bounded },
+        (_, index) =>
+          current[index] ?? {
+            title: "",
+            purpose:
+              LEARNING_STAGE_PURPOSES[index % LEARNING_STAGE_PURPOSES.length] ?? "comprehension",
+            concepts: "",
+            activityTypes: [],
+          },
+      ),
+    );
+  };
+
+  const updateManualStage = (index: number, patch: Partial<ManualStageDraft>) => {
+    setManualStages((current) =>
+      current.map((stage, stageIndex) => (stageIndex === index ? { ...stage, ...patch } : stage)),
+    );
   };
 
   return (
@@ -255,8 +373,8 @@ function GeneratePage() {
               <div className="flex items-center justify-between">
                 <Label htmlFor="material">Study material</Label>
                 <span className="text-xs text-muted-foreground">
-                  {material.length.toLocaleString()} characters · suggests ~
-                  {mode === "new" ? suggestedCards : estimateQuestions(material.length)}{" "}
+                  {effectiveMaterial.length.toLocaleString()} characters · suggests ~
+                  {mode === "new" ? suggestedCards : estimateQuestions(effectiveMaterial.length)}{" "}
                   {mode === "new" ? "cards" : "questions"}
                 </span>
               </div>
@@ -268,6 +386,25 @@ function GeneratePage() {
                 className="min-h-52 font-mono text-xs"
               />
             </div>
+
+            <SmartModeToggle
+              enabled={smartMode.config.enabled}
+              onToggle={(enabled) =>
+                smartMode.setConfig({
+                  enabled,
+                  lengthPreset: presetForSliderValue(lengthSliderValue),
+                  lengthSliderValue,
+                })
+              }
+              fileCount={smartMode.config.sourceFiles.length}
+            />
+            {smartMode.config.enabled && (
+              <SourceFileUpload
+                files={smartMode.config.sourceFiles}
+                onFilesChange={(sourceFiles) => smartMode.setConfig({ sourceFiles })}
+                onProcessFiles={smartMode.processFiles}
+              />
+            )}
 
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -302,11 +439,162 @@ function GeneratePage() {
               {mode === "new" && (
                 <p className="rounded-lg bg-surface-2/60 px-3 py-2 text-xs text-muted-foreground">
                   Every card comes back with tutor notes — a plain-words explanation, a mnemonic, an
-                  example and a reason for each wrong option — and the cards spread over at least
-                  four concepts so Knowly can split the deck into parts and rounds.
+                  example and a reason for each wrong option. Knowly organizes the cards into
+                  Learning Path stages based on their actual concepts and prerequisites.
                 </p>
               )}
             </div>
+
+            <div className="space-y-3 rounded-xl border border-border p-4">
+              <div>
+                <h3 className="text-sm font-semibold">Learning Path depth</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Controls stage count, practice variety, conceptual depth, explanations, and
+                  reinforcement—not just the number of questions.
+                </p>
+              </div>
+              <LengthDetailControl
+                value={lengthSliderValue}
+                preset={
+                  smartMode.config.enabled
+                    ? smartMode.config.lengthPreset
+                    : presetForSliderValue(lengthSliderValue)
+                }
+                onChange={(value, preset) => {
+                  setLengthSliderValue(value);
+                  if (smartMode.config.enabled) {
+                    smartMode.setConfig({
+                      lengthPreset: preset,
+                      lengthSliderValue: value,
+                    });
+                  }
+                }}
+              />
+            </div>
+
+            {mode === "new" && (
+              <section className="space-y-4 rounded-xl border border-border p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-semibold">Learning Path structure</h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Let the AI adapt the path to your material, or pin stage goals and activities
+                      before generating.
+                    </p>
+                  </div>
+                  <label className="inline-flex items-center gap-2 text-xs font-medium">
+                    <input
+                      type="checkbox"
+                      checked={customLearningPath}
+                      onChange={(event) => setCustomLearningPath(event.target.checked)}
+                      className="size-4 accent-[var(--primary)]"
+                    />
+                    Customize stages
+                  </label>
+                </div>
+
+                {customLearningPath && (
+                  <>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <Label>Number of stages</Label>
+                        <span>{stageCount}</span>
+                      </div>
+                      <Slider
+                        value={[stageCount]}
+                        min={1}
+                        max={8}
+                        step={1}
+                        onValueChange={([value]) => resizeManualStages(value ?? stageCount)}
+                      />
+                    </div>
+                    <div className="space-y-3">
+                      {manualStages.slice(0, stageCount).map((stage, index) => (
+                        <div key={index} className="space-y-3 rounded-lg bg-surface-2/50 p-3">
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="space-y-1.5">
+                              <Label htmlFor={`stage-title-${index}`}>
+                                Stage {index + 1} title
+                              </Label>
+                              <Input
+                                id={`stage-title-${index}`}
+                                value={stage.title}
+                                onChange={(event) =>
+                                  updateManualStage(index, { title: event.target.value })
+                                }
+                                placeholder="e.g. Cell structure and function"
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label htmlFor={`stage-purpose-${index}`}>Learning purpose</Label>
+                              <select
+                                id={`stage-purpose-${index}`}
+                                value={stage.purpose}
+                                onChange={(event) =>
+                                  updateManualStage(index, {
+                                    purpose: event.target.value as StagePurpose,
+                                  })
+                                }
+                                className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
+                              >
+                                {LEARNING_STAGE_PURPOSES.map((purpose) => (
+                                  <option key={purpose} value={purpose}>
+                                    {LEARNING_PURPOSE_META[purpose].label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label htmlFor={`stage-concepts-${index}`}>
+                              Concepts to prioritize
+                            </Label>
+                            <Input
+                              id={`stage-concepts-${index}`}
+                              value={stage.concepts}
+                              onChange={(event) =>
+                                updateManualStage(index, { concepts: event.target.value })
+                              }
+                              placeholder="Comma-separated; leave blank for the AI to decide"
+                            />
+                          </div>
+                          <fieldset className="space-y-2">
+                            <legend className="text-xs font-medium">Preferred activities</legend>
+                            <div className="flex flex-wrap gap-x-4 gap-y-2">
+                              {LEARNING_ACTIVITY_TYPES.map((type) => (
+                                <label
+                                  key={type}
+                                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={stage.activityTypes.includes(type)}
+                                    onChange={(event) =>
+                                      updateManualStage(index, {
+                                        activityTypes: event.target.checked
+                                          ? [...stage.activityTypes, type]
+                                          : stage.activityTypes.filter((value) => value !== type),
+                                      })
+                                    }
+                                    className="size-3.5 accent-[var(--primary)]"
+                                  />
+                                  {activityLabel(type)}
+                                </label>
+                              ))}
+                            </div>
+                            {!stage.activityTypes.length && (
+                              <p className="text-[11px] text-muted-foreground">
+                                No preference set — the AI chooses activities that suit this stage.
+                              </p>
+                            )}
+                          </fieldset>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </section>
+            )}
 
             <div className="space-y-2">
               <Label>Question types</Label>

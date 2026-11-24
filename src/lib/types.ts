@@ -57,6 +57,125 @@ export interface Question {
   wordBank?: string[];
 }
 
+/** Shared length/detail presets used by every generation surface. */
+export type LengthPreset = "shorter" | "short" | "regular" | "long" | "longer";
+
+/**
+ * Learning Path - the primary organizational structure for Deck study.
+ * A path is a progressive journey through a deck's concepts: ordered stages,
+ * each with activities that move from exposure to mastery.
+ */
+export interface LearningPath {
+  id: string;
+  deckId: string;
+  title: string;
+  description?: string;
+  /** where the structure came from */
+  source: "auto" | "smart" | "manual" | "imported";
+  /** length/detail setting used when the path was planned */
+  lengthPreset?: LengthPreset;
+  stages: LearningStage[];
+  createdAt: number;
+  updatedAt: number;
+  completedAt?: number;
+  totalMasteryPct: number;
+  conceptsCovered: string[];
+  estimatedMinutes: number;
+  /** concepts/cards that were missed and should come back in later practice */
+  reinforcementQuestionIds: string[];
+}
+
+/** A learning milestone in a path. */
+export interface LearningStage {
+  id: string;
+  /** position in the path, starting at 0 */
+  index: number;
+  title: string;
+  description?: string;
+  /** the pedagogical job of this stage */
+  purpose: StagePurpose;
+  /** what the learner should be able to do after this stage */
+  objectives: string[];
+  concepts: string[];
+  /** concepts from earlier stages that this stage builds on */
+  prerequisiteConcepts?: string[];
+  /** the hardest difficulty this stage should reach */
+  difficultyTarget: Difficulty;
+  progress: StageProgress;
+  activities: LearningActivity[];
+  masteryPct: number;
+  estimatedMinutes: number;
+}
+
+/** Progress tracking for a stage. */
+export interface StageProgress {
+  status: "not-started" | "in-progress" | "completed";
+  completedAt?: number;
+  startedAt?: number;
+  totalQuestionsAnswered: number;
+  correctAnswers: number;
+  questionsRequiringReinforcement: string[];
+}
+
+/** A specific learning exercise inside a stage. */
+export interface LearningActivity {
+  id: string;
+  type: ActivityType;
+  title: string;
+  description?: string;
+  /** one line naming the skill this activity practises */
+  objective?: string;
+  questions: ActivityQuestionReference[];
+  estimatedMinutes: number;
+  masteryPct: number;
+  completed: boolean;
+  completedAt?: number;
+}
+
+/** A question's place inside an activity, with its own mastery history. */
+export interface ActivityQuestionReference {
+  questionId: string;
+  /** true when this card is revisiting earlier material */
+  isReinforcement?: boolean;
+  mastered: boolean;
+  attempts: number;
+  correctAttempts: number;
+  lastAnsweredAt?: number;
+}
+
+/**
+ * Learning activities the planner can choose from. They are conceptual
+ * formats, not a fixed template: a path only includes the ones that fit.
+ */
+export type ActivityType =
+  | "concept-introduction"
+  | "understanding-check"
+  | "active-recall"
+  | "application-exercises"
+  | "reinforcement-practice"
+  | "integration-challenge"
+  | "final-assessment"
+  | "review-session"
+  | "practice-quiz"
+  | "scenario-based"
+  | "problem-solving"
+  | "concept-mapping"
+  | "self-assessment"
+  | "mastery-check"
+  | "bonus-challenge"
+  | "error-analysis";
+
+/** The learning purpose of a stage. */
+export type StagePurpose =
+  | "concept-exposure"
+  | "comprehension"
+  | "active-recall"
+  | "application"
+  | "reinforcement"
+  | "integration"
+  | "retention"
+  | "mastery";
+
 export interface Deck {
   id: string;
   title: string;
@@ -86,6 +205,10 @@ export interface Deck {
   suspended?: string[];
   /** modules that imported this deck as an activity */
   linkedModuleIds?: string[];
+  /** Learning Path for progressive study (Phase 2 feature) */
+  learningPath?: LearningPath;
+  /** Auto-generated Learning Path configuration */
+  autoGenerateLearningPath?: boolean;
 }
 
 /* ------------------------------------------------------------------ *

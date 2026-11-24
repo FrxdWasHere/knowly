@@ -12,6 +12,7 @@ import {
   Brain,
   Sigma,
   Tag,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
@@ -25,6 +26,7 @@ import { LabelChips, LabelPickerDialog } from "@/components/binder/label-picker"
 import { TYPE_LABELS } from "@/lib/answers";
 import { cardStage, deckSrs, formatDue, formatInterval, STAGE_META } from "@/lib/srs";
 import { fragmentDeck, partCleared } from "@/lib/rounds";
+import { activityLabel, isStageUnlocked, pathStats, purposeLabel } from "@/lib/learning-paths";
 import { openImportPanel } from "@/lib/import-panel";
 import { useKnowly } from "@/store/knowly";
 import { cn } from "@/lib/utils";
@@ -73,6 +75,8 @@ function DeckDetail() {
   const pct = Math.round((deck.masteredIds.length / Math.max(1, deck.questions.length)) * 100);
   const srs = deckSrs(deck);
   const parts = fragmentDeck(deck);
+  const learningPath = deck.learningPath;
+  const learningPathStats = learningPath ? pathStats(learningPath) : undefined;
 
   const exportDeck = () => {
     const payload = {
@@ -80,6 +84,8 @@ function DeckDetail() {
       subject: deck.subject,
       description: deck.description,
       tags: deck.tags,
+      lengthPreset: deck.learningPath?.lengthPreset,
+      learningPath: deck.learningPath,
       isSTEM: deck.isSTEM,
       needsEquations: deck.needsEquations,
       needsGraphs: deck.needsGraphs,
@@ -129,8 +135,16 @@ function DeckDetail() {
               </Button>
             )}
             <Button variant={srs.due > 0 ? "secondary" : "default"} asChild>
-              <Link to="/study/$deckId" params={{ deckId: deck.id }} search={{ part: undefined }}>
-                <Play /> Study
+              <Link
+                to="/study/$deckId"
+                params={{ deckId: deck.id }}
+                search={{
+                  part: undefined,
+                  stageId: learningPathStats?.currentStage?.id,
+                  activityId: undefined,
+                }}
+              >
+                <Play /> {learningPathStats?.currentStage ? "Continue path" : "Study"}
               </Link>
             </Button>
             <Button className="press anim-glow" asChild>
@@ -184,6 +198,120 @@ function DeckDetail() {
         labelIds={deck.labelIds ?? []}
         onChange={(labelIds) => updateDeck(deck.id, { labelIds })}
       />
+
+      {learningPath && learningPathStats && (
+        <section className="panel mb-6 p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="font-display text-xl font-bold">{learningPath.title}</h2>
+                <Badge variant="secondary">
+                  {learningPathStats.completedStages}/{learningPathStats.totalStages} stages
+                </Badge>
+              </div>
+              {learningPath.description && (
+                <p className="mt-1 text-sm text-muted-foreground">{learningPath.description}</p>
+              )}
+            </div>
+            {learningPathStats.currentStage && (
+              <Button asChild>
+                <Link
+                  to="/study/$deckId"
+                  params={{ deckId: deck.id }}
+                  search={{
+                    part: undefined,
+                    stageId: learningPathStats.currentStage.id,
+                    activityId: undefined,
+                  }}
+                >
+                  <Play /> Continue learning
+                </Link>
+              </Button>
+            )}
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+            <span>{learningPath.conceptsCovered.length} concepts</span>
+            <span>{learningPath.estimatedMinutes} min estimated</span>
+            <span>{learningPathStats.masteryPct}% questions mastered</span>
+          </div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-secondary">
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{ width: `${learningPathStats.masteryPct}%` }}
+            />
+          </div>
+
+          <ol className="mt-5 space-y-3">
+            {learningPath.stages.map((stage, index) => {
+              const unlocked = isStageUnlocked(learningPath, stage.id);
+              const body = (
+                <>
+                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                    {stage.progress.status === "completed" ? (
+                      <Check className="size-4" />
+                    ) : (
+                      index + 1
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+                      {stage.title}
+                      <Badge variant="outline">{purposeLabel(stage.purpose)}</Badge>
+                      <Badge
+                        variant={stage.progress.status === "completed" ? "default" : "secondary"}
+                        className="capitalize"
+                      >
+                        {stage.progress.status.replace("-", " ")}
+                      </Badge>
+                    </span>
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      {stage.description} · {stage.concepts.join(", ")}
+                    </span>
+                    <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-secondary">
+                      <span
+                        className="block h-full rounded-full bg-primary transition-all"
+                        style={{ width: `${stage.masteryPct}%` }}
+                      />
+                    </span>
+                    <span className="mt-1 block text-[11px] text-muted-foreground">
+                      {stage.activities.filter((activity) => activity.completed).length}/
+                      {stage.activities.length} activities complete · {stage.masteryPct}% mastery ·{" "}
+                      {stage.estimatedMinutes} min
+                    </span>
+                    <span className="mt-2 flex flex-wrap gap-1">
+                      {stage.activities.map((activity) => (
+                        <Badge key={activity.id} variant="outline" className="text-[10px]">
+                          {activityLabel(activity.type)}
+                          {activity.completed ? " · done" : ""}
+                        </Badge>
+                      ))}
+                    </span>
+                  </span>
+                </>
+              );
+              return (
+                <li key={stage.id}>
+                  {unlocked ? (
+                    <Link
+                      to="/study/$deckId"
+                      params={{ deckId: deck.id }}
+                      search={{ part: undefined, stageId: stage.id, activityId: undefined }}
+                      className="flex items-start gap-3 rounded-xl border border-border p-3 transition-colors hover:border-primary/50"
+                    >
+                      {body}
+                    </Link>
+                  ) : (
+                    <div className="flex items-start gap-3 rounded-xl border border-border/60 p-3 opacity-60">
+                      {body}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      )}
 
       <details className="panel mb-6 p-5">
         <summary className="cursor-pointer text-sm font-medium">
@@ -306,7 +434,7 @@ function DeckDetail() {
               <Link
                 to="/study/$deckId"
                 params={{ deckId: deck.id }}
-                search={{ part: part.id }}
+                search={{ part: part.id, stageId: undefined, activityId: undefined }}
                 className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-3 transition-colors hover:border-primary/50"
               >
                 <span className="min-w-0 flex-1">

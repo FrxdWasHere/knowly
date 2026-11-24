@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { SrsDashboardWidget } from "@/components/srs/srs-dashboard-widget";
 import { SrsDueChip } from "@/components/srs/srs-status-badge";
 import { collectDue } from "@/lib/srs";
+import { pathStats } from "@/lib/learning-paths";
 import { useKnowly } from "@/store/knowly";
 import { useAvatarUrl } from "@/lib/use-avatar-url";
 import { levelFromXp, ACHIEVEMENTS } from "@/lib/gamification";
@@ -146,6 +147,9 @@ function Dashboard() {
   const todayCount = progress.studyDays[dayKey()] ?? 0;
   const goalPct = Math.min(100, (todayCount / Math.max(1, settings.dailyGoal)) * 100);
   const recentDeck = [...decks].sort((a, b) => (b.lastStudiedAt ?? 0) - (a.lastStudiedAt ?? 0))[0];
+  const recentStageId = recentDeck?.learningPath
+    ? pathStats(recentDeck.learningPath).currentStage?.id
+    : undefined;
   const dueNow = collectDue(decks).length;
   const unmastered = decks.reduce((n, d) => n + (d.questions.length - d.masteredIds.length), 0);
   const accuracy = progress.totalAnswered
@@ -337,7 +341,7 @@ function Dashboard() {
                   <Link
                     to="/study/$deckId"
                     params={{ deckId: recentDeck.id }}
-                    search={{ part: undefined }}
+                    search={{ part: undefined, stageId: recentStageId, activityId: undefined }}
                   >
                     Study
                   </Link>
