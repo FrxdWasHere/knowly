@@ -51,8 +51,12 @@ import {
   FileQuestion,
   Pencil,
   Play,
+  LogIn,
+  LogOut,
+  Cloud,
 } from "lucide-react";
 import { useKnowly } from "@/store/knowly";
+import { useAuth } from "@/store/auth-context";
 import { levelFromXp } from "@/lib/gamification";
 import { collectDue } from "@/lib/srs";
 import { courseStats, lessonProgress, nextLesson } from "@/lib/courses";
@@ -68,6 +72,7 @@ import { CommandPalette, useCommandPalette } from "@/components/command-palette"
 import { ImportPanel } from "@/components/import-panel";
 import { openImportPanel } from "@/lib/import-panel";
 import { DeveloperDashboard } from "@/components/developer-dashboard";
+import { toast } from "sonner";
 
 interface NavItem {
   to: string;
@@ -478,6 +483,7 @@ function NavRow({ item, active, dueCount }: { item: NavItem; active: boolean; du
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { state, updateSettings } = useKnowly();
+  const { user, signOut } = useAuth();
   const avatarUrl = useAvatarUrl(state.settings.avatarImage);
   const palette = useCommandPalette();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
@@ -759,6 +765,42 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {state.progress.lifetimeXp.toLocaleString()} XP
               </span>
             </span>
+            {user ? (
+              <>
+                <span className="hidden max-w-36 truncate text-xs font-semibold text-muted-foreground lg:inline">
+                  {user.email}
+                </span>
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/account" title="Account and cloud sync">
+                    <Cloud />
+                    <span className="hidden sm:inline">Sync</span>
+                  </Link>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  aria-label="Sign out"
+                  title="Sign out"
+                  onClick={() => {
+                    void signOut().catch((error: unknown) => {
+                      console.error("[Auth] Sign-out failed:", error);
+                      toast.error("Could not sign out. Please try again.");
+                    });
+                  }}
+                >
+                  <LogOut />
+                  <span className="hidden sm:inline">Sign out</span>
+                </Button>
+              </>
+            ) : (
+              <Button asChild variant="outline" size="sm">
+                <Link to="/login">
+                  <LogIn />
+                  Sign in
+                </Link>
+              </Button>
+            )}
           </div>
         </header>
 

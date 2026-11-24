@@ -13,6 +13,8 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { KnowlyProvider } from "@/store/knowly";
+import { AuthProvider } from "@/store/auth";
+import { CloudSyncProvider } from "@/store/cloud-sync";
 import { Toaster } from "../components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme-dom";
@@ -152,11 +154,15 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <KnowlyProvider>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
-        <Toaster position="top-right" />
-      </KnowlyProvider>
+      <AuthProvider>
+        <KnowlyProvider>
+          <CloudSyncProvider>
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <Outlet />
+            <Toaster position="top-right" />
+          </CloudSyncProvider>
+        </KnowlyProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

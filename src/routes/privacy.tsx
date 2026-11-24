@@ -26,7 +26,7 @@ function PrivacyPage() {
     <LegalPage
       eyebrow="Your data, clearly explained"
       title="Privacy policy"
-      intro="Knowly runs entirely on your own device. Your library stays with you. Knowly does not run an account service or sync your decks to a server."
+      intro="Knowly works locally by default. If you sign in and choose cloud sync, your study library is copied to your private account in Supabase so it can sync across devices."
     >
       <section>
         <h2>What Knowly stores</h2>
@@ -40,8 +40,26 @@ function PrivacyPage() {
         <h2>How information is used</h2>
         <p>
           That information is used only to run Knowly on this device: restore your library after a
-          refresh, calculate progress, and personalise the interface. Knowly does not sell personal
-          information.
+          refresh, calculate progress, and personalise the interface. If you opt into cloud sync,
+          the app also stores a copy of your decks, courses, settings, progress, and study history
+          in your Supabase account. Row-level security restricts that cloud copy to your signed-in
+          account. Knowly does not sell personal information.
+        </p>
+      </section>
+      <section>
+        <h2>Accounts and cloud sync</h2>
+        <p>
+          You can use Knowly without signing in. Google or email sign-in is handled by Supabase
+          Auth. Cloud sync starts only after you choose which local or existing cloud copy to use.
+          On download, Knowly saves a local backup before replacing the current library. Wallpaper
+          images, avatar images, and notebook pages are not included in cloud sync yet and remain
+          stored on this device.
+        </p>
+        <p>
+          Supabase processes account and synced data to provide authentication and cloud storage
+          under its own privacy and security terms. Signing out stops further syncing on this
+          device; it does not delete the cloud copy. Use the account controls to sign out and the
+          Supabase account controls to manage the account itself.
         </p>
       </section>
       <section>
@@ -55,16 +73,17 @@ function PrivacyPage() {
       <section>
         <h2>Moving data</h2>
         <p>
-          Use JSON export to download a backup of your library. Import that file on another browser
-          or machine when you want a copy there. Clearing this browser’s storage deletes the local
-          library unless you have a backup.
+          Use JSON export to download a backup of your library. Cloud sync can keep the main study
+          library available across signed-in devices. Clearing this browser’s storage deletes the
+          local copy; a cloud copy remains if you previously synced it.
         </p>
       </section>
       <section>
         <h2>Hosting</h2>
         <p>
           The Knowly application files may be served from a host so you can open the app in a
-          browser. That does not include an account or a copy of your study library.
+          browser. Account sign-in and optional cloud sync are provided by the configured Supabase
+          project.
         </p>
       </section>
       <section>

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   BarChart3,
   Bell,
   BookOpen,
   CalendarCheck,
+  Cloud,
   Contrast,
   Download,
   Droplets,
@@ -64,6 +65,7 @@ import { estimateStorageUsage, formatBytes, type StorageUsage } from "@/lib/stor
 import { useWallpaperUrl } from "@/hooks/use-wallpaper-url";
 import { useAvatarUrl } from "@/lib/use-avatar-url";
 import { useKnowly } from "@/store/knowly";
+import { useAuth } from "@/store/auth-context";
 import { cn } from "@/lib/utils";
 import type { Settings } from "@/lib/types";
 import { DEFAULT_SIDEBAR_GROUPS } from "@/lib/sidebar-preferences";
@@ -329,6 +331,7 @@ function SettingsPage() {
     importState,
   } = useKnowly();
   const s = state.settings;
+  const { user } = useAuth();
   const wallpaperUrl = useWallpaperUrl(s.wallpaper);
   const avatarUrl = useAvatarUrl(s.avatarImage);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -401,14 +404,13 @@ function SettingsPage() {
     );
   };
 
-  const profileSubtitle =
-    [s.school, s.gradeLevel].filter(Boolean).join(" · ") || "Local profile · no account";
+  const profileSubtitle = [s.school, s.gradeLevel].filter(Boolean).join(" · ") || "Study profile";
 
   return (
     <div className="mx-auto max-w-2xl">
       <PageHeader
         title="Settings"
-        description="Everything is stored locally in this browser. Nothing is ever uploaded."
+        description="Everything is stored on this device and kept in step with your account."
         action={
           <Button variant="outline" size="sm" onClick={resetSettings}>
             <RotateCcw /> Reset settings
@@ -440,6 +442,22 @@ function SettingsPage() {
             <ChevronRight className="size-4 shrink-0 text-muted-foreground/40" aria-hidden />
           </div>
         </div>
+
+        <Group title="Account" footer="Your library follows this account between devices.">
+          <Link
+            to="/account"
+            className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-hover"
+          >
+            <Tile icon={Cloud} tint="--primary" />
+            <div className="min-w-0 flex-1">
+              <p className="font-medium">Account & cloud sync</p>
+              <p className="mt-0.5 truncate text-[13px] text-muted-foreground">
+                {user?.email ?? "Signed in"}
+              </p>
+            </div>
+            <ChevronRight className="size-4 shrink-0 text-muted-foreground/40" aria-hidden />
+          </Link>
+        </Group>
 
         <Group title="Profile" footer="Used across the dashboard, arena and reports.">
           <div className="px-4 py-3">
@@ -1171,9 +1189,9 @@ function SettingsPage() {
             <div>
               <p className="text-[13px] text-muted-foreground mb-1">About Knowly</p>
               <p className="text-[13px] leading-5">
-                Knowly is a local-first study workspace designed to make learning personal and
-                effective. All your data stays on your device — no accounts, no cloud syncing, no
-                tracking.
+                Knowly is a study workspace designed to make learning personal and effective. Your
+                library is stored on this device and kept in step with your account — never shared,
+                never tracked.
               </p>
             </div>
             <div>
@@ -1188,7 +1206,7 @@ function SettingsPage() {
 
         <div className="px-4 py-2 text-center">
           <p className="text-[13px] text-muted-foreground">
-            Knowly · local-first study workspace · no account
+            Knowly · study workspace · private by default
           </p>
         </div>
       </div>

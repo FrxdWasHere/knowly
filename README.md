@@ -8,7 +8,7 @@ Knowly is a local-first study workspace. It does **not** call any AI service its
 
 ## Features
 
-- **Local storage** — decks, courses, progress, XP, streaks, notes, and quiz history stay in this browser.
+- **Local-first storage** — decks, courses, progress, XP, streaks, notes, and quiz history work on this device. Optional account sync can keep the main study library on Supabase across devices.
 - **JSON import & export** — paste or upload decks and courses with validation, and download a full backup whenever you want a portable copy.
 - **Prompt Forge** — generate, copy, and customize prompts for any LLM.
 - **Deck library** — search, sort, favorites, tags, colors, completion stats.
@@ -56,6 +56,14 @@ npm run dev
 
 The dev server starts at `http://localhost:8080`.
 
+### Optional Supabase sync
+
+Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in a root `.env.local` file to enable account sign-in and sync controls. Configure Google/email providers and auth redirect URLs in the Supabase dashboard.
+
+Before using cloud sync, apply `supabase/migrations/20261124090000_create_user_app_state.sql` in the Supabase SQL Editor. The table is protected by row-level security and stores one private app-state snapshot per account.
+
+Sync is automatic once you sign in. A device that is new to the account starts blank and adopts the copy stored in the account; the first sync for a brand-new account creates that copy from the device. Every change — decks, courses, modules, progress, study history, settings, notebooks, wallpapers and the profile photo — is written back a moment later. If another device saves first, this device reloads the account copy and keeps a local recovery backup. **Settings → Account & cloud sync** lets you deliberately push this device’s library over the account copy or reload the cloud copy, and can export either side as a JSON file.
+
 ### Build
 
 ```bash
@@ -81,6 +89,8 @@ src/
   routes/              # TanStack Start file-based routes
     __root.tsx         # Root layout, providers, global head meta
     index.tsx          # Landing page
+    login.tsx          # Optional Google/email sign-in
+    account.tsx        # Account and cloud-sync controls
     _authenticated/    # App routes (dashboard, decks, quiz, etc.)
   components/          # Reusable UI components
   store/               # Global state persisted to localStorage
@@ -126,6 +136,7 @@ Please keep changes focused and follow the existing TypeScript/React conventions
 This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. See [LICENSE](./LICENSE) for the full text.
 
 **Summary:**
+
 - ✅ You can **share, adapt, and remix** Knowly for educational purposes
 - ✅ You must provide **attribution** (credit to Frederic Liam De Guzman and the School of Our Lady of La Salette)
 - ❌ You **cannot use it for commercial purposes**

@@ -159,43 +159,33 @@ export function mathPromptSection(o: {
 
 const AUTONOMY = "choose whatever you see fit";
 
-/** Every new deck is asked for at least this many cards. */
-export const MIN_DECK_SIZE = 200;
-
 /**
- * The deck-size rule: a floor of 200 cards that grows with the source
- * material. Many small single-fact cards are easier to schedule than a few
- * dense ones, and the app fragments big decks into parts and rounds, so a
- * high card count costs the learner nothing.
- */
-/**
- * The card count a new-deck prompt will actually request: the 200-card floor,
- * the material's own scale (~1 card per 25 words), or a higher request.
+ * The suggested card count follows the material only when count is automatic;
+ * otherwise the learner's requested count is honored exactly.
  */
 export function deckSizeTarget(auto: boolean | undefined, requested: number, material: string) {
   const words = material.trim() ? material.trim().split(/\s+/).length : 0;
-  return Math.max(MIN_DECK_SIZE, Math.ceil(words / 25), auto ? 0 : requested);
+  return auto ? Math.ceil(words / 25) : requested;
 }
 
 export function deckSizeLine(auto: boolean | undefined, requested: number, material: string) {
   const words = material.trim() ? material.trim().split(/\s+/).length : 0;
   // roughly one card per 25 words of source material
   const fromMaterial = Math.ceil(words / 25);
-  const target = deckSizeTarget(auto, requested, material);
   const lines = [
-    `- Write ${target} cards. ${MIN_DECK_SIZE} is the floor for a deck; above it the material sets the count (~1 card per 25 words of source, so twice the material means roughly twice the cards).`,
+    auto
+      ? "- Choose a suitable number of cards for the supplied material (~1 card per 25 words as a rough guide); do not force a minimum or pad."
+      : `- Write exactly ${requested} cards, as requested.`,
     "- Prefer many small cards that test one fact, definition, step or distinction each. Never pad, repeat a question in different words, or split a single idea into filler — if the material is short, write fewer, sharper cards rather than variations.",
     `- Spread the cards across at least four distinct "concept" labels (15-40 cards each) so the app can split the deck into sub-topic parts and short rounds.`,
   ];
-  if (fromMaterial > MIN_DECK_SIZE) {
+  if (!auto && fromMaterial !== requested) {
     lines.push(
-      `- The supplied material is about ${words.toLocaleString("en-US")} words, which calls for roughly ${fromMaterial.toLocaleString("en-US")} cards.`,
+      `- The supplied material is about ${words.toLocaleString("en-US")} words, which suggests roughly ${fromMaterial.toLocaleString("en-US")} cards; honor the requested count above.`,
     );
   }
   if (auto) {
-    lines.push(
-      "- Beyond that floor, decide the final count yourself: scale it to the amount and density of material supplied.",
-    );
+    lines.push("- Decide the final count based on the amount and density of material supplied.");
   }
   return lines.join("\n");
 }

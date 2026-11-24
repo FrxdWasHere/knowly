@@ -11,13 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
-import {
-  buildAppendPrompt,
-  buildPrompt,
-  deckSizeTarget,
-  estimateQuestions,
-  MIN_DECK_SIZE,
-} from "@/lib/prompt";
+import { buildAppendPrompt, buildPrompt, deckSizeTarget, estimateQuestions } from "@/lib/prompt";
 import { TYPE_LABELS } from "@/lib/answers";
 import { createId } from "@/lib/id";
 import { questionTypes } from "@/lib/schema";
@@ -55,7 +49,12 @@ function GeneratePage() {
   const [material, setMaterial] = useState("");
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState(state.settings.focusSubjects[0] ?? "");
-  const [count, setCount] = useState(MIN_DECK_SIZE);
+  const [countInput, setCountInput] = useState("200");
+  const parsedCount = Number(countInput);
+  const count =
+    Number.isInteger(parsedCount) && Number.isFinite(parsedCount) && parsedCount >= 1
+      ? parsedCount
+      : 1;
   const [extra, setExtra] = useState("");
   const [dist, setDist] = useState<Record<Difficulty, number>>({ easy: 30, medium: 50, hard: 20 });
   const [types, setTypes] = useState<QuestionType[]>([
@@ -72,8 +71,6 @@ function GeneratePage() {
   const [distAuto, setDistAuto] = useState(false);
 
   const target = state.decks.find((d) => d.id === targetId);
-  // A new deck has a card floor; expanding an existing one keeps the exact count.
-  const countFloor = mode === "new" ? MIN_DECK_SIZE : 5;
   const suggestedCards = deckSizeTarget(countAuto, count, material);
 
   // keep the math toggles in step with the deck being expanded
@@ -199,7 +196,6 @@ function GeneratePage() {
                   key={m}
                   onClick={() => {
                     setMode(m);
-                    if (m === "new" && count < MIN_DECK_SIZE) setCount(MIN_DECK_SIZE);
                   }}
                   className={cn(
                     "rounded-full border border-border px-3 py-1.5 text-xs font-medium transition-colors",
@@ -281,7 +277,7 @@ function GeneratePage() {
               {countAuto ? (
                 <p className="text-xs text-muted-foreground">
                   {mode === "new"
-                    ? `Your AI scales the count to the material, never below ${MIN_DECK_SIZE} cards. This brief would ask for about ${suggestedCards}.`
+                    ? `Your AI chooses a count based on the material. This brief suggests about ${suggestedCards} cards.`
                     : "Your AI decides how many questions the material deserves."}
                 </p>
               ) : (
@@ -289,24 +285,17 @@ function GeneratePage() {
                   <Input
                     id="question-count"
                     type="number"
-                    min={countFloor}
-                    step={5}
-                    value={count}
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      if (raw === "") {
-                        setCount(countFloor);
-                        return;
-                      }
-                      const n = Math.round(parseInt(raw, 10) / 5) * 5;
-                      setCount(Math.max(countFloor, n));
-                    }}
+                    min={1}
+                    step={1}
+                    value={countInput}
+                    onChange={(e) => setCountInput(e.target.value)}
+                    onBlur={() => setCountInput(String(count))}
                     className="max-w-[140px]"
                   />
                   <p className="text-xs text-muted-foreground">
                     {mode === "new"
-                      ? `Decks start at ${MIN_DECK_SIZE} cards, and longer material scales above that. This brief asks for ${suggestedCards}.`
-                      : "Numbers are rounded to steps of 5. No upper limit."}
+                      ? `This brief asks for exactly ${count} cards. The material suggests about ${suggestedCards}.`
+                      : "Enter any positive whole number. No upper limit."}
                   </p>
                 </>
               )}

@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Flame,
   HardDrive,
@@ -38,12 +38,16 @@ import {
   STUDY_REASONS,
   STUDY_TIMES,
   SUBJECT_SUGGESTIONS,
+  DEFAULT_SETTINGS,
 } from "@/lib/defaults";
 import { validateDeckJson, type ValidationResult } from "@/lib/schema";
 import { fileToAvatarDataUrl } from "@/lib/avatar-store";
 import { cn } from "@/lib/utils";
 
 import { useKnowly } from "@/store/knowly";
+import { useAuth } from "@/store/auth-context";
+import { getAuthProfilePrefill } from "@/lib/auth-profile";
+import { useAvatarUrl } from "@/lib/use-avatar-url";
 import { buildSampleProfile } from "@/lib/sample-profile";
 import { ThemePicker } from "@/components/theme-picker";
 
@@ -54,7 +58,7 @@ export const Route = createFileRoute("/_authenticated/onboarding")({
       {
         name: "description",
         content:
-          "Set up your Knowly profile, learn the AI-free workflow and bring your library — add a deck or restore a full backup. Everything stays on this device until you save a backup copy.",
+          "Set up your Knowly profile, learn the AI-free workflow and bring your library — add a deck or restore a full backup.",
       },
       { property: "og:title", content: "Welcome to Knowly" },
       {
@@ -169,9 +173,13 @@ function previewBackup(
 function Onboarding() {
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState(1);
-  const { state, completeOnboarding, updateSettings, addDeck, importState, setAvatar } = useKnowly();
+  const { state, hydrated, completeOnboarding, updateSettings, addDeck, importState, setAvatar } =
+    useKnowly();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const settings = state.settings;
+  const avatarUrl = useAvatarUrl(state.settings.avatarImage);
+  const profilePrefill = getAuthProfilePrefill(user?.user_metadata);
 
   const [raw, setRaw] = useState("");
   const [result, setResult] = useState<ValidationResult | null>(null);
@@ -187,6 +195,40 @@ function Onboarding() {
   const fileRef = useRef<HTMLInputElement>(null);
   const backupFileRef = useRef<HTMLInputElement>(null);
   const avatarRef = useRef<HTMLInputElement>(null);
+  const profilePrefillApplied = useRef(false);
+
+  // The signed-in account already knows the learner's first name and photo.
+  // Apply them once the saved state has hydrated, so a fresh account starts
+  // as the person instead of as the defaults, without ever overwriting a name
+  // or image they picked themselves.
+  useEffect(() => {
+    if (!hydrated || !user || state.onboardingComplete) return;
+    if (profilePrefillApplied.current) return;
+    profilePrefillApplied.current = true;
+
+    const nameIsUntouched =
+      !settings.displayName.trim() || settings.displayName === DEFAULT_SETTINGS.displayName;
+    if (profilePrefill.firstName && nameIsUntouched) {
+      updateSettings({ displayName: profilePrefill.firstName });
+    }
+
+    const avatarIsUntouched =
+      !settings.avatarImage && settings.avatarEmoji === DEFAULT_SETTINGS.avatarEmoji;
+    if (profilePrefill.avatarUrl && avatarIsUntouched) {
+      setAvatar(profilePrefill.avatarUrl);
+    }
+  }, [
+    hydrated,
+    user,
+    state.onboardingComplete,
+    settings.avatarImage,
+    settings.displayName,
+    settings.avatarEmoji,
+    profilePrefill.firstName,
+    profilePrefill.avatarUrl,
+    updateSettings,
+    setAvatar,
+  ]);
 
   const evaluate = (text: string) => {
     setRaw(text);
@@ -435,8 +477,8 @@ function Onboarding() {
               <div className="relative mt-3 hidden items-start gap-2 text-[11px] leading-5 text-muted-foreground sm:flex lg:mt-auto">
                 <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-muted-foreground/60" />
                 <span>
-                  Decks, notes, courses and progress live on this device. Save a backup file
-                  whenever you want a copy you can move.
+                  Decks, notes, courses and progress save as you go. Save a backup file whenever you
+                  want a copy you can move.
                 </span>
               </div>
             </aside>
@@ -475,7 +517,7 @@ function Onboarding() {
                         {STEP_META[step].label}
                       </p>
                       <p className="mt-1 truncate text-[11px] text-muted-foreground">
-                        {librarySummary} · Everything stays on this device
+                        {librarySummary} · Saved as you go
                       </p>
                     </div>
                   </div>
@@ -507,12 +549,12 @@ function Onboarding() {
                       </h1>
                       <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
                         Knowly keeps everything — decks, questions, XP, streaks, notes and quiz
-                        history — on this device. Nothing is uploaded anywhere. Save a backup file
-                        whenever you want a copy or to move your library.
+                        history — in one workspace that saves as you go. Save a backup file whenever
+                        you want a copy you can move.
                       </p>
                       <ul className="stagger mt-8 grid gap-3 text-sm sm:grid-cols-3">
                         {[
-                          "No account — everything stays on this device",
+                          "One workspace — decks, notes and progress together",
                           "Backups, deck files and restore points",
                           "Built to feel like a desktop app",
                         ].map((p) => (
@@ -624,15 +666,15 @@ function Onboarding() {
                           Who's studying?
                         </h1>
                         <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-                          Just a name and a face — everything here is optional and stays on this
-                          device.
+                          Your name and Google profile photo come from your account. Change anything
+                          you like — it is all editable later in Settings.
                         </p>
                       </div>
 
                       <div className="flex flex-col gap-6 rounded-xl border border-border bg-surface/60 p-5 sm:flex-row sm:items-center">
-                        {state.settings.avatarImage ? (
+                        {avatarUrl ? (
                           <img
-                            src={state.settings.avatarImage}
+                            src={avatarUrl}
                             alt="Your avatar"
                             className="size-20 shrink-0 rounded-lg object-cover border border-primary/40 shadow-[3px_3px_0_0_var(--shadow-ink)]"
                           />
@@ -668,7 +710,9 @@ function Onboarding() {
                               }}
                               className={cn(
                                 "press grid aspect-square min-h-[44px] size-10 place-items-center rounded-xl border border-transparent text-lg transition-all hover:scale-110",
-                                settings.avatarEmoji === e && !state.settings.avatarImage && "scale-110 border-primary bg-primary/15",
+                                settings.avatarEmoji === e &&
+                                  !avatarUrl &&
+                                  "scale-110 border-primary bg-primary/15",
                               )}
                             >
                               {e}
@@ -679,7 +723,7 @@ function Onboarding() {
                             onClick={() => avatarRef.current?.click()}
                             className={cn(
                               "press inline-flex items-center gap-1.5 px-3 h-10 rounded-lg border-2 border-border bg-surface text-sm font-semibold transition-all hover:shadow-[3px_3px_0_0_var(--shadow-ink)] hover:-translate-x-0.5 hover:-translate-y-0.5",
-                              state.settings.avatarImage && "border-primary bg-primary/10",
+                              avatarUrl && "border-primary bg-primary/10",
                             )}
                             title="Upload a custom image"
                           >
@@ -704,7 +748,7 @@ function Onboarding() {
                               }
                             }}
                           />
-                          {state.settings.avatarImage && (
+                          {avatarUrl && (
                             <button
                               type="button"
                               onClick={() => setAvatar(null)}
@@ -715,10 +759,10 @@ function Onboarding() {
                             </button>
                           )}
                         </div>
-                        {state.settings.avatarImage && (
+                        {avatarUrl && (
                           <div className="mt-3 flex items-center gap-2">
                             <img
-                              src={state.settings.avatarImage}
+                              src={avatarUrl}
                               alt="Your custom avatar preview"
                               className="size-12 rounded-lg object-cover border border-border"
                             />

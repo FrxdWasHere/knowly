@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useKnowly } from "@/store/knowly";
+import { useAuth } from "@/store/auth-context";
 import { Logo } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
 
@@ -316,23 +317,18 @@ function Reveal({
 function Landing() {
   const navigate = useNavigate();
   const { state, hydrated } = useKnowly();
+  const { loading: authLoading, user } = useAuth();
 
-  useEffect(() => {
-    if (!hydrated) return;
-    if (state.onboardingComplete) navigate({ to: "/dashboard", replace: true });
-  }, [hydrated, state.onboardingComplete, navigate]);
-
+  // The landing page always renders. The path is landing → sign in →
+  // onboarding → app, so every call to action leads to the account step.
   const openApp = () => {
-    navigate({ to: state.onboardingComplete ? "/dashboard" : "/onboarding" });
+    if (authLoading) return;
+    if (!user || !hydrated) {
+      void navigate({ to: "/login" });
+      return;
+    }
+    void navigate({ to: state.onboardingComplete ? "/dashboard" : "/onboarding" });
   };
-
-  if (!hydrated || state.onboardingComplete) {
-    return (
-      <div className="grid min-h-screen place-items-center bg-[#FFFBF5]">
-        <div className="size-8 animate-spin rounded-full border-4 border-black border-t-[#FF6B6B]" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen overflow-hidden bg-[#FFFBF5] dark:bg-background text-black dark:text-white">
@@ -358,13 +354,21 @@ function Landing() {
             ))}
           </nav>
 
-          <Button
-            onClick={openApp}
-            className="rounded-xl border-4 border-black bg-[#FF6B6B] px-6 py-3 font-black text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-2px] hover:translate-y-[-2px] hover:bg-[#ff5555] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]"
-          >
-            TRY IT FREE
-            <ArrowUpRight className="size-5" />
-          </Button>
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <Link
+              to="/login"
+              className="hidden rounded-xl border-[3px] border-black bg-white px-4 py-2 text-sm font-bold transition-all hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:inline-block"
+            >
+              Sign in
+            </Link>
+            <Button
+              onClick={openApp}
+              className="rounded-xl border-4 border-black bg-[#FF6B6B] px-6 py-3 font-black text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-2px] hover:translate-y-[-2px] hover:bg-[#ff5555] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]"
+            >
+              TRY IT FREE
+              <ArrowUpRight className="size-5" />
+            </Button>
+          </div>
         </div>
 
         <nav
@@ -650,7 +654,7 @@ function Landing() {
                   <ArrowUpRight className="ml-2 inline size-6" />
                 </button>
                 <p className="mt-6 font-bold">
-                  No download • No sign-up • No credit card • Start in{" "}
+                  Sign in • No download • No credit card • Start in{" "}
                   <span className="relative inline-block">
                     <span className="relative z-10">30 seconds</span>
                     <span className="absolute bottom-0 left-0 right-0 h-2 bg-[#FFE66D]" />
@@ -662,7 +666,10 @@ function Landing() {
         </section>
 
         {/* Features Section */}
-        <section id="features" className="bg-[#FFFBF5] text-black px-5 py-20 sm:px-8 sm:py-32 dark:bg-background dark:text-white">
+        <section
+          id="features"
+          className="bg-[#FFFBF5] text-black px-5 py-20 sm:px-8 sm:py-32 dark:bg-background dark:text-white"
+        >
           <div className="mx-auto max-w-7xl">
             <Reveal>
               <div className="text-center">
@@ -1098,10 +1105,13 @@ function Landing() {
         <div className="border-t-4 border-black bg-[#FFE66D] px-5 py-6 sm:px-8">
           <div className="mx-auto flex max-w-7xl flex-col gap-2 text-sm font-black sm:flex-row sm:items-center sm:justify-between">
             <span>© {new Date().getFullYear()} Knowly. Made with 💜 for students.</span>
-            <span>NO ACCOUNT • NO TRACKING • YOUR DATA STAYS YOURS</span>
+            <span>SIGN IN • NO TRACKING • YOUR DATA STAYS YOURS</span>
           </div>
           <div className="mx-auto mt-4 max-w-7xl border-t-2 border-black pt-4 text-center text-xs font-bold leading-snug">
-            <p>Made with love by Frederic Liam De Guzman, for the kind students of the School of Our Lady of La Salette.</p>
+            <p>
+              Made with love by Frederic Liam De Guzman, for the kind students of the School of Our
+              Lady of La Salette.
+            </p>
             <p className="mt-2">All rights reserved. To God be all the glory! 🙏</p>
           </div>
         </div>

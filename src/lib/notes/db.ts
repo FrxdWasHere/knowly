@@ -28,6 +28,26 @@ interface NotesDB extends DBSchema {
 
 let dbPromise: Promise<IDBPDatabase<NotesDB>> | null = null;
 
+/** Everything a notebook needs to move between devices. */
+export interface NotesBackup {
+  notebooks: NotebookMeta[];
+  pages: NotePage[];
+}
+
+const changeListeners = new Set<() => void>();
+
+/** Told when any notebook or page is written, so cloud sync can pick it up. */
+export function subscribeNotesChanges(listener: () => void): () => void {
+  changeListeners.add(listener);
+  return () => {
+    changeListeners.delete(listener);
+  };
+}
+
+function notifyNotesChanged(): void {
+  for (const listener of changeListeners) listener();
+}
+
 function getDb() {
   if (!dbPromise) {
     dbPromise = openDB<NotesDB>(DB_NAME, DB_VERSION, {
@@ -59,6 +79,7 @@ export async function getNotebook(id: string): Promise<NotebookMeta | undefined>
 
 export async function putNotebook(notebook: NotebookMeta, retries = 3): Promise<void> {
   if (!available()) return;
+  notifyNotesChanged();
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
       await (await getDb()).put("notebooks", notebook);
@@ -73,6 +94,7 @@ export async function putNotebook(notebook: NotebookMeta, retries = 3): Promise<
 
 export async function deleteNotebook(id: string): Promise<void> {
   if (!available()) return;
+  notifyNotesChanged();
   const db = await getDb();
   const pages = await db.getAllFromIndex("pages", "by-notebook", id);
   const tx = db.transaction(["notebooks", "pages"], "readwrite");
@@ -97,6 +119,7 @@ export async function getPage(id: string): Promise<NotePage | undefined> {
 
 export async function putPage(page: NotePage, retries = 3): Promise<void> {
   if (!available()) return;
+  notifyNotesChanged();
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
       await (await getDb()).put("pages", page);
@@ -111,7 +134,28 @@ export async function putPage(page: NotePage, retries = 3): Promise<void> {
 
 export async function deletePage(id: string): Promise<void> {
   if (!available()) return;
+  notifyNotesChanged();
   await (await getDb()).delete("pages", id);
+}
+
+/** Reads every notebook and page, for the account snapshot. */
+export async function exportAllNotes(): Promise<NotesBackup> {
+  if (!available()) return { notebooks: [], pages: [] };
+  const db = await getDb();
+  const [notebooks, pages] = await Promise.all([db.getAll("notebooks"), db.getAll("pages")]);
+  return { notebooks, pages };
+}
+
+/** Replaces every local notebook and page with the given snapshot. */
+export async function replaceAllNotes(backup: NotesBackup): Promise<void> {
+  if (!available()) return;
+  const db = await getDb();
+  const tx = db.transaction(["notebooks", "pages"], "readwrite");
+  await Promise.all([tx.objectStore("notebooks").clear(), tx.objectStore("pages").clear()]);
+  for (const notebook of backup.notebooks) await tx.objectStore("notebooks").put(notebook);
+  for (const page of backup.pages) await tx.objectStore("pages").put(page);
+  await tx.done;
+  notifyNotesChanged();
 }
 
 export interface NoteSearchHit {
@@ -315,5 +359,6 @@ export async function importNotebookBundle(raw: string): Promise<NotebookMeta | 
 
   await putNotebook(notebook);
   for (const page of pages) await putPage(page);
+  notifyNotesChanged();
   return notebook;
 }
