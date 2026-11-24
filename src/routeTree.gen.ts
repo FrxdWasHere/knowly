@@ -46,6 +46,7 @@ import { Route as AuthenticatedTimetableRouteImport } from './routes/_authentica
 import { Route as AuthenticatedWeakSpotsRouteImport } from './routes/_authenticated/weak-spots'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
+import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as AuthenticatedArenaDeckIdRouteImport } from './routes/_authenticated/arena.$deckId'
 import { Route as AuthenticatedCoursesIndexRouteImport } from './routes/_authenticated/courses.index'
 import { Route as AuthenticatedCoursesCourseIdRouteImport } from './routes/_authenticated/courses.$courseId'
@@ -254,6 +255,11 @@ const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
   path: '/auth/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShareTokenRoute = ShareTokenRouteImport.update({
+  id: '/share/$token',
+  path: '/share/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedArenaDeckIdRoute =
   AuthenticatedArenaDeckIdRouteImport.update({
     id: '/arena/$deckId',
@@ -422,6 +428,7 @@ export interface FileRoutesByFullPath {
   '/weak-spots': typeof AuthenticatedWeakSpotsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/share/$token': typeof ShareTokenRoute
   '/arena/$deckId': typeof AuthenticatedArenaDeckIdRoute
   '/courses/$courseId': typeof AuthenticatedCoursesCourseIdRouteWithChildren
   '/courses/forge': typeof AuthenticatedCoursesForgeRoute
@@ -482,6 +489,7 @@ export interface FileRoutesByTo {
   '/weak-spots': typeof AuthenticatedWeakSpotsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/share/$token': typeof ShareTokenRoute
   '/arena/$deckId': typeof AuthenticatedArenaDeckIdRoute
   '/courses/forge': typeof AuthenticatedCoursesForgeRoute
   '/courses/import': typeof AuthenticatedCoursesImportRoute
@@ -542,6 +550,7 @@ export interface FileRoutesById {
   '/_authenticated/weak-spots': typeof AuthenticatedWeakSpotsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/share/$token': typeof ShareTokenRoute
   '/_authenticated/arena/$deckId': typeof AuthenticatedArenaDeckIdRoute
   '/_authenticated/courses/$courseId': typeof AuthenticatedCoursesCourseIdRouteWithChildren
   '/_authenticated/courses/forge': typeof AuthenticatedCoursesForgeRoute
@@ -604,6 +613,7 @@ export interface FileRouteTypes {
     | '/weak-spots'
     | '/auth/callback'
     | '/auth/reset-password'
+    | '/share/$token'
     | '/arena/$deckId'
     | '/courses/$courseId'
     | '/courses/forge'
@@ -664,6 +674,7 @@ export interface FileRouteTypes {
     | '/weak-spots'
     | '/auth/callback'
     | '/auth/reset-password'
+    | '/share/$token'
     | '/arena/$deckId'
     | '/courses/forge'
     | '/courses/import'
@@ -723,6 +734,7 @@ export interface FileRouteTypes {
     | '/_authenticated/weak-spots'
     | '/auth/callback'
     | '/auth/reset-password'
+    | '/share/$token'
     | '/_authenticated/arena/$deckId'
     | '/_authenticated/courses/$courseId'
     | '/_authenticated/courses/forge'
@@ -756,6 +768,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
+  ShareTokenRoute: typeof ShareTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1017,6 +1030,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/reset-password'
       fullPath: '/auth/reset-password'
       preLoaderRoute: typeof AuthResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/share/$token': {
+      id: '/share/$token'
+      path: '/share/$token'
+      fullPath: '/share/$token'
+      preLoaderRoute: typeof ShareTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/arena/$deckId': {
@@ -1329,6 +1349,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
+  ShareTokenRoute: ShareTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

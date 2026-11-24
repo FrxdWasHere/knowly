@@ -19,9 +19,13 @@ import { gradeFor } from "@/lib/gamification";
 import { cn } from "@/lib/utils";
 import type { AnswerRecord, QuizResult } from "@/lib/types";
 import { useKnowly } from "@/store/knowly";
+import { ShareButton } from "@/components/share/share-button";
+import { buildPracticeQuizShareSnapshot } from "@/lib/share-content";
+import type { Question } from "@/lib/types";
 
 export function QuizReport({
   result,
+  questions,
   exam = false,
   onOverride,
   onRetry,
@@ -30,6 +34,7 @@ export function QuizReport({
   onBackToSetup,
 }: {
   result: QuizResult;
+  questions: Question[];
   /** exam mode: stricter labels for the mock-exam report */
   exam?: boolean;
   onOverride: (index: number) => void;
@@ -260,6 +265,18 @@ export function QuizReport({
         </div>
 
         <div className="mt-8 flex flex-wrap justify-center gap-2">
+          {!exam && questions.length > 0 && (
+            <ShareButton
+              resourceType="practice_quiz"
+              resourceId={result.id}
+              title={`${result.deckTitles.join(" · ") || "Mixed decks"} — Practice Quiz`}
+              payload={buildPracticeQuizShareSnapshot(
+                `${result.deckTitles.join(" · ") || "Mixed decks"} — Practice Quiz`,
+                result.deckTitles.join(" · ") || "Mixed decks",
+                questions,
+              )}
+            />
+          )}
           <Button onClick={onRetry}>
             <RotateCcw /> {exam ? "Retake exam" : "Retake quiz"}
           </Button>

@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { MathText } from "@/components/math/math-text";
 import { ModuleMarkdownText } from "@/components/module-markdown";
 import { DocumentThemePicker } from "@/components/reading/document-theme-picker";
+import { ShareButton } from "@/components/share/share-button";
 import {
   ArrowLeft,
   BookOpenCheck,
@@ -40,6 +41,7 @@ import { useKnowly } from "@/store/knowly";
 import { cn } from "@/lib/utils";
 import type { ExamTheme } from "@/lib/exam-print";
 import { serializeModuleJson } from "@/lib/module-schema";
+import { buildModuleShareSnapshot } from "@/lib/share-content";
 import { createId } from "@/lib/id";
 import { documentThemeStyle, getDocumentThemeDesign } from "@/lib/document-themes";
 import type { ReadingHighlightAnchor } from "@/lib/reading-highlights";
@@ -272,7 +274,13 @@ function ModuleEditor() {
         <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/modules" } as never)}>
           <ArrowLeft className="size-4" /> Modules
         </Button>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <ShareButton
+            resourceType="module"
+            resourceId={module.id}
+            title={module.title}
+            payload={buildModuleShareSnapshot(module, documentTheme)}
+          />
           <Button
             variant="ghost"
             size="sm"

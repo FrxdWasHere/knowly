@@ -142,6 +142,7 @@ export function QuizEngine({ exam = false }: { exam?: boolean } = {}) {
     return (
       <QuizReport
         result={result}
+        questions={pool}
         exam={exam}
         onOverride={(index) => {
           setResult((r) => {

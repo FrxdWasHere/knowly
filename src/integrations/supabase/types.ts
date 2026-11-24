@@ -261,6 +261,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      share_links: {
+        Row: {
+          allowed_emails: string[];
+          created_at: string;
+          id: string;
+          owner_id: string;
+          payload: Json;
+          resource_id: string;
+          resource_type: string;
+          share_token: string;
+          title: string;
+          updated_at: string;
+          visibility: string;
+        };
+        Insert: {
+          allowed_emails?: string[];
+          created_at?: string;
+          id?: string;
+          owner_id: string;
+          payload: Json;
+          resource_id: string;
+          resource_type: string;
+          share_token: string;
+          title: string;
+          updated_at?: string;
+          visibility?: string;
+        };
+        Update: {
+          allowed_emails?: string[];
+          created_at?: string;
+          id?: string;
+          owner_id?: string;
+          payload?: Json;
+          resource_id?: string;
+          resource_type?: string;
+          share_token?: string;
+          title?: string;
+          updated_at?: string;
+          visibility?: string;
+        };
+        Relationships: [];
+      };
       user_progress: {
         Row: {
           payload: Json;
@@ -299,7 +341,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      read_shared_resource: {
+        Args: { p_token: string };
+        Returns: Json;
+      };
     };
     Enums: {
       [_ in never]: never;

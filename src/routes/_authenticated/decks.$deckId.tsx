@@ -23,7 +23,9 @@ import { SrsRing } from "@/components/srs/srs-ring";
 import { MathText } from "@/components/math/math-text";
 import { QuestionRationales } from "@/components/questions/question-rationales";
 import { LabelChips, LabelPickerDialog } from "@/components/binder/label-picker";
+import { ShareButton } from "@/components/share/share-button";
 import { TYPE_LABELS } from "@/lib/answers";
+import { buildDeckShareSnapshot } from "@/lib/share-content";
 import { cardStage, deckSrs, formatDue, formatInterval, STAGE_META } from "@/lib/srs";
 import { fragmentDeck, partCleared } from "@/lib/rounds";
 import { activityLabel, isStageUnlocked, pathStats, purposeLabel } from "@/lib/learning-paths";
@@ -107,6 +109,12 @@ function DeckDetail() {
         description={`${deck.subject} · ${deck.questions.length} questions · ${pct}% mastered`}
         action={
           <div className="flex flex-wrap gap-2">
+            <ShareButton
+              resourceType="deck"
+              resourceId={deck.id}
+              title={deck.title}
+              payload={buildDeckShareSnapshot(deck, state.settings.documentTheme)}
+            />
             <Button
               variant="outline"
               onClick={() => updateDeck(deck.id, { favorite: !deck.favorite })}

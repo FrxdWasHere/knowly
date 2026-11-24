@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { ShareButton } from "@/components/share/share-button";
 import { MathText } from "@/components/math/math-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ import {
   nextLesson,
 } from "@/lib/courses";
 import { createId } from "@/lib/id";
+import { buildCourseShareSnapshot } from "@/lib/share-content";
 import { useKnowly } from "@/store/knowly";
 import { cn } from "@/lib/utils";
 import type { CourseLesson, Deck } from "@/lib/types";
@@ -145,7 +147,16 @@ function CourseOverviewPage() {
                 >
                   <ArrowLeft className="size-3.5" /> All courses
                 </Link>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <ShareButton
+                    resourceType="course"
+                    resourceId={course.id}
+                    title={course.title}
+                    payload={buildCourseShareSnapshot(
+                      course,
+                      state.settings.documentTheme ?? "classic",
+                    )}
+                  />
                   <Button asChild variant="ghost" size="sm">
                     <Link to="/courses/$courseId/print" params={{ courseId: course.id }}>
                       <Printer className="size-3.5" /> Print course

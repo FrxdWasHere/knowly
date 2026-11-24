@@ -19,6 +19,7 @@ import { ExamPaper } from "@/components/print/exam-paper";
 import { MultiPaperConfig } from "@/components/print/multi-paper-config";
 import { PrintMarketplace } from "@/components/print/print-marketplace";
 import { PrintStyleMenu } from "@/components/print/print-style-menu";
+import { ShareButton } from "@/components/share/share-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,6 +50,7 @@ import {
 import { TYPE_LABELS } from "@/lib/answers";
 import type { GeneratedBulkPaper } from "@/lib/exam-bulk";
 import { validateDeckJson, validateQuestionsJson } from "@/lib/schema";
+import { buildPrintExamShareSnapshot } from "@/lib/share-content";
 import type { Difficulty, Question, QuestionType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useKnowly } from "@/store/knowly";
@@ -135,6 +137,7 @@ function PrintExamPage() {
   const [mode, setMode] = useState<"single" | "bulk">("single");
   const [bulkPapers, setBulkPapers] = useState<GeneratedBulkPaper[] | null>(null);
   const [previewBulk, setPreviewBulk] = useState(0);
+  const [draftShareId] = useState(() => createId());
   const [exportState, setExportState] = useState<
     { kind: "idle" } | { kind: "working"; message: string } | { kind: "error"; log: string }
   >({ kind: "idle" });
@@ -297,6 +300,21 @@ function PrintExamPage() {
           action={
             mode === "single" ? (
               <div className="flex flex-wrap gap-2">
+                {paperQuestions.length > 0 && (
+                  <ShareButton
+                    resourceType="print_exam"
+                    resourceId={fromPaper?.id ?? draftShareId}
+                    title={options.title || "Practice Exam"}
+                    payload={buildPrintExamShareSnapshot(
+                      options.title || "Practice Exam",
+                      options.subject,
+                      paperQuestions,
+                      options,
+                    )}
+                    variant="outline"
+                    size="default"
+                  />
+                )}
                 <Button
                   variant="outline"
                   onClick={handleExportDocx}
@@ -949,9 +967,24 @@ function PrintExamPage() {
                   : "Bulk preview"}
               </p>
               {!!bulkPapers?.length && (
-                <span className="text-[11px] text-muted-foreground">
-                  Click a paper to preview it
-                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[11px] text-muted-foreground">
+                    Click a paper to preview it
+                  </span>
+                  {bulkPreviewPaper && (
+                    <ShareButton
+                      resourceType="print_exam"
+                      resourceId={bulkPreviewPaper.paperId}
+                      title={bulkPreviewPaper.title}
+                      payload={buildPrintExamShareSnapshot(
+                        bulkPreviewPaper.title,
+                        options.subject,
+                        bulkPreviewPaper.questions,
+                        { ...options, title: bulkPreviewPaper.title },
+                      )}
+                    />
+                  )}
+                </div>
               )}
             </div>
             {!bulkPapers?.length ? (
