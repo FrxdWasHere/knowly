@@ -70,6 +70,14 @@ Sync is automatic once you sign in. A device that is new to the account starts b
 npm run build
 ```
 
+### Deploy to Vercel
+
+Vercel sets `VERCEL` during builds, so Knowly automatically uses Nitro's Vercel output there
+while keeping the Node server output for local and Tauri builds. In Vercel, use `npm run build`
+and leave the Output Directory override disabled; do not set it to `dist`, since this is an
+SSR app rather than a static-only Vite build. Set the Supabase URL and publishable key in
+Vercel's environment settings, and allow the deployed callback URLs in Supabase Auth.
+
 ### Desktop app
 
 The Tauri shell needs the Rust toolchain and the Visual Studio C++ build tools. Once those are installed:
