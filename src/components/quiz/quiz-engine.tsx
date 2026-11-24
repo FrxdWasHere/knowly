@@ -36,6 +36,7 @@ import { questionTypes } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 import { createId } from "@/lib/id";
 import { openImportPanel } from "@/lib/import-panel";
+import { groupQuestionsBySubtopic, questionSubtopicKey, questionSubtopicTitle } from "@/lib/rounds";
 
 import type {
   AnswerRecord,
@@ -86,6 +87,7 @@ export function QuizEngine({
           roundPauses: false,
           questionsPerRound: 10,
           pauseAutoAdvanceSeconds: null,
+          pauseAfterSubtopic: false,
         }
       : {
           ...state.settings.defaultQuizConfig,
@@ -99,6 +101,10 @@ export function QuizEngine({
 
   const decks = state.decks;
   const widgets = state.settings.quizWidgets;
+  const deckSubjects = useMemo(
+    () => new Map(decks.map((deck) => [deck.id, deck.subject])),
+    [decks],
+  );
 
   const availableQuestions = useMemo(() => {
     const selected = config.deckIds.length
@@ -115,7 +121,11 @@ export function QuizEngine({
 
   const start = (questions?: Question[]) => {
     const base = questions ?? availableQuestions;
-    const ordered = config.shuffle ? shuffleArray(base) : base;
+    const ordered = config.pauseAfterSubtopic
+      ? groupQuestionsBySubtopic(base, deckSubjects, config.shuffle)
+      : config.shuffle
+        ? shuffleArray(base)
+        : base;
     setResumeSession(null);
     setPool(config.unlimited ? ordered : ordered.slice(0, config.questionCount));
     setPhase("running");
@@ -171,7 +181,7 @@ export function QuizEngine({
         onRetryIncorrect={() => {
           const wrongIds = result.answers.filter((a) => !a.correct).map((a) => a.questionId);
           const questions = decks
-            .flatMap((d) => d.questions)
+            .flatMap((d) => d.questions.map((q) => ({ ...q, deckId: d.id })))
             .filter((q) => wrongIds.includes(q.id));
           if (!questions.length) return;
           setResult(null);
@@ -190,6 +200,7 @@ export function QuizEngine({
     return (
       <QuizRun
         pool={pool}
+        decks={decks}
         config={config}
         initialSession={resumeSession}
         widgets={widgets}
@@ -571,26 +582,41 @@ export function QuizEngine({
                       }}
                     />
                   </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">
-                      Auto-advance after (seconds, leave empty for manual)
-                    </Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      placeholder="off"
-                      value={config.pauseAutoAdvanceSeconds ?? ""}
-                      onChange={(e) =>
-                        toggle(
-                          "pauseAutoAdvanceSeconds",
-                          e.target.value ? Number(e.target.value) : null,
-                        )
-                      }
-                    />
-                  </div>
                 </div>
               )}
+
+              {(config.roundPauses || config.pauseAfterSubtopic) && (
+                <div className="space-y-1.5 border-t border-border pt-3">
+                  <Label className="text-xs">
+                    Auto-advance after (seconds, leave empty for manual)
+                  </Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder="off"
+                    value={config.pauseAutoAdvanceSeconds ?? ""}
+                    onChange={(e) =>
+                      toggle(
+                        "pauseAutoAdvanceSeconds",
+                        e.target.value ? Number(e.target.value) : null,
+                      )
+                    }
+                  />
+                </div>
+              )}
+
+              <div className="flex items-center justify-between gap-4 border-t border-border pt-3">
+                <div>
+                  <Label className="text-sm">Pause after each subtopic</Label>
+                  <p className="text-[11px] text-muted-foreground">
+                    Finish each concept or tag before pausing. Shuffle stays within each group.
+                  </p>
+                </div>
+                <Switch
+                  checked={config.pauseAfterSubtopic}
+                  onCheckedChange={(value) => toggle("pauseAfterSubtopic", value)}
+                />
+              </div>
             </div>
           )}
 
@@ -749,6 +775,7 @@ function QuizFeedbackPanel({
 
 function QuizRun({
   pool,
+  decks,
   config,
   initialSession,
   widgets,
@@ -760,6 +787,7 @@ function QuizRun({
   onSaveAndExit,
 }: {
   pool: Question[];
+  decks: { id: string; subject: string }[];
   config: QuizConfig;
   initialSession: SavedQuizSession | null;
   widgets: QuizWidgets;
@@ -806,6 +834,11 @@ function QuizRun({
   const [confirmQuit, setConfirmQuit] = useState(false);
   const [pauseScreenVisible, setPauseScreenVisible] = useState(false);
   const [pauseCountdown, setPauseCountdown] = useState<number | null>(null);
+  const [completedSubtopic, setCompletedSubtopic] = useState<string | null>(null);
+  const deckSubjects = useMemo(
+    () => new Map(decks.map((deck) => [deck.id, deck.subject])),
+    [decks],
+  );
   const coarsePointer = useCoarsePointer();
   const started = useRef(Date.now() - (initialSession?.totalElapsedMs ?? 0));
   const questionStart = useRef(Date.now());
@@ -858,11 +891,18 @@ function QuizRun({
         setQuestionElapsed(0);
 
         // Check if we should show a round pause
-        if (
-          config.roundPauses &&
-          nextAnswers.length % config.questionsPerRound === 0 &&
-          nextAnswers.length < total
-        ) {
+        const nextQuestion = pool[index + 1];
+        const subtopicFinished =
+          config.pauseAfterSubtopic &&
+          nextQuestion !== undefined &&
+          questionSubtopicKey(question, deckSubjects) !==
+            questionSubtopicKey(nextQuestion, deckSubjects);
+        const roundFinished =
+          config.roundPauses && nextAnswers.length % config.questionsPerRound === 0;
+        if ((subtopicFinished || roundFinished) && nextAnswers.length < total) {
+          setCompletedSubtopic(
+            subtopicFinished ? questionSubtopicTitle(question, deckSubjects) : null,
+          );
           setPauseScreenVisible(true);
           if (config.pauseAutoAdvanceSeconds !== null && config.pauseAutoAdvanceSeconds > 0) {
             setPauseCountdown(config.pauseAutoAdvanceSeconds);
@@ -899,11 +939,14 @@ function QuizRun({
       config.feedbackOnNextQuestion,
       config.instantFeedback,
       config.pauseAutoAdvanceSeconds,
+      config.pauseAfterSubtopic,
       config.questionsPerRound,
       config.roundPauses,
+      deckSubjects,
       config.xpEnabled,
       index,
       onFinish,
+      pool,
       question,
       total,
       xp,
@@ -933,6 +976,7 @@ function QuizRun({
     if (pauseCountdown === 0) {
       setPauseScreenVisible(false);
       setPauseCountdown(null);
+      setCompletedSubtopic(null);
       setIndex((i) => i + 1);
     }
   }, [pauseCountdown]);
@@ -993,7 +1037,12 @@ function QuizRun({
       <div className="mx-auto max-w-3xl">
         <div className="grid place-items-center gap-6 rounded-2xl border-2 border-border bg-surface p-12 text-center">
           <div>
-            <h2 className="font-display text-3xl font-bold">Round Complete!</h2>
+            <h2 className="font-display text-3xl font-bold">
+              {completedSubtopic ? "Subtopic complete!" : "Round complete!"}
+            </h2>
+            {completedSubtopic && (
+              <p className="mt-1 font-medium text-primary">{completedSubtopic}</p>
+            )}
             <p className="mt-2 text-muted-foreground">
               You've completed {answers.length} questions
             </p>
@@ -1020,6 +1069,7 @@ function QuizRun({
               onClick={() => {
                 setPauseScreenVisible(false);
                 setPauseCountdown(null);
+                setCompletedSubtopic(null);
                 setIndex((i) => i + 1);
               }}
             >

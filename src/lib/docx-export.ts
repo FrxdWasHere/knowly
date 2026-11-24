@@ -107,6 +107,19 @@ type InlineRunStyle = FlowStyle & {
   size?: number;
 };
 
+type TextRunFormatting = {
+  allCaps?: boolean;
+  bold?: boolean;
+  characterSpacing?: number;
+  color?: string;
+  font?: string;
+  italics?: boolean;
+  size?: number;
+  strike?: boolean;
+  style?: string;
+  underline?: { type: "single" };
+};
+
 /**
  * Parse inline Markdown formatting from a plain-text segment supporting:
  * - Bold: **text** or __text__
@@ -115,7 +128,12 @@ type InlineRunStyle = FlowStyle & {
  * - Links: [text](url)
  * - Strikethrough: ~~...~~
  */
-function markdownTextRuns(text: string, style: InlineRunStyle = {}): TextRun[] {
+function markdownTextRuns(
+  text: string,
+  style: InlineRunStyle = {},
+  suggestedHighlights: string[] = [],
+  highlightFill?: string,
+): TextRun[] {
   const runs: TextRun[] = [];
   const inheritedStyle = {
     ...(style.bold === undefined ? {} : { bold: style.bold }),
@@ -125,6 +143,38 @@ function markdownTextRuns(text: string, style: InlineRunStyle = {}): TextRun[] {
     ...(style.font ? { font: style.font } : {}),
     ...(style.size === undefined ? {} : { size: style.size }),
     ...(style.allCaps === undefined ? {} : { allCaps: style.allCaps }),
+  };
+  const append = (value: string, formatting: TextRunFormatting = {}) => {
+    const lowerValue = value.toLocaleLowerCase();
+    const matches = suggestedHighlights
+      .map((phrase) => {
+        const start = lowerValue.indexOf(phrase.toLocaleLowerCase());
+        return start < 0 ? null : { start, end: start + phrase.length };
+      })
+      .filter((match): match is { start: number; end: number } => match !== null)
+      .sort((a, b) => a.start - b.start);
+    let cursor = 0;
+    const push = (segment: string, highlighted: boolean) => {
+      if (!segment) return;
+      runs.push(
+        new TextRun({
+          ...inheritedStyle,
+          ...formatting,
+          text: segment,
+          ...(highlighted && highlightFill
+            ? { shading: { type: ShadingType.CLEAR, fill: highlightFill } }
+            : {}),
+        }),
+      );
+    };
+
+    for (const match of matches) {
+      if (match.start < cursor) continue;
+      push(value.slice(cursor, match.start), false);
+      push(value.slice(match.start, match.end), true);
+      cursor = match.end;
+    }
+    push(value.slice(cursor), false);
   };
 
   // Pattern that matches (in priority order to avoid conflicts):
@@ -141,72 +191,48 @@ function markdownTextRuns(text: string, style: InlineRunStyle = {}): TextRun[] {
   while ((match = pattern.exec(text))) {
     // Add plain text before this match
     if (match.index > last) {
-      runs.push(new TextRun({ text: text.slice(last, match.index), ...inheritedStyle }));
+      append(text.slice(last, match.index));
     }
 
     // Bold-italic: ***...***
     if (match[1] != null) {
-      runs.push(new TextRun({ ...inheritedStyle, text: match[1], bold: true, italics: true }));
+      append(match[1], { bold: true, italics: true });
     }
     // Bold-italic: ___...___
     else if (match[2] != null) {
-      runs.push(new TextRun({ ...inheritedStyle, text: match[2], bold: true, italics: true }));
+      append(match[2], { bold: true, italics: true });
     }
     // Bold: **text**
     else if (match[3] != null) {
-      runs.push(
-        new TextRun({
-          ...inheritedStyle,
-          text: match[3],
-          bold: true,
-        }),
-      );
+      append(match[3], { bold: true });
     }
     // Bold: __...__ (group 6)
     else if (match[4] != null) {
-      runs.push(
-        new TextRun({
-          ...inheritedStyle,
-          text: match[4],
-          bold: true,
-        }),
-      );
+      append(match[4], { bold: true });
     }
     // Strikethrough: ~~...~~ (group 7)
     else if (match[5] != null) {
-      runs.push(
-        new TextRun({
-          ...inheritedStyle,
-          text: match[5],
-          strike: true,
-        }),
-      );
+      append(match[5], { strike: true });
     }
     // Code: `...` (group 8)
     else if (match[6] != null) {
-      runs.push(
-        new TextRun({ ...inheritedStyle, text: match[6], font: "Consolas", color: "1E293B" }),
-      );
+      append(match[6], { font: "Consolas", color: "1E293B" });
     }
     // Link: [text](url) (groups 9-10)
     else if (match[7] != null && match[8] != null) {
-      runs.push(
-        new TextRun({
-          ...inheritedStyle,
-          text: `${match[7]} (${match[8]})`,
-          style: "Hyperlink",
-          color: "0563C1",
-          underline: { type: "single" },
-        }),
-      );
+      append(`${match[7]} (${match[8]})`, {
+        style: "Hyperlink",
+        color: "0563C1",
+        underline: { type: "single" },
+      });
     }
     // Italic: *...* (group 11)
     else if (match[9] != null) {
-      runs.push(new TextRun({ ...inheritedStyle, text: match[9], italics: true }));
+      append(match[9], { italics: true });
     }
     // Italic: _..._ (group 12)
     else if (match[10] != null) {
-      runs.push(new TextRun({ ...inheritedStyle, text: match[10], italics: true }));
+      append(match[10], { italics: true });
     }
 
     last = pattern.lastIndex;
@@ -214,13 +240,18 @@ function markdownTextRuns(text: string, style: InlineRunStyle = {}): TextRun[] {
 
   // Add remaining text
   if (last < text.length) {
-    runs.push(new TextRun({ text: text.slice(last), ...inheritedStyle }));
+    append(text.slice(last));
   }
 
   return runs.length > 0 ? runs : [new TextRun("")];
 }
 
-function inlineRuns(text: string, style: InlineRunStyle = {}): ParagraphChild[] {
+function inlineRuns(
+  text: string,
+  style: InlineRunStyle = {},
+  suggestedHighlights: string[] = [],
+  highlightFill?: string,
+): ParagraphChild[] {
   const runs: ParagraphChild[] = [];
   const segments = splitMath(text);
 
@@ -230,7 +261,7 @@ function inlineRuns(text: string, style: InlineRunStyle = {}): ParagraphChild[] 
       runs.push(latexToDocxMath(segment.source));
       if (segment.display && index < segments.length - 1) runs.push(new TextRun({ break: 1 }));
     } else {
-      runs.push(...markdownTextRuns(segment.source, style));
+      runs.push(...markdownTextRuns(segment.source, style, suggestedHighlights, highlightFill));
     }
   });
 
@@ -240,7 +271,13 @@ function inlineRuns(text: string, style: InlineRunStyle = {}): ParagraphChild[] 
 /**
  * Parse markdown tables into Word table objects.
  */
-function mdTable(header: string[], rows: string[][], design: DocxPaperDesign): Table {
+function mdTable(
+  header: string[],
+  rows: string[][],
+  design: DocxPaperDesign,
+  suggestedHighlights: string[],
+  highlightFill?: string,
+): Table {
   const borderStyle =
     design.tableStyle === "editorial"
       ? BorderStyle.DOUBLE
@@ -268,7 +305,12 @@ function mdTable(header: string[], rows: string[][], design: DocxPaperDesign): T
             margins: { top: 40, bottom: 40, left: 50, right: 50 },
             children: [
               new Paragraph({
-                children: inlineRuns(cell, isHeader ? { bold: true, color: design.ink } : {}),
+                children: inlineRuns(
+                  cell,
+                  isHeader ? { bold: true, color: design.ink } : {},
+                  suggestedHighlights,
+                  highlightFill,
+                ),
                 spacing: { line: 300, lineRule: "auto" },
               }),
             ],
@@ -290,6 +332,7 @@ function markdownToDocx(
   md: string,
   design: DocxPaperDesign,
   style: FlowStyle = {},
+  suggestedHighlights: string[] = [],
 ): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
   const shading: Shading | undefined = style.fill
@@ -300,6 +343,7 @@ function markdownToDocx(
         left: { style: BorderStyle.SINGLE, size: 18, color: style.borderColor, space: 6 },
       }
     : undefined;
+  const highlightFill = suggestedHighlights.length ? tint(design.accent, 0.82) : undefined;
 
   const lines = md.split("\n");
   let i = 0;
@@ -348,7 +392,7 @@ function markdownToDocx(
                 : level === 3
                   ? HeadingLevel.HEADING_3
                   : HeadingLevel.HEADING_4,
-          children: inlineRuns(heading[2]),
+          children: inlineRuns(heading[2], {}, suggestedHighlights, highlightFill),
           spacing: { before: level <= 2 ? 200 : 140, after: 80 },
         }),
       );
@@ -371,7 +415,7 @@ function markdownToDocx(
         rows.push(parse(lines[i]));
         i++;
       }
-      out.push(mdTable(header, rows, design));
+      out.push(mdTable(header, rows, design, suggestedHighlights, highlightFill));
       out.push(new Paragraph({ spacing: { after: 80 }, children: [] }));
       continue;
     }
@@ -383,7 +427,12 @@ function markdownToDocx(
             border: {
               left: { style: BorderStyle.SINGLE, size: 18, color: design.accent, space: 10 },
             },
-            children: inlineRuns(lines[i].replace(/^\s*>\s?/, ""), { italics: true }),
+            children: inlineRuns(
+              lines[i].replace(/^\s*>\s?/, ""),
+              { italics: true },
+              suggestedHighlights,
+              highlightFill,
+            ),
             shading: { type: ShadingType.CLEAR, fill: design.soft },
             spacing: {
               before: 60,
@@ -402,7 +451,12 @@ function markdownToDocx(
         out.push(
           new Paragraph({
             bullet: { level: 0 },
-            children: inlineRuns(lines[i].replace(/^\s*[-*+]\s+/, ""), style),
+            children: inlineRuns(
+              lines[i].replace(/^\s*[-*+]\s+/, ""),
+              style,
+              suggestedHighlights,
+              highlightFill,
+            ),
             shading,
             border,
             indent: style.fill ? { left: 40 } : undefined,
@@ -422,7 +476,12 @@ function markdownToDocx(
             indent: { left: 360, hanging: 360 },
             children: [
               new TextRun({ text: `${marker}. `, bold: true }),
-              ...inlineRuns(lines[i].replace(ordered, ""), style),
+              ...inlineRuns(
+                lines[i].replace(ordered, ""),
+                style,
+                suggestedHighlights,
+                highlightFill,
+              ),
             ],
             shading,
             border,
@@ -471,7 +530,7 @@ function markdownToDocx(
     // tables inside callouts lose their fill; paragraphs carry the shaded style
     out.push(
       new Paragraph({
-        children: inlineRuns(buf.join(" "), style),
+        children: inlineRuns(buf.join(" "), style, suggestedHighlights, highlightFill),
         shading,
         border,
         indent: style.fill ? { left: 40 } : undefined,
@@ -700,7 +759,7 @@ async function blockChildren(
   for (const block of blocks) {
     if (block.type === "checkpoint") continue;
     if (block.type === "markdown") {
-      out.push(...markdownToDocx(block.markdown ?? "", design));
+      out.push(...markdownToDocx(block.markdown ?? "", design, {}, block.highlightedText));
     } else if (block.type === "callout" || block.type === "example") {
       const toneName = block.type === "example" ? "example" : (block.tone ?? "info");
       const onAccent = toneName === "info" || toneName === "tip" || toneName === "definition";
@@ -731,7 +790,14 @@ async function blockChildren(
           ],
         }),
       );
-      out.push(...markdownToDocx(block.markdown ?? "", design, { fill, borderColor: border }));
+      out.push(
+        ...markdownToDocx(
+          block.markdown ?? "",
+          design,
+          { fill, borderColor: border },
+          block.highlightedText,
+        ),
+      );
     } else if (block.type === "image") {
       onStatus?.("Embedding image…");
       out.push(...(await imageChildren(block, design)));

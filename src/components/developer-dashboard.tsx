@@ -95,7 +95,7 @@ export function DeveloperDashboard() {
 
   const diagnostics = useMemo(
     () => ({
-      appVersion: "4.1.0",
+      appVersion: __KNOWLY_VERSION__,
       buildMode: import.meta.env.MODE,
       stateVersion: state.version,
       hydrated,

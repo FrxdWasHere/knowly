@@ -76,6 +76,7 @@ export const DEFAULT_QUIZ_CONFIG: QuizConfig = {
   roundPauses: false,
   questionsPerRound: 10,
   pauseAutoAdvanceSeconds: null,
+  pauseAfterSubtopic: false,
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -159,7 +160,7 @@ export const DEFAULT_PROGRESS: Progress = {
  * in a way that older saves need repair; add a matching entry to the migration
  * table in `src/store/knowly.tsx`.
  */
-export const STATE_VERSION = 8;
+export const STATE_VERSION = 9;
 
 export const DEFAULT_STATE: AppState = {
   version: STATE_VERSION,

@@ -2340,6 +2340,7 @@ export function buildSampleProfile(now = Date.now()): AppState {
       roundPauses: false,
       questionsPerRound: 10,
       pauseAutoAdvanceSeconds: null,
+      pauseAfterSubtopic: false,
     },
     answers: [],
     durationMs: minutes * 60_000,
@@ -2446,6 +2447,7 @@ export function buildSampleProfile(now = Date.now()): AppState {
     roundPauses: false,
     questionsPerRound: 10,
     pauseAutoAdvanceSeconds: null,
+    pauseAfterSubtopic: false,
   };
 
   const savedQuizSessions: SavedQuizSession[] = [

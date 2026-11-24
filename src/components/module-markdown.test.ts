@@ -42,4 +42,25 @@ describe("Module Markdown highlights", () => {
     expect(serialized).toContain('"dataReadingHighlightId":"highlight-1"');
     expect(serialized).toContain('"value":"a concept"');
   });
+
+  it("renders AI-selected exact text as a non-removable key passage", () => {
+    const tree = {
+      type: "root",
+      children: [
+        {
+          type: "element",
+          tagName: "p",
+          properties: {},
+          children: [{ type: "text", value: "The plasma membrane is a phospholipid bilayer." }],
+        },
+      ],
+    };
+
+    createReadingHighlightPlugin([], ["phospholipid bilayer"])()(tree);
+
+    const serialized = JSON.stringify(tree);
+    expect(serialized).toContain('"className":["ai-reading-highlight"]');
+    expect(serialized).toContain('"value":"phospholipid bilayer"');
+    expect(serialized).not.toContain("dataReadingHighlightId");
+  });
 });

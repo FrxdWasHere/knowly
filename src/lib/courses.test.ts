@@ -58,6 +58,9 @@ describe("validateCourseJson", () => {
     expect(result.course?.modules[0].lessons).toHaveLength(1);
     expect(result.course?.modules[0].lessons[0].questions).toHaveLength(3);
     expect(result.course?.modules[0].lessons[0].questions[0].id).toBeTruthy();
+    expect(result.course?.modules[0].lessons[0].blocks[1].highlightedText).toEqual([
+      "phospholipid bilayer",
+    ]);
   });
 
   it("rejects a module without lessons", () => {

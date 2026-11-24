@@ -1183,7 +1183,7 @@ function SettingsPage() {
                 }}
                 className="rounded-sm text-[15px] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
               >
-                4.1.0
+                {__KNOWLY_VERSION__}
               </button>
             </div>
             <div>

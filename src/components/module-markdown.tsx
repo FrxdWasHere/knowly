@@ -84,7 +84,8 @@ interface TextMark {
   node: MarkdownNode;
   start: number;
   end: number;
-  id: string;
+  kind: "learner" | "ai";
+  id?: string;
 }
 
 const BLOCK_TAGS = new Set([
@@ -115,7 +116,10 @@ function isKatex(node: MarkdownNode): boolean {
   );
 }
 
-export function createReadingHighlightPlugin(highlights: ReadingHighlight[]) {
+export function createReadingHighlightPlugin(
+  highlights: ReadingHighlight[],
+  suggestedHighlights: string[] = [],
+) {
   return () => (tree: MarkdownNode) => {
     let text = "";
     const positions: TextPosition[] = [];
@@ -160,9 +164,11 @@ export function createReadingHighlightPlugin(highlights: ReadingHighlight[]) {
     const textPositions = positions.slice(trimStart, trimStart + normalized.length);
     const marksByNode = new Map<MarkdownNode, TextMark[]>();
 
-    for (const highlight of highlights) {
-      const located = locateReadingHighlight(normalized, highlight);
-      if (!located) continue;
+    const addMarkRange = (
+      start: number,
+      end: number,
+      mark: Omit<TextMark, "node" | "start" | "end">,
+    ) => {
       let group: TextMark | null = null;
       const flush = () => {
         if (!group) return;
@@ -172,8 +178,20 @@ export function createReadingHighlightPlugin(highlights: ReadingHighlight[]) {
         group = null;
       };
 
-      for (const position of textPositions.slice(located.start, located.end)) {
+      for (const position of textPositions.slice(start, end)) {
         if (!position.node) {
+          flush();
+          continue;
+        }
+        const overlapsLearnerHighlight =
+          mark.kind === "ai" &&
+          (marksByNode.get(position.node) ?? []).some(
+            (existing) =>
+              existing.kind === "learner" &&
+              existing.start < position.end &&
+              existing.end > position.start,
+          );
+        if (overlapsLearnerHighlight) {
           flush();
           continue;
         }
@@ -185,11 +203,23 @@ export function createReadingHighlightPlugin(highlights: ReadingHighlight[]) {
             node: position.node,
             start: position.start,
             end: position.end,
-            id: highlight.id,
+            ...mark,
           };
         }
       }
       flush();
+    };
+
+    for (const highlight of highlights) {
+      const located = locateReadingHighlight(normalized, highlight);
+      if (located) addMarkRange(located.start, located.end, { kind: "learner", id: highlight.id });
+    }
+
+    for (const suggestion of suggestedHighlights) {
+      const quote = normalizeReadingText(suggestion);
+      if (!quote) continue;
+      const start = normalized.indexOf(quote);
+      if (start >= 0) addMarkRange(start, start + quote.length, { kind: "ai" });
     }
 
     const applyMarks = (parent: MarkdownNode) => {
@@ -209,9 +239,12 @@ export function createReadingHighlightPlugin(highlights: ReadingHighlight[]) {
               type: "element",
               tagName: "mark",
               properties: {
-                className: ["reading-highlight"],
-                dataReadingHighlightId: mark.id,
-                title: "Click to remove this highlight",
+                className: [mark.kind === "learner" ? "reading-highlight" : "ai-reading-highlight"],
+                ...(mark.kind === "learner" && mark.id ? { dataReadingHighlightId: mark.id } : {}),
+                title:
+                  mark.kind === "learner"
+                    ? "Click to remove this highlight"
+                    : "AI-selected key passage",
               },
               children: [{ type: "text", value: value.slice(mark.start, mark.end) }],
             });
@@ -237,6 +270,7 @@ export function ModuleMarkdownText({
   className,
   theme = "classic",
   highlights = [],
+  suggestedHighlights = [],
   onAddHighlight,
   onRemoveHighlight,
 }: {
@@ -248,6 +282,7 @@ export function ModuleMarkdownText({
   className?: string;
   theme?: ExamTheme;
   highlights?: ReadingHighlight[];
+  suggestedHighlights?: string[];
   onAddHighlight?: (anchor: ReadingHighlightAnchor) => void;
   onRemoveHighlight?: (id: string) => void;
 }) {
@@ -259,8 +294,8 @@ export function ModuleMarkdownText({
     left: number;
   } | null>(null);
   const rehypePlugins = useMemo(
-    () => [rehypeKatex, createReadingHighlightPlugin(highlights)],
-    [highlights],
+    () => [rehypeKatex, createReadingHighlightPlugin(highlights, suggestedHighlights)],
+    [highlights, suggestedHighlights],
   );
   let headingIndex = 0;
   const nextHeadingId = () =>

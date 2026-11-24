@@ -110,6 +110,7 @@ const LESSON_SHAPE = `{
 const BLOCK_SHAPE = `{
   "type": "markdown" | "callout" | "example" | "image" | "checkpoint" | "divider",  // required
   "markdown": string,                                  // required for markdown, callout and example
+  "highlightedText": string[],                         // optional — exact visible passages to emphasize
   "tone": "info" | "tip" | "warning" | "definition",  // required for callout
   "title": string,                                     // required for callout and example
   "url": string,                                       // required for image — a full image address
@@ -126,7 +127,7 @@ const SAMPLE_LESSON_JSON = `{
   "estimatedMinutes": 15,
   "blocks": [
     { "type": "markdown", "markdown": "## A moving surface" },
-    { "type": "markdown", "markdown": "The plasma membrane is a **phospholipid bilayer** with proteins floating in and on it." },
+    { "type": "markdown", "markdown": "The plasma membrane is a **phospholipid bilayer** with proteins floating in and on it.", "highlightedText": ["phospholipid bilayer"] },
     { "type": "callout", "tone": "definition", "title": "Fluid mosaic model", "markdown": "The membrane is a fluid sea of lipids with a mosaic of proteins, glycoproteins and glycolipids." },
     { "type": "example", "title": "Why cholesterol matters", "markdown": "At body temperature cholesterol stiffens the bilayer; in the cold it keeps the tails apart so the membrane stays flexible." },
     { "type": "checkpoint", "questionId": "q1" },
@@ -321,6 +322,7 @@ ${briefExtras ? `\n${briefExtras}\n` : ""}COURSE DESIGN & PEDAGOGY
 - Explicitly name and define important concepts. Explain unfamiliar terminology when first introduced, show how and why ideas work, and use friendly, approachable prose without sacrificing academic substance.
 - Use clear sections, examples, analogies, comparisons, step-by-step reasoning, and practical applications where they improve understanding. Avoid filler, shallow summaries, repetitive conclusions, and excessive bullet lists.
 - Each lesson's sections should develop a coherent progression. Use Markdown headings in its ordered content blocks: start with a short lesson framing, then use a \`## Section N — Section title\` heading for each section, with the heading and section text in the same or adjacent markdown block. Keep headings meaningful rather than arbitrary.
+- In prose markdown, callout and example blocks, optionally add a small "highlightedText" array for the most important definitions, causal ideas, or takeaways. Each entry must be an exact, contiguous phrase from that block's visible text, without Markdown markers or LaTeX. Do not select whole paragraphs, code, equations, or text spanning paragraph boundaries; usually choose no more than one or two passages per section, and omit the field when none merits emphasis.
 - Objectives must use measurable verbs (identify, explain, compare, solve, evaluate). Avoid duplicating questions across lessons; use checkpoints to test concepts taught in that lesson and quizzes to reinforce a unit's learning.
 - When reference material is supplied, it is the factual anchor. Add only reliable foundational context needed to teach it, do not contradict the sources, and identify genuine conflicts or uncertainty rather than inventing facts.
 - Set realistic estimated lesson times based on actual content and selected depth; do not pad lessons or force an arbitrary duration.
@@ -431,6 +433,8 @@ SCHEMA — the complete lesson object
 
 BLOCK OBJECT — one entry per piece of the lesson, in reading order
 ${BLOCK_SHAPE}
+
+In prose markdown, callout and example blocks, optionally add a small "highlightedText" array for the most important visible definitions, causal ideas, or takeaways. Each passage must match exact text in that block, without Markdown markers or LaTeX. Avoid whole paragraphs, code, equations, and cross-paragraph passages; omit the field when nothing merits emphasis.
 
 QUESTION OBJECT — every question uses this shape
 ${QUESTION_SCHEMA_TEXT}

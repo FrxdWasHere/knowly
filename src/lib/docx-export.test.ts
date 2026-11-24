@@ -149,4 +149,43 @@ describe("DOCX answer key equations", () => {
     expect(courseXml).not.toContain("[LaTeX:");
     expect(moduleXml).not.toContain("[LaTeX:");
   });
+
+  it("writes AI-selected module passages as document-theme highlights", async () => {
+    const module = {
+      id: "module-highlight",
+      title: "Membranes",
+      subject: "Biology",
+      color: "#123456",
+      emoji: "📘",
+      tags: [],
+      isSTEM: false,
+      needsEquations: false,
+      needsGraphs: false,
+      objectives: [],
+      blocks: [
+        {
+          id: "block-highlight",
+          type: "markdown",
+          markdown: "The plasma membrane contains a **phospholipid bilayer**.",
+          highlightedText: ["phospholipid bilayer"],
+        },
+      ],
+      questions: [],
+      linkedDeckIds: [],
+      estimatedMinutes: 10,
+      difficulty: 1,
+      createdAt: 0,
+      updatedAt: 0,
+    } satisfies Module;
+    const blob = await moduleDocxBlob(module, [], undefined, {
+      ...defaultCoursePrintOptions,
+      includeTitlePage: false,
+      includeAnswerKey: false,
+      printStyle: "friendly",
+    });
+    const documentXml = readZipText(await blob.arrayBuffer(), "word/document.xml");
+
+    expect(documentXml).toContain("phospholipid bilayer");
+    expect(documentXml).toMatch(/<w:shd[^>]*w:fill=/);
+  });
 });

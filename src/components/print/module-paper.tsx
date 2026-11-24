@@ -403,6 +403,7 @@ type ModuleUnitData =
   | {
       kind: "markdown";
       text: string;
+      suggestedHighlights?: string[];
       blurb?: boolean;
       list?: boolean;
       listStart?: boolean;
@@ -537,6 +538,7 @@ function buildUnits(
           push({
             kind: "markdown",
             text: piece.text,
+            suggestedHighlights: block.highlightedText,
             blurb: piece.blurb,
             list: piece.kind === "list",
             listStart: piece.kind === "list" && previousKind !== "list",
@@ -1247,6 +1249,7 @@ function UnitView({
           accent={accent}
           theme={theme ?? "classic"}
           markdown={data.text}
+          suggestedHighlights={data.suggestedHighlights}
           className={
             data.list
               ? "[&_ul]:my-0 [&_ol]:my-0 [&_li]:my-[0.12em] [&_li>ul]:mt-[0.15em] [&_li>ol]:mt-[0.15em]"
@@ -1270,6 +1273,7 @@ function UnitView({
               accent={accent}
               theme={theme ?? "classic"}
               markdown={body}
+              suggestedHighlights={data.block.highlightedText}
             />
           </div>
         );
@@ -1291,6 +1295,7 @@ function UnitView({
               accent={accent}
               theme={theme ?? "classic"}
               markdown={body}
+              suggestedHighlights={data.block.highlightedText}
             />
           </div>
         </div>
@@ -1310,6 +1315,7 @@ function UnitView({
               accent={accent}
               theme={theme ?? "classic"}
               markdown={body}
+              suggestedHighlights={data.block.highlightedText}
             />
           </div>
         );
@@ -1331,6 +1337,7 @@ function UnitView({
               accent={accent}
               theme={theme ?? "classic"}
               markdown={body}
+              suggestedHighlights={data.block.highlightedText}
             />
           </div>
         </div>

@@ -87,6 +87,45 @@ export function subTopicOf(question: Question, fallback: string) {
   return fallback || "General";
 }
 
+type DeckQuestion = Question & { deckId?: string };
+
+export function questionSubtopicTitle(
+  question: DeckQuestion,
+  deckSubjects: ReadonlyMap<string, string>,
+) {
+  const deckId = question.deckId ?? "";
+  return subTopicOf(question, deckSubjects.get(deckId) ?? "General");
+}
+
+export function questionSubtopicKey(
+  question: DeckQuestion,
+  deckSubjects: ReadonlyMap<string, string>,
+) {
+  return JSON.stringify([
+    question.deckId ?? "",
+    questionSubtopicTitle(question, deckSubjects).trim().toLocaleLowerCase(),
+  ]);
+}
+
+/** Keeps topics in first-seen order and only shuffles questions within each topic. */
+export function groupQuestionsBySubtopic<T extends DeckQuestion>(
+  questions: T[],
+  deckSubjects: ReadonlyMap<string, string>,
+  shuffleWithinSubtopic: boolean,
+): T[] {
+  const groups = new Map<string, T[]>();
+  for (const question of questions) {
+    const key = questionSubtopicKey(question, deckSubjects);
+    const group = groups.get(key);
+    if (group) group.push(question);
+    else groups.set(key, [question]);
+  }
+
+  return Array.from(groups.values()).flatMap((group) =>
+    shuffleWithinSubtopic ? shuffleArray(group) : group,
+  );
+}
+
 /**
  * Splits a deck into parts of at most `size` cards, grouping by sub-topic
  * first so a part is one coherent idea. Every question appears in exactly

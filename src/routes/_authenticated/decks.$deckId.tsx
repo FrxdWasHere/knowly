@@ -164,7 +164,7 @@ function DeckDetail() {
               <Plus /> Add questions
             </Button>
             <Button variant="secondary" asChild>
-              <Link to="/quiz">
+              <Link to="/quiz" search={{ deckId: deck.id }}>
                 <BrainCircuit /> Quiz
               </Link>
             </Button>

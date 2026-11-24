@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 import { defaultExamOptions } from "./exam-print";
 import {
   createViewerDeckCopy,
+  buildCourseShareSnapshot,
   buildDeckShareSnapshot,
+  buildModuleShareSnapshot,
   buildPrintExamShareSnapshot,
   normalizeInviteEmails,
   parseShareSnapshot,
 } from "./share-content";
-import type { Deck, Question } from "./types";
+import type { Course, Deck, Module, Question } from "./types";
 
 const matchingQuestion: Question = {
   id: "matching-1",
@@ -41,6 +43,72 @@ describe("share content", () => {
 
     expect(snapshot.color).toBe("#3158a7");
     expect(parseShareSnapshot(snapshot)?.color).toBe("#3158a7");
+  });
+
+  it("preserves AI-selected passages when sharing Modules and Courses", () => {
+    const block = {
+      id: "block-1",
+      type: "markdown" as const,
+      markdown: "A cell membrane controls what enters and leaves the cell.",
+      highlightedText: ["controls what enters and leaves the cell"],
+    };
+    const module: Module = {
+      id: "module-1",
+      title: "Cell membranes",
+      subject: "Biology",
+      color: "#3158a7",
+      emoji: "📘",
+      tags: [],
+      isSTEM: false,
+      needsEquations: false,
+      needsGraphs: false,
+      objectives: [],
+      blocks: [block],
+      questions: [],
+      linkedDeckIds: [],
+      estimatedMinutes: 10,
+      difficulty: 1,
+      createdAt: 1,
+      updatedAt: 1,
+    };
+    const course: Course = {
+      id: "course-1",
+      title: "Cell biology",
+      subject: "Biology",
+      color: "#3158a7",
+      tags: [],
+      objectives: [],
+      sources: [],
+      modules: [
+        {
+          id: "unit-1",
+          title: "Membranes",
+          objectives: [],
+          lessons: [
+            {
+              id: "lesson-1",
+              title: "Cell membranes",
+              objectives: [],
+              blocks: [block],
+              questions: [],
+              linkedDeckIds: [],
+            },
+          ],
+          linkedDeckIds: [],
+        },
+      ],
+      linkedDeckIds: [],
+      createdAt: 1,
+      updatedAt: 1,
+    };
+
+    expect(
+      parseShareSnapshot(buildModuleShareSnapshot(module))?.blocks?.[0]?.highlightedText,
+    ).toEqual(block.highlightedText);
+    expect(
+      parseShareSnapshot(buildCourseShareSnapshot(course))?.modules?.[0]?.lessons[0]?.blocks[0]
+        ?.highlightedText,
+    ).toEqual(block.highlightedText);
   });
 
   it("creates an isolated local practice copy without carrying learner progress", () => {

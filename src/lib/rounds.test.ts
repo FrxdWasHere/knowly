@@ -4,6 +4,7 @@ import {
   bossHealth,
   buildRounds,
   fragmentDeck,
+  groupQuestionsBySubtopic,
   hardestQuestions,
   MAX_HEARTS,
   nextPart,
@@ -174,6 +175,27 @@ describe("buildRounds", () => {
     const rounds = buildRounds(deck(cards), cards, "boss");
     expect(rounds).toHaveLength(1);
     expect(rounds[0].length).toBeLessThanOrEqual(BOSS_SIZE);
+  });
+});
+
+describe("subtopic quiz ordering", () => {
+  it("keeps subtopics in first-seen order and shuffles only within each group", () => {
+    const cards = [
+      question({ id: "a1", concept: "Cells" }),
+      question({ id: "b1", concept: "Genetics" }),
+      question({ id: "a2", concept: "Cells" }),
+    ];
+    const ordered = groupQuestionsBySubtopic(cards, new Map([["deck", "Biology"]]), false);
+    expect(ordered.map((item) => item.id)).toEqual(["a1", "a2", "b1"]);
+  });
+
+  it("keeps matching concepts from different decks in separate subtopics", () => {
+    const cards = [
+      { ...question({ id: "one", concept: "Cells" }), deckId: "deck-1" },
+      { ...question({ id: "two", concept: "Cells" }), deckId: "deck-2" },
+    ];
+    const ordered = groupQuestionsBySubtopic(cards, new Map(), false);
+    expect(ordered.map((item) => item.id)).toEqual(["one", "two"]);
   });
 });
 

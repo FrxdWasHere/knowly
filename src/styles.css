@@ -2293,14 +2293,17 @@ body {
 .paper-markdown[data-document-theme="workbook"] li {
   padding-block: 0.12em;
 }
-.reading-highlight {
+.reading-highlight,
+.ai-reading-highlight {
   border-radius: 0.18em;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
   background: var(--document-highlight);
   color: var(--document-highlight-ink);
-  cursor: pointer;
   padding: 0 0.08em;
+}
+.reading-highlight {
+  cursor: pointer;
 }
 .reading-highlight-action {
   position: fixed;

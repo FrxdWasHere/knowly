@@ -8,6 +8,7 @@ export const moduleBlockSchema = z.object({
   id: z.string().optional(),
   type: z.enum(["markdown", "callout", "example", "image", "checkpoint", "divider", "activity"]),
   markdown: z.string().optional(),
+  highlightedText: z.array(z.string()).optional(),
   tone: z.enum(["info", "tip", "warning", "definition"]).optional(),
   title: z.string().optional(),
   url: z.string().optional(),
@@ -72,6 +73,7 @@ function buildBlocks(raw: z.infer<typeof moduleBlockSchema>[]): CourseBlock[] {
       id: block.id || uid(),
       type: block.type,
       markdown: block.markdown,
+      highlightedText: block.highlightedText,
       tone: block.tone,
       title: block.title,
       url: block.url,
@@ -186,11 +188,13 @@ export function serializeModuleJson(mod: Module): string {
             type: block.type,
             title: block.title,
             deckId: block.markdown, // deck id from this device
+            highlightedText: block.highlightedText,
           };
         }
         return {
           type: block.type,
           markdown: block.markdown,
+          highlightedText: block.highlightedText,
           tone: block.tone,
           title: block.title,
           url: block.url,
@@ -239,7 +243,8 @@ export const SAMPLE_MODULE_JSON = `{
     },
     {
       "type": "markdown",
-      "markdown": "A leaf is a **solar-powered kitchen**. Chloroplasts capture light and use it to turn water and carbon dioxide into glucose: $$6CO_2 + 6H_2O + \\text{light energy} \\rightarrow C_6H_{12}O_6 + 6O_2$$"
+      "markdown": "A leaf is a **solar-powered kitchen**. Chloroplasts capture light and use it to turn water and carbon dioxide into glucose: $$6CO_2 + 6H_2O + \\text{light energy} \\rightarrow C_6H_{12}O_6 + 6O_2$$",
+      "highlightedText": ["Chloroplasts capture light"]
     },
     {
       "type": "callout",

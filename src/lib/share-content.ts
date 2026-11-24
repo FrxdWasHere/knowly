@@ -36,6 +36,7 @@ const sharedBlockSchema = z.object({
   id: z.string(),
   type: z.string(),
   markdown: z.string().optional(),
+  highlightedText: z.array(z.string()).optional(),
   tone: z.string().optional(),
   title: z.string().optional(),
   url: z.string().optional(),
@@ -200,6 +201,7 @@ function publicBlock(block: CourseBlock): SharedBlock {
   const shared: SharedBlock = { id: block.id, type: block.type };
   if (block.title) shared.title = block.title;
   if (block.type !== "activity" && block.markdown) shared.markdown = block.markdown;
+  if (block.highlightedText?.length) shared.highlightedText = [...block.highlightedText];
   if (block.type === "callout" && block.tone) shared.tone = block.tone;
   if (block.type === "image") {
     const url = safeImageUrl(block.url);

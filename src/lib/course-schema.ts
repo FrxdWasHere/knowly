@@ -8,6 +8,7 @@ export const courseBlockSchema = z.object({
   id: z.string().optional(),
   type: z.enum(["markdown", "callout", "example", "image", "checkpoint", "divider"]),
   markdown: z.string().optional(),
+  highlightedText: z.array(z.string()).optional(),
   tone: z.enum(["info", "tip", "warning", "definition"]).optional(),
   title: z.string().optional(),
   url: z.string().optional(),
@@ -106,6 +107,7 @@ function buildBlocks(raw: z.infer<typeof courseBlockSchema>[]): CourseBlock[] {
     id: block.id || uid(),
     type: block.type,
     markdown: block.markdown,
+    highlightedText: block.highlightedText,
     tone: block.tone,
     title: block.title,
     url: block.url,
@@ -280,7 +282,8 @@ export const SAMPLE_COURSE_JSON = `{
             },
             {
               "type": "markdown",
-              "markdown": "The plasma membrane is a **phospholipid bilayer** with proteins floating in and on it."
+              "markdown": "The plasma membrane is a **phospholipid bilayer** with proteins floating in and on it.",
+              "highlightedText": ["phospholipid bilayer"]
             },
             {
               "type": "callout",

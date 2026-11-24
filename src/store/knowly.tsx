@@ -141,6 +141,21 @@ const MIGRATIONS: Partial<Record<number, Migration>> = {
   }),
   // v7 → v8: persistent reading highlights and shared document theme.
   7: (state) => ({ ...state, readingHighlights: state.readingHighlights ?? [] }),
+  // v8 → v9: subtopic-aware quiz pause setting.
+  8: (state) => ({
+    ...state,
+    settings: {
+      ...state.settings,
+      defaultQuizConfig: {
+        ...DEFAULT_SETTINGS.defaultQuizConfig,
+        ...state.settings.defaultQuizConfig,
+      },
+    },
+    savedQuizSessions: (state.savedQuizSessions ?? []).map((session) => ({
+      ...session,
+      config: { ...DEFAULT_SETTINGS.defaultQuizConfig, ...session.config },
+    })),
+  }),
 };
 
 /** Applies every migration needed to bring `parsed` up to `STATE_VERSION`. */

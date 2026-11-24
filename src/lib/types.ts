@@ -225,6 +225,8 @@ export interface CourseBlock {
   type: CourseBlockType;
   /** markdown / callout / example body */
   markdown?: string;
+  /** Exact visible passages the authoring AI recommends highlighting. */
+  highlightedText?: string[];
   /** callout tone */
   tone?: "info" | "tip" | "warning" | "definition";
   title?: string;
@@ -397,6 +399,8 @@ export interface QuizConfig {
   questionsPerRound: number;
   /** Auto-advance after N seconds (0 = manual button press only) */
   pauseAutoAdvanceSeconds: number | null;
+  /** Pause when a quiz reaches the end of a concept/tag group. */
+  pauseAfterSubtopic: boolean;
 }
 
 /** Quiz session saved mid-quiz for resuming later */

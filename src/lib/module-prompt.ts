@@ -194,6 +194,11 @@ Use the existing module block types in reading order:
 5. {"type":"divider"} — only when a clear visual break helps.
 Do not let callouts, questions, or short blocks replace the explanatory textbook prose.
 
+AI-SELECTED KEY PASSAGES
+- On prose markdown, callout and example blocks, include an optional "highlightedText" array containing only a small number of especially important visible passages (key definitions, causal ideas, or useful takeaways). Do not highlight whole paragraphs or add highlights mechanically.
+- Each entry must be an exact, contiguous phrase from the rendered text in that same block, written as plain text without Markdown markers or LaTeX. Avoid selecting text across paragraph boundaries, equations, or code.
+- Usually choose no more than one or two passages per section. Omit the field when nothing merits emphasis.
+
 EQUATIONS & NOTATION
 - Use LaTeX whenever the subject calls for equations or scientific notation: inline as $…$ or displayed as $$…$$.
 - Keep ordinary words outside math delimiters. Escape backslashes so the JSON remains valid (for example, \\\\frac in the raw JSON file). Do not fake equations with plain text or put equations in code blocks.
@@ -213,7 +218,7 @@ ${moduleLengthInstructions(lengthValue)}
 OUTPUT RULES
 ${jsonFileRule("knowly-module.json")}
 - Return one complete module JSON object only. Do not set "blocks" to null.
-- Preserve the required block schema. Chapter and section structure belongs in the ordered Markdown blocks; do not invent new JSON fields.
+- Preserve the block schema below, using "highlightedText" only as described. Chapter and section structure belongs in the ordered Markdown blocks; do not invent other JSON fields.
 
 SCHEMA — the complete module object
 {
@@ -238,6 +243,7 @@ BLOCK OBJECT
 {
   "type": "markdown" | "callout" | "example" | "image" | "checkpoint" | "divider" | "activity",
   "markdown": string,
+  "highlightedText": string[],
   "tone": "info" | "tip" | "warning" | "definition",
   "title": string,
   "url": string,

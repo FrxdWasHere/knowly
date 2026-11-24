@@ -12,6 +12,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { MathText } from "@/components/math/math-text";
+import { createReadingHighlightPlugin } from "@/components/module-markdown";
 import {
   LETTERS,
   paperThemeVars,
@@ -224,7 +225,7 @@ type UnitData =
   | { kind: "module-header"; module: CourseModule; index: number }
   | { kind: "objectives"; title: string; items: string[] }
   | { kind: "lesson-header"; lesson: CourseLesson; index: number }
-  | { kind: "markdown"; text: string }
+  | { kind: "markdown"; text: string; suggestedHighlights?: string[] }
   | { kind: "callout"; block: CourseBlock }
   | { kind: "image"; block: CourseBlock }
   | { kind: "divider" }
@@ -454,7 +455,7 @@ function buildUnits(
         if (block.type === "checkpoint") continue;
         if (block.type === "markdown") {
           for (const chunk of markdownChunks(block.markdown ?? "")) {
-            push({ kind: "markdown", text: chunk });
+            push({ kind: "markdown", text: chunk, suggestedHighlights: block.highlightedText });
           }
         } else if (block.type === "image") {
           push({ kind: "image", block });
@@ -1107,7 +1108,13 @@ function UnitView({
       );
     }
     case "markdown":
-      return <PaperMarkdown markdown={data.text} theme={theme ?? "classic"} />;
+      return (
+        <PaperMarkdown
+          markdown={data.text}
+          theme={theme ?? "classic"}
+          suggestedHighlights={data.suggestedHighlights}
+        />
+      );
     case "callout": {
       const tone = data.block.type === "example" ? "example" : (data.block.tone ?? "info");
       return (
@@ -1130,7 +1137,11 @@ function UnitView({
           >
             {data.block.title || (data.block.type === "example" ? "Example" : "Note")}
           </p>
-          <PaperMarkdown markdown={data.block.markdown ?? ""} theme={theme ?? "classic"} />
+          <PaperMarkdown
+            markdown={data.block.markdown ?? ""}
+            theme={theme ?? "classic"}
+            suggestedHighlights={data.block.highlightedText}
+          />
         </div>
       );
     }
@@ -1599,7 +1610,15 @@ function ObjectivesList({
   );
 }
 
-function PaperMarkdown({ markdown, theme }: { markdown: string; theme: ExamTheme }) {
+function PaperMarkdown({
+  markdown,
+  theme,
+  suggestedHighlights = [],
+}: {
+  markdown: string;
+  theme: ExamTheme;
+  suggestedHighlights?: string[];
+}) {
   return (
     <div
       data-document-theme={theme}
@@ -1607,7 +1626,10 @@ function PaperMarkdown({ markdown, theme }: { markdown: string; theme: ExamTheme
       data-document-heading-style={getDocumentThemeDesign(theme).titleRule}
       className="paper-markdown text-[0.98em] text-foreground [&_a]:text-foreground [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-foreground [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:text-[0.9em] [&_h1]:mb-2 [&_h1]:mt-4 [&_h1]:text-[1.25em] [&_h1]:font-bold [&_h2]:mb-2 [&_h2]:mt-4 [&_h2]:text-[1.15em] [&_h2]:font-bold [&_h3]:mb-2 [&_h3]:mt-3 [&_h3]:font-semibold [&_li]:my-0.5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-2 [&_pre]:my-2 [&_pre]:overflow-auto [&_pre]:rounded-lg [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:text-[0.9em] [&_strong]:font-bold [&_table]:my-3 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-border [&_td]:p-1.5 [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:p-1.5 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5"
     >
-      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeKatex, createReadingHighlightPlugin([], suggestedHighlights)]}
+      >
         {markdown}
       </ReactMarkdown>
     </div>

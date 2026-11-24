@@ -702,6 +702,7 @@ function BlockView({
         headingPrefix={headingPrefix}
         markdown={block.markdown || "_Empty note_"}
         highlights={highlights}
+        suggestedHighlights={block.highlightedText}
         onAddHighlight={onAddHighlight}
         onRemoveHighlight={onRemoveHighlight}
         className="panel p-5"
@@ -731,6 +732,7 @@ function BlockView({
           theme={documentTheme}
           markdown={block.markdown || ""}
           highlights={highlights}
+          suggestedHighlights={block.highlightedText}
           onAddHighlight={onAddHighlight}
           onRemoveHighlight={onRemoveHighlight}
         />
@@ -749,6 +751,7 @@ function BlockView({
           theme={documentTheme}
           markdown={block.markdown || ""}
           highlights={highlights}
+          suggestedHighlights={block.highlightedText}
           onAddHighlight={onAddHighlight}
           onRemoveHighlight={onRemoveHighlight}
         />

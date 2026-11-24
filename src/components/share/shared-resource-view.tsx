@@ -155,6 +155,7 @@ function ContentBlocks({ blocks, theme }: { blocks: SharedBlock[]; theme: ExamTh
             <ModuleMarkdownText
               markdown={block.markdown}
               theme={theme}
+              suggestedHighlights={block.highlightedText}
               className="text-sm sm:text-base"
             />
           );

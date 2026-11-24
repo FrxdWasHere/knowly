@@ -609,6 +609,7 @@ function LessonBlock({
           accent={accent}
           theme={theme}
           highlights={highlights}
+          suggestedHighlights={block.highlightedText}
           onAddHighlight={onAddHighlight}
           onRemoveHighlight={onRemoveHighlight}
         />
@@ -622,6 +623,7 @@ function LessonBlock({
       accent={accent}
       theme={theme}
       highlights={highlights}
+      suggestedHighlights={block.highlightedText}
       onAddHighlight={onAddHighlight}
       onRemoveHighlight={onRemoveHighlight}
     />
@@ -633,6 +635,7 @@ function Markdown({
   accent,
   theme,
   highlights,
+  suggestedHighlights,
   onAddHighlight,
   onRemoveHighlight,
 }: {
@@ -640,6 +643,7 @@ function Markdown({
   accent: string;
   theme: ExamTheme;
   highlights: ReadingHighlight[];
+  suggestedHighlights?: string[];
   onAddHighlight: (anchor: ReadingHighlightAnchor) => void;
   onRemoveHighlight: (id: string) => void;
 }) {
@@ -649,6 +653,7 @@ function Markdown({
       accent={accent}
       theme={theme}
       highlights={highlights}
+      suggestedHighlights={suggestedHighlights}
       onAddHighlight={onAddHighlight}
       onRemoveHighlight={onRemoveHighlight}
       className="text-sm leading-7 text-foreground/90 [&_a]:text-primary [&_a]:underline [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-xs [&_h1]:text-2xl [&_h2]:text-xl [&_h3]:mt-5 [&_h3]:text-base [&_pre]:my-3 [&_pre]:p-4 [&_pre]:text-xs [&_table]:my-4 [&_td]:p-2 [&_th]:p-2 [&_ul]:my-3 [&_ul]:pl-8 [&_ol]:my-3 [&_ol]:pl-8"
