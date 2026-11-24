@@ -1193,7 +1193,9 @@ function RoundsSession() {
               <div className="flex flex-wrap gap-2">
                 <Button
                   className="min-h-[44px]"
-                  onClick={() => commit("correct", input)}
+                  onClick={() =>
+                    commit(checkAnswer(question, input) ? "correct" : "incorrect", input)
+                  }
                   disabled={!input.trim()}
                 >
                   <Check /> Submit

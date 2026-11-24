@@ -92,7 +92,13 @@ export function purposeMenuText(): string {
  * decision into concrete structure, activity variety, progression and
  * reinforcement rules.
  */
+<<<<<<< HEAD
 export function buildLearningPathInstructions(options: LearningPathPromptOptions = {}): string {
+=======
+export function buildLearningPathInstructions(
+  options: LearningPathPromptOptions = {},
+): string {
+>>>>>>> 4356d87774549d8fc1f4271d8e44ba482a79a15a
   const budget = promptBudget(options);
   const stageTarget = options.stageCount
     ? Math.max(1, Math.min(8, Math.round(options.stageCount)))
@@ -103,15 +109,25 @@ export function buildLearningPathInstructions(options: LearningPathPromptOptions
 
   const stageLine = stageTarget
     ? `- Plan exactly ${stageTarget} stage${stageTarget === 1 ? "" : "s"}.`
+<<<<<<< HEAD
     : `    - Plan ${budget.minStages}–${budget.maxStages} stages, choosing the number the material actually needs.`;
+=======
+    : `- Plan ${budget.minStages}–${budget.maxStages} stages, choosing the number the material actually needs.`;
+>>>>>>> 4356d87774549d8fc1f4271d8e44ba482a79a15a
 
   const custom = options.customStages?.length
     ? `\nLEARNER-PINNED STAGES (respect this structure, adapt the content)\n${options.customStages
         .map(
           (stage, index) =>
+<<<<<<< HEAD
             `${index + 1}. ${stage.title.trim() || `Learner-defined stage ${index + 1}`}${stage.purpose ? ` — purpose: ${stage.purpose}` : ""}${
               stage.concepts?.length ? ` — concepts: ${stage.concepts.join(", ")}` : ""
             }${stage.activityTypes?.length ? ` — activities: ${stage.activityTypes.join(", ")}` : " — choose activities that fit the material and purpose"}`,
+=======
+            `${index + 1}. ${stage.title}${stage.purpose ? ` — purpose: ${stage.purpose}` : ""}${
+              stage.concepts?.length ? ` — concepts: ${stage.concepts.join(", ")}` : ""
+            }${stage.activityTypes?.length ? ` — activities: ${stage.activityTypes.join(", ")}` : ""}`,
+>>>>>>> 4356d87774549d8fc1f4271d8e44ba482a79a15a
         )
         .join("\n")}\n`
     : "";

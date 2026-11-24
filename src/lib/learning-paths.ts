@@ -945,7 +945,15 @@ export function isStageUnlocked(path: LearningPath, stageId: string): boolean {
   const index = path.stages.findIndex((stage) => stage.id === stageId);
   if (index <= 0) return true;
   const previous = path.stages[index - 1];
+<<<<<<< HEAD
   return previous.progress.status === "completed" || previous.masteryPct >= 60;
+=======
+  return (
+    previous.progress.status === "completed" ||
+    previous.masteryPct >= 60 ||
+    previous.activities.some((activity) => activity.questions.some((ref) => ref.attempts > 0))
+  );
+>>>>>>> 4356d87774549d8fc1f4271d8e44ba482a79a15a
 }
 
 function recomputeActivity(activity: LearningActivity): LearningActivity {
@@ -1086,6 +1094,7 @@ export function applyLearningPathAnswer(
         activity.questions.some((ref) => ref.questionId === questionId),
       ),
     )?.id;
+<<<<<<< HEAD
   const originalRef = path.stages
     .flatMap((stage) => stage.activities)
     .flatMap((activity) => activity.questions)
@@ -1094,6 +1103,12 @@ export function applyLearningPathAnswer(
   let answeredInReinforcement = false;
 
   let stages: LearningStage[] = path.stages.map((stage) => {
+=======
+
+  let answeredInReinforcement = false;
+
+  const stages: LearningStage[] = path.stages.map((stage) => {
+>>>>>>> 4356d87774549d8fc1f4271d8e44ba482a79a15a
     if (targetStageId && stage.id !== targetStageId) return stage;
 
     const activities = stage.activities.map((activity) => {
@@ -1143,6 +1158,7 @@ export function applyLearningPathAnswer(
     };
   });
 
+<<<<<<< HEAD
   if (!correct && originalRef && targetStageId) {
     const stageIndex = stages.findIndex((stage) => stage.id === targetStageId);
     const activityIndex =
@@ -1251,6 +1267,8 @@ export function applyLearningPathAnswer(
     }));
   }
 
+=======
+>>>>>>> 4356d87774549d8fc1f4271d8e44ba482a79a15a
   const updated: LearningPath = {
     ...path,
     stages,
