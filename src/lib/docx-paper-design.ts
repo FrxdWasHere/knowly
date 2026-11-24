@@ -8,6 +8,7 @@ import {
 } from "./exam-print";
 import { readableAccent } from "./print-colors";
 import { normalizeHex } from "./themes";
+import { getDocumentThemeDesign } from "./document-themes";
 
 /**
  * The Word export of a paper studio has to wear the *same* design as the paper
@@ -52,6 +53,12 @@ export interface DocxPaperDesign {
   ink: string;
   muted: string;
   rule: string;
+  bodyFont: string;
+  headingFont: string;
+  lineSpacing: number;
+  paragraphAfter: number;
+  headingRule: "solid" | "double" | "dotted" | "dashed";
+  tableStyle: string;
   cover: DocxCoverInk;
 }
 
@@ -68,6 +75,13 @@ const MUTED = "#5b6472";
 const FRIENDLY_MUTED = "#555555";
 const RULE = "#9ca3af";
 const FRIENDLY_INK = "#1f2937";
+
+function firstFont(stack: string): string {
+  return stack
+    .split(",")[0]!
+    .trim()
+    .replace(/^["']|["']$/g, "");
+}
 
 /** Six-digit hex without the `#`, which is what docx expects. */
 const bare = (hex: string) => normalizeHex(hex).slice(1).toUpperCase();
@@ -247,6 +261,7 @@ export function resolveDocxDesign(input: {
   const safeFallback = fallback && /^#[0-9a-f]{6}$/i.test(fallback) ? fallback : undefined;
 
   const { theme, palette } = resolveThemePalette(input.theme, input.palette);
+  const interior = getDocumentThemeDesign(theme.id);
   const rawAccent = palette?.accent ?? safeFallback ?? theme.accent;
   const accent = readableAccent(rawAccent, "#3b5bdb");
   const soft = palette?.soft ?? mixHex(rawAccent, WHITE, 0.92);
@@ -262,6 +277,12 @@ export function resolveDocxDesign(input: {
     ink: bare(friendly ? FRIENDLY_INK : INK),
     muted: bare(friendly ? FRIENDLY_MUTED : MUTED),
     rule: bare(RULE),
+    bodyFont: firstFont(interior.bodyFont),
+    headingFont: firstFont(interior.headingFont),
+    lineSpacing: Math.round(Number.parseFloat(interior.lineHeight) * 200),
+    paragraphAfter: Math.round(Number.parseFloat(interior.paragraphGap) * 200),
+    headingRule: interior.titleRule,
+    tableStyle: interior.tableStyle,
     cover: friendly
       ? {
           dark: false,

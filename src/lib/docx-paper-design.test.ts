@@ -1,9 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { defaultCoursePrintOptions } from "@/components/print/course-paper";
-import { resolveDocxExamAppearance } from "./docx-paper-design";
+import { resolveDocxDesign, resolveDocxExamAppearance } from "./docx-paper-design";
 import { examOptionLabel, examQuestionLabel, EXAM_THEMES, THEME_PALETTES } from "./exam-print";
 
 describe("resolveDocxExamAppearance", () => {
+  it("carries theme-specific interior typography and layout into Word exports", () => {
+    const designs = EXAM_THEMES.map((theme) =>
+      resolveDocxDesign({ theme: theme.id, style: "design" }),
+    );
+
+    expect(designs).toHaveLength(35);
+    expect(designs.every((design) => design.bodyFont && design.headingFont)).toBe(true);
+    expect(new Set(designs.map((design) => design.headingFont)).size).toBeGreaterThan(4);
+    expect(new Set(designs.map((design) => design.tableStyle)).size).toBeGreaterThan(4);
+    expect(new Set(designs.map((design) => design.headingRule)).size).toBeGreaterThan(2);
+  });
+
   it("uses the quiz theme, palette, print style, font and font size", () => {
     const appearance = resolveDocxExamAppearance(
       {

@@ -1,3 +1,5 @@
+import type { ExamTheme } from "./exam-print";
+
 export type QuestionType =
   | "flashcard"
   | "multiple-choice"
@@ -492,6 +494,8 @@ export interface Settings {
   confirmBeforeExit: boolean;
   // appearance
   theme: "dark" | "light";
+  /** Shared interior theme for Module and Course reading and print views. */
+  documentTheme?: ExamTheme;
   /** legacy palette id; app theming now comes from the built-in light/dark themes */
   colorTheme: string;
   /** legacy custom palette, kept so older backups still restore cleanly */
@@ -576,6 +580,19 @@ export interface JournalEntry {
   sessionId?: string;
 }
 
+export interface ReadingHighlight {
+  id: string;
+  documentType: "module" | "course";
+  documentId: string;
+  /** Module block id, or Course lesson + block id. */
+  locationId: string;
+  quote: string;
+  prefix: string;
+  suffix: string;
+  startOffset: number;
+  createdAt: number;
+}
+
 import { TimetableSlot } from "./timetable";
 
 export type { TimetableSlot };
@@ -601,4 +618,6 @@ export interface AppState {
   labels: import("./labels").BinderLabel[];
   /** printed exam papers and their sittings */
   papers: import("./papers").PaperRecord[];
+  /** persistent text annotations for Module and Course reading */
+  readingHighlights: ReadingHighlight[];
 }

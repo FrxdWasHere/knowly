@@ -18,6 +18,7 @@ import {
   type ExamTheme,
 } from "@/lib/exam-print";
 import { TYPE_LABELS } from "@/lib/answers";
+import { documentThemeStyle } from "@/lib/document-themes";
 import {
   FOOTER_OPTIONS,
   FONT_SCALE_OPTIONS,
@@ -85,7 +86,7 @@ export interface ModulePrintOptions {
 export const defaultModulePrintOptions: ModulePrintOptions = {
   paper: "a4",
   orientation: "portrait",
-  typeface: "sans",
+  typeface: "theme",
   fontScale: "normal",
   spacing: "normal",
   footerStyle: "count",
@@ -881,6 +882,7 @@ export function ModulePaper({
 
   const padding = { padX, padTop, padBottom };
   const accent = "var(--exam-accent)";
+  const documentStyle = documentThemeStyle(skin.theme.id, "paper", paperAccent ?? skin.accent);
 
   const focusTextarea = (index: number) =>
     requestAnimationFrame(() => document.getElementById(`edit-textarea-${index}`)?.focus());
@@ -892,8 +894,10 @@ export function ModulePaper({
         `paper-theme-${skin.theme.id}`,
         options.printStyle === "friendly" && "print-friendly",
       )}
+      data-document-theme={skin.theme.id}
       style={
         {
+          ...documentStyle,
           /* The sheet is white paper in both media (see .paper-skin), so the
              identity colour is the one measured against white: the preview and
              the printer use the same value. */
@@ -1105,7 +1109,7 @@ function UnitSpace({
   decks: Deck[];
   coverTheme?: string;
   /** paper theme, so the in-flow hero matches the cover */
-  theme?: string;
+  theme?: ExamTheme;
   /** first unit on a page: the inter-unit spacing above is dropped */
   flush?: boolean;
 }) {
@@ -1132,7 +1136,7 @@ function UnitView({
   module: Module;
   decks: Deck[];
   coverTheme?: string;
-  theme?: string;
+  theme?: ExamTheme;
 }) {
   const data = unit.data;
   const accent = "var(--exam-accent)";
@@ -1241,6 +1245,7 @@ function UnitView({
         <ModuleMarkdownText
           variant="paper"
           accent={accent}
+          theme={theme ?? "classic"}
           markdown={data.text}
           className={
             data.list
@@ -1256,14 +1261,22 @@ function UnitView({
         // continuation of a callout split across pages: keep the colored rule,
         // drop the card chrome and the repeated label
         return (
-          <div className="pl-3.5" style={{ borderLeft: `3px solid ${tone.border}` }}>
-            <ModuleMarkdownText variant="paper" accent={accent} markdown={body} />
+          <div
+            className="document-reading-callout pl-3.5"
+            style={{ borderLeft: `3px solid ${tone.border}` }}
+          >
+            <ModuleMarkdownText
+              variant="paper"
+              accent={accent}
+              theme={theme ?? "classic"}
+              markdown={body}
+            />
           </div>
         );
       }
       return (
         <div
-          className="rounded-xl px-4 py-3.5"
+          className="document-reading-callout rounded-xl px-4 py-3.5"
           style={{ borderLeft: `3px solid ${tone.border}`, background: tone.bg }}
         >
           <p
@@ -1273,7 +1286,12 @@ function UnitView({
             {data.block.title || tone.label}
           </p>
           <div className="mt-1">
-            <ModuleMarkdownText variant="paper" accent={accent} markdown={body} />
+            <ModuleMarkdownText
+              variant="paper"
+              accent={accent}
+              theme={theme ?? "classic"}
+              markdown={body}
+            />
           </div>
         </div>
       );
@@ -1283,14 +1301,22 @@ function UnitView({
       const body = data.text ?? data.block.markdown ?? "";
       if (data.first === false) {
         return (
-          <div className="pl-3.5" style={{ borderLeft: `3px solid ${tone.border}` }}>
-            <ModuleMarkdownText variant="paper" accent={accent} markdown={body} />
+          <div
+            className="document-reading-callout pl-3.5"
+            style={{ borderLeft: `3px solid ${tone.border}` }}
+          >
+            <ModuleMarkdownText
+              variant="paper"
+              accent={accent}
+              theme={theme ?? "classic"}
+              markdown={body}
+            />
           </div>
         );
       }
       return (
         <div
-          className="rounded-xl px-4 py-3.5"
+          className="document-reading-callout rounded-xl px-4 py-3.5"
           style={{ borderLeft: `3px solid ${tone.border}`, background: tone.bg }}
         >
           <p
@@ -1300,7 +1326,12 @@ function UnitView({
             {data.block.title || "Worked example"}
           </p>
           <div className="mt-1">
-            <ModuleMarkdownText variant="paper" accent={accent} markdown={body} />
+            <ModuleMarkdownText
+              variant="paper"
+              accent={accent}
+              theme={theme ?? "classic"}
+              markdown={body}
+            />
           </div>
         </div>
       );
@@ -1426,7 +1457,12 @@ function UnitView({
               My notes
             </p>
           )}
-          <ModuleMarkdownText variant="paper" accent={accent} markdown={data.text} />
+          <ModuleMarkdownText
+            variant="paper"
+            accent={accent}
+            theme={theme ?? "classic"}
+            markdown={data.text}
+          />
         </div>
       );
     case "answer-header":
@@ -1812,10 +1848,10 @@ function modulePrintStylesheet(dims: { width: number; height: number }, contentH
     max-height: ${contentHeight}px !important;
     overflow: hidden !important;
   }
-  .paper-flow .print-page { background-color: #ffffff !important; color: #1f2937 !important; }
-  .paper-flow .print-page .text-foreground { color: #1f2937 !important; }
-  .paper-flow .print-page .text-card-foreground { color: #1f2937 !important; }
-  .paper-flow .print-page .text-muted-foreground { color: #5b6472 !important; }
+  .paper-flow .print-page { background-color: var(--document-page, #ffffff) !important; color: var(--document-ink, #1f2937) !important; }
+  .paper-flow .print-page .text-foreground { color: var(--document-ink, #1f2937) !important; }
+  .paper-flow .print-page .text-card-foreground { color: var(--document-ink, #1f2937) !important; }
+  .paper-flow .print-page .text-muted-foreground { color: var(--document-muted, #5b6472) !important; }
   .paper-flow .print-page .border-border { border-color: #9ca3af !important; }
   .paper-flow .print-page .border-foreground { border-color: #1f2937 !important; }
   .paper-flow .print-page img { filter: none !important; }

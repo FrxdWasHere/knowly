@@ -159,7 +159,7 @@ function loadOptions(): ModulePrintOptions {
 
 function ModulePrintPage() {
   const { moduleId } = Route.useParams();
-  const { state } = useKnowly();
+  const { state, updateSettings } = useKnowly();
   const module = state.modules.find((m) => m.id === moduleId);
   const [options, setOptions] = useState<ModulePrintOptions>(loadOptions);
   const [docxWorking, setDocxWorking] = useState(false);
@@ -173,6 +173,18 @@ function ModulePrintPage() {
       // storage may be unavailable; options simply don't persist
     }
   }, [options]);
+
+  useEffect(() => {
+    if (state.settings.documentTheme) {
+      setOptions((current) =>
+        current.theme === state.settings.documentTheme
+          ? current
+          : { ...current, theme: state.settings.documentTheme },
+      );
+    } else {
+      updateSettings({ documentTheme: options.theme ?? "classic" });
+    }
+  }, [options.theme, state.settings.documentTheme, updateSettings]);
 
   if (!module) {
     return (
@@ -419,7 +431,10 @@ function ModulePrintPage() {
                     palette={options.palette}
                     baseAccent={module.color || "#3b5bdb"}
                     baseLabel="Module colour"
-                    onTheme={(theme) => patch({ theme })}
+                    onTheme={(theme) => {
+                      patch({ theme });
+                      updateSettings({ documentTheme: theme });
+                    }}
                     onPalette={(palette) => patch({ palette })}
                     onBrowseMarketplace={() => setMarketplaceOpen(true)}
                   />
@@ -525,6 +540,7 @@ function ModulePrintPage() {
         onOpenChange={setMarketplaceOpen}
         onSelectTheme={(themeId, palette) => {
           patch({ theme: themeId });
+          updateSettings({ documentTheme: themeId });
           if (palette) patch({ palette });
         }}
         documentType="module"

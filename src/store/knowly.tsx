@@ -27,6 +27,7 @@ import { loadWallpaper, saveWallpaper } from "@/lib/wallpaper-store";
 import { loadAvatar, saveAvatar } from "@/lib/avatar-store";
 import { normalizeSidebarGroups } from "@/lib/sidebar-preferences";
 import { createId } from "@/lib/id";
+import { isDocumentTheme } from "@/lib/document-themes";
 import { schedule, DAY_MS, type SrsGrade } from "@/lib/srs";
 import {
   applyLearningPathAnswer,
@@ -136,6 +137,8 @@ const MIGRATIONS: Partial<Record<number, Migration>> = {
     ...state,
     decks: (state.decks ?? []).map(ensureDeckLearningPath),
   }),
+  // v7 → v8: persistent reading highlights and shared document theme.
+  7: (state) => ({ ...state, readingHighlights: state.readingHighlights ?? [] }),
 };
 
 /** Applies every migration needed to bring `parsed` up to `STATE_VERSION`. */
@@ -175,6 +178,7 @@ function normalizeState(parsed: Partial<AppState>): AppState {
       ...DEFAULT_SETTINGS,
       ...settings,
       theme: theme === "dark" ? "dark" : "light",
+      documentTheme: isDocumentTheme(settings.documentTheme) ? settings.documentTheme : undefined,
       colorTheme: "default",
       sidebarGroups: normalizeSidebarGroups(settings.sidebarGroups),
       accent,
@@ -195,6 +199,7 @@ function normalizeState(parsed: Partial<AppState>): AppState {
     timetable: state.timetable ?? [],
     labels: state.labels ?? [],
     papers: state.papers ?? [],
+    readingHighlights: state.readingHighlights ?? [],
     savedQuizSessions: (state.savedQuizSessions ?? []).map((session) => ({
       ...session,
       config: { ...DEFAULT_SETTINGS.defaultQuizConfig, ...session.config },
@@ -641,6 +646,9 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
           ...s,
           modules: s.modules.filter((m) => m.id !== id),
           moduleProgress: rest,
+          readingHighlights: s.readingHighlights.filter(
+            (highlight) => !(highlight.documentType === "module" && highlight.documentId === id),
+          ),
           // peel from decks that linked to it
           decks: s.decks.map((d) => ({
             ...d,
@@ -890,6 +898,9 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
           ...s,
           courses: s.courses.filter((course) => course.id !== id),
           courseProgress: rest,
+          readingHighlights: s.readingHighlights.filter(
+            (highlight) => !(highlight.documentType === "course" && highlight.documentId === id),
+          ),
         };
       });
     },

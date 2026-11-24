@@ -22,6 +22,7 @@ import {
 import { courseStats, decksForCourse, lessonProgress, type CourseStats } from "@/lib/courses";
 import { CoverOrnament, coverDesign, coverVars } from "@/components/print/cover-designs";
 import { readableAccent } from "@/lib/print-colors";
+import { documentThemeStyle, getDocumentThemeDesign } from "@/lib/document-themes";
 import { TYPE_LABELS } from "@/lib/answers";
 import {
   type Course,
@@ -44,7 +45,7 @@ export type PaperFontScale = "small" | "normal" | "large";
 /** Every sheet keeps a fixed 0.5in content margin — 48px at 96dpi. The paper art
  *  runs to the sheet edge, so a no-margin PDF export comes out finished. */
 export const PRINT_MARGIN_PX = 48;
-export type PaperTypeface = "sans" | "serif";
+export type PaperTypeface = "theme" | "sans" | "serif";
 export type PaperSpacing = "compact" | "normal" | "relaxed";
 export type PaperBreaks = "flow" | "modules" | "lessons";
 export type PaperFooterStyle = "count" | "of" | "plain" | "none";
@@ -83,7 +84,7 @@ export const defaultCoursePrintOptions: CoursePrintOptions = {
   paper: "a4",
   orientation: "portrait",
   fontScale: "normal",
-  typeface: "sans",
+  typeface: "theme",
   spacing: "normal",
   breaks: "modules",
   footerStyle: "count",
@@ -158,6 +159,12 @@ export const FONT_SCALE_OPTIONS: { id: PaperFontScale; label: string }[] = [
 
 export const TYPEFACE_OPTIONS: { id: PaperTypeface; label: string; sub: string; stack: string }[] =
   [
+    {
+      id: "theme",
+      label: "Theme",
+      sub: "Distinctive document type",
+      stack: "var(--document-body-font)",
+    },
     {
       id: "sans",
       label: "Modern",
@@ -709,6 +716,7 @@ export function CoursePaper({
     if (options.footerStyle === "plain") return String(page);
     return `${page} / ${totalPages}`;
   };
+  const documentStyle = documentThemeStyle(skin.theme.id, "paper", paperAccent ?? skin.accent);
 
   return (
     <div
@@ -717,8 +725,10 @@ export function CoursePaper({
         `paper-theme-${skin.theme.id}`,
         options.printStyle === "friendly" && "print-friendly",
       )}
+      data-document-theme={skin.theme.id}
       style={
         {
+          ...documentStyle,
           /* The sheet is white paper in both media (see .paper-skin), so the
              identity colour is the one measured against white: the preview and
              the printer use the same value. */
@@ -965,7 +975,7 @@ function UnitSlot({
   courseColor: string;
   toc: Record<string, number>;
   /** paper theme, so a compact hero matches the cover design */
-  theme?: string;
+  theme?: ExamTheme;
   /** cover style, so a plain cover also gets a plain compact hero */
   coverStyle?: PaperCoverStyle;
 }) {
@@ -995,7 +1005,7 @@ function UnitView({
   course: Course;
   courseColor: string;
   toc: Record<string, number>;
-  theme?: string;
+  theme?: ExamTheme;
   coverStyle?: PaperCoverStyle;
 }) {
   switch (data.kind) {
@@ -1097,13 +1107,13 @@ function UnitView({
       );
     }
     case "markdown":
-      return <PaperMarkdown markdown={data.text} />;
+      return <PaperMarkdown markdown={data.text} theme={theme ?? "classic"} />;
     case "callout": {
       const tone = data.block.type === "example" ? "example" : (data.block.tone ?? "info");
       return (
         <div
           className={cn(
-            "rounded-xl border px-4 py-3",
+            "document-reading-callout rounded-xl border px-4 py-3",
             tone === "example" && "border-success/45 bg-success/10",
             tone === "warning" && "border-warning/45 bg-warning/10",
             tone === "definition" && "border-primary/45 bg-primary/10",
@@ -1120,7 +1130,7 @@ function UnitView({
           >
             {data.block.title || (data.block.type === "example" ? "Example" : "Note")}
           </p>
-          <PaperMarkdown markdown={data.block.markdown ?? ""} />
+          <PaperMarkdown markdown={data.block.markdown ?? ""} theme={theme ?? "classic"} />
         </div>
       );
     }
@@ -1149,7 +1159,7 @@ function UnitView({
           <p className="text-[0.8em] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             Lesson notes
           </p>
-          <PaperMarkdown markdown={data.text} />
+          <PaperMarkdown markdown={data.text} theme={theme ?? "classic"} />
         </div>
       );
     case "section-header":
@@ -1589,9 +1599,14 @@ function ObjectivesList({
   );
 }
 
-function PaperMarkdown({ markdown }: { markdown: string }) {
+function PaperMarkdown({ markdown, theme }: { markdown: string; theme: ExamTheme }) {
   return (
-    <div className="paper-markdown text-[0.98em] text-foreground [&_a]:text-foreground [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-foreground [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:text-[0.9em] [&_h1]:mb-2 [&_h1]:mt-4 [&_h1]:text-[1.25em] [&_h1]:font-bold [&_h2]:mb-2 [&_h2]:mt-4 [&_h2]:text-[1.15em] [&_h2]:font-bold [&_h3]:mb-2 [&_h3]:mt-3 [&_h3]:font-semibold [&_li]:my-0.5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-2 [&_pre]:my-2 [&_pre]:overflow-auto [&_pre]:rounded-lg [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:text-[0.9em] [&_strong]:font-bold [&_table]:my-3 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-border [&_td]:p-1.5 [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:p-1.5 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5">
+    <div
+      data-document-theme={theme}
+      data-document-table-style={getDocumentThemeDesign(theme).tableStyle}
+      data-document-heading-style={getDocumentThemeDesign(theme).titleRule}
+      className="paper-markdown text-[0.98em] text-foreground [&_a]:text-foreground [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-foreground [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:text-[0.9em] [&_h1]:mb-2 [&_h1]:mt-4 [&_h1]:text-[1.25em] [&_h1]:font-bold [&_h2]:mb-2 [&_h2]:mt-4 [&_h2]:text-[1.15em] [&_h2]:font-bold [&_h3]:mb-2 [&_h3]:mt-3 [&_h3]:font-semibold [&_li]:my-0.5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-2 [&_pre]:my-2 [&_pre]:overflow-auto [&_pre]:rounded-lg [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:text-[0.9em] [&_strong]:font-bold [&_table]:my-3 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-border [&_td]:p-1.5 [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:p-1.5 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5"
+    >
       <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
         {markdown}
       </ReactMarkdown>
@@ -1771,12 +1786,12 @@ function printStylesheet(dims: { width: number; height: number }) {
   .course-paper { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   /* The sheet itself is white under the theme's paper wash, so the art reaches
      the sheet edge while the words keep their 0.5in margin. */
-  .paper-flow .print-page { background-color: #ffffff !important; color: #1f2937 !important; }
+  .paper-flow .print-page { background-color: var(--document-page, #ffffff) !important; color: var(--document-ink, #1f2937) !important; }
   /* Theme ink classes are pinned as well as the variables, so a utility class
      can never hand the printer a pale colour. */
-  .paper-flow .print-page .text-foreground { color: #1f2937 !important; }
-  .paper-flow .print-page .text-card-foreground { color: #1f2937 !important; }
-  .paper-flow .print-page .text-muted-foreground { color: #5b6472 !important; }
+  .paper-flow .print-page .text-foreground { color: var(--document-ink, #1f2937) !important; }
+  .paper-flow .print-page .text-card-foreground { color: var(--document-ink, #1f2937) !important; }
+  .paper-flow .print-page .text-muted-foreground { color: var(--document-muted, #5b6472) !important; }
   .paper-flow .print-page .border-border { border-color: #9ca3af !important; }
   /* Print friendly drops the ink-heavy palette: neutral ink on white, so the
      page costs a fraction of the toner. Full design keeps the theme colours. */

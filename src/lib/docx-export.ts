@@ -241,11 +241,20 @@ function inlineRuns(text: string, style: InlineRunStyle = {}): ParagraphChild[] 
  * Parse markdown tables into Word table objects.
  */
 function mdTable(header: string[], rows: string[][], design: DocxPaperDesign): Table {
+  const borderStyle =
+    design.tableStyle === "editorial"
+      ? BorderStyle.DOUBLE
+      : design.tableStyle === "ruled"
+        ? BorderStyle.DOTTED
+        : design.tableStyle === "grid"
+          ? BorderStyle.SINGLE
+          : BorderStyle.SINGLE;
+  const borderSize = design.tableStyle === "minimal" ? 3 : design.tableStyle === "boxed" ? 10 : 6;
   const borders = {
-    top: { style: BorderStyle.SINGLE, size: 6, color: design.border },
-    bottom: { style: BorderStyle.SINGLE, size: 6, color: design.border },
-    left: { style: BorderStyle.SINGLE, size: 6, color: design.border },
-    right: { style: BorderStyle.SINGLE, size: 6, color: design.border },
+    top: { style: borderStyle, size: borderSize, color: design.border },
+    bottom: { style: borderStyle, size: borderSize, color: design.border },
+    left: { style: borderStyle, size: borderSize, color: design.border },
+    right: { style: borderStyle, size: borderSize, color: design.border },
   };
   const headerFill = design.style === "friendly" ? "F1F5F9" : tint(design.accent, 0.84);
   const rowOf = (cells: string[], isHeader: boolean) =>
@@ -311,10 +320,15 @@ function markdownToDocx(
       for (const codeLine of buf) {
         out.push(
           new Paragraph({
-            shading: { type: ShadingType.CLEAR, fill: "F1F5F9" },
+            shading: { type: ShadingType.CLEAR, fill: design.soft },
             spacing: { after: 0 },
             children: [
-              new TextRun({ text: codeLine.length ? codeLine : " ", font: "Consolas", size: 20 }),
+              new TextRun({
+                text: codeLine.length ? codeLine : " ",
+                font: "Consolas",
+                size: 20,
+                color: design.ink,
+              }),
             ],
           }),
         );
@@ -370,7 +384,13 @@ function markdownToDocx(
               left: { style: BorderStyle.SINGLE, size: 18, color: design.accent, space: 10 },
             },
             children: inlineRuns(lines[i].replace(/^\s*>\s?/, ""), { italics: true }),
-            spacing: { before: 60, after: 60, line: 300, lineRule: "auto" },
+            shading: { type: ShadingType.CLEAR, fill: design.soft },
+            spacing: {
+              before: 60,
+              after: 60,
+              line: design.lineSpacing,
+              lineRule: "auto",
+            },
           }),
         );
         i++;
@@ -386,7 +406,7 @@ function markdownToDocx(
             shading,
             border,
             indent: style.fill ? { left: 40 } : undefined,
-            spacing: { after: 60, line: 300, lineRule: "auto" },
+            spacing: { after: 60, line: design.lineSpacing, lineRule: "auto" },
           }),
         );
         i++;
@@ -406,7 +426,7 @@ function markdownToDocx(
             ],
             shading,
             border,
-            spacing: { after: 60, line: 300, lineRule: "auto" },
+            spacing: { after: 60, line: design.lineSpacing, lineRule: "auto" },
           }),
         );
         i++;
@@ -417,7 +437,19 @@ function markdownToDocx(
       out.push(
         new Paragraph({
           border: {
-            bottom: { style: BorderStyle.SINGLE, size: 12, color: design.accent, space: 4 },
+            bottom: {
+              style:
+                design.headingRule === "double"
+                  ? BorderStyle.DOUBLE
+                  : design.headingRule === "dotted"
+                    ? BorderStyle.DOTTED
+                    : design.headingRule === "dashed"
+                      ? BorderStyle.DASHED
+                      : BorderStyle.SINGLE,
+              size: 12,
+              color: design.accent,
+              space: 4,
+            },
           },
           spacing: { before: 160, after: 160 },
           children: [],
@@ -445,8 +477,8 @@ function markdownToDocx(
         indent: style.fill ? { left: 40 } : undefined,
         spacing: {
           before: style.fill ? 40 : 80,
-          after: style.fill ? 60 : 120,
-          line: 300,
+          after: style.fill ? 60 : design.paragraphAfter,
+          line: design.lineSpacing,
           lineRule: "auto",
         },
       }),
@@ -1932,8 +1964,18 @@ async function assembleDocx({
   const dims = getPaperDims(options.paper, options.orientation);
   const contentWidth = px(dims.width - PRINT_MARGIN_PX * 2);
   const bodyFontSizeHalfPoints = DOCX_FONT_SIZE_HALF_POINTS[options.fontScale];
-  const fontFamily = fontFamilyOverride ?? (options.typeface === "serif" ? "Georgia" : "Calibri");
-  const lineSpacing = { compact: 280, normal: 320, relaxed: 360 } as const;
+  const fontFamily =
+    fontFamilyOverride ??
+    (options.typeface === "serif"
+      ? "Georgia"
+      : options.typeface === "theme"
+        ? design.bodyFont
+        : "Calibri");
+  const lineSpacing = {
+    compact: Math.min(280, design.lineSpacing),
+    normal: design.lineSpacing,
+    relaxed: Math.max(360, design.lineSpacing),
+  } as const;
   const headingSizes = {
     1: Math.round(bodyFontSizeHalfPoints * 1.8),
     2: Math.round(bodyFontSizeHalfPoints * 1.4),
@@ -1948,22 +1990,41 @@ async function assembleDocx({
     next: "Normal",
     quickFormat: true,
     run: {
-      font: fontFamily,
+      font: design.headingFont,
       size: headingSizes[level],
       bold: true,
-      color: design.ink,
+      color: design.accent,
     },
     paragraph: {
       spacing: {
-        before: level === 1 ? 400 : level === 2 ? 300 : level === 3 ? 200 : 120,
-        after: level === 1 ? 160 : level === 2 ? 120 : 100,
+        before:
+          level === 1
+            ? design.paragraphAfter * 3
+            : level === 2
+              ? design.paragraphAfter * 2
+              : level === 3
+                ? design.paragraphAfter
+                : Math.round(design.paragraphAfter * 0.75),
+        after: Math.round(design.paragraphAfter * 0.8),
       },
       keepNext: true,
       outlineLevel: level - 1,
       ...(level === 1
         ? {
             border: {
-              bottom: { style: BorderStyle.SINGLE, size: 12, color: design.accent, space: 6 },
+              bottom: {
+                style:
+                  design.headingRule === "double"
+                    ? BorderStyle.DOUBLE
+                    : design.headingRule === "dotted"
+                      ? BorderStyle.DOTTED
+                      : design.headingRule === "dashed"
+                        ? BorderStyle.DASHED
+                        : BorderStyle.SINGLE,
+                size: 12,
+                color: design.accent,
+                space: 6,
+              },
             },
             pageBreakBefore: true,
           }
@@ -1977,7 +2038,7 @@ async function assembleDocx({
     runningHeader,
     design.muted,
     bodyFontSizeHalfPoints,
-    fontFamily,
+    design.headingFont,
     headerAlignment,
   );
   const bodyFooter = pageFooter(
@@ -1986,7 +2047,7 @@ async function assembleDocx({
     design.muted,
     contentWidth,
     bodyFontSizeHalfPoints,
-    fontFamily,
+    design.headingFont,
   );
   const coverHeader = coverDark
     ? pageHeader(
@@ -1995,7 +2056,7 @@ async function assembleDocx({
         null,
         design.cover.muted,
         bodyFontSizeHalfPoints,
-        fontFamily,
+        design.headingFont,
         headerAlignment,
       )
     : undefined;
@@ -2006,7 +2067,7 @@ async function assembleDocx({
         design.cover.muted,
         contentWidth,
         bodyFontSizeHalfPoints,
-        fontFamily,
+        design.headingFont,
       )
     : undefined;
 

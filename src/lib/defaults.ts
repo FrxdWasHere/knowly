@@ -159,7 +159,7 @@ export const DEFAULT_PROGRESS: Progress = {
  * in a way that older saves need repair; add a matching entry to the migration
  * table in `src/store/knowly.tsx`.
  */
-export const STATE_VERSION = 7;
+export const STATE_VERSION = 8;
 
 export const DEFAULT_STATE: AppState = {
   version: STATE_VERSION,
@@ -179,6 +179,7 @@ export const DEFAULT_STATE: AppState = {
   timetable: [],
   labels: [],
   papers: [],
+  readingHighlights: [],
 };
 
 export const GRADE_LEVELS = [

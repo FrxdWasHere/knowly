@@ -2,6 +2,7 @@ import type { Difficulty, LengthPreset, QuestionType } from "./types";
 import type { AISuggestions, SmartModeConfig } from "./smart-mode";
 import { buildPrompt } from "./prompt";
 import { buildModulePrompt } from "./module-prompt";
+import { buildCoursePrompt } from "./course-prompt";
 import { getLengthInstructions } from "./length-detail";
 import type { LearningPathPromptOptions } from "./learning-path-prompt-builder";
 
@@ -33,6 +34,7 @@ export interface PromptBuildOptions {
 
   extra?: string;
   tone?: string;
+  purpose?: string;
 
   /** deck question count; when omitted Smart Mode derives it from the material */
   count?: number;
@@ -44,8 +46,16 @@ export interface PromptBuildOptions {
   learningPath?: LearningPathPromptOptions;
 
   // course-specific
+  topic?: string;
+  objectives?: string[];
+  sectionGuidance?: string;
+  sectionsPerLesson?: number;
+  sectionsAuto?: boolean;
+  sizeAuto?: boolean;
   moduleCount?: number;
   lessonsPerModule?: number;
+  questionsPerLesson?: number;
+  levelAuto?: boolean;
   includeAssessments?: boolean;
 }
 
@@ -70,8 +80,42 @@ export function buildSmartPrompt(options: PromptBuildOptions): string {
       minutesAuto: true,
     });
   }
+  return buildSmartCoursePrompt(options);
+}
 
-  return buildGenericSmartPrompt(options);
+function buildSmartCoursePrompt(options: PromptBuildOptions): string {
+  return buildCoursePrompt({
+    topic: options.topic ?? options.suggestions.topics?.join("\n") ?? "",
+    material: options.material,
+    title: options.title || options.suggestions.title || "",
+    subject: options.subject || options.suggestions.subject || "",
+    level: options.level ?? "",
+    description: options.description?.trim() || options.suggestions.description || "",
+    objectives:
+      options.objectives?.join("\n") ?? options.suggestions.learningObjectives?.join("\n") ?? "",
+    sectionGuidance: options.sectionGuidance ?? "",
+    sectionsPerLesson: options.sectionsPerLesson,
+    sectionsAuto: options.sectionsAuto ?? true,
+    moduleCount: options.moduleCount ?? 4,
+    lessonsPerModule: options.lessonsPerModule ?? 3,
+    questionsPerLesson: options.questionsPerLesson ?? 4,
+    types: options.questionTypes,
+    distribution: options.difficultyDistribution,
+    audience: options.level,
+    purpose: options.purpose ?? "",
+    extra: options.extra ?? "",
+    tone: options.tone ?? "",
+    includeAssessments: options.includeAssessments ?? true,
+    isSTEM: options.isSTEM,
+    needsEquations: options.needsEquations,
+    needsGraphs: options.needsGraphs,
+    sizeAuto: options.sizeAuto ?? options.autoConfigure,
+    typesAuto: options.typesAuto ?? options.autoConfigure,
+    distributionAuto: options.distributionAuto ?? options.autoConfigure,
+    levelAuto: options.levelAuto ?? (options.autoConfigure || !options.level),
+    lengthSliderValue: options.lengthSliderValue,
+    smartModeEnabled: true,
+  });
 }
 
 function buildSmartDeckPrompt(options: PromptBuildOptions): string {
@@ -131,32 +175,6 @@ function smartHeader(options: PromptBuildOptions): string {
     "",
   );
   return `${lines.join("\n")}\n`;
-}
-
-/**
- * Course prompts remain a thin scaffold until their generation phase. Decks
- * and Modules use their dedicated schema-aware builders.
- */
-function buildGenericSmartPrompt(options: PromptBuildOptions): string {
-  const { lengthSliderValue } = options;
-  return `You are an expert curriculum designer. Create a ${options.content_type} from the material below.
-
-${smartHeader(options)}
-
-CONTENT SETTINGS
-- Title: ${options.title || "Untitled"}
-- Subject: ${options.subject || "General"}
-- Level: ${options.level || "unspecified"}
-${options.content_type === "course" ? `- Modules: ${options.moduleCount ?? 4}\n- Lessons per module: ${options.lessonsPerModule ?? 3}\n` : ""}
-${options.includeAssessments ? "- Include assessments.\n" : ""}
-
-${getLengthInstructions(lengthSliderValue)}
-
-${options.extra ? `ADDITIONAL INSTRUCTIONS\n${options.extra}\n` : ""}
-STUDY MATERIAL
-"""
-${options.material || "(paste your study material here)"}
-"""`;
 }
 
 /** Shared Smart Mode defaults so every surface starts from the same place. */

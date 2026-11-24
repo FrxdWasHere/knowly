@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   BookPlus,
@@ -13,6 +13,9 @@ import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
 import { PromptStudioNav } from "@/components/prompt-studio-nav";
 import { AutoChoice } from "@/components/auto-choice";
+import { LengthDetailControl } from "@/components/length-detail-control";
+import { SmartModeToggle } from "@/components/smart-mode-toggle";
+import { SourceFileUpload } from "@/components/source-file-upload";
 import { PageHeader } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +28,7 @@ import { createId } from "@/lib/id";
 import { buildCoursePrompt, estimateCourseQuestions } from "@/lib/course-prompt";
 import { openImportPanel } from "@/lib/import-panel";
 import { questionTypes } from "@/lib/schema";
+import { useSmartMode } from "@/hooks/useSmartMode";
 import { useKnowly } from "@/store/knowly";
 import { cn } from "@/lib/utils";
 import type { Course, Difficulty, QuestionType } from "@/lib/types";
@@ -36,7 +40,7 @@ export const Route = createFileRoute("/_authenticated/courses/forge")({
       {
         name: "description",
         content:
-          "Turn a topic, syllabus or reference notes into a strict AI prompt for a complete course: modules, lessons, checkpoints, quizzes and a final exam.",
+          "Build a complete course prompt from a topic or locally processed source files, with editable unit, lesson, section, and learning-objective guidance.",
       },
     ],
   }),
@@ -53,13 +57,20 @@ const DEFAULT_TYPES: QuestionType[] = [
 function CourseForgePage() {
   const { state, addCourse } = useKnowly();
   const navigate = useNavigate();
+  const smartMode = useSmartMode();
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("");
   const [topic, setTopic] = useState("");
   const [material, setMaterial] = useState("");
+  const [description, setDescription] = useState("");
+  const [objectives, setObjectives] = useState("");
+  const [sectionGuidance, setSectionGuidance] = useState("");
   const [level, setLevel] = useState(state.settings.gradeLevel);
+  const [levelAuto, setLevelAuto] = useState(false);
   const [modules, setModules] = useState(4);
   const [lessons, setLessons] = useState(3);
+  const [sectionsPerLesson, setSectionsPerLesson] = useState(3);
+  const [sectionsAuto, setSectionsAuto] = useState(true);
   const [questions, setQuestions] = useState(6);
   const [types, setTypes] = useState<QuestionType[]>(DEFAULT_TYPES);
   const [easy, setEasy] = useState(20);
@@ -77,14 +88,44 @@ function CourseForgePage() {
   const [needsGraphs, setNeedsGraphs] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  useEffect(() => {
+    if (!smartMode.config.enabled || !smartMode.config.autoConfigure) return;
+
+    const suggestions = smartMode.suggestions;
+    setTitle((current) => current || suggestions.title || "");
+    setSubject((current) => current || suggestions.subject || "");
+    setTopic((current) => current || suggestions.topics?.join("\n") || "");
+    setDescription((current) => current || suggestions.description || "");
+    setObjectives((current) => current || suggestions.learningObjectives?.join("\n") || "");
+  }, [smartMode.config.autoConfigure, smartMode.config.enabled, smartMode.suggestions]);
+
+  const effectiveMaterial = useMemo(
+    () =>
+      [
+        material.trim() ? `[Pasted reference]\n${material.trim()}` : "",
+        smartMode.config.enabled ? smartMode.material.trim() : "",
+      ]
+        .filter(Boolean)
+        .join("\n\n"),
+    [material, smartMode.config.enabled, smartMode.material],
+  );
+  const needsFileProcessing =
+    smartMode.config.enabled &&
+    smartMode.config.sourceFiles.some((file) => file.processingStatus !== "completed");
+
   const prompt = useMemo(
     () =>
       buildCoursePrompt({
         topic,
-        material,
+        material: effectiveMaterial,
         title,
         subject,
         level,
+        description,
+        objectives,
+        sectionGuidance,
+        sectionsPerLesson,
+        sectionsAuto,
         moduleCount: modules,
         lessonsPerModule: lessons,
         questionsPerLesson: questions,
@@ -97,6 +138,9 @@ function CourseForgePage() {
         sizeAuto,
         typesAuto,
         distributionAuto: distAuto,
+        levelAuto,
+        lengthSliderValue: smartMode.config.lengthSliderValue,
+        smartModeEnabled: smartMode.config.enabled,
         includeAssessments,
         isSTEM,
         needsEquations,
@@ -104,10 +148,15 @@ function CourseForgePage() {
       }),
     [
       topic,
-      material,
+      effectiveMaterial,
       title,
       subject,
       level,
+      description,
+      objectives,
+      sectionGuidance,
+      sectionsPerLesson,
+      sectionsAuto,
       modules,
       lessons,
       questions,
@@ -120,6 +169,9 @@ function CourseForgePage() {
       sizeAuto,
       typesAuto,
       distAuto,
+      levelAuto,
+      smartMode.config.lengthSliderValue,
+      smartMode.config.enabled,
       includeAssessments,
       isSTEM,
       needsEquations,
@@ -145,6 +197,10 @@ function CourseForgePage() {
   });
 
   const copyPrompt = async () => {
+    if (needsFileProcessing) {
+      toast.error("Process or remove each uploaded file before copying the prompt.");
+      return;
+    }
     await navigator.clipboard.writeText(prompt);
     setCopied(true);
     toast.success("Course instructions copied");
@@ -215,7 +271,7 @@ function CourseForgePage() {
     <AppPage>
       <PageHeader
         title="Prompt Studio · Course"
-        description="Describe a topic or paste your notes. Copy the instructions into the AI you use; nothing is uploaded."
+        description="Build a complete course from a topic or source files. Materials are processed on this device; copy the prompt to your chosen AI, then import the finished course."
         action={
           <>
             <Button variant="outline" onClick={() => openImportPanel({ kind: "course" })}>
@@ -224,7 +280,7 @@ function CourseForgePage() {
             <Button variant="outline" onClick={createEmpty}>
               <BookPlus className="size-4" /> Blank course
             </Button>
-            <Button onClick={copyPrompt}>
+            <Button onClick={copyPrompt} disabled={smartMode.isLoading || needsFileProcessing}>
               {copied ? <Check className="size-4" /> : <ClipboardCopy className="size-4" />}
               {copied ? "Copied" : "Copy instructions"}
             </Button>
@@ -242,6 +298,36 @@ function CourseForgePage() {
             <h2 className="font-display text-lg font-semibold">Course brief</h2>
           </div>
 
+          <SmartModeToggle
+            enabled={smartMode.config.enabled}
+            onToggle={(enabled) => {
+              smartMode.setConfig({ enabled });
+              if (enabled) {
+                setLevelAuto(true);
+                setSizeAuto(true);
+                setSectionsAuto(true);
+                setTypesAuto(true);
+                setDistAuto(true);
+              }
+            }}
+            fileCount={smartMode.config.sourceFiles.length}
+          />
+          {smartMode.config.enabled && (
+            <>
+              <SourceFileUpload
+                files={smartMode.config.sourceFiles}
+                onFilesChange={(sourceFiles) => smartMode.setConfig({ sourceFiles })}
+                onProcessFiles={smartMode.processFiles}
+              />
+              {(smartMode.suggestions.title || smartMode.suggestions.topics?.length) && (
+                <p className="rounded-lg bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
+                  Source-analysis suggestions are placed in the editable brief fields below. Review
+                  or change them before copying the prompt.
+                </p>
+              )}
+            </>
+          )}
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="course-title">Course title</Label>
@@ -249,7 +335,7 @@ function CourseForgePage() {
                 id="course-title"
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                placeholder="e.g. Organic Chemistry Foundations"
+                placeholder="e.g. Organic Chemistry Foundations; leave blank to infer"
               />
             </div>
             <div className="space-y-2">
@@ -258,19 +344,52 @@ function CourseForgePage() {
                 id="course-subject"
                 value={subject}
                 onChange={(event) => setSubject(event.target.value)}
-                placeholder="e.g. Chemistry"
+                placeholder="e.g. Chemistry; leave blank to infer"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="course-topic">Topic or goal</Label>
+            <Label htmlFor="course-description">Course description</Label>
+            <Textarea
+              id="course-description"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="A clear overview of the course scope and what learners will be able to do."
+              className="min-h-20"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="course-topic">Course scope / topics</Label>
             <Textarea
               id="course-topic"
               value={topic}
               onChange={(event) => setTopic(event.target.value)}
-              placeholder="What should the course teach? e.g. first-year organic chemistry, reaction mechanisms and stereochemistry"
+              placeholder="Describe the course goal or list topics to cover, one per line. The AI will organize them into a coherent program."
               className="min-h-24"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="course-objectives">Learning objectives (one per line)</Label>
+            <Textarea
+              id="course-objectives"
+              value={objectives}
+              onChange={(event) => setObjectives(event.target.value)}
+              placeholder="Explain the main concepts...\nApply the concepts to a new scenario..."
+              className="min-h-24"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="course-structure">Unit, lesson, or section guidance (optional)</Label>
+            <Textarea
+              id="course-structure"
+              value={sectionGuidance}
+              onChange={(event) => setSectionGuidance(event.target.value)}
+              placeholder="List any required units, lessons, or topics. The AI will preserve these while organizing the remaining material."
+              className="min-h-20"
             />
           </div>
 
@@ -280,24 +399,33 @@ function CourseForgePage() {
               id="course-material"
               value={material}
               onChange={(event) => setMaterial(event.target.value)}
-              placeholder="Paste a syllabus, lecture notes, textbook excerpt or source list. Leave empty to generate from the topic."
+              placeholder="Paste a syllabus, lecture notes, textbook excerpt or source list. You can combine this with Smart Mode uploads."
               className="min-h-40"
             />
             <p className="text-xs text-muted-foreground">
-              The reference is treated as source of truth. Keep it focused — long excerpts work
-              better when split by module.
+              Pasted and uploaded sources are combined as one reference set and treated as the
+              factual anchor.
             </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="course-level">Learner level</Label>
-              <Input
-                id="course-level"
-                value={level}
-                onChange={(event) => setLevel(event.target.value)}
-                placeholder="Grade 11, undergraduate…"
-              />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Label htmlFor="course-level">Course level / difficulty</Label>
+                <AutoChoice active={levelAuto} onToggle={() => setLevelAuto((value) => !value)} />
+              </div>
+              {levelAuto ? (
+                <p className="text-xs text-muted-foreground">
+                  The AI will infer the appropriate course level from the scope and learner.
+                </p>
+              ) : (
+                <Input
+                  id="course-level"
+                  value={level}
+                  onChange={(event) => setLevel(event.target.value)}
+                  placeholder="Grade 11, undergraduate…"
+                />
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="course-extra">Extra instructions</Label>
@@ -308,6 +436,26 @@ function CourseForgePage() {
                 placeholder="Exam board, constraints…"
               />
             </div>
+          </div>
+
+          <div className="space-y-3 rounded-xl border border-border p-4">
+            <div>
+              <h3 className="text-sm font-semibold">Length and detail</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Shapes the number of units and lessons when automatic, section depth, concept
+                coverage, examples, and the completeness of each lesson.
+              </p>
+            </div>
+            <LengthDetailControl
+              value={smartMode.config.lengthSliderValue}
+              preset={smartMode.config.lengthPreset}
+              onChange={(value, preset) =>
+                smartMode.setConfig({
+                  lengthSliderValue: value,
+                  lengthPreset: preset,
+                })
+              }
+            />
           </div>
 
           <div className="space-y-2">
@@ -332,14 +480,14 @@ function CourseForgePage() {
             </div>
             {sizeAuto ? (
               <p className="text-xs text-muted-foreground">
-                Your AI sizes the course to the material — as many modules, lessons and checkpoints
-                as it warrants.
+                Your AI sizes the course to the material — as many units, lessons and checkpoints as
+                it warrants.
               </p>
             ) : (
               <div className="grid gap-5 sm:grid-cols-3">
-                <Counter label="Modules" value={modules} onChange={setModules} min={1} max={12} />
+                <Counter label="Units" value={modules} onChange={setModules} min={1} max={12} />
                 <Counter
-                  label="Lessons / module"
+                  label="Lessons / unit"
                   value={lessons}
                   onChange={setLessons}
                   min={1}
@@ -353,6 +501,29 @@ function CourseForgePage() {
                   max={20}
                 />
               </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Label>Sections per lesson</Label>
+              <AutoChoice
+                active={sectionsAuto}
+                onToggle={() => setSectionsAuto((value) => !value)}
+              />
+            </div>
+            {sectionsAuto ? (
+              <p className="text-xs text-muted-foreground">
+                The selected length/detail setting and lesson content guide the section count.
+              </p>
+            ) : (
+              <Counter
+                label="Exact sections / lesson"
+                value={sectionsPerLesson}
+                onChange={setSectionsPerLesson}
+                min={1}
+                max={8}
+              />
             )}
           </div>
 
@@ -471,14 +642,13 @@ function CourseForgePage() {
               </p>
               <p className="text-xs text-muted-foreground">
                 {sizeAuto
-                  ? "No fixed module, lesson or question counts"
-                  : `${modules} modules × ${lessons} lessons × ${questions} questions`}
+                  ? "Units, lessons, and checkpoints scale to scope and selected detail"
+                  : `${modules} units × ${lessons} lessons × ${questions} questions`}
               </p>
             </div>
             <Badge variant="outline">
-              {sizeAuto
-                ? "Length varies"
-                : `~${Math.max(1, Math.round(totalQuestions * 0.35))}k words`}
+              {smartMode.config.lengthPreset.charAt(0).toUpperCase() +
+                smartMode.config.lengthPreset.slice(1)}
             </Badge>
           </div>
 
@@ -496,7 +666,12 @@ function CourseForgePage() {
               <Sparkles className="size-4 text-primary" />
               <h2 className="font-display text-lg font-semibold">Your course instructions</h2>
             </div>
-            <Button size="sm" variant="outline" onClick={copyPrompt}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={copyPrompt}
+              disabled={smartMode.isLoading || needsFileProcessing}
+            >
               {copied ? <Check className="size-4" /> : <ClipboardCopy className="size-4" />}
               {copied ? "Copied" : "Copy"}
             </Button>

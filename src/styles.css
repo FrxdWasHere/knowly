@@ -1756,9 +1756,9 @@ body {
 }
 
 /* ------------------------------------------------------------------ *
- * Module sheets and course packs reuse the exam themes + palettes. Ink rides
- * on --exam-accent / --exam-soft / --exam-border; each sheet only gains a
- * paper wash and an accent edge, so pagination and layout stay untouched.
+ * Module sheets and course packs reuse the exam themes + palettes. Each theme
+ * adds its own interior typography, page treatment, component styling and
+ * accent system while the measured pagination remains fixed.
  * ------------------------------------------------------------------ */
 
 /*
@@ -2046,6 +2046,293 @@ body {
   --paper-wash:
     repeating-linear-gradient(0deg, transparent 0, transparent 20px, color-mix(in srgb, var(--exam-border) 15%, transparent) 20px, color-mix(in srgb, var(--exam-border) 15%, transparent) 21px),
     linear-gradient(180deg, var(--exam-soft), #fff 200px);
+}
+
+/* ------------------------------------------------------------------ *
+ * Reading interiors
+ *
+ * Each document theme supplies its own paper, type pairing, heading marker,
+ * callout treatment, quote rule, table language and page texture. These rules
+ * are shared by the live readers and the paginated Module/Course interiors.
+ * ------------------------------------------------------------------ */
+.document-reading,
+.document-markdown {
+  color: var(--document-ink);
+  background-color: var(--document-page);
+  background-image: inherit;
+}
+.document-reading {
+  font-family: var(--document-body-font);
+}
+.document-reading .document-reading-header {
+  color: var(--document-ink);
+  background: color-mix(in srgb, var(--document-surface) 94%, var(--document-page));
+  border-color: color-mix(in srgb, var(--document-accent) 34%, transparent);
+}
+.document-reading .document-reading-panel {
+  color: var(--document-ink);
+  background: var(--document-surface);
+  border-color: color-mix(in srgb, var(--document-accent) 25%, transparent);
+}
+.document-reading .document-reading-callout {
+  color: var(--document-ink);
+  background: color-mix(in srgb, var(--document-accent) 7%, var(--document-surface));
+  border: 1px var(--document-callout-border) color-mix(in srgb, var(--document-accent) 46%, transparent);
+  border-radius: var(--document-callout-radius);
+}
+.document-reading .document-reading-muted {
+  color: var(--document-muted);
+}
+.document-markdown {
+  font-family: var(--document-body-font);
+  line-height: var(--document-line-height);
+}
+.document-markdown p,
+.document-markdown li {
+  line-height: var(--document-line-height);
+}
+.document-markdown p {
+  margin-block: var(--document-paragraph-gap);
+}
+.document-markdown h1,
+.document-markdown h2,
+.document-markdown h3,
+.document-markdown h4,
+.paper-skin .print-page h1,
+.paper-skin .print-page h2,
+.paper-skin .print-page h3,
+.paper-skin .print-page h4 {
+  color: var(--document-ink);
+  font-family: var(--document-heading-font);
+}
+.document-markdown h1 {
+  border-bottom: var(--document-title-rule);
+}
+.document-markdown h2::before {
+  content: var(--document-heading-marker);
+  display: grid;
+  place-items: center;
+  width: 0.9em;
+  height: 0.9em;
+  background: transparent;
+  border-radius: var(--document-marker-shape);
+  color: var(--document-accent);
+  font-family: var(--document-heading-font);
+  font-size: 0.72em;
+  line-height: 1;
+  transform: var(--document-marker-transform);
+}
+.document-markdown h3 {
+  color: color-mix(in srgb, var(--document-ink) 88%, var(--document-accent));
+}
+.document-markdown blockquote,
+.paper-skin .print-page blockquote {
+  border-left: var(--document-quote-border) var(--document-quote-style) var(--document-accent);
+  border-radius: 0 var(--document-callout-radius) var(--document-callout-radius) 0;
+  background: color-mix(in srgb, var(--document-accent) 5%, var(--document-surface));
+  color: var(--document-ink);
+}
+.document-markdown code:not(pre code),
+.document-markdown pre,
+.paper-skin .print-page code,
+.paper-skin .print-page pre {
+  border-radius: var(--document-code-radius);
+  background: color-mix(in srgb, var(--document-accent) 7%, var(--document-surface));
+}
+.document-markdown pre,
+.paper-skin .print-page pre {
+  border: 1px solid color-mix(in srgb, var(--document-accent) 24%, transparent);
+}
+.document-markdown table {
+  color: var(--document-ink);
+  border-color: color-mix(in srgb, var(--document-accent) 32%, transparent);
+}
+.document-markdown th {
+  background: color-mix(in srgb, var(--document-accent) 11%, var(--document-surface));
+}
+.document-markdown td,
+.document-markdown th {
+  border-color: color-mix(in srgb, var(--document-accent) 24%, transparent);
+}
+.document-markdown[data-document-table-style="grid"] td,
+.document-markdown[data-document-table-style="grid"] th,
+.paper-markdown[data-document-table-style="grid"] td,
+.paper-markdown[data-document-table-style="grid"] th {
+  border: 1px solid color-mix(in srgb, var(--document-accent) 28%, transparent);
+}
+.document-markdown[data-document-table-style="ruled"] td,
+.document-markdown[data-document-table-style="ruled"] th,
+.paper-markdown[data-document-table-style="ruled"] td,
+.paper-markdown[data-document-table-style="ruled"] th {
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--document-accent) 30%, transparent);
+}
+.document-markdown[data-document-table-style="editorial"] table,
+.paper-markdown[data-document-table-style="editorial"] table {
+  border-block: 2px double color-mix(in srgb, var(--document-accent) 45%, transparent);
+}
+.document-markdown[data-document-table-style="editorial"] th,
+.paper-markdown[data-document-table-style="editorial"] th {
+  border-block: 1px solid color-mix(in srgb, var(--document-accent) 45%, transparent);
+}
+.document-markdown[data-document-table-style="minimal"] td,
+.document-markdown[data-document-table-style="minimal"] th,
+.paper-markdown[data-document-table-style="minimal"] td,
+.paper-markdown[data-document-table-style="minimal"] th {
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--document-accent) 18%, transparent);
+}
+.document-markdown[data-document-table-style="boxed"] table,
+.paper-markdown[data-document-table-style="boxed"] table {
+  border: 2px solid color-mix(in srgb, var(--document-accent) 42%, transparent);
+}
+.document-markdown[data-document-table-style="boxed"] td,
+.document-markdown[data-document-table-style="boxed"] th,
+.paper-markdown[data-document-table-style="boxed"] td,
+.paper-markdown[data-document-table-style="boxed"] th {
+  border: 1px solid color-mix(in srgb, var(--document-accent) 28%, transparent);
+}
+.document-markdown[data-document-table-style="soft"] tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--document-accent) 5%, var(--document-surface));
+}
+.paper-markdown[data-document-table-style="soft"] tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--document-accent) 5%, var(--document-surface));
+}
+.document-markdown[data-document-heading-style="double"] h1 {
+  border-bottom-width: 3px;
+  padding-bottom: 0.4em;
+}
+.paper-markdown[data-document-heading-style="double"] h1 {
+  border-bottom-width: 3px;
+  padding-bottom: 0.4em;
+}
+.document-markdown[data-document-heading-style="dotted"] h1 {
+  border-bottom-style: dotted;
+}
+.paper-markdown[data-document-heading-style="dotted"] h1 {
+  border-bottom-style: dotted;
+}
+.document-markdown[data-document-heading-style="dashed"] h1 {
+  border-bottom-style: dashed;
+}
+.paper-markdown[data-document-heading-style="dashed"] h1 {
+  border-bottom-style: dashed;
+}
+.document-markdown[data-document-theme="newspaper"] p,
+.paper-markdown[data-document-theme="newspaper"] p {
+  text-align: justify;
+}
+.document-markdown[data-document-theme="terminal"] h1,
+.document-markdown[data-document-theme="terminal"] h2,
+.document-markdown[data-document-theme="terminal"] h3,
+.paper-markdown[data-document-theme="terminal"] h1,
+.paper-markdown[data-document-theme="terminal"] h2,
+.paper-markdown[data-document-theme="terminal"] h3 {
+  letter-spacing: 0.04em;
+}
+.document-markdown[data-document-theme="comic"] h1,
+.document-markdown[data-document-theme="comic"] h2,
+.paper-markdown[data-document-theme="comic"] h1,
+.paper-markdown[data-document-theme="comic"] h2 {
+  text-shadow: 1px 1px 0 color-mix(in srgb, var(--document-accent) 20%, transparent);
+}
+.document-markdown[data-document-theme="blueprint"] h1,
+.document-markdown[data-document-theme="blueprint"] h2,
+.document-markdown[data-document-theme="concrete"] h1,
+.document-markdown[data-document-theme="concrete"] h2,
+.paper-markdown[data-document-theme="blueprint"] h1,
+.paper-markdown[data-document-theme="blueprint"] h2,
+.paper-markdown[data-document-theme="concrete"] h1,
+.paper-markdown[data-document-theme="concrete"] h2 {
+  font-family: var(--document-heading-font);
+  letter-spacing: 0.06em;
+}
+.document-markdown[data-document-theme="manuscript"] h1:first-child:first-letter,
+.paper-markdown[data-document-theme="manuscript"] h1:first-child:first-letter {
+  float: left;
+  margin: 0.02em 0.12em 0 0;
+  color: var(--document-accent);
+  font-size: 2.8em;
+  line-height: 0.9;
+}
+.document-markdown[data-document-theme="minimalist"] h2::before,
+.paper-markdown[data-document-theme="minimalist"] h2::before {
+  display: none;
+}
+.document-markdown[data-document-theme="minimalist"] h2,
+.paper-markdown[data-document-theme="minimalist"] h2 {
+  padding-left: 0;
+}
+.document-markdown[data-document-theme="watercolor"] blockquote,
+.document-markdown[data-document-theme="cherry-blossom"] blockquote,
+.paper-markdown[data-document-theme="watercolor"] blockquote,
+.paper-markdown[data-document-theme="cherry-blossom"] blockquote {
+  box-shadow: 0 5px 18px color-mix(in srgb, var(--document-accent) 8%, transparent);
+}
+.document-markdown[data-document-theme="chalkboard"] code:not(pre code),
+.document-markdown[data-document-theme="terminal"] code:not(pre code),
+.paper-markdown[data-document-theme="chalkboard"] code:not(pre code),
+.paper-markdown[data-document-theme="terminal"] code:not(pre code) {
+  font-family: var(--document-body-font);
+}
+.document-markdown[data-document-theme="gold-leaf"] h1,
+.document-markdown[data-document-theme="gold-leaf"] h2,
+.paper-markdown[data-document-theme="gold-leaf"] h1,
+.paper-markdown[data-document-theme="gold-leaf"] h2 {
+  font-variant: small-caps;
+}
+.document-markdown[data-document-theme="field-notes"] li::marker,
+.document-markdown[data-document-theme="botanical"] li::marker,
+.document-markdown[data-document-theme="forest-green"] li::marker,
+.paper-markdown[data-document-theme="field-notes"] li::marker,
+.paper-markdown[data-document-theme="botanical"] li::marker,
+.paper-markdown[data-document-theme="forest-green"] li::marker {
+  color: var(--document-accent);
+}
+.document-markdown[data-document-theme="workbook"] li,
+.paper-markdown[data-document-theme="workbook"] li {
+  padding-block: 0.12em;
+}
+.reading-highlight {
+  border-radius: 0.18em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  background: var(--document-highlight);
+  color: var(--document-highlight-ink);
+  cursor: pointer;
+  padding: 0 0.08em;
+}
+.reading-highlight-action {
+  position: fixed;
+  z-index: 80;
+  transform: translateX(-50%);
+  border: 0;
+  border-radius: 999px;
+  background: var(--document-ink);
+  color: var(--document-page);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.24);
+  padding: 0.45rem 0.8rem;
+  font: 600 0.75rem/1.2 var(--document-body-font);
+}
+.paper-skin[data-document-theme] .print-page {
+  background-color: var(--document-page);
+  color: var(--document-ink);
+  font-family: var(--document-body-font);
+}
+.paper-skin[data-document-theme] .print-page .paper-markdown {
+  color: var(--document-ink);
+  font-family: var(--document-body-font);
+  line-height: var(--document-line-height);
+}
+.paper-skin[data-document-theme] .print-page .paper-markdown h1 {
+  border-bottom: var(--document-title-rule);
+}
+.paper-skin[data-document-theme] .print-page .paper-markdown th {
+  background: color-mix(in srgb, var(--document-accent) 11%, var(--document-surface));
+}
+.paper-skin[data-document-theme] .print-page footer {
+  color: var(--document-muted);
+  font-family: var(--document-heading-font);
 }
 
 /* ------------------------------------------------------------------ *

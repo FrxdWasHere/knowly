@@ -137,7 +137,7 @@ function buildErrorLog(error: unknown): string {
 
 function CoursePrintPage() {
   const { courseId } = Route.useParams();
-  const { state } = useKnowly();
+  const { state, updateSettings } = useKnowly();
   const course = state.courses.find((course) => course.id === courseId);
   const [options, setOptions] = useState<CoursePrintOptions>(loadOptionsSync);
   const [exportState, setExportState] = useState<ExportState>({ kind: "idle" });
@@ -155,6 +155,18 @@ function CoursePrintPage() {
       }
     })();
   }, [options]);
+
+  useEffect(() => {
+    if (state.settings.documentTheme) {
+      setOptions((current) =>
+        current.theme === state.settings.documentTheme
+          ? current
+          : { ...current, theme: state.settings.documentTheme },
+      );
+    } else {
+      updateSettings({ documentTheme: options.theme ?? "classic" });
+    }
+  }, [options.theme, state.settings.documentTheme, updateSettings]);
 
   if (!course) {
     return (
@@ -268,13 +280,13 @@ function CoursePrintPage() {
               <BookOpenCheck className="mx-auto size-8 animate-pulse text-primary" />
               <h2 className="mt-4 font-display text-lg font-semibold">Building your book set…</h2>
               <p className="mt-1.5 truncate text-sm text-muted-foreground">{course.title}</p>
-              
+
               <div className="mt-4 space-y-3 rounded-xl border bg-surface/50 px-4 py-3">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Loader2 className="size-3.5 shrink-0 animate-spin text-primary" />
                   <span className="min-w-0 truncate">{exportState.message}</span>
                 </div>
-                
+
                 {/* Progress bar with percentage extraction */}
                 {(() => {
                   const match = exportState.message.match(/(\d+)%/);
@@ -294,7 +306,7 @@ function CoursePrintPage() {
                   ) : null;
                 })()}
               </div>
-              
+
               <p className="mt-3 text-[11px] leading-4 text-muted-foreground">
                 Everything is created on this device — larger courses take a few seconds.
               </p>
@@ -415,7 +427,10 @@ function CoursePrintPage() {
                     palette={options.palette}
                     baseAccent={course.color || "#3b5bdb"}
                     baseLabel="Course colour"
-                    onTheme={(theme) => patch({ theme })}
+                    onTheme={(theme) => {
+                      patch({ theme });
+                      updateSettings({ documentTheme: theme });
+                    }}
                     onPalette={(palette) => patch({ palette })}
                     onBrowseMarketplace={() => setMarketplaceOpen(true)}
                   />
@@ -517,6 +532,7 @@ function CoursePrintPage() {
         onOpenChange={setMarketplaceOpen}
         onSelectTheme={(themeId, palette) => {
           patch({ theme: themeId });
+          updateSettings({ documentTheme: themeId });
           if (palette) patch({ palette });
         }}
         documentType="course"

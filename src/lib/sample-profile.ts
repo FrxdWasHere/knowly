@@ -2774,7 +2774,7 @@ export function buildSampleProfile(now = Date.now()): AppState {
   /* -------------------------------------------------------- bundle */
 
   return {
-    version: 6,
+    version: 8,
     onboardingComplete: true,
     decks: [deckBio, deckChem, deckSpan, deckHist, deckStats],
     courses: [courseBio, courseChem, courseStats],
@@ -2791,5 +2791,6 @@ export function buildSampleProfile(now = Date.now()): AppState {
     timetable,
     labels,
     papers,
+    readingHighlights: [],
   };
 }

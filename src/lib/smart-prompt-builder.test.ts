@@ -73,3 +73,38 @@ describe("Smart Mode module prompts", () => {
     expect(prompt).toContain("[Source: lecture.txt]");
   });
 });
+
+describe("Smart Mode course prompts", () => {
+  it("uses the course program builder with editable suggestions and shared length/detail", () => {
+    const prompt = buildSmartPrompt({
+      content_type: "course",
+      title: "",
+      subject: "",
+      material: "[Source: syllabus.pdf]\nCell structures and transport.",
+      suggestions: {
+        title: "Cell biology foundations",
+        subject: "Biology",
+        description: "A course on cell structures and membrane transport.",
+        topics: ["Cell structure", "Membrane transport"],
+        learningObjectives: ["Explain how cell structures support their functions."],
+      },
+      autoConfigure: true,
+      lengthPreset: "long",
+      lengthSliderValue: 70,
+      questionTypes: ["short-answer"],
+      difficultyDistribution: { easy: 20, medium: 55, hard: 25 },
+      isSTEM: false,
+      needsEquations: false,
+      needsGraphs: false,
+      includeAssessments: false,
+    });
+
+    expect(prompt).toContain("SMART MODE");
+    expect(prompt).toContain("Cell biology foundations");
+    expect(prompt).toContain("Cell structure\nMembrane transport");
+    expect(prompt).toContain("LENGTH & DETAIL — Long (70/100)");
+    expect(prompt).toContain("Course size: choose the number of units, lessons");
+    expect(prompt).toContain("[Source: syllabus.pdf]");
+    expect(prompt).toContain('Do not include "quiz" or "finalExam" anywhere');
+  });
+});

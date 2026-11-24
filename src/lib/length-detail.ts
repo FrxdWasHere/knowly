@@ -111,7 +111,8 @@ export function lengthBudgetFor(sliderValue: number): LengthBudget {
             : "comprehensive";
 
   const activitiesPerStage = value <= 30 ? 1 : value <= 65 ? 2 : value <= 85 ? 3 : 3;
-  const questionsPerActivity = value <= 20 ? 5 : value <= 40 ? 7 : value <= 60 ? 9 : value <= 80 ? 12 : 15;
+  const questionsPerActivity =
+    value <= 20 ? 5 : value <= 40 ? 7 : value <= 60 ? 9 : value <= 80 ? 12 : 15;
   const reinforcementPerStage = value <= 30 ? 0 : value <= 50 ? 1 : value <= 80 ? 2 : 3;
 
   const instruction =
@@ -141,7 +142,8 @@ export function lengthBudgetFor(sliderValue: number): LengthBudget {
     includeReinforcement: value > 30,
     includeRetention: value >= 55,
     includeAdvanced: value >= 80,
-    explanationDepth: value <= 20 ? "brief" : value <= 40 ? "clear" : value <= 70 ? "detailed" : "rich",
+    explanationDepth:
+      value <= 20 ? "brief" : value <= 40 ? "clear" : value <= 70 ? "detailed" : "rich",
     instruction,
   };
 }
@@ -164,11 +166,10 @@ export function getLengthInstructions(sliderValue: number): string {
 /** One-line summary for UI previews. */
 export function describeLengthBudget(sliderValue: number): string {
   const budget = lengthBudgetFor(sliderValue);
-  const stageRange =
-    budget.minStages === budget.maxStages
-      ? `${budget.minStages} stages`
-      : `${budget.minStages}–${budget.maxStages} stages`;
-  return `${stageRange} · up to ${budget.activitiesPerStage} activities per stage · ${budget.depth} depth · ${budget.explanationDepth} explanations`;
+  const details = [`${budget.depth} coverage`, `${budget.explanationDepth} explanations`];
+  if (budget.includeApplication) details.push("application practice");
+  if (budget.includeReinforcement) details.push("reinforcement");
+  return details.join(" · ");
 }
 
 /** The maximum number of stages a path should ever plan for. */

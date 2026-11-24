@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { MathText } from "@/components/math/math-text";
 import { ModuleMarkdownText } from "@/components/module-markdown";
+import { DocumentThemePicker } from "@/components/reading/document-theme-picker";
 import {
   ArrowLeft,
   BookOpenCheck,
@@ -37,8 +38,12 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useKnowly } from "@/store/knowly";
 import { cn } from "@/lib/utils";
+import type { ExamTheme } from "@/lib/exam-print";
 import { serializeModuleJson } from "@/lib/module-schema";
-import type { CourseBlock, Module } from "@/lib/types";
+import { createId } from "@/lib/id";
+import { documentThemeStyle, getDocumentThemeDesign } from "@/lib/document-themes";
+import type { ReadingHighlightAnchor } from "@/lib/reading-highlights";
+import type { CourseBlock, Module, ReadingHighlight } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/modules/$moduleId/")({
   head: () => ({
@@ -96,11 +101,14 @@ function ModuleEditor() {
     updateModuleProgress,
     recordModuleQuestion,
     recordSession,
+    setState,
+    updateSettings,
   } = useKnowly();
   const module = state.modules.find((m) => m.id === moduleId);
   const progress = module ? state.moduleProgress[module.id] : undefined;
   const [editing, setEditing] = useState(false);
   const [reveal, setReveal] = useState<Record<string, boolean>>({});
+  const documentTheme = state.settings.documentTheme ?? "classic";
   const moduleHeadings = useMemo(
     () =>
       module
@@ -222,9 +230,44 @@ function ModuleEditor() {
   };
 
   const objectivesDone = progress?.status === "completed" ? module.objectives.length : 0;
+  const addHighlight = (locationId: string, anchor: ReadingHighlightAnchor) => {
+    setState((current) => {
+      const location = {
+        documentType: "module" as const,
+        documentId: module.id,
+        locationId,
+      };
+      const duplicate = current.readingHighlights.some(
+        (item) =>
+          item.documentType === location.documentType &&
+          item.documentId === location.documentId &&
+          item.locationId === locationId &&
+          item.quote === anchor.quote &&
+          item.prefix === anchor.prefix,
+      );
+      if (duplicate) return current;
+      const highlight: ReadingHighlight = {
+        ...location,
+        ...anchor,
+        id: createId(),
+        createdAt: Date.now(),
+      };
+      return { ...current, readingHighlights: [...current.readingHighlights, highlight] };
+    });
+  };
+  const removeHighlight = (id: string) =>
+    setState((current) => ({
+      ...current,
+      readingHighlights: current.readingHighlights.filter((item) => item.id !== id),
+    }));
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div
+      className="document-reading mx-auto max-w-4xl space-y-6"
+      data-document-theme={documentTheme}
+      data-document-table-style={getDocumentThemeDesign(documentTheme).tableStyle}
+      style={documentThemeStyle(documentTheme)}
+    >
       <div className="flex items-center justify-between gap-3">
         <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/modules" } as never)}>
           <ArrowLeft className="size-4" /> Modules
@@ -252,6 +295,10 @@ function ModuleEditor() {
               <Printer className="size-4" /> <span className="hidden sm:inline">Print</span>
             </Link>
           </Button>
+          <DocumentThemePicker
+            value={documentTheme}
+            onChange={(theme) => updateSettings({ documentTheme: theme })}
+          />
           <Label className="text-xs text-muted-foreground">Edit</Label>
           <Switch checked={editing} onCheckedChange={setEditing} />
         </div>
@@ -422,6 +469,15 @@ function ModuleEditor() {
                 questions: module.questions.map((qq) => (qq.id === qid ? { ...qq, ...p } : qq)),
               });
             }}
+            documentTheme={documentTheme}
+            highlights={state.readingHighlights.filter(
+              (item) =>
+                item.documentType === "module" &&
+                item.documentId === module.id &&
+                item.locationId === block.id,
+            )}
+            onAddHighlight={(anchor) => addHighlight(block.id, anchor)}
+            onRemoveHighlight={removeHighlight}
           />
         ))}
       </section>
@@ -485,6 +541,10 @@ interface BlockViewProps {
     qid: string,
     patch: { question?: string; answer?: string; explanation?: string },
   ) => void;
+  documentTheme: ExamTheme;
+  highlights: ReadingHighlight[];
+  onAddHighlight: (anchor: ReadingHighlightAnchor) => void;
+  onRemoveHighlight: (id: string) => void;
 }
 
 function BlockView({
@@ -502,6 +562,10 @@ function BlockView({
   decks,
   onAnswer,
   onQuestionChange,
+  documentTheme,
+  highlights,
+  onAddHighlight,
+  onRemoveHighlight,
 }: BlockViewProps) {
   const q =
     block.type === "checkpoint"
@@ -626,8 +690,12 @@ function BlockView({
       <ModuleMarkdownText
         variant="screen"
         accent={module.color}
+        theme={documentTheme}
         headingPrefix={headingPrefix}
         markdown={block.markdown || "_Empty note_"}
+        highlights={highlights}
+        onAddHighlight={onAddHighlight}
+        onRemoveHighlight={onRemoveHighlight}
         className="panel p-5"
       />
     );
@@ -643,7 +711,7 @@ function BlockView({
             ? "border-success/40 bg-success/10"
             : "border-border bg-surface/60";
     return (
-      <div className={`rounded-xl border p-4 ${cls}`}>
+      <div className={`document-reading-callout rounded-xl border p-4 ${cls}`}>
         {block.title && (
           <p className="mb-2 text-[0.72em] font-bold uppercase tracking-[0.18em] text-foreground/70">
             <MathText text={block.title} />
@@ -652,21 +720,29 @@ function BlockView({
         <ModuleMarkdownText
           variant="screen"
           accent={module.color}
+          theme={documentTheme}
           markdown={block.markdown || ""}
+          highlights={highlights}
+          onAddHighlight={onAddHighlight}
+          onRemoveHighlight={onRemoveHighlight}
         />
       </div>
     );
   }
   if (block.type === "example") {
     return (
-      <div className="rounded-xl border border-border bg-surface/40 p-4">
+      <div className="document-reading-callout rounded-xl border border-border bg-surface/40 p-4">
         <p className="mb-2 inline-flex items-center gap-1.5 text-[0.72em] font-bold uppercase tracking-[0.18em] text-foreground/70">
           <Lightbulb className="size-3.5" /> <MathText text={block.title || "Example"} />
         </p>
         <ModuleMarkdownText
           variant="screen"
           accent={module.color}
+          theme={documentTheme}
           markdown={block.markdown || ""}
+          highlights={highlights}
+          onAddHighlight={onAddHighlight}
+          onRemoveHighlight={onRemoveHighlight}
         />
       </div>
     );

@@ -1,9 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
+import { ModuleMarkdownText } from "@/components/module-markdown";
+import { DocumentThemePicker } from "@/components/reading/document-theme-picker";
 import {
   ArrowLeft,
   ArrowRight,
@@ -39,6 +37,10 @@ import { MathKeypad, MathText } from "@/components/math/math-text";
 import type { CourseBlock, Question } from "@/lib/types";
 import type { NotebookMeta } from "@/lib/notes/types";
 import { cn } from "@/lib/utils";
+import { documentThemeStyle, getDocumentThemeDesign } from "@/lib/document-themes";
+import type { ExamTheme } from "@/lib/exam-print";
+import type { ReadingHighlightAnchor } from "@/lib/reading-highlights";
+import type { ReadingHighlight } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/courses/$courseId/lessons/$lessonId")({
   head: () => ({ meta: [{ title: "Course Lesson — Read, Check & Take Notes | Knowly" }] }),
@@ -47,8 +49,15 @@ export const Route = createFileRoute("/_authenticated/courses/$courseId/lessons/
 
 function CourseLessonPage() {
   const { courseId, lessonId } = Route.useParams();
-  const { state, markCourseLesson, updateCourseProgress, recordCourseQuestion, recordSession } =
-    useKnowly();
+  const {
+    state,
+    markCourseLesson,
+    updateCourseProgress,
+    recordCourseQuestion,
+    recordSession,
+    setState,
+    updateSettings,
+  } = useKnowly();
   const navigate = useNavigate();
   const course = state.courses.find((item) => item.id === courseId);
   const found = course ? findLesson(course, lessonId) : null;
@@ -57,6 +66,7 @@ function CourseLessonPage() {
   const [notes, setNotes] = useState(lessonState?.notes ?? "");
   const [notebook, setNotebook] = useState<NotebookMeta | null>(null);
   const [creatingNotebook, setCreatingNotebook] = useState(false);
+  const documentTheme = state.settings.documentTheme ?? "classic";
 
   useEffect(() => {
     setNotes(lessonState?.notes ?? "");
@@ -109,6 +119,44 @@ function CourseLessonPage() {
   }
 
   const { module, lesson } = found;
+  const addHighlight = (locationId: string, anchor: ReadingHighlightAnchor) => {
+    setState((current) => {
+      const duplicate = current.readingHighlights.some(
+        (item) =>
+          item.documentType === "course" &&
+          item.documentId === course.id &&
+          item.locationId === locationId &&
+          item.quote === anchor.quote &&
+          item.prefix === anchor.prefix,
+      );
+      if (duplicate) return current;
+      const highlight: ReadingHighlight = {
+        documentType: "course",
+        documentId: course.id,
+        locationId,
+        ...anchor,
+        id: createId(),
+        createdAt: Date.now(),
+      };
+      return { ...current, readingHighlights: [...current.readingHighlights, highlight] };
+    });
+  };
+  const removeHighlight = (id: string) =>
+    setState((current) => ({
+      ...current,
+      readingHighlights: current.readingHighlights.filter((item) => item.id !== id),
+    }));
+  const highlightsForBlock = (blockId: string) => {
+    const locationId = `${lesson.id}:${blockId}`;
+    return state.readingHighlights.filter(
+      (item) =>
+        item.documentType === "course" &&
+        item.documentId === course.id &&
+        item.locationId === locationId,
+    );
+  };
+  const addBlockHighlight = (blockId: string, anchor: ReadingHighlightAnchor) =>
+    addHighlight(`${lesson.id}:${blockId}`, anchor);
   const complete = lessonState.status === "completed";
   const checkpointQuestions = lesson.questions;
 
@@ -236,6 +284,10 @@ function CourseLessonPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <DocumentThemePicker
+              value={documentTheme}
+              onChange={(theme) => updateSettings({ documentTheme: theme })}
+            />
             <Button asChild variant="ghost" size="sm">
               <Link to="/courses/$courseId/edit" params={{ courseId: course.id }}>
                 <Pencil className="size-3.5" /> Edit
@@ -284,8 +336,13 @@ function CourseLessonPage() {
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <article className="min-w-0 overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
-            <div className="border-b-[3px] border-border bg-surface px-5 py-5 sm:px-8">
+          <article
+            className="document-reading min-w-0 overflow-hidden rounded-3xl border border-border bg-card shadow-sm"
+            data-document-theme={documentTheme}
+            data-document-table-style={getDocumentThemeDesign(documentTheme).tableStyle}
+            style={documentThemeStyle(documentTheme, "screen", course.color)}
+          >
+            <div className="document-reading-header border-b-[3px] border-border bg-surface px-5 py-5 sm:px-8">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline">Module {course.modules.indexOf(module) + 1}</Badge>
                 {lesson.objectives.length > 0 && (
@@ -305,7 +362,7 @@ function CourseLessonPage() {
               )}
             </div>
 
-            <div className="p-5 sm:p-8">
+            <div className="document-reading-panel p-5 sm:p-8">
               {lesson.blocks.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-border p-10 text-center">
                   <Sparkles className="mx-auto size-7 text-primary" />
@@ -325,7 +382,15 @@ function CourseLessonPage() {
               ) : (
                 <div className="space-y-5">
                   {lesson.blocks.map((block) => (
-                    <LessonBlock key={block.id} block={block} />
+                    <LessonBlock
+                      key={block.id}
+                      block={block}
+                      accent={course.color}
+                      theme={documentTheme}
+                      highlights={highlightsForBlock(block.id)}
+                      onAddHighlight={(anchor) => addBlockHighlight(block.id, anchor)}
+                      onRemoveHighlight={removeHighlight}
+                    />
                   ))}
                 </div>
               )}
@@ -486,7 +551,21 @@ function CourseLessonPage() {
   );
 }
 
-function LessonBlock({ block }: { block: CourseBlock }) {
+function LessonBlock({
+  block,
+  accent,
+  theme,
+  highlights,
+  onAddHighlight,
+  onRemoveHighlight,
+}: {
+  block: CourseBlock;
+  accent: string;
+  theme: ExamTheme;
+  highlights: ReadingHighlight[];
+  onAddHighlight: (anchor: ReadingHighlightAnchor) => void;
+  onRemoveHighlight: (id: string) => void;
+}) {
   if (block.type === "divider") return <hr className="border-border" />;
   if (block.type === "image") {
     return (
@@ -511,7 +590,7 @@ function LessonBlock({ block }: { block: CourseBlock }) {
     return (
       <div
         className={cn(
-          "rounded-2xl border p-4 sm:p-5",
+          "document-reading-callout rounded-2xl border p-4 sm:p-5",
           block.type === "example"
             ? "border-success/25 bg-success/8"
             : block.tone === "warning"
@@ -525,21 +604,55 @@ function LessonBlock({ block }: { block: CourseBlock }) {
           <Icon className="size-4 text-primary" />
           <MathText text={block.title || (block.type === "example" ? "Example" : "Note")} />
         </div>
-        <Markdown markdown={block.markdown ?? ""} />
+        <Markdown
+          markdown={block.markdown ?? ""}
+          accent={accent}
+          theme={theme}
+          highlights={highlights}
+          onAddHighlight={onAddHighlight}
+          onRemoveHighlight={onRemoveHighlight}
+        />
       </div>
     );
   }
   if (block.type === "checkpoint") return null;
-  return <Markdown markdown={block.markdown ?? ""} />;
+  return (
+    <Markdown
+      markdown={block.markdown ?? ""}
+      accent={accent}
+      theme={theme}
+      highlights={highlights}
+      onAddHighlight={onAddHighlight}
+      onRemoveHighlight={onRemoveHighlight}
+    />
+  );
 }
 
-function Markdown({ markdown }: { markdown: string }) {
+function Markdown({
+  markdown,
+  accent,
+  theme,
+  highlights,
+  onAddHighlight,
+  onRemoveHighlight,
+}: {
+  markdown: string;
+  accent: string;
+  theme: ExamTheme;
+  highlights: ReadingHighlight[];
+  onAddHighlight: (anchor: ReadingHighlightAnchor) => void;
+  onRemoveHighlight: (id: string) => void;
+}) {
   return (
-    <div className="text-sm leading-7 text-foreground/90 [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-5 [&_blockquote]:text-muted-foreground [&_code]:rounded [&_code]:bg-surface-2 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-xs [&_h1]:mb-3 [&_h1]:mt-6 [&_h1]:font-display [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:mb-2 [&_h2]:mt-6 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:mb-2 [&_h3]:mt-5 [&_h3]:font-semibold [&_li]:my-1 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-8 [&_p]:my-3 [&_pre]:my-3 [&_pre]:overflow-auto [&_pre]:rounded-xl [&_pre]:bg-surface-2 [&_pre]:p-4 [&_pre]:text-xs [&_strong]:font-semibold [&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-border [&_td]:p-2 [&_th]:border [&_th]:border-border [&_th]:bg-surface-2 [&_th]:p-2 [&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-8">
-      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
-        {markdown}
-      </ReactMarkdown>
-    </div>
+    <ModuleMarkdownText
+      markdown={markdown}
+      accent={accent}
+      theme={theme}
+      highlights={highlights}
+      onAddHighlight={onAddHighlight}
+      onRemoveHighlight={onRemoveHighlight}
+      className="text-sm leading-7 text-foreground/90 [&_a]:text-primary [&_a]:underline [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-xs [&_h1]:text-2xl [&_h2]:text-xl [&_h3]:mt-5 [&_h3]:text-base [&_pre]:my-3 [&_pre]:p-4 [&_pre]:text-xs [&_table]:my-4 [&_td]:p-2 [&_th]:p-2 [&_ul]:my-3 [&_ul]:pl-8 [&_ol]:my-3 [&_ol]:pl-8"
+    />
   );
 }
 

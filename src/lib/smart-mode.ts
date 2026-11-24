@@ -92,9 +92,7 @@ export function createSourceFileEntry(file: File): SmartModeSourceFile {
  * Extracts one entry's text. Text formats are read directly; PDF/DOCX/PPTX go
  * through the shared document-extraction layer.
  */
-export async function processSourceFile(
-  entry: SmartModeSourceFile,
-): Promise<SmartModeSourceFile> {
+export async function processSourceFile(entry: SmartModeSourceFile): Promise<SmartModeSourceFile> {
   const file = entry.file;
   if (!file) {
     return {
@@ -191,12 +189,83 @@ export function estimateReadingTime(content: string, wordsPerMinute = 200): numb
 }
 
 const STOP_WORDS = new Set([
-  "the","and","for","with","that","this","from","have","has","are","was","were","will","would",
-  "can","could","should","into","their","there","they","them","these","those","such","than",
-  "then","when","where","which","while","your","you","our","its","not","but","all","any","each",
-  "how","why","what","who","whom","about","also","been","being","because","between","both","does",
-  "doing","during","more","most","other","over","only","same","some","very","just","may","might",
-  "must","shall","upon","within","without","using","used","use","one","two","three",
+  "the",
+  "and",
+  "for",
+  "with",
+  "that",
+  "this",
+  "from",
+  "have",
+  "has",
+  "are",
+  "was",
+  "were",
+  "will",
+  "would",
+  "can",
+  "could",
+  "should",
+  "into",
+  "their",
+  "there",
+  "they",
+  "them",
+  "these",
+  "those",
+  "such",
+  "than",
+  "then",
+  "when",
+  "where",
+  "which",
+  "while",
+  "your",
+  "you",
+  "our",
+  "its",
+  "not",
+  "but",
+  "all",
+  "any",
+  "each",
+  "how",
+  "why",
+  "what",
+  "who",
+  "whom",
+  "about",
+  "also",
+  "been",
+  "being",
+  "because",
+  "between",
+  "both",
+  "does",
+  "doing",
+  "during",
+  "more",
+  "most",
+  "other",
+  "over",
+  "only",
+  "same",
+  "some",
+  "very",
+  "just",
+  "may",
+  "might",
+  "must",
+  "shall",
+  "upon",
+  "within",
+  "without",
+  "using",
+  "used",
+  "use",
+  "one",
+  "two",
+  "three",
 ]);
 
 /**
@@ -213,7 +282,11 @@ export function analyzeContent(content: string): SourceAnalysis {
   const headings = text
     .split("\n")
     .map((line) => line.trim())
-    .filter((line) => /^#{1,4}\s+\S/.test(line) || (/^[A-Z][A-Za-z0-9 ,&:—-]{3,60}$/.test(line) && line.split(" ").length <= 8))
+    .filter(
+      (line) =>
+        /^#{1,4}\s+\S/.test(line) ||
+        (/^[A-Z][A-Za-z0-9 ,&:—-]{3,60}$/.test(line) && line.split(" ").length <= 8),
+    )
     .map((line) => line.replace(/^#{1,4}\s+/, "").trim())
     .filter(Boolean)
     .slice(0, 24);
@@ -282,13 +355,13 @@ export async function analyzeSourceFiles(
       : files[0]?.name.replace(/\.[^/.]+$/, ""),
     subject: undefined,
     description: analysis.estimatedTopics.length
-      ? `A ${budget.label.toLowerCase()} learning path covering ${analysis.estimatedTopics
+      ? `A ${budget.label.toLowerCase()} study resource covering ${analysis.estimatedTopics
           .slice(0, 5)
           .join(", ")}.`
-      : "A learning path built from the supplied material.",
+      : "A study resource built from the supplied material.",
     learningObjectives: analysis.estimatedTopics
       .slice(0, 5)
-      .map((topic) => `Understand ${topic.toLowerCase()}`),
+      .map((topic) => `Explain the core concepts of ${topic.toLowerCase()}.`),
     topics: analysis.estimatedTopics,
   };
 
