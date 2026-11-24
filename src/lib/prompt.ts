@@ -7,6 +7,12 @@ import {
   MODULE_FIELD_DOCS,
 } from "./schema";
 import type { Difficulty, QuestionType } from "./types";
+import { getLengthInstructions, lengthBudgetForPreset } from "./length-detail";
+import {
+  LEARNING_PATH_SCHEMA_TEXT,
+  buildLearningPathInstructions,
+  type LearningPathPromptOptions,
+} from "./learning-path-prompt-builder";
 
 /* ------------------------------------------------------------------ *
  * Shared prompt blocks
@@ -84,8 +90,13 @@ export const DECK_SCHEMA_TEXT = `{
   "isSTEM": boolean,               // required — true for a maths or science deck
   "needsEquations": boolean,       // required — true when the questions rely on LaTeX maths
   "needsGraphs": boolean,          // required — true when the questions refer to graphs or diagrams
-  "questions": [ Question ]        // required — one or more, each using the full Question object below
+  "questions": [ Question ],       // required — one or more, each using the full Question object below
+  "learningPath": LearningPath     // required — the progressive journey through the questions
 }`;
+
+/** The Learning Path object: the primary structure of a deck. */
+export const LEARNING_PATH_BLOCK_TEXT = `LEARNING PATH OBJECT — the deck's spine
+${LEARNING_PATH_SCHEMA_TEXT}`;
 
 /** The full question-pack object (expanding an existing deck). */
 export const QUESTION_PACK_SCHEMA_TEXT = `{
@@ -117,6 +128,10 @@ export interface PromptOptions {
   typesAuto?: boolean;
   /** "whatever you see fit": let the AI choose the difficulty spread */
   distributionAuto?: boolean;
+  /** shared length/detail slider (0–100); presets are derived from it */
+  lengthSliderValue?: number;
+  /** the learning-path structure requested by the learner */
+  learningPath?: LearningPathPromptOptions;
 }
 
 /**
@@ -177,7 +192,7 @@ export function deckSizeLine(auto: boolean | undefined, requested: number, mater
       ? "- Choose a suitable number of cards for the supplied material (~1 card per 25 words as a rough guide); do not force a minimum or pad."
       : `- Write exactly ${requested} cards, as requested.`,
     "- Prefer many small cards that test one fact, definition, step or distinction each. Never pad, repeat a question in different words, or split a single idea into filler — if the material is short, write fewer, sharper cards rather than variations.",
-    `- Spread the cards across at least four distinct "concept" labels (15-40 cards each) so the app can split the deck into sub-topic parts and short rounds.`,
+    `- Spread the cards across at least four distinct "concept" labels (15-40 cards each) so the app can build coherent stages and short rounds.`,
   ];
   if (!auto && fromMaterial !== requested) {
     lines.push(
@@ -214,15 +229,30 @@ function distributionLine(auto: boolean | undefined, dist: Record<Difficulty, nu
 
 export function buildPrompt(o: PromptOptions) {
   const typeList = o.types.join(", ");
+  const sliderValue =
+    typeof o.lengthSliderValue === "number"
+      ? o.lengthSliderValue
+      : lengthBudgetForPreset("regular").sliderValue;
+  const pathOptions: LearningPathPromptOptions = {
+    sliderValue,
+    ...o.learningPath,
+  };
 
-  return `You are an expert exam writer. Convert the study material below into a Knowly deck.
+  return `You are an expert curriculum designer. Convert the study material below into a Knowly deck built around a Learning Path.
 
 OUTPUT RULES
 ${jsonFileRule("knowly-deck.json")}
 ${deckSizeLine(o.countAuto, o.count, o.material)}
+- The deck is one coherent learning journey: design the questions and the Learning Path together, not as two unrelated lists.
 
 SCHEMA — the complete deck object
 ${DECK_SCHEMA_TEXT}
+
+${LEARNING_PATH_BLOCK_TEXT}
+
+${buildLearningPathInstructions(pathOptions)}
+
+${getLengthInstructions(sliderValue)}
 
 QUESTION OBJECT — every field, verbatim
 ${QUESTION_SCHEMA_TEXT}
@@ -254,8 +284,9 @@ ${mathPromptSection(o)}
 QUALITY BAR
 - Test understanding, not trivia phrasing. Avoid duplicate questions.
 - Distractors must be plausible and mutually exclusive.
-- Keep every "concept" value consistent so topic analytics group correctly.
+- Keep every "concept" value consistent so topic analytics and stages group correctly.
 - Explanations: 1-2 sentences, self-contained.
+- Every question belongs to at least one stage activity; missed concepts should have a natural place to return later.
 ${o.extra ? `\nADDITIONAL INSTRUCTIONS\n${o.extra}\n` : ""}
 STUDY MATERIAL
 """
@@ -290,18 +321,27 @@ export interface AppendPromptOptions {
   typesAuto?: boolean;
   /** "whatever you see fit": let the AI choose the difficulty spread */
   distributionAuto?: boolean;
+  /** shared length/detail slider (0–100); presets are derived from it */
+  lengthSliderValue?: number;
+  /** guidance for how the new questions should join the existing path */
+  learningPath?: LearningPathPromptOptions;
 }
 
 export function buildAppendPrompt(o: AppendPromptOptions) {
   const typeList = o.types.join(", ");
   const sample = o.existingQuestions.slice(0, 60);
+  const sliderValue =
+    typeof o.lengthSliderValue === "number"
+      ? o.lengthSliderValue
+      : lengthBudgetForPreset("regular").sliderValue;
 
-  return `You are an expert exam writer. Expand an EXISTING Knowly deck with additional questions.
+  return `You are an expert curriculum designer. Expand an EXISTING Knowly deck with additional questions.
 
 OUTPUT RULES
 ${jsonFileRule("knowly-new-questions.json")}
 - Keep the file to the questions payload below — no deck metadata (no color, tags or description).
 ${countLine(o.countAuto, o.count, "NEW questions that do not duplicate the existing ones")}
+- The new questions will be woven into the deck's existing Learning Path, so give each one a clear concept and a difficulty that fits where it belongs.
 
 SCHEMA — the complete question-pack object
 ${QUESTION_PACK_SCHEMA_TEXT}
@@ -332,6 +372,14 @@ ${o.existingConcepts.length ? `- concepts already covered (reuse these exact lab
 ${o.audience ? `- learner level: ${o.audience} — pitch wording and depth accordingly` : ""}
 ${o.purpose ? `- study goal: ${o.purpose} — bias the questions toward this goal` : ""}
 ${mathPromptSection(o)}
+
+${getLengthInstructions(sliderValue)}
+
+LEARNING PATH CONTINUITY
+- New questions should strengthen gaps and weak concepts, not duplicate cards.
+- Prefer concepts that already exist so the new cards can join the right stage.
+- Include a few harder cards that can serve as integration or mastery practice.
+- If a concept was previously missed, write a fresh angle on it rather than repeating the same wording.
 
 EXISTING QUESTIONS — DO NOT REPEAT OR REPHRASE
 ${sample.length ? sample.map((q, i) => `${i + 1}. ${q}`).join("\n") : "(none)"}

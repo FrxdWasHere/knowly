@@ -28,6 +28,15 @@ import { loadAvatar, saveAvatar } from "@/lib/avatar-store";
 import { normalizeSidebarGroups } from "@/lib/sidebar-preferences";
 import { createId } from "@/lib/id";
 import { schedule, DAY_MS, type SrsGrade } from "@/lib/srs";
+import {
+  applyLearningPathAnswer,
+  buildLearningPath,
+  markStageCompleted as markStageCompletedPath,
+  markStageStarted as markStageStartedPath,
+  mergeQuestionsIntoPath,
+  rebuildLearningPath,
+  type BuildLearningPathOptions,
+} from "@/lib/learning-paths";
 import * as storage from "@/lib/storage";
 import type {
   AppState,
@@ -35,6 +44,8 @@ import type {
   CourseAssessmentResult,
   CourseProgress,
   Deck,
+  LearningPath,
+  LearningStage,
   Module,
   ModuleProgress,
   Progress,
@@ -73,6 +84,22 @@ function normalizeProgress(input: Progress): Progress {
   };
 }
 
+/**
+ * Every deck is a Learning Path. Older saves (and hand-built decks) may lack
+ * one, so this repairs the shape without touching any progress already
+ * recorded on an existing path.
+ */
+function ensureDeckLearningPath(deck: Deck): Deck {
+  if (deck.learningPath || !deck.questions.length) return deck;
+  return {
+    ...deck,
+    learningPath: buildLearningPath(deck, {
+      source: "auto",
+      lengthPreset: "regular",
+    }),
+  };
+}
+
 /** Upgrades a state snapshot by exactly one version. */
 type Migration = (state: AppState) => AppState;
 
@@ -104,6 +131,11 @@ const MIGRATIONS: Partial<Record<number, Migration>> = {
   }),
   // v5 → v6: resumable quiz checkpoints.
   5: (state) => ({ ...state, savedQuizSessions: state.savedQuizSessions ?? [] }),
+  // v6 → v7: every deck becomes a Learning Path.
+  6: (state) => ({
+    ...state,
+    decks: (state.decks ?? []).map(ensureDeckLearningPath),
+  }),
 };
 
 /** Applies every migration needed to bring `parsed` up to `STATE_VERSION`. */
@@ -153,7 +185,9 @@ function normalizeState(parsed: Partial<AppState>): AppState {
       },
       srs: { ...DEFAULT_SETTINGS.srs, ...(settings.srs ?? {}) },
     },
-    decks: (state.decks ?? []).map((deck) => ({ ...deck, color: oceanDeckColor(deck.color) })),
+    decks: (state.decks ?? []).map((deck) =>
+      ensureDeckLearningPath({ ...deck, color: oceanDeckColor(deck.color) }),
+    ),
     courses: state.courses ?? [],
     courseProgress: state.courseProgress ?? {},
     modules: state.modules ?? [],
@@ -207,6 +241,21 @@ interface Ctx {
   deleteModule: (id: string) => void;
   updateModuleProgress: (moduleId: string, updater: (p: ModuleProgress) => ModuleProgress) => void;
   recordModuleQuestion: (moduleId: string, questionId: string, correct: boolean) => void;
+  
+  // Learning Path methods
+  updateLearningPath: (deckId: string, updater: (lp: LearningPath) => LearningPath) => void;
+  markStageCompleted: (deckId: string, stageId: string) => void;
+  markStageStarted: (deckId: string, stageId: string) => void;
+  updateStageProgress: (
+    deckId: string,
+    stageId: string,
+    questionId: string,
+    correct: boolean,
+    activityId?: string,
+  ) => void;
+  /** Re-plan a deck's Learning Path, carrying existing answer history across. */
+  regenerateLearningPath: (deckId: string, options?: BuildLearningPathOptions) => void;
+  
   markCourseLesson: (
     courseId: string,
     lessonId: string,
@@ -390,7 +439,7 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
   const addDeck = useCallback(
     (deck: Deck) => {
       setState((s) => {
-        const decks = [deck, ...s.decks];
+        const decks = [ensureDeckLearningPath(deck), ...s.decks];
         return { ...s, decks, progress: flushAchievements(s.progress, decks) };
       });
     },
@@ -404,7 +453,15 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
           if (d.id !== deckId) return d;
           const existing = new Set(d.questions.map((q) => q.id));
           const fresh = questions.filter((q) => !existing.has(q.id));
-          return { ...d, questions: [...d.questions, ...fresh] };
+          if (!fresh.length) return d;
+          const updated: Deck = { ...d, questions: [...d.questions, ...fresh] };
+          if (updated.learningPath) {
+            return {
+              ...updated,
+              learningPath: mergeQuestionsIntoPath(updated.learningPath, updated, fresh),
+            };
+          }
+          return ensureDeckLearningPath(updated);
         });
         return { ...s, decks, progress: flushAchievements(s.progress, decks) };
       });
@@ -416,7 +473,33 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
     (id: string, patch: Partial<Deck>) => {
       setState((s) => ({
         ...s,
-        decks: s.decks.map((d) => (d.id === id ? { ...d, ...patch } : d)),
+        decks: s.decks.map((d) => {
+          if (d.id !== id) return d;
+
+          const next: Deck = { ...d, ...patch };
+
+          if (patch.learningPath) {
+            next.learningPath = {
+              ...d.learningPath,
+              ...patch.learningPath,
+              updatedAt: Date.now(),
+            };
+          } else if (patch.questions) {
+            // Rebuild only when the set of question ids actually changed, so
+            // editing wording does not reshuffle a path mid-course.
+            const before = new Set(d.questions.map((q) => q.id));
+            const after = new Set(patch.questions.map((q) => q.id));
+            const changed =
+              before.size !== after.size || [...after].some((qid) => !before.has(qid));
+            if (changed) {
+              next.learningPath = d.learningPath
+                ? rebuildLearningPath(next, d.learningPath)
+                : undefined;
+            }
+          }
+
+          return ensureDeckLearningPath(next);
+        }),
       }));
     },
     [setState],
@@ -581,6 +664,96 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
         const next = updater(current);
         return { ...s, moduleProgress: { ...s.moduleProgress, [moduleId]: next } };
       });
+    },
+    [setState],
+  );
+
+  /**
+   * Update Learning Path progress for a deck
+   */
+  const updateLearningPath = useCallback(
+    (deckId: string, updater: (lp: LearningPath) => LearningPath) => {
+      setState((s) => {
+        const decks = s.decks.map((d) => {
+          if (d.id !== deckId || !d.learningPath) return d;
+          return { ...d, learningPath: updater(d.learningPath) };
+        });
+        return { ...s, decks };
+      });
+    },
+    [setState],
+  );
+
+  /**
+   * Mark a stage as completed
+   */
+  const markStageCompleted = useCallback(
+    (deckId: string, stageId: string) => {
+      setState((s) => ({
+        ...s,
+        decks: s.decks.map((d) =>
+          d.id === deckId && d.learningPath
+            ? { ...d, learningPath: markStageCompletedPath(d.learningPath, stageId) }
+            : d,
+        ),
+      }));
+    },
+    [setState],
+  );
+
+  /**
+   * Mark a stage as started
+   */
+  const markStageStarted = useCallback(
+    (deckId: string, stageId: string) => {
+      setState((s) => ({
+        ...s,
+        decks: s.decks.map((d) =>
+          d.id === deckId && d.learningPath
+            ? { ...d, learningPath: markStageStartedPath(d.learningPath, stageId) }
+            : d,
+        ),
+      }));
+    },
+    [setState],
+  );
+
+  /**
+   * Update stage progress based on question answer
+   */
+  const updateStageProgress = useCallback(
+    (deckId: string, stageId: string, questionId: string, correct: boolean, activityId?: string) => {
+      setState((s) => ({
+        ...s,
+        decks: s.decks.map((d) =>
+          d.id === deckId && d.learningPath
+            ? {
+                ...d,
+                learningPath: applyLearningPathAnswer(d.learningPath, questionId, correct, {
+                  stageId,
+                  activityId,
+                }),
+              }
+            : d,
+        ),
+      }));
+    },
+    [setState],
+  );
+
+  const regenerateLearningPath = useCallback(
+    (deckId: string, options: BuildLearningPathOptions = {}) => {
+      setState((s) => ({
+        ...s,
+        decks: s.decks.map((d) =>
+          d.id === deckId
+            ? {
+                ...d,
+                learningPath: rebuildLearningPath(d, d.learningPath, options),
+              }
+            : d,
+        ),
+      }));
     },
     [setState],
   );
@@ -984,6 +1157,11 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
       deleteModule,
       updateModuleProgress,
       recordModuleQuestion,
+      updateLearningPath,
+      markStageCompleted,
+      markStageStarted,
+      updateStageProgress,
+      regenerateLearningPath,
       markCourseLesson,
       recordCourseQuestion,
       recordCourseAssessment,
@@ -1053,6 +1231,11 @@ export function KnowlyProvider({ children }: { children: ReactNode }) {
       deleteModule,
       updateModuleProgress,
       recordModuleQuestion,
+      updateLearningPath,
+      markStageCompleted,
+      markStageStarted,
+      updateStageProgress,
+      regenerateLearningPath,
       markCourseLesson,
       recordCourseQuestion,
       recordCourseAssessment,

@@ -9,6 +9,7 @@ import {
   serializeWordBank,
 } from "./interactive";
 import type { Deck, Question } from "./types";
+import { buildLearningPath, parseLearningPath } from "./learning-paths";
 import { createId } from "./id";
 
 export const questionTypes = [
@@ -199,6 +200,10 @@ export const deckSchema = z.object({
   needsEquations: z.boolean().optional(),
   needsGraphs: z.boolean().optional(),
   questions: z.array(questionSchema).min(1, "A deck needs at least one question"),
+  /** Optional AI-planned Learning Path; a deterministic one is built when absent. */
+  learningPath: z.unknown().optional(),
+  /** Shared length/detail setting used to plan the path. */
+  lengthPreset: z.enum(["shorter", "short", "regular", "long", "longer"]).optional(),
 });
 
 export interface ValidationResult {
@@ -267,6 +272,21 @@ export function validateDeckJson(raw: string): ValidationResult {
     bookmarks: [],
     notes: {},
   };
+
+  if (parsed.data.learningPath) {
+    deck.learningPath = parseLearningPath(parsed.data.learningPath, deck, {
+      lengthPreset: parsed.data.lengthPreset,
+      source: "imported",
+    });
+  } else {
+    deck.learningPath = buildLearningPath(deck, {
+      source: "imported",
+      lengthPreset: parsed.data.lengthPreset ?? "regular",
+    });
+    warnings.push(
+      "No learning path was supplied — we planned one automatically from the questions.",
+    );
+  }
 
   return { ok: true, errors, warnings: warnings.slice(0, 12), deck };
 }
@@ -446,7 +466,75 @@ export const SAMPLE_DECK_JSON = `{
       },
       "tags": ["tonicity", "osmosis", "solutions"]
     }
-  ]
+  ],
+  "learningPath": {
+    "title": "Membranes & Transport",
+    "description": "From membrane structure to transport mechanisms, then a mixed mastery check.",
+    "stages": [
+      {
+        "title": "Foundations: Membrane structure",
+        "description": "Meet the fluid mosaic model and the molecules that make up the membrane.",
+        "purpose": "concept-exposure",
+        "objectives": ["Describe the fluid mosaic model in your own words.", "Recognise the roles of lipids and proteins."],
+        "concepts": ["Membrane structure"],
+        "prerequisiteConcepts": [],
+        "difficultyTarget": "easy",
+        "estimatedMinutes": 8,
+        "activities": [
+          {
+            "type": "concept-introduction",
+            "title": "Meet the membrane",
+            "description": "A first pass over the model and its components.",
+            "objective": "Build a first mental model of membrane structure.",
+            "estimatedMinutes": 8,
+            "questions": [1, 2]
+          }
+        ]
+      },
+      {
+        "title": "Apply membrane transport",
+        "description": "Use the transport mechanisms on new situations.",
+        "purpose": "application",
+        "objectives": ["Choose the right transport mechanism for a scenario.", "Explain why a cell swells or shrinks."],
+        "concepts": ["Transport mechanisms", "Tonicity"],
+        "prerequisiteConcepts": ["Membrane structure"],
+        "difficultyTarget": "medium",
+        "estimatedMinutes": 10,
+        "activities": [
+          {
+            "type": "application-exercises",
+            "title": "Apply it",
+            "description": "Put the transport ideas to work.",
+            "objective": "Use the concepts in new situations.",
+            "estimatedMinutes": 10,
+            "questions": [3, 4, 5]
+          }
+        ]
+      },
+      {
+        "title": "Mastery check",
+        "description": "A mixed set covering structure, transport and tonicity.",
+        "purpose": "mastery",
+        "objectives": ["Answer harder mixed questions without support."],
+        "concepts": ["Membrane structure", "Transport mechanisms", "Tonicity"],
+        "prerequisiteConcepts": ["Membrane structure", "Transport mechanisms"],
+        "difficultyTarget": "hard",
+        "estimatedMinutes": 8,
+        "activities": [
+          {
+            "type": "mastery-check",
+            "title": "Mastery check",
+            "description": "Confirm the whole journey holds together.",
+            "objective": "Meet the stage's mastery bar.",
+            "estimatedMinutes": 8,
+            "questions": [2, 4, 5]
+          }
+        ]
+      }
+    ],
+    "estimatedMinutes": 26,
+    "conceptsCovered": ["Membrane structure", "Transport mechanisms", "Tonicity"]
+  }
 }`;
 
 export const FIELD_DOCS: { field: string; type: string; required: boolean; note: string }[] = [
