@@ -61,17 +61,37 @@ export function ModuleMarkdownText({
   markdown,
   accent,
   variant = "screen",
+  headingPrefix,
   className,
 }: {
   markdown: string;
   /** accent color — module color on screen, kept as tint on paper */
   accent?: string;
   variant?: "screen" | "paper";
+  headingPrefix?: string;
   className?: string;
 }) {
   const safeAccent = accent || "var(--primary)";
+  let headingIndex = 0;
+  const nextHeadingId = () =>
+    headingPrefix ? `${headingPrefix}-heading-${headingIndex++}` : undefined;
 
   const components: Components = {
+    h1: ({ children }) => (
+      <h1 id={nextHeadingId()} className="scroll-mt-24">
+        {children}
+      </h1>
+    ),
+    h2: ({ children }) => (
+      <h2 id={nextHeadingId()} className="scroll-mt-24">
+        {children}
+      </h2>
+    ),
+    h3: ({ children }) => (
+      <h3 id={nextHeadingId()} className="scroll-mt-24">
+        {children}
+      </h3>
+    ),
     hr: () => (
       <div aria-hidden className="my-[1.1em] flex items-center justify-center gap-2">
         <span

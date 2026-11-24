@@ -1,6 +1,7 @@
 import type { Difficulty, LengthPreset, QuestionType } from "./types";
 import type { AISuggestions, SmartModeConfig } from "./smart-mode";
 import { buildPrompt } from "./prompt";
+import { buildModulePrompt } from "./module-prompt";
 import { getLengthInstructions } from "./length-detail";
 import type { LearningPathPromptOptions } from "./learning-path-prompt-builder";
 
@@ -42,15 +43,33 @@ export interface PromptBuildOptions {
   /** manual Learning Path structure from Prompt Studio */
   learningPath?: LearningPathPromptOptions;
 
-  // course/module specific (not generated in this phase)
+  // course-specific
   moduleCount?: number;
   lessonsPerModule?: number;
-  questionsPerLesson?: number;
   includeAssessments?: boolean;
 }
 
 export function buildSmartPrompt(options: PromptBuildOptions): string {
   if (options.content_type === "deck") return buildSmartDeckPrompt(options);
+  if (options.content_type === "module") {
+    return buildModulePrompt({
+      title: options.title,
+      subject: options.subject,
+      description: options.description ?? "",
+      difficulty: options.suggestions.difficulty ?? "2",
+      minutes: "15",
+      objectives: options.suggestions.learningObjectives?.join("\n") ?? "",
+      topics: options.suggestions.topics?.join("\n") ?? "",
+      material: options.material,
+      extra: options.extra ?? "",
+      tone: options.tone ?? "",
+      blurbs: [],
+      lengthSliderValue: options.lengthSliderValue,
+      smartModeEnabled: true,
+      difficultyAuto: options.autoConfigure || !options.suggestions.difficulty,
+      minutesAuto: true,
+    });
+  }
 
   return buildGenericSmartPrompt(options);
 }
@@ -115,8 +134,8 @@ function smartHeader(options: PromptBuildOptions): string {
 }
 
 /**
- * Module and course prompts are intentionally left as a thin scaffold in this
- * phase. Deck generation owns the full Learning Path contract.
+ * Course prompts remain a thin scaffold until their generation phase. Decks
+ * and Modules use their dedicated schema-aware builders.
  */
 function buildGenericSmartPrompt(options: PromptBuildOptions): string {
   const { lengthSliderValue } = options;
@@ -129,7 +148,6 @@ CONTENT SETTINGS
 - Subject: ${options.subject || "General"}
 - Level: ${options.level || "unspecified"}
 ${options.content_type === "course" ? `- Modules: ${options.moduleCount ?? 4}\n- Lessons per module: ${options.lessonsPerModule ?? 3}\n` : ""}
-${options.content_type === "module" ? `- Checkpoint questions: ${options.questionsPerLesson ?? 5}\n` : ""}
 ${options.includeAssessments ? "- Include assessments.\n" : ""}
 
 ${getLengthInstructions(lengthSliderValue)}

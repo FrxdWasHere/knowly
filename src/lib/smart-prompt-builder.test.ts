@@ -44,3 +44,32 @@ describe("Smart Mode deck prompts", () => {
     expect(prompt).toContain('"lengthPreset": "shorter" | "short" | "regular" | "long" | "longer"');
   });
 });
+
+describe("Smart Mode module prompts", () => {
+  it("uses the textbook builder with the shared length/detail budget", () => {
+    const prompt = buildSmartPrompt({
+      content_type: "module",
+      title: "Cell biology",
+      subject: "Biology",
+      material: "[Source: lecture.txt]\nCells contain specialized organelles.",
+      suggestions: {
+        topics: ["Cell structure", "Organelles"],
+        learningObjectives: ["Explain how cell structures support cell functions."],
+      },
+      autoConfigure: true,
+      lengthPreset: "longer",
+      lengthSliderValue: 90,
+      questionTypes: ["short-answer"],
+      difficultyDistribution: { easy: 30, medium: 50, hard: 20 },
+      isSTEM: false,
+      needsEquations: false,
+      needsGraphs: false,
+    });
+
+    expect(prompt).toContain("SMART MODE");
+    expect(prompt).toContain("professionally written textbook chapter");
+    expect(prompt).toContain("Cell structure");
+    expect(prompt).toContain("LENGTH & DETAIL — Longer (90/100)");
+    expect(prompt).toContain("[Source: lecture.txt]");
+  });
+});

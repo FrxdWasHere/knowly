@@ -1,10 +1,13 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { Download, Plus, Trash2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
 import { PromptStudioNav } from "@/components/prompt-studio-nav";
 import { AutoChoice } from "@/components/auto-choice";
+import { LengthDetailControl } from "@/components/length-detail-control";
+import { SmartModeToggle } from "@/components/smart-mode-toggle";
+import { SourceFileUpload } from "@/components/source-file-upload";
 import { PageHeader } from "@/components/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,10 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { openImportPanel } from "@/lib/import-panel";
-import { QUESTION_SCHEMA_TEXT, SAMPLE_NOTE, TUTOR_RULES, jsonFileRule, STRICT_FORMAT_RULES } from "@/lib/prompt";
-import { SAMPLE_MODULE_JSON } from "@/lib/module-schema";
-import { useKnowly } from "@/store/knowly";
-import type { Module } from "@/lib/types";
+import { buildModulePrompt } from "@/lib/module-prompt";
+import { useSmartMode } from "@/hooks/useSmartMode";
 
 interface Blurb {
   id: string;
@@ -33,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/modules/prompter")({
       {
         name: "description",
         content:
-          "Turn a topic into a strict AI prompt for a standalone module: writing blocks, colored blurbs and checkpoint questions. Copy the instructions, bring the JSON back, import it.",
+          "Turn source material and a topic brief into a textbook-style Module prompt with chapters, sections, and checkpoint questions.",
       },
     ],
   }),
@@ -41,9 +42,11 @@ export const Route = createFileRoute("/_authenticated/modules/prompter")({
 });
 
 function ModulePrompter() {
-  const navigate = useNavigate();
+  const smartMode = useSmartMode();
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("");
+  const [description, setDescription] = useState("");
+  const [material, setMaterial] = useState("");
   const [difficulty, setDifficulty] = useState("2");
   const [minutes, setMinutes] = useState("15");
   const [objectives, setObjectives] = useState("");
@@ -79,37 +82,82 @@ function ModulePrompter() {
     setBlurbs((bs) => bs.map((b) => (b.id === id ? { ...b, ...patch } : b)));
   const removeBlurb = (id: string) => setBlurbs((bs) => bs.filter((b) => b.id !== id));
 
+  useEffect(() => {
+    if (!smartMode.config.enabled || !smartMode.config.autoConfigure) return;
+
+    const suggestions = smartMode.suggestions;
+    const topicSuggestions = suggestions.topics ?? [];
+    setTitle((current) => current || suggestions.title || "");
+    setSubject((current) => current || suggestions.subject || "");
+    setDescription(
+      (current) =>
+        current ||
+        suggestions.description ||
+        (topicSuggestions.length
+          ? `A textbook-style module introducing ${topicSuggestions.slice(0, 5).join(", ")}.`
+          : ""),
+    );
+    setObjectives((current) => current || suggestions.learningObjectives?.join("\n") || "");
+    setTopics((current) => current || topicSuggestions.join("\n"));
+  }, [smartMode.config.autoConfigure, smartMode.config.enabled, smartMode.suggestions]);
+
+  const effectiveMaterial = useMemo(
+    () =>
+      [
+        material.trim() ? `[Pasted material]\n${material.trim()}` : "",
+        smartMode.config.enabled ? smartMode.material.trim() : "",
+      ]
+        .filter(Boolean)
+        .join("\n\n"),
+    [material, smartMode.config.enabled, smartMode.material],
+  );
+  const needsFileProcessing =
+    smartMode.config.enabled &&
+    smartMode.config.sourceFiles.some((file) => file.processingStatus !== "completed");
+
   const prompt = useMemo(
     () =>
       buildModulePrompt({
         title,
         subject,
+        description,
         difficulty,
         minutes,
         objectives,
         topics,
+        material: effectiveMaterial,
         extra,
         tone,
         blurbs,
+        lengthSliderValue: smartMode.config.lengthSliderValue,
+        smartModeEnabled: smartMode.config.enabled,
         difficultyAuto,
         minutesAuto,
       }),
     [
       title,
       subject,
+      description,
       difficulty,
       minutes,
       objectives,
       topics,
+      effectiveMaterial,
       extra,
       tone,
       blurbs,
+      smartMode.config.enabled,
+      smartMode.config.lengthSliderValue,
       difficultyAuto,
       minutesAuto,
     ],
   );
 
   const copyPrompt = async () => {
+    if (needsFileProcessing) {
+      toast.error("Process or remove each uploaded file before copying the prompt.");
+      return;
+    }
     await navigator.clipboard.writeText(prompt);
     toast.success("Module instructions copied — paste into your AI");
   };
@@ -118,10 +166,14 @@ function ModulePrompter() {
     <AppPage>
       <PageHeader
         title="Prompt Studio · Module"
-        description="Describe one focused lesson, then copy the instructions into the AI you use. Bring the finished module back through Import a module."
+        description="Shape a standalone, textbook-style learning resource, then copy the instructions into the AI you use. Bring the finished module back through Import a module."
         action={
           <>
-            <Button variant="outline" onClick={copyPrompt}>
+            <Button
+              variant="outline"
+              onClick={copyPrompt}
+              disabled={smartMode.isLoading || needsFileProcessing}
+            >
               <Wand2 className="size-4" /> Copy instructions
             </Button>
             <Button variant="outline" onClick={() => openImportPanel({ kind: "module" })}>
@@ -138,6 +190,32 @@ function ModulePrompter() {
         <div className="space-y-4">
           <div className="panel space-y-3 p-5">
             <h3 className="font-display text-sm font-semibold">Module brief</h3>
+            <SmartModeToggle
+              enabled={smartMode.config.enabled}
+              onToggle={(enabled) => {
+                smartMode.setConfig({ enabled });
+                if (enabled) {
+                  setDifficultyAuto(true);
+                  setMinutesAuto(true);
+                }
+              }}
+              fileCount={smartMode.config.sourceFiles.length}
+            />
+            {smartMode.config.enabled && (
+              <>
+                <SourceFileUpload
+                  files={smartMode.config.sourceFiles}
+                  onFilesChange={(sourceFiles) => smartMode.setConfig({ sourceFiles })}
+                  onProcessFiles={smartMode.processFiles}
+                />
+                {smartMode.suggestions.title && (
+                  <p className="rounded-lg bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
+                    Source-analysis suggestions are shown in the editable fields below. Review or
+                    change them before copying the prompt.
+                  </p>
+                )}
+              </>
+            )}
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>Title</Label>
@@ -152,7 +230,16 @@ function ModulePrompter() {
                 <Input
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Biology"
+                  placeholder="AI can infer this from your source material"
+                />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Description</Label>
+                <Textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="min-h-16"
+                  placeholder="A clear one-sentence description of what this module teaches."
                 />
               </div>
               <div className="space-y-1.5">
@@ -203,12 +290,42 @@ function ModulePrompter() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Topics to cover (one per line)</Label>
+              <Label>Chapter and section guidance (one per line)</Label>
               <Textarea
                 value={topics}
                 onChange={(e) => setTopics(e.target.value)}
                 className="min-h-20"
-                placeholder={"Chloroplast structure\nLight-dependent reactions"}
+                placeholder={
+                  "Foundations of photosynthesis\nLight-dependent reactions\nThe Calvin cycle"
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Source material (optional)</Label>
+              <Textarea
+                value={material}
+                onChange={(e) => setMaterial(e.target.value)}
+                className="min-h-36 font-mono text-xs"
+                placeholder="Paste notes or source text here. You can combine this with Smart Mode uploads."
+              />
+            </div>
+            <div className="space-y-3 rounded-xl border border-border p-4">
+              <div>
+                <h3 className="text-sm font-semibold">Length and detail</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Shapes the chapter and section outline, explanation depth, examples, context, and
+                  checkpoint practice—not just the word count.
+                </p>
+              </div>
+              <LengthDetailControl
+                value={smartMode.config.lengthSliderValue}
+                preset={smartMode.config.lengthPreset}
+                onChange={(value, preset) =>
+                  smartMode.setConfig({
+                    lengthSliderValue: value,
+                    lengthPreset: preset,
+                  })
+                }
               />
             </div>
             <div className="space-y-1.5">
@@ -295,7 +412,7 @@ function ModulePrompter() {
               spellCheck={false}
             />
             <div className="mt-3 flex justify-end">
-              <Button onClick={copyPrompt}>
+              <Button onClick={copyPrompt} disabled={smartMode.isLoading || needsFileProcessing}>
                 <Wand2 className="size-4" /> Copy instructions
               </Button>
             </div>
@@ -315,133 +432,4 @@ function ModulePrompter() {
       </div>
     </AppPage>
   );
-}
-
-function buildModulePrompt(input: {
-  title: string;
-  subject: string;
-  difficulty: string;
-  minutes: string;
-  objectives: string;
-  topics: string;
-  extra: string;
-  /** how the writing should sound — a paragraph or two in the learner's own words */
-  tone: string;
-  blurbs: Blurb[];
-  /** "whatever you see fit": let the AI pick the depth instead */
-  difficultyAuto?: boolean;
-  /** "whatever you see fit": let the AI pick the length instead */
-  minutesAuto?: boolean;
-}) {
-  const { title, subject, difficulty, minutes, objectives, topics, extra, tone, blurbs } = input;
-  const { difficultyAuto, minutesAuto } = input;
-  const diffLabel = difficulty === "1" ? "Intro" : difficulty === "3" ? "Advanced" : "Core";
-  const objList = objectives
-    .split("\n")
-    .map((x) => x.trim())
-    .filter(Boolean);
-  const topicList = topics
-    .split("\n")
-    .map((x) => x.trim())
-    .filter(Boolean);
-  const blurbSpec = blurbs
-    .map(
-      (b, i) =>
-        `  ${i + 1}. "${b.title}" — ${b.body || "a focused takeaway"} (suggest tone: ${
-          ["info", "tip", "warning", "definition"][i % 4]
-        })`,
-    )
-    .join("\n");
-
-  return `You are building a Knowly module — a standalone, one-off lesson on a single idea.
-
-MODULE BRIEF
-- Title: ${title || "(choose a fitting title)"}
-- Subject: ${subject || "General"}
-- Difficulty: ${difficultyAuto ? "your choice — pick the depth that fits the material" : diffLabel}
-- Estimated time: ${
-    minutesAuto ? "your choice — pick a length that fits the material" : `${minutes || 15} minutes`
-  }
-- Goals:
-${objList.length ? objList.map((o) => "  - " + o).join("\n") : "  - (define 2-4 measurable goals)"}
-- Topics to cover:
-${topicList.length ? topicList.map((t) => "  - " + t).join("\n") : "  - (choose the key topics yourself)"}
-${extra ? `- Extra instructions: ${extra}\n` : ""}${
-    tone.trim()
-      ? `\nTONE & VOICE\nWrite everything — the lesson prose, every blurb, the examples, the checkpoint questions and their answers — in this voice:\n"""\n${tone.trim()}\n"""\nThe voice shapes how it reads, never what is true: keep the facts exact and the block/JSON rules below intact.\n`
-      : ""
-  }
-HOW TO WRITE THE MODULE
-Write short, focused blocks. Use these types:
-
-1. {"type":"markdown","markdown":"…"} — the lesson writing (markdown, "## " headings per topic).
-2. {"type":"callout","tone":"info|tip|warning|definition","title":"…","markdown":"…"} — a BLURB: a colored titled rectangle the learner can scan. Blurbs are the module's signature tool — use them generously for key ideas, warnings, tips and definitions. A module is BETTER when blurbs chunk the information; never write a wall of text.
-3. {"type":"example","title":"…","markdown":"…"} — a worked example.
-4. {"type":"checkpoint","questionId":"q1"} — an inline question, matched by id to the questions array.
-5. {"type":"divider"} — a section break.
-
-You are NOT limited to the blurbs listed below — invent your OWN blurbs whenever the content calls for one: choose the title, the body, and the tone that fits the meaning (warning for pitfalls, tip for shortcuts, definition for terms, info for key ideas). The blurb toolkit is effectively infinite, so lean on it as your primary structuring tool and add as many authored blurbs as the lesson needs.
-
-EQUATIONS & NOTATION
-- Both the module view and its printed version typeset LaTeX, so use it any time you need an equation — inline math as $…$ inside a sentence, or $$…$$ on its own line when the equation deserves its own block.
-- That works in every text field: lesson markdown, blurb titles and bodies, worked examples, objectives, tags, and checkpoint questions, options and answers.
-- Write real LaTeX for anything mathematical — e.g. $E = mc^2$, $\\frac{d}{dx}x^2 = 2x$, $\\int_0^\\infty e^{-x}\\,dx$, an acceleration of $9.81\\,\\text{m/s}^2$, or $H_2O$ for a formula.
-- Keep ordinary words outside the math delimiters. Never fake an equation with plain characters and never put math inside a code block.
-- Escape backslashes so the JSON stays valid (e.g. \\\\frac in the raw file).
-- Reach for LaTeX whenever the subject calls for it, whatever the subject is — physics, chemistry, economics, statistics or geometry.
-
-BLURBS REQUESTED (include all of these)
-${blurbSpec || "  (none requested — blur your own)"}
-
-QUESTIONS
-Add 3-6 checkpoint questions${minutesAuto ? "" : ` for a ${minutes || 15}-minute module`}. Types: "short-answer" (question + answer text) or "multiple-choice" (question + options + answer = the exact correct option text, no letter) — the other types in the schema below are allowed, but these two read best inline. Every checkpoint block's questionId must match a question's id. Write the question, its options and its answer in LaTeX whenever they involve an equation or symbol.
-
-OUTPUT RULES
-${jsonFileRule("knowly-module.json")}
-- Do not set "blocks" to null; always give an array, even if it only holds writing so far.
-
-SCHEMA — the complete module object
-{
-  "title": string,                                              // required — the lesson name
-  "subject": string,                                            // required — e.g. "Biology"
-  "description": string,                                        // required — one line on what it teaches
-  "difficulty": ${difficultyAuto ? "1 | 2 | 3 (the depth you judge right)" : difficulty},                                        // required — 1 = Intro, 2 = Core, 3 = Advanced
-  "emoji": string,                                              // required — one emoji
-  "color": string,                                              // required — hex accent, e.g. "#5fd38a"
-  "tags": string[],                                             // required — free-form labels
-  "isSTEM": boolean,                                            // required — maths or science topic
-  "needsEquations": boolean,                                    // required — writing relies on LaTeX maths
-  "needsGraphs": boolean,                                       // required — writing refers to graphs
-  "objectives": string[],                                       // required — 2-4 measurable goals
-  "estimatedMinutes": number,                                   // required
-  "blocks": [ Block ],                                          // required — the lesson, in reading order
-  "questions": [ Question ],                                    // required — the checkpoint questions
-  "linkedDeckIds": string[]                                     // required — always leave []
-}
-
-BLOCK OBJECT — every entry in "blocks" uses this shape
-{
-  "type": "markdown" | "callout" | "example" | "image" | "checkpoint" | "divider" | "activity",  // required
-  "markdown": string,                                     // required for markdown, callout and example
-  "tone": "info" | "tip" | "warning" | "definition",     // required for callout
-  "title": string,                                        // required for callout and example
-  "url": string,                                          // required for image — a full image address
-  "alt": string,                                          // required for image — what the image shows
-  "caption": string,                                      // required for image
-  "questionId": string,                                   // required for checkpoint — must match the "id" of a question below
-  "deckId": string                                        // required for activity — leave empty, decks are linked inside the app
-}
-
-QUESTION OBJECT — every entry in "questions" uses this shape
-${QUESTION_SCHEMA_TEXT}
-
-TUTOR NOTES — pre-written inside every question
-${TUTOR_RULES}
-
-FULL SAMPLE — a complete module
-${SAMPLE_NOTE}
-${SAMPLE_MODULE_JSON}
-
-FORMAT ADHERENCE — CRITICAL
-${STRICT_FORMAT_RULES}`;
 }

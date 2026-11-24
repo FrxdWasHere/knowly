@@ -53,6 +53,39 @@ export const Route = createFileRoute("/_authenticated/modules/$moduleId/")({
 
 const DIFFICULTY_LABEL = ["", "Intro", "Core", "Advanced"] as const;
 
+function extractModuleHeadings(markdown: string, prefix: string) {
+  let index = 0;
+  let inFence = false;
+  const headings: { id: string; level: number; text: string }[] = [];
+
+  for (const line of markdown.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (/^(```|~~~)/.test(trimmed)) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) continue;
+
+    const match = /^(#{1,3})\s+(.+?)\s*#*\s*$/.exec(line);
+    if (!match) continue;
+    const headingIndex = index++;
+    const text = match[2]
+      .replace(/\s+#+\s*$/, "")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/[*_~`$]/g, "")
+      .trim();
+    if (!text) continue;
+
+    headings.push({
+      id: `${prefix}-heading-${headingIndex}`,
+      level: match[1].length,
+      text,
+    });
+  }
+
+  return headings;
+}
+
 function ModuleEditor() {
   const { moduleId } = Route.useParams() as { moduleId: string };
   const navigate = useNavigate();
@@ -68,6 +101,17 @@ function ModuleEditor() {
   const progress = module ? state.moduleProgress[module.id] : undefined;
   const [editing, setEditing] = useState(false);
   const [reveal, setReveal] = useState<Record<string, boolean>>({});
+  const moduleHeadings = useMemo(
+    () =>
+      module
+        ? module.blocks.flatMap((block) =>
+            block.type === "markdown"
+              ? extractModuleHeadings(block.markdown ?? "", `module-${module.id}-block-${block.id}`)
+              : [],
+          )
+        : [],
+    [module],
+  );
 
   if (!module) {
     return (
@@ -214,6 +258,9 @@ function ModuleEditor() {
       </div>
 
       <PageHeader title={module.title} description={module.subject} />
+      {module.notes && (
+        <p className="-mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">{module.notes}</p>
+      )}
       <div className="-mt-2">
         <Badge variant="outline" className="gap-1">
           {module.emoji} Module ┬╖ {DIFFICULTY_LABEL[module.difficulty]}
@@ -269,6 +316,21 @@ function ModuleEditor() {
         )}
       </section>
 
+      {!editing && moduleHeadings.length > 0 && (
+        <nav className="panel p-4" aria-label="Module contents">
+          <h2 className="font-display text-sm font-semibold">In this module</h2>
+          <ol className="mt-2 space-y-1">
+            {moduleHeadings.map((heading) => (
+              <li key={heading.id} className={heading.level === 3 ? "pl-4" : undefined}>
+                <a href={`#${heading.id}`} className="text-sm text-primary hover:underline">
+                  {heading.text}
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )}
+
       {/* Title + subject (edit) */}
       {editing && (
         <section className="panel grid gap-3 p-4 sm:grid-cols-2">
@@ -279,6 +341,14 @@ function ModuleEditor() {
           <div className="space-y-1.5">
             <Label>Subject</Label>
             <Input value={module.subject} onChange={(e) => patch({ subject: e.target.value })} />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label>Description</Label>
+            <Textarea
+              value={module.notes ?? ""}
+              onChange={(e) => patch({ notes: e.target.value })}
+              className="min-h-16"
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Emoji</Label>
@@ -335,6 +405,7 @@ function ModuleEditor() {
           <BlockView
             key={block.id}
             block={block}
+            headingPrefix={`module-${module.id}-block-${block.id}`}
             editing={editing}
             module={module}
             reveal={!!reveal[block.id]}
@@ -398,6 +469,7 @@ function ModuleEditor() {
 
 interface BlockViewProps {
   block: CourseBlock;
+  headingPrefix: string;
   editing: boolean;
   module: Module;
   reveal: boolean;
@@ -417,6 +489,7 @@ interface BlockViewProps {
 
 function BlockView({
   block,
+  headingPrefix,
   editing,
   module,
   reveal,
@@ -553,6 +626,7 @@ function BlockView({
       <ModuleMarkdownText
         variant="screen"
         accent={module.color}
+        headingPrefix={headingPrefix}
         markdown={block.markdown || "_Empty note_"}
         className="panel p-5"
       />
