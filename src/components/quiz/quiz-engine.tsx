@@ -12,6 +12,12 @@ import {
   Trash2,
   Check,
   X,
+  Bookmark,
+  Eye,
+  GraduationCap,
+  Lightbulb,
+  Sparkles,
+  StickyNote,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/app-shell";
 import { QuizReport } from "@/components/quiz/quiz-report";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -26,6 +33,8 @@ import {
   InteractiveQuestion,
   isInteractiveComplete,
 } from "@/components/questions/interactive-question";
+import { QuestionRationales } from "@/components/questions/question-rationales";
+import { QuestionTutorPanel } from "@/components/questions/question-tutor-panel";
 import { MathKeypad, MathText } from "@/components/math/math-text";
 import { useKnowly } from "@/store/knowly";
 import { useCoarsePointer } from "@/hooks/use-mobile";
@@ -40,6 +49,7 @@ import { groupQuestionsBySubtopic, questionSubtopicKey, questionSubtopicTitle } 
 
 import type {
   AnswerRecord,
+  Deck,
   Difficulty,
   Question,
   QuestionType,
@@ -63,8 +73,14 @@ export function QuizEngine({
   exam = false,
   initialDeckId,
 }: { exam?: boolean; initialDeckId?: string } = {}) {
-  const { state, updateSettings, recordSession, saveQuizSession, deleteSavedQuizSession } =
-    useKnowly();
+  const {
+    state,
+    updateDeck,
+    updateSettings,
+    recordSession,
+    saveQuizSession,
+    deleteSavedQuizSession,
+  } = useKnowly();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("setup");
   const [config, setConfig] = useState<QuizConfig>(() =>
@@ -201,6 +217,7 @@ export function QuizEngine({
       <QuizRun
         pool={pool}
         decks={decks}
+        updateDeck={updateDeck}
         config={config}
         initialSession={resumeSession}
         widgets={widgets}
@@ -776,6 +793,7 @@ function QuizFeedbackPanel({
 function QuizRun({
   pool,
   decks,
+  updateDeck,
   config,
   initialSession,
   widgets,
@@ -787,7 +805,8 @@ function QuizRun({
   onSaveAndExit,
 }: {
   pool: Question[];
-  decks: { id: string; subject: string }[];
+  decks: Deck[];
+  updateDeck: (id: string, patch: Partial<Deck>) => void;
   config: QuizConfig;
   initialSession: SavedQuizSession | null;
   widgets: QuizWidgets;
@@ -812,6 +831,14 @@ function QuizRun({
   const [input, setInput] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<QuizFeedback | null>(null);
+  const [thinkFirst, setThinkFirst] = useState(true);
+  const [optionsShown, setOptionsShown] = useState(false);
+  const [eliminated, setEliminated] = useState<string[]>([]);
+  const [showHintText, setShowHintText] = useState(false);
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [tutorOpen, setTutorOpen] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [explainOpen, setExplainOpen] = useState(false);
   const [previousFeedback, setPreviousFeedback] = useState<QuizFeedback | null>(() => {
     if (!initialSession?.config.feedbackOnNextQuestion || initialSession.currentIndex < 1) {
       return null;
@@ -846,12 +873,38 @@ function QuizRun({
   const answerInput = useRef<HTMLInputElement>(null);
 
   const question = pool[index];
+  const questionDeckId = (question as (Question & { deckId?: string }) | undefined)?.deckId;
+  const questionDeck = decks.find((deck) => deck.id === questionDeckId);
+  const bookmarked =
+    question && questionDeck ? questionDeck.bookmarks.includes(question.id) : false;
   const total = pool.length;
   const multiplier = settings.timerMultiplier || 1;
   const perQuestionSeconds = config.perQuestionSeconds
     ? Math.round(config.perQuestionSeconds * multiplier)
     : null;
   const totalMinutes = config.totalMinutes ? config.totalMinutes * multiplier : null;
+
+  const showHint = useCallback(() => {
+    if (!question || exam || !settings.showHints) return;
+    setShowHintText(true);
+    if (question.type !== "multiple-choice" || !question.options) return;
+    const remainingWrong = question.options.filter(
+      (option) => option !== question.answer && !eliminated.includes(option),
+    );
+    if (remainingWrong.length <= 1) return;
+    const eliminatedOption = remainingWrong[Math.floor(Math.random() * remainingWrong.length)];
+    setEliminated((current) => [...current, eliminatedOption]);
+    setHintsUsed((current) => current + 1);
+  }, [eliminated, exam, question, settings.showHints]);
+
+  const toggleBookmark = useCallback(() => {
+    if (!question || !questionDeck) return;
+    updateDeck(questionDeck.id, {
+      bookmarks: bookmarked
+        ? questionDeck.bookmarks.filter((id) => id !== question.id)
+        : [...questionDeck.bookmarks, question.id],
+    });
+  }, [bookmarked, question, questionDeck, updateDeck]);
 
   const commit = useCallback(
     (given: string | null, skipped: boolean) => {
@@ -887,6 +940,13 @@ function QuizRun({
         if (config.feedbackOnNextQuestion) setPreviousFeedback(questionFeedback);
         setInput("");
         setSelected(null);
+        setOptionsShown(false);
+        setEliminated([]);
+        setShowHintText(false);
+        setHintsUsed(0);
+        setTutorOpen(false);
+        setNoteOpen(false);
+        setExplainOpen(false);
         questionStart.current = Date.now();
         setQuestionElapsed(0);
 
@@ -1003,6 +1063,50 @@ function QuizRun({
     }
   }, [answers, bestCombo, totalMinutes, elapsed, onFinish, xp]);
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (exam || feedback || event.altKey || event.ctrlKey || event.metaKey) return;
+      const target = event.target as HTMLElement | null;
+      if (
+        target?.isContentEditable ||
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.tagName === "SELECT" ||
+        target?.closest("button, a, [role='button']")
+      ) {
+        return;
+      }
+
+      switch (event.key.toLowerCase()) {
+        case "h":
+          showHint();
+          break;
+        case "e":
+          setExplainOpen((open) => !open);
+          break;
+        case "t":
+          setTutorOpen((open) => !open);
+          break;
+        case "b":
+          toggleBookmark();
+          break;
+        case " ":
+          if (
+            thinkFirst &&
+            !optionsShown &&
+            (question?.type === "multiple-choice" || question?.type === "true-false")
+          ) {
+            event.preventDefault();
+            setOptionsShown(true);
+          }
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [exam, feedback, optionsShown, question, showHint, thinkFirst, toggleBookmark]);
+
   const saveAndExit = (currentIndex = index) => {
     onSaveAndExit({
       pool,
@@ -1098,6 +1202,9 @@ function QuizRun({
     );
   }
 
+  const isChoice = question.type === "multiple-choice";
+  const isTrueFalse = question.type === "true-false";
+  const showOptions = exam || !thinkFirst || optionsShown || !!feedback;
   const answered = answers.filter((a) => !a.skipped).length;
   const correctCount = answers.filter((a) => a.correct).length;
   const accuracy = answered ? Math.round((correctCount / answered) * 100) : 0;
@@ -1185,25 +1292,71 @@ function QuizRun({
             showExplanation={settings.showExplanations}
           />
         )}
-        <Badge variant="outline" className="text-[11px]">
-          {TYPE_LABELS[question.type]}
-        </Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="outline" className="text-[11px]">
+            {TYPE_LABELS[question.type]}
+          </Badge>
+          {!exam && (isChoice || isTrueFalse) && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="min-h-[40px]"
+              aria-pressed={thinkFirst}
+              onClick={() => {
+                setThinkFirst((current) => !current);
+                setOptionsShown(false);
+              }}
+            >
+              <Eye /> Think first {thinkFirst ? "on" : "off"}
+            </Button>
+          )}
+          {questionDeck && !exam && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="ml-auto size-10"
+              aria-label={bookmarked ? "Remove bookmark" : "Bookmark question"}
+              aria-pressed={bookmarked}
+              onClick={toggleBookmark}
+            >
+              <Bookmark className={cn("size-4", bookmarked && "fill-primary text-primary")} />
+            </Button>
+          )}
+        </div>
         <h1 className="mt-4 break-words text-2xl font-semibold leading-snug">
           <MathText text={question.question} />
         </h1>
 
-        {question.hint && settings.showHints && !exam && !feedback && (
-          <p className="mt-3 text-xs text-muted-foreground">
-            Hint: <MathText text={question.hint} />
+        {showHintText && question.hint && (
+          <p className="mt-3 rounded-lg bg-surface-2/70 px-3 py-2 text-xs text-muted-foreground">
+            <Lightbulb className="mr-1 inline size-3.5" />
+            <MathText text={question.hint} />
           </p>
         )}
 
-        {question.type === "multiple-choice" && question.options && (
+        {!exam && thinkFirst && !showOptions && (isChoice || isTrueFalse) && (
+          <div className="mt-6 rounded-xl border border-dashed border-border p-5 text-center">
+            <p className="text-sm text-muted-foreground">
+              Think of your answer first, then reveal the choices.
+            </p>
+            <Button
+              type="button"
+              className="mt-4 min-h-[44px]"
+              onClick={() => setOptionsShown(true)}
+            >
+              Show options
+            </Button>
+          </div>
+        )}
+
+        {isChoice && question.options && showOptions && (
           <ul className="mt-6 grid gap-2">
             {question.options.map((o) => (
               <li key={o}>
                 <button
-                  disabled={!!feedback}
+                  disabled={!!feedback || eliminated.includes(o)}
                   onClick={() => {
                     setSelected(o);
                     commit(o, false);
@@ -1211,6 +1364,7 @@ function QuizRun({
                   className={cn(
                     "w-full rounded-lg border border-border break-words px-4 py-3 text-left text-sm transition-colors hover:border-primary/60",
                     selected === o && "border-primary bg-primary/10",
+                    eliminated.includes(o) && "opacity-40 line-through",
                     feedback &&
                       o === question.answer &&
                       "border-success bg-success/10 text-success",
@@ -1227,7 +1381,7 @@ function QuizRun({
           </ul>
         )}
 
-        {question.type === "true-false" && (
+        {isTrueFalse && showOptions && (
           <div className="mt-6 grid grid-cols-2 gap-3">
             {["true", "false"].map((o) => (
               <button
@@ -1297,6 +1451,99 @@ function QuizRun({
           </div>
         )}
 
+        {!exam && (
+          <>
+            <div className="mt-6 flex flex-wrap gap-2 border-t border-border/60 pt-4">
+              {settings.showHints && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="min-h-[40px]"
+                  disabled={!!feedback || (!question.hint && !question.options?.length)}
+                  onClick={showHint}
+                >
+                  <Lightbulb /> Hint
+                  {eliminated.length > 0 && (
+                    <span className="text-[10px] text-muted-foreground">−1 option</span>
+                  )}
+                </Button>
+              )}
+              {isChoice || isTrueFalse || question.explanation || question.incorrectExplanation ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="min-h-[40px]"
+                  onClick={() => setExplainOpen((open) => !open)}
+                  aria-expanded={explainOpen}
+                >
+                  <Sparkles /> {explainOpen ? "Hide explanation" : "Explain"}
+                </Button>
+              ) : null}
+              <Button
+                type="button"
+                variant={question.tutor ? "secondary" : "outline"}
+                size="sm"
+                className="min-h-[40px]"
+                onClick={() => setTutorOpen((open) => !open)}
+                aria-expanded={tutorOpen}
+              >
+                <GraduationCap /> Tutor
+              </Button>
+              {questionDeck && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="ml-auto min-h-[40px]"
+                  onClick={() => setNoteOpen((open) => !open)}
+                  aria-expanded={noteOpen}
+                >
+                  <StickyNote /> Note
+                </Button>
+              )}
+            </div>
+
+            {hintsUsed > 0 && !feedback && (
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                {hintsUsed} hint{hintsUsed === 1 ? "" : "s"} used on this question.
+              </p>
+            )}
+
+            {explainOpen && (
+              <div className="mt-4 rounded-xl border border-border bg-surface/50 p-4">
+                <QuestionRationales question={question} />
+                {!question.explanation &&
+                  !question.incorrectExplanation &&
+                  !question.tutor?.whyCorrect &&
+                  !question.tutor?.whyWrong?.length && (
+                    <p className="text-sm text-muted-foreground">
+                      No explanation is saved for this question yet.
+                    </p>
+                  )}
+              </div>
+            )}
+
+            {tutorOpen && (
+              <QuestionTutorPanel question={question} onClose={() => setTutorOpen(false)} />
+            )}
+
+            {noteOpen && questionDeck && (
+              <Textarea
+                className="mt-3"
+                placeholder="Write a personal note for this question…"
+                value={questionDeck.notes?.[question.id] ?? ""}
+                onChange={(event) =>
+                  updateDeck(questionDeck.id, {
+                    notes: { ...(questionDeck.notes ?? {}), [question.id]: event.target.value },
+                  })
+                }
+              />
+            )}
+          </>
+        )}
+
         {feedback && (
           <QuizFeedbackPanel feedback={feedback} showExplanation={settings.showExplanations} />
         )}
@@ -1312,6 +1559,12 @@ function QuizRun({
           </Button>
         </div>
       </article>
+
+      {!exam && (
+        <p className="mt-4 hidden text-center text-[11px] text-muted-foreground sm:block">
+          Space show choices · H hint · E explain · T tutor · B bookmark
+        </p>
+      )}
 
       <ConfirmDialog
         open={confirmQuit}

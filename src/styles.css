@@ -930,7 +930,7 @@ body {
 
   /* Hide app chrome and the editor UI. */
   aside,
-  header,
+  header:not(.shared-resource-header),
   nav,
   .print-hide {
     display: none !important;
@@ -2394,18 +2394,6 @@ body {
 }
 
 @media print {
-  .shared-resource-layout {
-    display: block !important;
-  }
-
-  .shared-resource-sidebar {
-    display: none !important;
-  }
-
-  .shared-resource-reader-shell {
-    padding: 0 !important;
-  }
-
   .shared-resource-article {
     max-width: none !important;
     overflow: visible !important;

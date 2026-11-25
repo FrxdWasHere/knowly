@@ -1,52 +1,34 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
-  BookMarked,
-  Brain,
+  BookOpen,
   Check,
-  Coffee,
-  FileJson,
-  GraduationCap,
-  Heart,
-  Lightbulb,
-  Moon,
+  LockKeyhole,
   NotebookPen,
-  ShieldCheck,
   Sparkles,
-  Star,
   Target,
-  Trophy,
-  Users,
-  Wand2,
   Zap,
-  type LucideIcon,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useKnowly } from "@/store/knowly";
-import { useAuth } from "@/store/auth-context";
 import { Logo } from "@/components/brand/logo";
-import { cn } from "@/lib/utils";
+import { useAuth } from "@/store/auth-context";
+import { useKnowly } from "@/store/knowly";
 
 export const Route = createFileRoute("/")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Knowly — STOP Juggling Apps. Study Smarter! 🎯" },
+      { title: "Knowly — A study app that gets you. Free forever." },
       {
         name: "description",
         content:
-          "The study app that actually gets you. AI flashcards, handwritten notes, smart reviews — all in one place. 100% free, works offline, no BS.",
+          "A free study workspace for your notes, flashcards, and reviews. Create an online account to sync across devices, or keep your study space local. Free forever.",
       },
-      {
-        property: "og:title",
-        content: "Knowly — STOP Juggling Apps. Study Smarter! 🎯",
-      },
+      { property: "og:title", content: "Knowly — A study app that gets you. Free forever." },
       {
         property: "og:description",
         content:
-          "Study app for students who are tired of boring tools. Free forever, actually fun to use, and it works.",
+          "Sync your study library across devices with a free Knowly account, or keep it local. Free forever, with no subscription.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -57,270 +39,45 @@ export const Route = createFileRoute("/")({
 
 const NAV_LINKS = [
   ["#how-it-works", "How it works"],
-  ["#features", "Features"],
-  ["#for-you", "Why Knowly?"],
+  ["#what-you-get", "What you get"],
   ["#privacy", "Privacy"],
 ] as const;
 
-const STUDENT_STATS = [
+const STUDY_TOOLS = [
   {
-    emoji: "⚡",
-    label: "Faster studying",
-    value: "10x",
-    color: "bg-[#FFE66D]",
-    ink: "text-black",
-    rotation: "rotate-[-1deg]",
-  },
-  {
-    emoji: "🎯",
-    label: "Better grades",
-    value: "87%",
-    color: "bg-[#34D399]",
-    ink: "text-black",
-    rotation: "rotate-[1deg]",
-  },
-  {
-    emoji: "💜",
-    label: "Hours saved",
-    value: "5+",
-    color: "bg-[#A855F7]",
-    ink: "text-white",
-    rotation: "rotate-[-2deg]",
-  },
-  {
-    emoji: "🔥",
-    label: "Students daily",
-    value: "10K+",
-    color: "bg-[#FF6B6B]",
-    ink: "text-white",
-    rotation: "rotate-[2deg]",
-  },
-];
-
-const PAIN_POINTS = [
-  {
-    emoji: "☕",
-    title: "Cramming sucks",
-    problem: "Pulling all-nighters because you forgot to study",
-    solution: "Smart reminders show you EXACTLY what to review",
-    color: "bg-[#FF6B6B]",
-    rotation: "rotate-[-1deg]",
-  },
-  {
-    emoji: "📱",
-    title: "App chaos",
-    problem: "Switching between 10 apps just to study one subject",
-    solution: "Everything in ONE place. Flashcards, notes, tracking",
-    color: "bg-[#FFE66D]",
-    rotation: "rotate-[1deg]",
-  },
-  {
-    emoji: "💸",
-    title: "Another $10/mo?!",
-    problem: "Every study app wants your credit card",
-    solution: "100% FREE forever. No trial, no premium BS",
-    color: "bg-[#A855F7]",
-    rotation: "rotate-[2deg]",
-  },
-  {
-    emoji: "❓",
-    title: "Am I ready?",
-    problem: "No clue what you actually know before the exam",
-    solution: "See EXACTLY which topics you're weak on",
-    color: "bg-[#34D399]",
-    rotation: "rotate-[-2deg]",
-  },
-];
-
-const FEATURE_GROUPS: {
-  icon: LucideIcon;
-  emoji: string;
-  title: string;
-  studentSpeak: string;
-  items: string[];
-  color: string;
-  rotation: string;
-}[] = [
-  {
-    icon: Wand2,
-    emoji: "✨",
-    title: "AI Flashcard Magic",
-    studentSpeak: "Stop wasting 2 hours making cards",
-    items: [
-      "Works with ChatGPT, Claude, ANY AI",
-      "Auto-checks everything",
-      "Import from Quizlet",
-      "PDF → flashcards instantly",
-      "Images & audio support",
-      "Bulk edit tools",
-    ],
-    color: "bg-[#FF6B6B]",
-    rotation: "rotate-[-1deg]",
-  },
-  {
-    icon: Brain,
-    emoji: "🧠",
-    title: "Smart Study System",
-    studentSpeak: "Remember for the final, not just the quiz",
-    items: [
-      "Daily review queue",
-      "Spaced repetition that WORKS",
-      "Cram mode for emergencies",
-      "Practice quizzes",
-      "Timed exam simulator",
-      "Focus timer built-in",
-    ],
-    color: "bg-[#A855F7]",
-    rotation: "rotate-[1deg]",
-  },
-  {
-    icon: NotebookPen,
-    emoji: "📝",
-    title: "Digital Notebooks",
-    studentSpeak: "For when typing doesn't cut it",
-    items: [
-      "Pen pressure (feels real!)",
-      "Annotate PDFs",
-      "Insert images & audio",
-      "Math equations",
-      "Infinite canvas",
-      "Export to PDF",
-    ],
-    color: "bg-[#FFE66D]",
-    rotation: "rotate-[-2deg]",
+    icon: Sparkles,
+    title: "Make the materials, not busywork.",
+    description:
+      "Turn notes and PDFs into flashcards, or bring in the decks you already have. Spend your time learning, not formatting.",
+    tone: "bg-[#FFE66D]",
+    surface: "bg-[#FFE66D]/25",
+    wash: "hover:bg-[#FFE66D]/40",
   },
   {
     icon: Target,
-    emoji: "🎯",
-    title: "Know What You Don't Know",
-    studentSpeak: "Stop studying stuff you already know",
-    items: [
-      "Weak spot detector",
-      "Trouble card tracker",
-      "Concept mastery %",
-      "Time insights",
-      "Progress streaks",
-      "Study forecasts",
-    ],
-    color: "bg-[#34D399]",
-    rotation: "rotate-[2deg]",
-  },
-  {
-    icon: BookMarked,
-    emoji: "📚",
-    title: "Course Organization",
-    studentSpeak: "See where you are in each class",
-    items: [
-      "Build custom courses",
-      "Module checkpoints",
-      "Auto progress tracking",
-      "Link flashcards to lessons",
-      "Practice quizzes",
-      "Print study guides",
-    ],
-    color: "bg-[#60A5FA]",
-    rotation: "rotate-[-1deg]",
-  },
-  {
-    icon: Heart,
-    emoji: "💜",
-    title: "Your Data Stays YOURS",
-    studentSpeak: "Privacy that doesn't suck",
-    items: [
-      "100% offline capable",
-      "Zero sign-up needed",
-      "No tracking ever",
-      "Easy backups",
-      "Switch devices anytime",
-      "Delete whenever you want",
-    ],
-    color: "bg-[#EC4899]",
-    rotation: "rotate-[1deg]",
-  },
-];
-
-const HOW_IT_WORKS = [
-  {
-    icon: Lightbulb,
-    emoji: "💡",
-    step: "1",
-    title: "Get your stuff in",
+    title: "Know what to study next.",
     description:
-      "Upload PDFs, paste notes, import Quizlet, or use AI to make flashcards from anything.",
-    color: "bg-[#FFE66D]",
-    rotation: "rotate-[-2deg]",
+      "Smart reviews help you revisit the tricky stuff before it disappears from your memory. No guessing, no guilt trip.",
+    tone: "bg-[#34D399]",
+    surface: "bg-[#34D399]/20",
+    wash: "hover:bg-[#34D399]/35",
   },
   {
-    icon: Brain,
-    emoji: "🧠",
-    step: "2",
-    title: "Study smart",
-    description: "Knowly tells you what to review and when. No more guessing what to study next.",
-    color: "bg-[#A855F7]",
-    rotation: "rotate-[1deg]",
+    icon: NotebookPen,
+    title: "Keep your study life in one place.",
+    description:
+      "Notes, decks, courses, and progress belong together. Your study setup should make sense to you—not another app company.",
+    tone: "bg-[#A855F7]",
+    surface: "bg-[#A855F7]/15",
+    wash: "hover:bg-[#A855F7]/30",
   },
-  {
-    icon: Trophy,
-    emoji: "🏆",
-    step: "3",
-    title: "Ace the test",
-    description: "Track progress, crush weak spots, walk into exams actually confident.",
-    color: "bg-[#FF6B6B]",
-    rotation: "rotate-[-1deg]",
-  },
-];
-
-/** Fades content up the first time it scrolls into view. */
-function Reveal({
-  children,
-  className = "",
-  delay = 0,
-}: {
-  children: ReactNode;
-  className?: string;
-  delay?: number;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (typeof IntersectionObserver === "undefined") {
-      setVisible(true);
-      return;
-    }
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          setVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.1, rootMargin: "0px 0px -8% 0px" },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div
-      ref={ref}
-      style={delay ? { animationDelay: `${delay}ms` } : undefined}
-      className={cn(visible ? "anim-fade-up" : "opacity-0", className)}
-    >
-      {children}
-    </div>
-  );
-}
+] as const;
 
 function Landing() {
   const navigate = useNavigate();
   const { state, hydrated } = useKnowly();
   const { loading: authLoading, user } = useAuth();
 
-  // First-time visitors choose sign-in or local setup; returning local users
-  // can continue straight into their device-stored workspace.
   const openApp = () => {
     if (authLoading) return;
     if (!hydrated || (!user && !state.onboardingComplete)) {
@@ -331,791 +88,489 @@ function Landing() {
   };
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[#FFFBF5] dark:bg-background text-black dark:text-white">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b-4 border-black bg-[#FFFBF5] text-black dark:border-border dark:bg-surface dark:text-white">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-5 sm:px-8">
-          <Link to="/" className="group flex items-center gap-3">
-            <span className="grid size-14 place-items-center rounded-2xl border-4 border-black bg-gradient-to-br from-[#FF6B6B] to-[#A855F7] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all group-hover:translate-x-[2px] group-hover:translate-y-[2px] group-hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-              <Logo className="size-8" />
+    <div className="min-h-screen overflow-hidden bg-[#FFFBF5] text-black dark:bg-background dark:text-foreground">
+      <header className="sticky top-0 z-40 border-b-2 border-black bg-[#FFFBF5] dark:border-border dark:bg-surface">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-3 sm:px-8">
+          <Link to="/" className="flex min-w-0 items-center gap-3" aria-label="Knowly home">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl border-2 border-black bg-gradient-to-br from-[#FF6B6B] to-[#A855F7] shadow-[3px_3px_0_0_#000]">
+              <Logo className="size-6" />
             </span>
-            <span className="font-display text-2xl font-black tracking-tight">Knowly</span>
+            <span className="font-display text-xl font-bold tracking-tight">Knowly</span>
           </Link>
 
-          <nav aria-label="Primary navigation" className="hidden items-center gap-2 md:flex">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <Link
+              to="/login"
+              className="hidden rounded-lg px-3 py-2 text-sm font-semibold transition-colors hover:bg-[#FFE66D] sm:inline-flex"
+            >
+              Sign in
+            </Link>
+            <button
+              type="button"
+              onClick={openApp}
+              className="inline-flex items-center gap-2 rounded-lg border-2 border-black bg-[#FF6B6B] px-4 py-2 text-sm font-bold text-black shadow-[3px_3px_0_0_#000] transition-transform hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_#000]"
+            >
+              Try Knowly
+              <ArrowUpRight className="size-4" />
+            </button>
+          </div>
+
+          <nav
+            aria-label="Sections"
+            className="order-3 flex w-full items-center gap-1 overflow-x-auto border-t border-black/15 pt-2 sm:order-none sm:w-auto sm:border-0 sm:pt-0"
+          >
             {NAV_LINKS.map(([href, label]) => (
               <a
                 key={href}
                 href={href}
-                className="rounded-xl border-[3px] border-black bg-white px-4 py-2 text-sm font-bold transition-all hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                className="shrink-0 rounded-md px-3 py-2 text-sm font-medium text-black/75 transition-colors hover:bg-[#FFE66D] hover:text-black dark:text-foreground/75 dark:hover:text-black"
               >
                 {label}
               </a>
             ))}
           </nav>
-
-          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <Link
-              to="/login"
-              className="hidden rounded-xl border-[3px] border-black bg-white px-4 py-2 text-sm font-bold transition-all hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:inline-block"
-            >
-              Sign in
-            </Link>
-            <Button
-              onClick={openApp}
-              className="rounded-xl border-4 border-black bg-[#FF6B6B] px-6 py-3 font-black text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-2px] hover:translate-y-[-2px] hover:bg-[#ff5555] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]"
-            >
-              TRY IT FREE
-              <ArrowUpRight className="size-5" />
-            </Button>
-          </div>
         </div>
-
-        <nav
-          aria-label="Sections"
-          className="flex gap-2 overflow-x-auto border-t-4 border-black bg-[#FFE66D] px-4 py-3 md:hidden"
-        >
-          {NAV_LINKS.map(([href, label]) => (
-            <a
-              key={href}
-              href={href}
-              className="shrink-0 rounded-lg border-[3px] border-black bg-white px-3 py-2 text-xs font-bold"
-            >
-              {label}
-            </a>
-          ))}
-        </nav>
       </header>
 
       <main>
-        {/* Hero Section */}
-        <section
-          className="relative px-5 pb-20 pt-16 sm:px-8 sm:pb-32 sm:pt-24 bg-[#FFFBF5] text-black dark:bg-background dark:text-white"
-          style={{
-            backgroundImage: "radial-gradient(rgba(0,0,0,0.09) 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
-          }}
-        >
-          {/* Decorative shapes */}
-          <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="absolute left-[10%] top-[15%] size-32 rotate-12 rounded-3xl border-4 border-black bg-[#A855F7] opacity-20" />
-            <div className="absolute right-[15%] top-[25%] size-24 rotate-[-15deg] rounded-full border-4 border-black bg-[#FFE66D] opacity-20" />
-            <div className="absolute bottom-[20%] left-[20%] size-28 rotate-[25deg] border-4 border-black bg-[#34D399] opacity-20" />
-            <div className="absolute bottom-[30%] right-[10%] size-36 rotate-[-20deg] rounded-2xl border-4 border-black bg-[#FF6B6B] opacity-20" />
+        <section className="relative isolate overflow-hidden border-b-2 border-black px-5 py-12 sm:px-8 sm:py-20 dark:border-border">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+          >
+            <div
+              className="absolute inset-0 opacity-35 motion-safe:anim-grid-drift"
+              style={{
+                backgroundImage:
+                  "radial-gradient(rgba(0,0,0,0.12) 1px, transparent 1px), radial-gradient(rgba(168,85,247,0.2) 1px, transparent 1px)",
+                backgroundSize: "44px 44px, 88px 88px",
+              }}
+            />
+            <div className="absolute -left-20 top-16 size-56 rounded-full border-2 border-black/10 bg-[#FFE66D]/45 motion-safe:anim-float" />
+            <div className="absolute -right-16 top-8 size-64 rotate-12 rounded-[2.5rem] border-2 border-black/10 bg-[#FF6B6B]/20 motion-safe:anim-float-fast" />
+            <div className="absolute bottom-8 left-[42%] size-24 rotate-12 rounded-2xl border-2 border-black/10 bg-[#34D399]/30 motion-safe:anim-float" />
           </div>
-
-          <div className="relative mx-auto max-w-6xl">
-            <div className="text-center">
-              {/* Badges */}
-              <Reveal>
-                <div className="flex flex-wrap items-center justify-center gap-3">
-                  <span className="inline-flex items-center gap-2 rotate-[-2deg] rounded-xl border-4 border-black bg-[#FF6B6B] px-4 py-2 font-black text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                    <Sparkles className="size-5" />
-                    100% FREE
-                  </span>
-                  <span className="inline-flex items-center gap-2 rotate-[1deg] rounded-xl border-4 border-black bg-[#34D399] px-4 py-2 font-black text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                    <Zap className="size-5" />
-                    WORKS OFFLINE
-                  </span>
-                  <span className="inline-flex items-center gap-2 rotate-[-1deg] rounded-xl border-4 border-black bg-[#FFE66D] px-4 py-2 font-black text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                    <Users className="size-5" />
-                    10K+ STUDENTS
-                  </span>
-                </div>
-              </Reveal>
-
-              {/* Giant Headline */}
-              <Reveal delay={80}>
-                <h1 className="mt-12 font-display text-[clamp(2.5rem,7vw,5.5rem)] font-black leading-[0.95] tracking-tighter">
-                  <span className="inline-block rotate-[-1deg] bg-[#FF6B6B] px-4 py-2 text-white">
-                    STOP
-                  </span>{" "}
-                  <span className="inline-block">🎒</span>
-                  <br />
-                  <span className="inline-block">juggling</span>{" "}
-                  <span className="relative inline-block">
-                    <span className="relative z-10">10 apps</span>
-                    <span className="absolute bottom-2 left-0 right-0 h-4 rotate-[-1deg] bg-[#FFE66D]" />
-                  </span>
-                  <br />
-                  <span className="inline-block rotate-[1deg] bg-gradient-to-r from-[#A855F7] to-[#EC4899] bg-clip-text px-2 text-transparent [-webkit-text-stroke:2px_black]">
-                    Study SMARTER
-                  </span>{" "}
-                  <span className="inline-block">🧠</span>
-                  <br />
-                  <span className="inline-block">in</span>{" "}
-                  <span className="inline-block rotate-[-2deg] border-4 border-black bg-[#60A5FA] px-4 py-2 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                    ONE
-                  </span>{" "}
-                  <span className="inline-block">place</span> ✨
-                </h1>
-              </Reveal>
-
-              <Reveal delay={160}>
-                <p className="mx-auto mt-8 max-w-2xl text-lg font-bold leading-relaxed sm:text-xl">
-                  Create flashcards with AI in seconds. Take handwritten notes. Track what you{" "}
-                  <span className="relative inline-block">
-                    <span className="relative z-10">actually know</span>
-                    <span className="absolute bottom-0 left-0 right-0 h-2 bg-[#FFE66D]" />
-                  </span>
-                  . Everything stays on your device —{" "}
-                  <span className="font-black">no account, no subscription, no BS</span>.
-                </p>
-              </Reveal>
-
-              <Reveal delay={240}>
-                <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                  <button
-                    onClick={openApp}
-                    className="group relative rotate-[-1deg] rounded-2xl border-4 border-black bg-[#FF6B6B] px-8 py-4 font-black text-xl text-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]"
-                  >
-                    GET STARTED FREE
-                    <ArrowUpRight className="ml-2 inline size-6" />
-                  </button>
-                  <a
-                    href="#how-it-works"
-                    className="rotate-[1deg] rounded-2xl border-4 border-black bg-white px-8 py-4 font-black text-lg shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
-                  >
-                    See how it works
-                  </a>
-                </div>
-              </Reveal>
-
-              <Reveal delay={320}>
-                <div className="mt-10 flex flex-wrap items-center justify-center gap-4 text-base font-bold">
-                  {[
-                    { icon: Check, text: "No credit card" },
-                    { icon: Check, text: "No account" },
-                    { icon: Check, text: "Works offline" },
-                    { icon: Check, text: "Private forever" },
-                  ].map((item) => (
-                    <span key={item.text} className="inline-flex items-center gap-2">
-                      <span className="grid size-6 place-items-center rounded-full border-[3px] border-black bg-[#34D399]">
-                        <item.icon className="size-4" />
-                      </span>
-                      {item.text}
-                    </span>
-                  ))}
-                </div>
-              </Reveal>
-            </div>
-          </div>
-        </section>
-
-        {/* Stats Bar */}
-        <section className="border-y-4 border-black bg-gradient-to-r from-[#FF6B6B] via-[#A855F7] to-[#FFE66D] py-12 dark:border-border dark:from-primary dark:via-purple-600 dark:to-yellow-600">
-          <div className="mx-auto max-w-7xl px-5 sm:px-8">
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {STUDENT_STATS.map((stat, index) => (
-                <Reveal key={stat.label} delay={index * 60}>
-                  <div
-                    className={cn(
-                      "rounded-2xl border-4 border-black p-6 text-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-3px] hover:translate-y-[-3px] hover:shadow-[9px_9px_0px_0px_rgba(0,0,0,1)]",
-                      stat.color,
-                      stat.ink,
-                      stat.rotation,
-                    )}
-                  >
-                    <div className="mb-2 text-5xl">{stat.emoji}</div>
-                    <div className="font-display text-4xl font-black">{stat.value}</div>
-                    <div className="mt-1 text-sm font-bold uppercase tracking-wider">
-                      {stat.label}
-                    </div>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Pain Points Section */}
-        <section className="px-5 py-20 sm:px-8 sm:py-32 bg-[#FFFBF5] text-black dark:bg-background/30 dark:text-white">
-          <div className="mx-auto max-w-7xl">
-            <Reveal>
-              <div className="text-center">
-                <h2 className="font-display text-4xl font-black leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-                  We know studying{" "}
-                  <span className="relative inline-block rotate-[-1deg]">
-                    <span className="relative z-10 bg-[#FF6B6B] px-4 py-2 text-white">SUCKS</span>
-                  </span>{" "}
-                  <br />
-                  sometimes
-                </h2>
-                <p className="mx-auto mt-6 max-w-2xl text-lg font-bold sm:text-xl">
-                  That's why we built something that{" "}
-                  <span className="relative inline-block">
-                    <span className="relative z-10">actually helps</span>
-                    <span className="absolute bottom-0 left-0 right-0 h-3 bg-[#FFE66D]" />
-                  </span>{" "}
-                  instead of getting in your way.
-                </p>
-              </div>
-            </Reveal>
-
-            <div className="mt-16 grid gap-8 md:grid-cols-2">
-              {PAIN_POINTS.map((point, index) => (
-                <Reveal key={point.title} delay={index * 80}>
-                  <div
-                    className={cn(
-                      "group relative overflow-hidden rounded-3xl border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]",
-                      point.color,
-                      point.rotation,
-                    )}
-                  >
-                    {/* Decorative corner shape */}
-                    <div className="absolute right-4 top-4 size-12 rotate-12 rounded-lg border-4 border-black bg-white opacity-30" />
-
-                    <div className="relative">
-                      <div className="mb-4 text-6xl">{point.emoji}</div>
-                      <h3 className="font-display text-2xl font-black uppercase tracking-tight">
-                        {point.title}
-                      </h3>
-                      <p className="mt-3 text-base font-bold opacity-80">{point.problem}</p>
-                      <div className="mt-4 flex items-start gap-3 rounded-xl border-4 border-black bg-white p-4">
-                        <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border-[3px] border-black bg-[#34D399]">
-                          <Check className="size-4" />
-                        </span>
-                        <p className="text-sm font-black uppercase leading-snug">
-                          {point.solution}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* How It Works Section */}
-        <section
-          id="how-it-works"
-          className="border-y-4 border-black bg-white text-black px-5 py-20 sm:px-8 sm:py-32 dark:border-border dark:bg-surface dark:text-white"
-        >
-          <div className="mx-auto max-w-7xl">
-            <Reveal>
-              <div className="text-center">
-                <span className="inline-block rotate-[-2deg] rounded-2xl border-4 border-black bg-[#FFE66D] px-6 py-3 font-black uppercase shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                  <Lightbulb className="mr-2 inline size-6" />
-                  Super Simple
-                </span>
-                <h2 className="mt-8 font-display text-4xl font-black sm:text-5xl lg:text-6xl">
-                  Here's how it{" "}
-                  <span className="relative inline-block">
-                    <span className="relative z-10">WORKS</span>
-                    <span className="absolute bottom-2 left-0 right-0 h-4 rotate-[-1deg] bg-[#A855F7]" />
-                  </span>
-                </h2>
-                <p className="mx-auto mt-6 max-w-2xl text-lg font-bold sm:text-xl">
-                  No complicated setup. No learning curve.
-                  <br />
-                  Just start studying better in <span className="text-[#FF6B6B]">3 STEPS</span>.
-                </p>
-              </div>
-            </Reveal>
-
-            <div className="mt-16 grid gap-8 md:grid-cols-3">
-              {HOW_IT_WORKS.map((step, index) => (
-                <Reveal key={step.step} delay={index * 80}>
-                  <article
-                    className={cn(
-                      "relative rounded-3xl border-4 border-black p-8 text-center shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]",
-                      step.color,
-                      step.rotation,
-                    )}
-                  >
-                    {/* Step number badge */}
-                    <div className="absolute -right-3 -top-3 grid size-14 place-items-center rotate-12 rounded-full border-4 border-black bg-white font-display text-2xl font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                      {step.step}
-                    </div>
-
-                    <div className="mx-auto mb-6 text-7xl">{step.emoji}</div>
-                    <h3 className="font-display text-2xl font-black uppercase">{step.title}</h3>
-                    <p className="mt-4 text-base font-bold leading-snug">{step.description}</p>
-
-                    {/* Arrow to next step */}
-                    {index < HOW_IT_WORKS.length - 1 && (
-                      <div className="absolute -right-12 top-1/2 hidden -translate-y-1/2 md:block">
-                        <ArrowRight className="size-10 stroke-[3]" />
-                      </div>
-                    )}
-                  </article>
-                </Reveal>
-              ))}
-            </div>
-
-            <Reveal delay={300}>
-              <div className="mt-16 text-center">
-                <button
-                  onClick={openApp}
-                  className="rotate-[-1deg] rounded-2xl border-4 border-black bg-[#FF6B6B] px-10 py-5 font-black text-xl text-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]"
-                >
-                  TRY IT NOW — IT'S FREE
-                  <ArrowUpRight className="ml-2 inline size-6" />
-                </button>
-                <p className="mt-6 font-bold">
-                  Sign in • No download • No credit card • Start in{" "}
-                  <span className="relative inline-block">
-                    <span className="relative z-10">30 seconds</span>
-                    <span className="absolute bottom-0 left-0 right-0 h-2 bg-[#FFE66D]" />
-                  </span>
-                </p>
-              </div>
-            </Reveal>
-          </div>
-        </section>
-
-        {/* Features Section */}
-        <section
-          id="features"
-          className="bg-[#FFFBF5] text-black px-5 py-20 sm:px-8 sm:py-32 dark:bg-background dark:text-white"
-        >
-          <div className="mx-auto max-w-7xl">
-            <Reveal>
-              <div className="text-center">
-                <span className="inline-block rotate-[1deg] rounded-2xl border-4 border-black bg-[#A855F7] px-6 py-3 font-black uppercase text-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                  <Star className="mr-2 inline size-6" />
-                  Everything You Need
-                </span>
-                <h2 className="mt-8 font-display text-4xl font-black sm:text-5xl lg:text-6xl">
-                  All your study tools in{" "}
-                  <span className="relative inline-block rotate-[-2deg]">
-                    <span className="relative z-10 bg-gradient-to-r from-[#FF6B6B] to-[#EC4899] bg-clip-text text-transparent [-webkit-text-stroke:2px_black]">
-                      ONE APP
-                    </span>
-                  </span>
-                </h2>
-                <p className="mx-auto mt-6 max-w-2xl text-lg font-bold sm:text-xl">
-                  No more switching between Quizlet, Notion, OneNote, and{" "}
-                  <span className="relative inline-block">
-                    <span className="relative z-10">7 other apps</span>
-                    <span className="absolute bottom-0 left-0 right-0 h-3 bg-[#FFE66D]" />
-                  </span>
-                  . Knowly has it all.
-                </p>
-              </div>
-            </Reveal>
-            <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {FEATURE_GROUPS.map((group, index) => (
-                <Reveal key={group.title} delay={index * 60} className="h-full">
-                  <article
-                    className={cn(
-                      "group h-full rounded-3xl border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]",
-                      group.color,
-                      group.rotation,
-                    )}
-                  >
-                    {/* Decorative shapes */}
-                    <div className="absolute right-4 top-4 size-10 rotate-12 rounded-full border-4 border-black bg-white/40" />
-
-                    <div className="relative">
-                      <div className="mb-4 text-6xl">{group.emoji}</div>
-                      <h3 className="font-display text-2xl font-black uppercase leading-tight tracking-tight">
-                        {group.title}
-                      </h3>
-                      <p className="mt-3 rounded-xl border-[3px] border-black bg-white/80 p-3 text-sm font-black uppercase leading-snug">
-                        {group.studentSpeak}
-                      </p>
-                      <ul className="mt-6 space-y-2">
-                        {group.items.map((item) => (
-                          <li key={item} className="flex items-start gap-2 text-sm font-bold">
-                            <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border-[3px] border-black bg-white">
-                              <Check className="size-3" />
-                            </span>
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </article>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* For Students Section */}
-        <section
-          id="for-you"
-          className="relative overflow-hidden px-5 py-20 sm:px-8 sm:py-28 bg-[#FFFBF5] text-black dark:bg-background dark:text-white"
-          style={{
-            backgroundImage: "radial-gradient(rgba(0,0,0,0.13) 1px, transparent 1px)",
-            backgroundSize: "26px 26px",
-          }}
-        >
-          <div className="mx-auto max-w-7xl">
-            <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
-              <Reveal>
-                <div>
-                  <span className="inline-flex rotate-[-2deg] items-center gap-2 rounded-xl border-4 border-black bg-[#60A5FA] px-4 py-2 font-black uppercase shadow-[5px_5px_0px_0px_rgba(0,0,0,1)]">
-                    <GraduationCap className="size-5" />
-                    Built for students
-                  </span>
-                  <h2 className="mt-8 font-display text-4xl font-black leading-[1.05] sm:text-5xl">
-                    Finally, an app that{" "}
-                    <span className="relative inline-block">
-                      <span className="relative z-10">GETS YOU</span>
-                      <span className="absolute bottom-1 left-0 right-0 h-4 rotate-[-1deg] bg-[#FFE66D]" />
-                    </span>
-                    <br />
-                    <span className="inline-block rotate-[-1deg] bg-[#A855F7] px-3 py-1 text-white">
-                      not your wallet
-                    </span>
-                  </h2>
-                  <p className="mt-6 max-w-xl text-lg font-bold leading-relaxed sm:text-xl">
-                    We're students too. We know you're broke, busy, and tired of paying for apps
-                    that don't actually help you learn.
-                  </p>
-
-                  <div className="mt-10 grid gap-5 sm:grid-cols-2">
-                    {[
-                      {
-                        emoji: "💸",
-                        title: "Actually free",
-                        description:
-                          "No trial. No premium tier. No 'just $9.99/month'. Zero dollars, forever.",
-                        color: "bg-[#FFE66D]",
-                      },
-                      {
-                        emoji: "📱",
-                        title: "Works anywhere",
-                        description:
-                          "Study on your laptop in the library, phone on the bus, tablet in bed. Everything syncs.",
-                        color: "bg-[#60A5FA]",
-                      },
-                      {
-                        emoji: "⚡",
-                        title: "Save time",
-                        description:
-                          "AI-powered flashcard creation means you spend 5 minutes instead of 2 hours making cards.",
-                        color: "bg-[#34D399]",
-                      },
-                      {
-                        emoji: "🔒",
-                        title: "Your privacy matters",
-                        description:
-                          "No tracking, no selling your data, no creepy ads. Your study habits are nobody's business.",
-                        color: "bg-[#FF6B6B]",
-                      },
-                    ].map((item, index) => (
-                      <div
-                        key={item.title}
-                        className={cn(
-                          "rounded-2xl border-4 border-black bg-white p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-3px] hover:translate-y-[-3px] hover:shadow-[9px_9px_0px_0px_rgba(0,0,0,1)]",
-                          index % 2 === 0 ? "rotate-[-1deg]" : "rotate-[1deg]",
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            "grid size-11 place-items-center rounded-xl border-4 border-black text-2xl",
-                            item.color,
-                          )}
-                        >
-                          {item.emoji}
-                        </span>
-                        <h3 className="mt-3 font-display text-lg font-black uppercase leading-tight">
-                          {item.title}
-                        </h3>
-                        <p className="mt-2 text-sm font-bold leading-snug">{item.description}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={openApp}
-                    className="mt-10 rotate-[-1deg] rounded-2xl border-4 border-black bg-[#FF6B6B] px-8 py-4 text-lg font-black text-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]"
-                  >
-                    Start studying smarter
-                    <ArrowRight className="ml-2 inline size-5 stroke-[3]" />
-                  </button>
-                </div>
-              </Reveal>
-
-              <Reveal delay={100} className="relative">
-                <div className="space-y-6">
-                  {[
-                    {
-                      icon: Coffee,
-                      title: "Late night study mode",
-                      tagline: "When coffee isn't enough",
-                      description:
-                        "Focus timer, dark mode, and spaced repetition that actually works. Because pulling all-nighters isn't a sustainable strategy.",
-                      color: "bg-[#FFE66D]",
-                      rotation: "rotate-[1deg]",
-                    },
-                    {
-                      icon: Moon,
-                      title: "Before bed review",
-                      tagline: "5 minutes, big impact",
-                      description:
-                        "Quick review before sleep helps memory consolidation. Science says so, and it actually works.",
-                      color: "bg-[#A855F7]",
-                      rotation: "rotate-[-2deg]",
-                    },
-                    {
-                      icon: Trophy,
-                      title: "Exam prep mode",
-                      tagline: "When it's crunch time",
-                      description:
-                        "Timed practice exams, weak spot analysis, and cram mode. Everything you need when the test is tomorrow.",
-                      color: "bg-[#34D399]",
-                      rotation: "rotate-[1deg]",
-                    },
-                  ].map((item) => (
-                    <article
-                      key={item.title}
-                      className={cn(
-                        "rounded-3xl border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]",
-                        item.rotation,
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={cn(
-                            "grid size-12 shrink-0 place-items-center rounded-xl border-4 border-black",
-                            item.color,
-                          )}
-                        >
-                          <item.icon className="size-6 stroke-[3]" />
-                        </span>
-                        <div>
-                          <p className="font-display text-lg font-black leading-tight">
-                            {item.title}
-                          </p>
-                          <p className="text-sm font-bold opacity-70">{item.tagline}</p>
-                        </div>
-                      </div>
-                      <p className="mt-4 text-sm font-bold leading-snug">{item.description}</p>
-                    </article>
-                  ))}
-                </div>
-
-                <span className="absolute -top-5 right-0 hidden rotate-[7deg] rounded-xl border-4 border-black bg-[#FF6B6B] px-4 py-2 text-sm font-black text-white shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] sm:inline-block">
-                  STUDY ANYWHERE ✈️
-                </span>
-              </Reveal>
-            </div>
-          </div>
-        </section>
-
-        {/* Privacy Section - Simplified for brutalist style */}
-        <section
-          id="privacy"
-          className="border-y-4 border-black bg-[#34D399] px-5 py-20 sm:px-8 sm:py-32"
-        >
-          <Reveal className="mx-auto max-w-6xl">
-            <div className="text-center">
-              <span className="inline-block rotate-[-2deg] rounded-2xl border-4 border-black bg-white px-6 py-3 font-black uppercase shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                <ShieldCheck className="mr-2 inline size-6" />
-                Privacy That Doesn't Suck
-              </span>
-              <h2 className="mt-8 font-display text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
-                What you study is{" "}
-                <span className="inline-block rotate-[1deg] bg-black px-4 py-2 text-white">
-                  NOBODY'S BUSINESS
-                </span>
-                <span className="inline-block ml-2">🔒</span>
-              </h2>
-              <p className="mx-auto mt-6 max-w-2xl text-lg font-bold sm:text-xl">
-                We literally{" "}
-                <span className="relative inline-block">
-                  <span className="relative z-10">can't see your stuff</span>
-                  <span className="absolute bottom-0 left-0 right-0 h-3 bg-[#FFE66D]" />
-                </span>{" "}
-                even if we wanted to. Everything stays on your device.
+          <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[0.88fr_1.12fr] lg:gap-14">
+            <div className="max-w-xl">
+              <p className="inline-flex items-center gap-2 rounded-md border-2 border-black bg-[#FFE66D] px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-black">
+                <Zap className="size-4" />
+                Made by a student. For students.
               </p>
-
-              <div className="mx-auto mt-12 grid max-w-3xl gap-6 sm:grid-cols-2">
-                {[
-                  { icon: Check, text: "No account needed", sub: "Just open & study" },
-                  { icon: Check, text: "Works offline", sub: "Bad WiFi? No problem" },
-                  { icon: Check, text: "Your data, your device", sub: "100% local storage" },
-                  { icon: Check, text: "Easy backups", sub: "One file = everything" },
-                ].map((item, i) => (
-                  <Reveal key={item.text} delay={i * 60}>
-                    <div className="rounded-2xl border-4 border-black bg-white p-6 text-left shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                      <div className="mb-2 grid size-10 place-items-center rounded-full border-[3px] border-black bg-black">
-                        <item.icon className="size-5 text-white" />
-                      </div>
-                      <p className="font-display text-xl font-black">{item.text}</p>
-                      <p className="mt-1 text-sm font-bold opacity-70">{item.sub}</p>
-                    </div>
-                  </Reveal>
-                ))}
+              <h1 className="mt-6 font-display text-[clamp(2.75rem,6vw,5rem)] font-bold leading-[0.98] tracking-[-0.06em]">
+                A study app
+                <br />
+                that <span className="bg-[#FF6B6B] px-2">gets you.</span>
+              </h1>
+              <p className="mt-6 max-w-lg text-lg leading-8 text-black/75 sm:text-xl dark:text-foreground/75">
+                No lectures about “unlocking your potential.” Just the notes, flashcards, and
+                reviews you need, in one place, built by someone who’s in this with you. Create a
+                free account to sync across devices, or keep your study space local. Knowly is free
+                forever either way.
+              </p>
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={openApp}
+                  className="inline-flex items-center gap-2 rounded-lg border-2 border-black bg-[#FF6B6B] px-5 py-3 font-bold text-black shadow-[4px_4px_0_0_#000] transition-transform hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_#000]"
+                >
+                  Start studying
+                  <ArrowRight className="size-4" />
+                </button>
+                <a
+                  href="#what-you-get"
+                  className="rounded-lg px-4 py-3 font-semibold underline decoration-2 underline-offset-4 hover:bg-[#FFE66D]"
+                >
+                  Take a look around.
+                </a>
               </div>
-
-              <Reveal delay={300}>
-                <div className="mt-12 rounded-3xl border-4 border-black bg-white p-8 text-left shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                  <div className="flex items-start gap-4">
-                    <div className="grid size-16 shrink-0 place-items-center rounded-2xl border-4 border-black bg-[#FFE66D]">
-                      <FileJson className="size-8" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-display text-2xl font-black">my-study-backup.json</p>
-                      <p className="mt-1 font-bold">724 KB • Everything you need</p>
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {["Flashcards", "Notebooks", "Progress", "Streaks"].map((item) => (
-                          <span
-                            key={item}
-                            className="rounded-lg border-[3px] border-black bg-[#FFFBF5] px-3 py-1 text-sm font-bold"
-                          >
-                            ✓ {item}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="mt-4 text-sm font-bold opacity-70">
-                        <span className="font-black">Fun fact:</span> The entire app is smaller than
-                        one TikTok video 📱
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </Reveal>
-            </div>
-          </Reveal>
-        </section>
-
-        {/* Final CTA */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-[#FF6B6B] via-[#A855F7] to-[#FFE66D] px-5 py-24 sm:px-8 sm:py-32">
-          {/* Decorative shapes */}
-          <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="absolute left-[5%] top-[10%] size-40 rotate-12 rounded-3xl border-4 border-black bg-white/20" />
-            <div className="absolute right-[10%] top-[20%] size-32 rotate-[-20deg] rounded-full border-4 border-black bg-white/20" />
-            <div className="absolute bottom-[15%] left-[15%] size-36 rotate-[30deg] border-4 border-black bg-white/20" />
-            <div className="absolute bottom-[25%] right-[8%] size-28 rotate-[-15deg] rounded-2xl border-4 border-black bg-white/20" />
-          </div>
-
-          <Reveal className="relative mx-auto max-w-4xl text-center">
-            <span className="inline-block rotate-[2deg] rounded-2xl border-4 border-black bg-white px-6 py-3 font-black uppercase shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-              <Sparkles className="mr-2 inline size-6" />
-              Ready to Level Up?
-            </span>
-            <h2 className="mt-8 font-display text-[clamp(2.5rem,6vw,5rem)] font-black leading-[0.95]">
-              Time to{" "}
-              <span className="inline-block rotate-[-2deg] bg-black px-4 py-2 text-white">
-                ACTUALLY
-              </span>
-              <br />
-              <span className="inline-block rotate-[1deg] border-4 border-black bg-white px-4 py-2 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                study smarter
-              </span>
-              <span className="inline-block ml-2">🚀</span>
-            </h2>
-            <p className="mx-auto mt-8 max-w-2xl text-xl font-bold">
-              Join 10,000+ students who stopped wasting time.
-              <br />
-              <span className="text-2xl font-black">Free forever • Works offline • No BS</span>
-            </p>
-            <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <button
-                onClick={openApp}
-                className="group rotate-[-1deg] rounded-2xl border-4 border-black bg-white px-10 py-5 font-black text-2xl shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[-6px] hover:translate-y-[-6px] hover:shadow-[16px_16px_0px_0px_rgba(0,0,0,1)]"
-              >
-                GET STARTED FREE
-                <ArrowUpRight className="ml-2 inline size-8" />
-              </button>
-            </div>
-            <p className="mt-8 text-base font-bold">
-              No download • No credit card • No account •{" "}
-              <span className="relative inline-block">
-                <span className="relative z-10 font-black">Start in 30 seconds</span>
-                <span className="absolute bottom-0 left-0 right-0 h-3 bg-white" />
-              </span>
-            </p>
-          </Reveal>
-        </section>
-      </main>
-
-      <footer className="border-t-4 border-black bg-white text-black dark:border-border dark:bg-surface dark:text-white">
-        <div className="mx-auto grid max-w-7xl gap-12 px-5 py-16 sm:px-8 md:grid-cols-[1.2fr_1.8fr]">
-          <div>
-            <Link to="/" className="inline-flex items-center gap-3">
-              <span className="grid size-14 place-items-center rounded-2xl border-4 border-black bg-gradient-to-br from-[#FF6B6B] to-[#A855F7] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                <Logo className="size-8" />
-              </span>
-              <span className="font-display text-2xl font-black tracking-tight">Knowly</span>
-            </Link>
-            <p className="mt-4 max-w-xs font-bold leading-snug">
-              Study smarter, not harder. Free forever, works offline, respects your privacy.
-            </p>
-            <div className="mt-6 inline-flex items-center gap-2 rotate-[-1deg] rounded-xl border-[3px] border-black bg-[#34D399] px-4 py-2 font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-              <span className="size-2 rounded-full bg-black" />
-              100% FREE & LOCAL
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
-            <div>
-              <p className="font-display text-sm font-black uppercase">Learn More</p>
-              <ul className="mt-4 space-y-2 font-bold">
-                {NAV_LINKS.map(([href, label]) => (
-                  <li key={href}>
-                    <a
-                      href={href}
-                      className="transition-all hover:translate-x-1 hover:text-[#FF6B6B]"
-                    >
-                      → {label}
-                    </a>
+              <ul className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-black/70 dark:text-foreground/70">
+                {["Free forever.", "Free account sync.", "Works offline."].map((item) => (
+                  <li key={item} className="inline-flex items-center gap-1.5">
+                    <Check className="size-4 text-[#047857]" />
+                    {item}
                   </li>
                 ))}
               </ul>
             </div>
-            <div>
-              <p className="font-display text-sm font-black uppercase">Features</p>
-              <ul className="mt-4 space-y-2 font-bold">
-                <li>→ AI flashcards</li>
-                <li>→ Smart reviews</li>
-                <li>→ Notebooks</li>
-                <li>→ Progress tracking</li>
-              </ul>
-            </div>
-            <div>
-              <p className="font-display text-sm font-black uppercase">Get Started</p>
-              <ul className="mt-4 space-y-2 font-bold">
-                <li>
-                  <button
-                    type="button"
-                    onClick={openApp}
-                    className="transition-all hover:translate-x-1 hover:text-[#FF6B6B]"
-                  >
-                    → Try it free
-                  </button>
-                </li>
-                <li>
-                  <Link
-                    to="/privacy"
-                    className="transition-all hover:translate-x-1 hover:text-[#FF6B6B]"
-                  >
-                    → Privacy policy
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/terms"
-                    className="transition-all hover:translate-x-1 hover:text-[#FF6B6B]"
-                  >
-                    → Terms of use
-                  </Link>
-                </li>
-              </ul>
+
+            <div className="relative min-w-0">
+              <span
+                aria-hidden="true"
+                className="absolute -right-3 -top-4 z-20 grid size-12 place-items-center rounded-full border-2 border-black bg-[#34D399] motion-safe:anim-float-fast"
+              >
+                <Sparkles className="size-5" />
+              </span>
+              <span
+                aria-hidden="true"
+                className="absolute -bottom-4 -left-3 z-20 size-8 rotate-12 border-2 border-black bg-[#FFE66D] motion-safe:anim-float"
+              />
+              <div
+                aria-hidden="true"
+                className="absolute -inset-2 rotate-1 rounded-2xl border-2 border-black bg-[#A855F7]"
+              />
+              <div className="relative z-10 motion-safe:anim-float">
+                <DashboardPreview />
+              </div>
             </div>
           </div>
-        </div>
-        <div className="border-t-4 border-black bg-[#FFE66D] px-5 py-6 sm:px-8">
-          <div className="mx-auto flex max-w-7xl flex-col gap-2 text-sm font-black sm:flex-row sm:items-center sm:justify-between">
-            <span>© {new Date().getFullYear()} Knowly. Made with 💜 for students.</span>
-            <span>SIGN IN • NO TRACKING • YOUR DATA STAYS YOURS</span>
+        </section>
+
+        <section id="what-you-get" className="scroll-mt-24 px-5 py-16 sm:px-8 sm:py-24">
+          <div className="relative mx-auto max-w-6xl">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-8 top-2 hidden sm:block"
+            >
+              <div className="size-16 rotate-12 border-2 border-black bg-[#60A5FA] motion-safe:anim-float-fast" />
+              <div className="-mt-3 ml-10 size-7 rounded-full border-2 border-black bg-[#FF6B6B] motion-safe:anim-bounce-light" />
+            </div>
+            <div className="grid gap-6 border-b-2 border-black pb-8 md:grid-cols-[0.8fr_1.2fr] md:items-end dark:border-border">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#C0272D] dark:text-[#FF8A8A]">
+                  The useful stuff.
+                </p>
+                <h2 className="mt-3 max-w-md font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+                  Less app juggling. More actual studying.
+                </h2>
+              </div>
+              <p className="max-w-xl text-base leading-7 text-black/70 sm:text-lg dark:text-foreground/70">
+                You already have enough tabs open. Knowly brings the parts of studying that work
+                together, without making you learn a whole new productivity religion.
+              </p>
+            </div>
+
+            <div className="divide-y-2 divide-black/15 dark:divide-border">
+              {STUDY_TOOLS.map((tool, index) => (
+                <article
+                  key={tool.title}
+                  className={`group grid gap-4 rounded-xl border-l-4 border-black/20 px-4 py-7 transition-colors sm:grid-cols-[3rem_1fr_1.1fr] sm:items-start sm:gap-6 ${tool.surface} ${tool.wash}`}
+                >
+                  <span
+                    className={`grid size-11 place-items-center rounded-lg border-2 border-black text-black transition-transform group-hover:rotate-6 group-hover:scale-110 ${tool.tone}`}
+                  >
+                    <tool.icon className="size-5" />
+                  </span>
+                  <div className="flex items-start gap-3">
+                    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#FF6B6B]/20 font-mono text-[10px] font-bold text-black/70 dark:text-foreground/70">
+                      0{index + 1}
+                    </span>
+                    <h3 className="font-display text-lg font-bold leading-snug sm:text-xl">
+                      {tool.title}
+                    </h3>
+                  </div>
+                  <p className="max-w-xl text-sm leading-6 text-black/70 sm:text-base dark:text-foreground/70">
+                    {tool.description}
+                  </p>
+                </article>
+              ))}
+            </div>
           </div>
-          <div className="mx-auto mt-4 max-w-7xl border-t-2 border-black pt-4 text-center text-xs font-bold leading-snug">
-            <p>
-              Made with love by Frederic Liam De Guzman, for the kind students of the School of Our
-              Lady of La Salette.
-            </p>
-            <p className="mt-2">All rights reserved. To God be all the glory! 🙏</p>
+        </section>
+
+        <section
+          id="how-it-works"
+          className="relative isolate scroll-mt-24 overflow-hidden border-y-2 border-black bg-white px-5 py-16 sm:px-8 sm:py-20 dark:border-border dark:bg-surface dark:text-foreground"
+        >
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute -right-16 -top-20 size-64 rounded-full border-2 border-black/10 bg-[#FFE66D]/45 motion-safe:anim-float" />
+            <div className="absolute -bottom-12 left-[35%] size-40 rotate-12 border-2 border-black/10 bg-[#60A5FA]/30 motion-safe:anim-float-fast" />
           </div>
+          <div className="relative z-10 mx-auto grid max-w-6xl gap-10 md:grid-cols-[0.8fr_1.2fr]">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#C0272D] dark:text-[#FF8A8A]">
+                No big setup.
+              </p>
+              <h2 className="mt-3 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+                Start where you are.
+              </h2>
+              <p className="mt-4 max-w-md leading-7 text-black/70 dark:text-foreground/70">
+                Use the notes you already have. Pick the tools that help. You don’t need a perfect
+                system before you can get started.
+              </p>
+            </div>
+            <ol className="divide-y-2 divide-black/15 border-y-2 border-black dark:divide-border dark:border-border">
+              {[
+                {
+                  title: "Bring your study stuff.",
+                  description: "Add notes, PDFs, or flashcards you’ve already made.",
+                  tone: "bg-[#FFE66D]",
+                },
+                {
+                  title: "Pick what helps today.",
+                  description: "Make cards, review a deck, write notes, or work through a course.",
+                  tone: "bg-[#34D399]",
+                },
+                {
+                  title: "Keep moving at your pace.",
+                  description: "See what’s clicking and what could use another look.",
+                  tone: "bg-[#A855F7]",
+                },
+              ].map((step, index) => (
+                <li key={step.title} className="flex gap-5 py-5">
+                  <span
+                    className={`grid size-8 shrink-0 place-items-center rounded-full border-2 border-black font-mono text-sm font-bold ${step.tone}`}
+                  >
+                    {index + 1}
+                  </span>
+                  <div>
+                    <h3 className="font-display font-bold">{step.title}</h3>
+                    <p className="mt-1 text-sm leading-6 text-black/70 dark:text-foreground/70">
+                      {step.description}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <section
+          id="privacy"
+          className="relative isolate scroll-mt-24 overflow-hidden bg-[#34D399] px-5 py-14 text-black sm:px-8 sm:py-16"
+        >
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute -right-8 -top-12 size-48 rounded-full border-2 border-black/15 bg-[#FFE66D]/35 motion-safe:anim-float" />
+            <div className="absolute bottom-[-4rem] left-[28%] size-40 rotate-12 border-2 border-black/10 bg-[#A855F7]/20 motion-safe:anim-float-fast" />
+          </div>
+          <div className="relative z-10 mx-auto grid max-w-6xl gap-6 sm:grid-cols-[auto_1fr_auto] sm:items-center">
+            <span className="grid size-12 place-items-center rounded-lg border-2 border-black bg-white">
+              <LockKeyhole className="size-5" />
+            </span>
+            <div>
+              <h2 className="font-display text-2xl font-bold tracking-tight">
+                Your study life is yours.
+              </h2>
+              <p className="mt-2 max-w-2xl leading-7">
+                Sign in or create a free account to keep your library in sync across devices. Prefer
+                a local-only study space? That works too. Your study habits are never used for ads,
+                and there is no subscription.
+              </p>
+            </div>
+            <span className="w-fit rounded-md border-2 border-black bg-white px-3 py-2 text-sm font-bold">
+              No tracking. No subscription.
+            </span>
+          </div>
+        </section>
+
+        <section className="relative isolate overflow-hidden border-t-2 border-black bg-[#FFE66D] px-5 py-16 sm:px-8 sm:py-20">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute -right-12 -top-16 size-56 rotate-12 rounded-[2rem] border-2 border-black/15 bg-[#FF6B6B]/40 motion-safe:anim-float" />
+            <div className="absolute -bottom-16 left-[40%] size-48 rounded-full border-2 border-black/10 bg-[#60A5FA]/35 motion-safe:anim-float-fast" />
+            <div className="absolute right-[35%] top-8 size-12 rotate-45 border-2 border-black/15 bg-[#A855F7]/30 motion-safe:anim-bounce-light" />
+          </div>
+          <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#C0272D] dark:text-[#FF8A8A]">
+                You’ve got this.
+              </p>
+              <h2 className="mt-3 max-w-2xl font-display text-3xl font-bold tracking-tight sm:text-4xl">
+                Let’s make studying a little less painful.
+              </h2>
+              <p className="mt-3 max-w-xl leading-7 text-black/70 dark:text-foreground/70">
+                Already have an account?{" "}
+                <Link
+                  to="/login"
+                  className="font-bold underline decoration-2 underline-offset-4 hover:text-[#C0272D] dark:hover:text-[#FF8A8A]"
+                >
+                  Sign in
+                </Link>{" "}
+                and pick up where you left off. New here? Create one for free. Knowly is free
+                forever, with no subscription.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={openApp}
+              className="inline-flex w-fit shrink-0 items-center gap-2 rounded-lg border-2 border-black bg-[#FF6B6B] px-5 py-3 font-bold text-black shadow-[4px_4px_0_0_#000] transition-transform hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_#000]"
+            >
+              Try Knowly
+              <ArrowUpRight className="size-4" />
+            </button>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t-2 border-black bg-white dark:bg-surface">
+        <div className="mx-auto flex max-w-6xl flex-col gap-5 px-5 py-7 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+          <div className="flex items-center gap-3">
+            <span className="grid size-9 place-items-center rounded-lg border-2 border-black bg-gradient-to-br from-[#FF6B6B] to-[#A855F7]">
+              <Logo className="size-5" />
+            </span>
+            <div>
+              <p className="font-display font-bold">Knowly</p>
+              <p className="text-sm text-black/65 dark:text-foreground/65">
+                Made with students in mind.
+              </p>
+            </div>
+          </div>
+          <nav aria-label="Legal" className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium">
+            <Link
+              to="/privacy"
+              className="underline underline-offset-4 hover:text-[#C0272D] dark:hover:text-[#FF8A8A]"
+            >
+              Privacy policy
+            </Link>
+            <Link
+              to="/terms"
+              className="underline underline-offset-4 hover:text-[#C0272D] dark:hover:text-[#FF8A8A]"
+            >
+              Terms of use
+            </Link>
+            <Link
+              to="/login"
+              className="underline underline-offset-4 hover:text-[#C0272D] dark:hover:text-[#FF8A8A]"
+            >
+              Sign in
+            </Link>
+          </nav>
+          <p className="text-sm text-black/65 dark:text-foreground/65">
+            © {new Date().getFullYear()} Knowly.
+          </p>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function DashboardPreview() {
+  return (
+    <div
+      role="img"
+      aria-label="Preview of the Knowly home screen, showing a study dashboard, review progress, and recent decks."
+      className="min-w-0 overflow-hidden rounded-xl border-2 border-black bg-white text-black shadow-[8px_8px_0_0_#000] sm:rounded-2xl"
+    >
+      <div className="flex h-10 items-center gap-2 border-b-2 border-black px-4">
+        <span className="size-2.5 rounded-full border border-black bg-[#FF6B6B]" />
+        <span className="size-2.5 rounded-full border border-black bg-[#FFE66D]" />
+        <span className="size-2.5 rounded-full border border-black bg-[#34D399]" />
+        <span className="ml-2 truncate text-xs font-medium text-black/55">
+          knowly.app / dashboard
+        </span>
+      </div>
+      <div className="grid min-h-[360px] sm:grid-cols-[140px_1fr]">
+        <aside className="hidden border-r border-black/15 bg-[#FFFBF5] p-3 sm:block">
+          <div className="mb-6 flex items-center gap-2 px-1">
+            <span className="grid size-7 place-items-center rounded-md border border-black bg-[#FF6B6B]">
+              <Logo className="size-4" />
+            </span>
+            <span className="font-display text-sm font-bold">Knowly</span>
+          </div>
+          <p className="px-2 text-[9px] font-bold uppercase tracking-wider text-black/45">
+            Workspace
+          </p>
+          <div className="mt-2 space-y-1 text-[11px] font-medium">
+            <p className="rounded-md border border-black/10 bg-[#FFE66D] px-2 py-1.5">Home</p>
+            <p className="px-2 py-1.5 text-black/65">My decks</p>
+            <p className="px-2 py-1.5 text-black/65">Courses</p>
+            <p className="px-2 py-1.5 text-black/65">Notebooks</p>
+            <p className="px-2 py-1.5 text-black/65">Review</p>
+          </div>
+          <div className="mt-7 rounded-md border border-black/15 bg-white p-2">
+            <p className="text-[9px] font-bold uppercase text-black/50">Today’s goal</p>
+            <p className="mt-1 text-xs font-bold">25 of 40 min</p>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-black/10">
+              <div className="h-full w-3/5 bg-[#34D399]" />
+            </div>
+          </div>
+        </aside>
+
+        <div className="min-w-0 p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#C0272D]">
+                Your learning space
+              </p>
+              <h2 className="mt-1 font-display text-lg font-bold tracking-tight sm:text-xl">
+                Good afternoon, Alex.
+              </h2>
+              <p className="mt-1 text-[10px] text-black/55 sm:text-xs">
+                A little progress still counts.
+              </p>
+            </div>
+            <span className="hidden rounded-md border border-black bg-[#FFE66D] px-2 py-1 text-[10px] font-bold sm:inline-block">
+              Study session
+            </span>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {[
+              { label: "Review due", value: "12 cards", tone: "bg-[#FFE66D]" },
+              { label: "This week", value: "3.5 hrs", tone: "bg-[#34D399]" },
+              { label: "Streak", value: "4 days", tone: "bg-[#60A5FA]" },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className={`min-w-0 rounded-md border border-black p-2 ${stat.tone}`}
+              >
+                <p className="truncate text-[8px] font-semibold text-black/65 sm:text-[9px]">
+                  {stat.label}
+                </p>
+                <p className="mt-1 truncate text-[10px] font-bold sm:text-xs">{stat.value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-xs font-bold">Pick up where you left off.</h3>
+              <span className="text-[9px] text-black/50">View all</span>
+            </div>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              {[
+                {
+                  icon: BookOpen,
+                  subject: "Biology",
+                  deck: "Cell structure",
+                  progress: "8 of 20 cards",
+                  width: "w-2/5",
+                },
+                {
+                  icon: NotebookPen,
+                  subject: "History",
+                  deck: "Industrial Revolution",
+                  progress: "12 of 18 cards",
+                  width: "w-2/3",
+                },
+              ].map((deck) => (
+                <div key={deck.deck} className="min-w-0 rounded-md border border-black/20 p-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="grid size-7 shrink-0 place-items-center rounded bg-[#FFFBF5]">
+                      <deck.icon className="size-3.5" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[8px] font-semibold uppercase tracking-wide text-black/50">
+                        {deck.subject}
+                      </p>
+                      <p className="truncate text-[10px] font-bold">{deck.deck}</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-2 text-[8px] text-black/55">
+                    <span>{deck.progress}</span>
+                    <span>Keep going</span>
+                  </div>
+                  <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-black/10">
+                    <div className={`h-full bg-[#A855F7] ${deck.width}`} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-3 flex items-center gap-2 rounded-md border border-black/15 bg-[#FFFBF5] p-2.5">
+            <span className="grid size-7 shrink-0 place-items-center rounded bg-[#FF6B6B]">
+              <Target className="size-3.5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-bold">A quick review is ready.</p>
+              <p className="text-[9px] text-black/55">12 cards are waiting when you are.</p>
+            </div>
+            <ArrowRight className="size-3.5 shrink-0" />
+          </div>
+        </div>
+      </div>
+      <p className="border-t border-black/15 px-4 py-2 text-center text-[10px] text-black/55">
+        A peek at your Knowly home screen.
+      </p>
     </div>
   );
 }

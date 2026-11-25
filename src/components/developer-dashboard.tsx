@@ -35,19 +35,49 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { buildSampleProfile } from "@/lib/sample-profile";
+import { loadSampleNotebook } from "@/lib/sample-notes";
+import { isDeveloperModeUnlocked, lockDeveloperMode } from "@/lib/developer-mode";
 import { collectDue } from "@/lib/srs";
 import { estimateStorageUsage, formatBytes, type StorageUsage } from "@/lib/storage-usage";
 import { cn } from "@/lib/utils";
 import { useKnowly } from "@/store/knowly";
+import { useAuth } from "@/store/auth-context";
 
 type ConfirmAction = "demo" | "quiz-checkpoints" | null;
 
 const QUICK_LINKS = [
   { to: "/dashboard", label: "Dashboard" },
-  { to: "/decks", label: "Decks" },
-  { to: "/generate", label: "Prompt Studio" },
+  { to: "/review", label: "Spaced review" },
+  { to: "/weak-spots", label: "Weak spots" },
+  { to: "/cram", label: "Cram mode" },
   { to: "/quiz", label: "Quiz" },
+  { to: "/exam", label: "Exam" },
+  { to: "/print", label: "Print" },
+  { to: "/papers", label: "Past papers" },
+  { to: "/focus", label: "Focus timer" },
+  { to: "/courses", label: "Courses" },
+  { to: "/timetable", label: "Timetable" },
+  { to: "/modules", label: "Modules" },
+  { to: "/modules/forge", label: "Module forge" },
+  { to: "/decks", label: "Decks" },
+  { to: "/cards", label: "Cards" },
+  { to: "/tags", label: "Tags" },
+  { to: "/bookmarks", label: "Bookmarks" },
+  { to: "/labels", label: "Binder labels" },
+  { to: "/forge", label: "Deck forge" },
+  { to: "/deck-tools", label: "Merge & split" },
+  { to: "/format", label: "Content formats" },
+  { to: "/generate", label: "Prompt Studio" },
+  { to: "/import", label: "Import" },
+  { to: "/notes", label: "Notebooks" },
+  { to: "/journal", label: "Study journal" },
   { to: "/stats", label: "Statistics" },
+  { to: "/goals", label: "Goals" },
+  { to: "/achievements", label: "Achievements" },
+  { to: "/leeches", label: "Leeches" },
+  { to: "/report", label: "Reports" },
+  { to: "/snapshots", label: "Snapshots" },
+  { to: "/shortcuts", label: "Keyboard shortcuts" },
   { to: "/settings", label: "Settings" },
 ] as const;
 
@@ -64,6 +94,7 @@ function Metric({ label, value }: { label: string; value: string | number }) {
 
 export function DeveloperDashboard() {
   const { state, hydrated, setState, updateSettings, exportState, importState } = useKnowly();
+  const { user, loading: authLoading } = useAuth();
   const pathname = useRouterState({ select: (router) => router.location.pathname });
   const [open, setOpen] = useState(false);
   const [storageUsage, setStorageUsage] = useState<StorageUsage | null>(null);
@@ -183,14 +214,36 @@ export function DeveloperDashboard() {
     }
   };
 
-  const confirmPendingAction = () => {
+  const confirmPendingAction = async () => {
     if (confirmAction === "demo") {
+      if (authLoading) {
+        toast.error("Wait for the account status check to finish", {
+          description: "Then try loading the sample profile again.",
+        });
+        setConfirmAction(null);
+        return;
+      }
+      if (user) {
+        toast.error("Sign out before loading the sample profile", {
+          description: "This prevents local demo data from syncing over your account.",
+        });
+        setConfirmAction(null);
+        return;
+      }
       const sample = buildSampleProfile();
       if (!importState(JSON.stringify(sample))) {
         toast.error("Couldn't load the demo profile");
         return;
       }
-      toast.success("Demo profile loaded");
+      try {
+        await loadSampleNotebook();
+        toast.success("Demo profile and sample notebook loaded");
+      } catch (error) {
+        toast.error("The profile loaded, but the sample notebook couldn't be created", {
+          description:
+            error instanceof Error ? error.message : "Check browser storage and try again.",
+        });
+      }
       setOpen(false);
     } else if (confirmAction === "quiz-checkpoints") {
       setState((current) => ({ ...current, savedQuizSessions: [] }));
@@ -204,7 +257,7 @@ export function DeveloperDashboard() {
       ? {
           title: "Replace this profile with the demo?",
           description:
-            "This overwrites all Knowly data on this device. Export a backup first if you want to keep your current profile.",
+            "This replaces local library, course, settings, progress, and study history data. Notebooks are stored separately and will remain. Sign out first to avoid syncing demo data over your account.",
           action: "Replace with demo",
         }
       : {
@@ -213,6 +266,8 @@ export function DeveloperDashboard() {
             "This removes every resumable quiz checkpoint. Completed results and study progress are not affected.",
           action: "Clear checkpoints",
         };
+
+  if (!isDeveloperModeUnlocked()) return null;
 
   return (
     <>
@@ -369,6 +424,20 @@ export function DeveloperDashboard() {
                 <Button
                   type="button"
                   variant="outline"
+                  className="justify-start"
+                  onClick={() => {
+                    lockDeveloperMode();
+                    updateSettings({ developerMode: false });
+                    setOpen(false);
+                    toast.success("Developer mode disabled");
+                  }}
+                >
+                  <Bug />
+                  Exit developer mode
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
                   className="justify-start text-destructive hover:text-destructive"
                   onClick={() => setConfirmAction("quiz-checkpoints")}
                 >
@@ -391,7 +460,7 @@ export function DeveloperDashboard() {
               <div className="mb-2 flex items-center gap-2">
                 <ExternalLink className="size-4 text-primary" />
                 <h2 id="dev-routes-heading" className="text-sm font-semibold">
-                  Quick route checks
+                  Feature launchpad
                 </h2>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -406,6 +475,112 @@ export function DeveloperDashboard() {
                   </Link>
                 ))}
               </div>
+              {(state.decks.length > 0 || state.courses.length > 0 || state.modules.length > 0) && (
+                <div className="mt-4">
+                  <p className="mb-2 text-xs font-medium text-muted-foreground">
+                    Open sample content directly
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {state.decks.slice(0, 3).map((deck) => (
+                      <Link
+                        key={deck.id}
+                        to="/decks/$deckId"
+                        params={{ deckId: deck.id }}
+                        onClick={() => setOpen(false)}
+                        className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:border-primary/40 hover:bg-primary/5"
+                      >
+                        Deck: {deck.title}
+                      </Link>
+                    ))}
+                    {state.decks[0] && (
+                      <Link
+                        to="/study/$deckId"
+                        params={{ deckId: state.decks[0].id }}
+                        search={{ part: undefined, stageId: undefined, activityId: undefined }}
+                        onClick={() => setOpen(false)}
+                        className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:border-primary/40 hover:bg-primary/5"
+                      >
+                        Study first deck
+                      </Link>
+                    )}
+                    {state.decks[0] && (
+                      <Link
+                        to="/arena/$deckId"
+                        params={{ deckId: state.decks[0].id }}
+                        onClick={() => setOpen(false)}
+                        className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:border-primary/40 hover:bg-primary/5"
+                      >
+                        Arena
+                      </Link>
+                    )}
+                    {state.courses.slice(0, 3).map((course) => (
+                      <Link
+                        key={course.id}
+                        to="/courses/$courseId"
+                        params={{ courseId: course.id }}
+                        onClick={() => setOpen(false)}
+                        className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:border-primary/40 hover:bg-primary/5"
+                      >
+                        Course: {course.title}
+                      </Link>
+                    ))}
+                    {state.courses[0] && (
+                      <>
+                        <Link
+                          to="/courses/$courseId/edit"
+                          params={{ courseId: state.courses[0].id }}
+                          onClick={() => setOpen(false)}
+                          className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:border-primary/40 hover:bg-primary/5"
+                        >
+                          Edit first course
+                        </Link>
+                        <Link
+                          to="/courses/$courseId/quiz"
+                          params={{ courseId: state.courses[0].id }}
+                          onClick={() => setOpen(false)}
+                          className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:border-primary/40 hover:bg-primary/5"
+                        >
+                          Course quiz
+                        </Link>
+                        {state.courses[0].modules[0]?.lessons[0] && (
+                          <Link
+                            to="/courses/$courseId/lessons/$lessonId"
+                            params={{
+                              courseId: state.courses[0].id,
+                              lessonId: state.courses[0].modules[0].lessons[0].id,
+                            }}
+                            onClick={() => setOpen(false)}
+                            className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:border-primary/40 hover:bg-primary/5"
+                          >
+                            Sample lesson
+                          </Link>
+                        )}
+                      </>
+                    )}
+                    {state.modules.slice(0, 3).map((module) => (
+                      <Link
+                        key={module.id}
+                        to="/modules/$moduleId"
+                        params={{ moduleId: module.id }}
+                        onClick={() => setOpen(false)}
+                        className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:border-primary/40 hover:bg-primary/5"
+                      >
+                        Module: {module.title}
+                      </Link>
+                    ))}
+                    {state.modules[0] && (
+                      <Link
+                        to="/modules/$moduleId/print"
+                        params={{ moduleId: state.modules[0].id }}
+                        onClick={() => setOpen(false)}
+                        className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:border-primary/40 hover:bg-primary/5"
+                      >
+                        Print first module
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              )}
             </section>
 
             <details className="rounded-2xl border border-border p-3">
@@ -419,8 +594,8 @@ export function DeveloperDashboard() {
 
             <p className="flex items-center gap-2 text-[11px] leading-5 text-muted-foreground">
               <ShieldCheck className="size-3.5 shrink-0 text-success" />
-              Developer mode is permanent on this device. Diagnostics exclude names, deck titles,
-              question text, and other study content.
+              Available only in Vite development builds. The hatch passphrase is client-visible;
+              sign out before loading sample data. Diagnostics omit study content.
             </p>
           </div>
         </DialogContent>

@@ -18,7 +18,6 @@ import {
   Lightbulb,
   ListChecks,
   KeyRound,
-  PartyPopper,
   RotateCcw,
   ShieldCheck,
   Sparkles,
@@ -70,6 +69,8 @@ import { cn } from "@/lib/utils";
 import type { Settings } from "@/lib/types";
 import { DEFAULT_SIDEBAR_GROUPS } from "@/lib/sidebar-preferences";
 import { buildSampleProfile } from "@/lib/sample-profile";
+import { loadSampleNotebook } from "@/lib/sample-notes";
+import { unlockDeveloperMode } from "@/lib/developer-mode";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -331,7 +332,7 @@ function SettingsPage() {
     importState,
   } = useKnowly();
   const s = state.settings;
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const wallpaperUrl = useWallpaperUrl(s.wallpaper);
   const avatarUrl = useAvatarUrl(s.avatarImage);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -344,9 +345,19 @@ function SettingsPage() {
   const [versionTaps, setVersionTaps] = useState(0);
   const [secretRevealed, setSecretRevealed] = useState(false);
   const [demoPassAnswer, setDemoPassAnswer] = useState("");
-  const [demoPassSolved, setDemoPassSolved] = useState(false);
-  const [demoPassError, setDemoPassError] = useState(false);
+  const [demoPassError, setDemoPassError] = useState("");
   const [confirmDemoLoad, setConfirmDemoLoad] = useState(false);
+  const devHatchPassword = import.meta.env.DEV
+    ? import.meta.env.VITE_DEV_HATCH_PASSWORD?.trim()
+    : undefined;
+  const profileHasData =
+    state.onboardingComplete ||
+    state.decks.length > 0 ||
+    state.courses.length > 0 ||
+    state.modules.length > 0 ||
+    state.history.length > 0 ||
+    state.results.length > 0 ||
+    state.journal.length > 0;
 
   // Re-measure whenever the sizeable parts of the state change.
   useEffect(() => {
@@ -381,14 +392,51 @@ function SettingsPage() {
 
   const answerDemoPassQuestion = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const answer = demoPassAnswer.trim().toLowerCase().replace(/\s+/g, " ");
-    const isCorrect = ["Teagues", "Ms. Teagues", "teagues"].includes(answer);
-    setDemoPassError(!isCorrect);
-    setDemoPassSolved(isCorrect);
-    if (isCorrect) toast.success("Riddle solved! The demo hatch is open.");
+    if (!devHatchPassword) {
+      setDemoPassError("Set VITE_DEV_HATCH_PASSWORD in your local environment to unlock dev mode.");
+      return;
+    }
+    if (demoPassAnswer !== devHatchPassword) {
+      setDemoPassError("That passphrase didn't match.");
+      return;
+    }
+    if (authLoading) {
+      setDemoPassError("Wait for the account status check to finish, then try again.");
+      return;
+    }
+    if (user) {
+      setDemoPassError(
+        "Sign out before loading sample data so it can't replace your cloud profile.",
+      );
+      return;
+    }
+
+    setDemoPassError("");
+    unlockDeveloperMode();
+    updateSettings({ developerMode: true });
+    toast.success("Developer hatch unlocked.");
+    if (profileHasData) {
+      setConfirmDemoLoad(true);
+    } else {
+      void replaceWithDemoProfile();
+    }
   };
 
-  const replaceWithDemoProfile = () => {
+  const replaceWithDemoProfile = async () => {
+    if (authLoading) {
+      setConfirmDemoLoad(false);
+      toast.error("Wait for the account status check to finish", {
+        description: "Then try loading the sample profile again.",
+      });
+      return;
+    }
+    if (user) {
+      setConfirmDemoLoad(false);
+      toast.error("Sign out before loading the sample profile", {
+        description: "This prevents local demo data from syncing over your account.",
+      });
+      return;
+    }
     const sample = buildSampleProfile();
     if (!importState(JSON.stringify(sample))) {
       toast.error("Couldn't load the demo profile");
@@ -396,11 +444,21 @@ function SettingsPage() {
     }
     setConfirmDemoLoad(false);
     setSecretRevealed(false);
-    setDemoPassSolved(false);
     setDemoPassAnswer("");
+    setDemoPassError("");
     setVersionTaps(0);
+    updateSettings({ developerMode: true });
+    try {
+      await loadSampleNotebook();
+    } catch (error) {
+      toast.error("The profile loaded, but the sample notebook couldn't be created", {
+        description:
+          error instanceof Error ? error.message : "Check browser storage and try again.",
+      });
+      return;
+    }
     toast.success(
-      `Demo profile loaded — ${sample.decks.length} decks, ${sample.courses.length} courses, and ${sample.modules.length} modules ready to explore.`,
+      `Demo profile loaded — ${sample.decks.length} decks, ${sample.courses.length} courses, ${sample.modules.length} modules, and a sample notebook ready to explore.`,
     );
   };
 
@@ -1101,7 +1159,7 @@ function SettingsPage() {
           </div>
         </Group>
 
-        {secretRevealed && (
+        {import.meta.env.DEV && secretRevealed && (
           <Group title="The Knowledge Attic">
             <div className="flex gap-3 px-4 py-4">
               <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
@@ -1110,13 +1168,14 @@ function SettingsPage() {
               <div className="min-w-0 flex-1">
                 <p className="font-medium">You found a secret hatch!</p>
                 <p className="mt-1 text-sm leading-5 text-muted-foreground">
-                  A busy little study world is behind this riddle: What's the last name of the best
-                  teacher in Abbott Elementary? Hint: She's the entire reason Abbott is still
-                  standing.
+                  This local-only hatch loads a ready-to-explore sample profile. Set
+                  VITE_DEV_HATCH_PASSWORD in your local environment first. This passphrase is
+                  bundled into the development app, so it is only a speed bump—not production
+                  security.
                 </p>
                 {s.developerMode && (
                   <p className="mt-2 text-xs font-medium text-primary">
-                    Developer mode is permanently enabled on this device.
+                    Developer mode is active. Open the DEV panel to explore test tools.
                   </p>
                 )}
                 <form
@@ -1127,37 +1186,22 @@ function SettingsPage() {
                     value={demoPassAnswer}
                     onChange={(event) => {
                       setDemoPassAnswer(event.target.value);
-                      setDemoPassError(false);
+                      setDemoPassError("");
                     }}
-                    aria-label="Answer to the secret passquestion"
-                    placeholder="Your answer…"
-                    autoComplete="off"
-                    disabled={demoPassSolved}
+                    aria-label="Local developer passphrase"
+                    placeholder="Local dev passphrase"
+                    type="password"
+                    autoComplete="new-password"
                   />
-                  <Button type="submit" disabled={demoPassSolved || !demoPassAnswer.trim()}>
+                  <Button type="submit" disabled={!demoPassAnswer.trim() || !devHatchPassword}>
                     <KeyRound />
                     Unlock
                   </Button>
                 </form>
                 {demoPassError && (
                   <p role="alert" className="mt-2 text-sm text-destructive">
-                    Not quite — the hatch stays locked. Try another answer!
+                    {demoPassError}
                   </p>
-                )}
-                {demoPassSolved && (
-                  <div className="mt-3 flex flex-col gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-muted-foreground">
-                      Correct! The demo-profile portal is yours.
-                    </p>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setConfirmDemoLoad(true)}
-                    >
-                      <PartyPopper />
-                      Load demo profile
-                    </Button>
-                  </div>
                 )}
               </div>
             </div>
@@ -1168,23 +1212,26 @@ function SettingsPage() {
           <div className="px-4 py-3 space-y-3">
             <div>
               <p className="text-[13px] text-muted-foreground mb-1">Version</p>
-              <button
-                type="button"
-                aria-label="Knowly version"
-                onClick={() => {
-                  if (versionTaps >= 6) {
-                    setVersionTaps(0);
-                    setSecretRevealed(true);
-                    if (!s.developerMode) updateSettings({ developerMode: true });
-                    toast.success("Lucky seven! You found a secret hatch.");
-                  } else {
-                    setVersionTaps((count) => count + 1);
-                  }
-                }}
-                className="rounded-sm text-[15px] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-              >
-                {__KNOWLY_VERSION__}
-              </button>
+              {import.meta.env.DEV ? (
+                <button
+                  type="button"
+                  aria-label="Knowly version"
+                  onClick={() => {
+                    if (versionTaps >= 6) {
+                      setVersionTaps(0);
+                      setSecretRevealed(true);
+                      toast.success("Lucky seven! You found a secret hatch.");
+                    } else {
+                      setVersionTaps((count) => count + 1);
+                    }
+                  }}
+                  className="rounded-sm text-[15px] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                >
+                  {__KNOWLY_VERSION__}
+                </button>
+              ) : (
+                <p className="text-[15px] font-medium">{__KNOWLY_VERSION__}</p>
+              )}
             </div>
             <div>
               <p className="text-[13px] text-muted-foreground mb-1">About Knowly</p>
@@ -1216,9 +1263,9 @@ function SettingsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Replace your profile with the demo?</AlertDialogTitle>
             <AlertDialogDescription>
-              This replaces all Knowly data on this device with the demo profile, including your
-              decks, courses, settings, progress, and history. This can’t be undone. Export a backup
-              first if you want to keep your current profile.
+              This replaces your local library, courses, settings, progress, and study history with
+              the demo profile. Notebooks are stored separately and will remain. This can’t be
+              undone, so export a backup first if you want to keep your current profile.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

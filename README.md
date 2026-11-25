@@ -56,6 +56,19 @@ npm run dev
 
 The dev server starts at `http://localhost:8080`.
 
+### Developer hatch
+
+In the development app, click the displayed version in **Settings** seven times to reveal the
+developer hatch. Set `VITE_DEV_HATCH_PASSWORD` in your ignored root `.env.local` file to configure
+its passphrase; there is no built-in default. A fresh local profile loads the sample data
+immediately after a successful unlock. Replacing an existing profile requires confirmation.
+
+Vite embeds `VITE_` variables in browser code. This hatch and its passphrase are a local
+development convenience, **not** an authentication or production security boundary. The developer
+dashboard is disabled in production builds. Sign out before loading sample data to avoid syncing it
+to an account; the unlock lasts only for the current app session. Notebook data is stored separately
+and is left untouched.
+
 ### Optional Supabase sync
 
 Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in a root `.env.local` file to enable account sign-in and sync controls. Configure Google/email providers and auth redirect URLs in the Supabase dashboard.

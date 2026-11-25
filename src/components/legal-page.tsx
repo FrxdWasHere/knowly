@@ -35,7 +35,7 @@ export function LegalPage({
         <p className="text-xs font-semibold uppercase text-primary">{eyebrow}</p>
         <h1 className="mt-4 font-display text-4xl font-bold sm:text-6xl">{title}</h1>
         <p className="mt-6 text-lg leading-8 text-muted-foreground">{intro}</p>
-        <p className="mt-5 text-xs text-muted-foreground">Effective September 12, 2026</p>
+        <p className="mt-5 text-xs text-muted-foreground">Effective November 25, 2026</p>
         <div className="legal-copy mt-14 space-y-10">{children}</div>
       </main>
       <footer className="border-t-[3px] border-border py-8">
@@ -49,7 +49,10 @@ export function LegalPage({
           </Link>
         </div>
         <div className="mx-auto mt-6 max-w-3xl border-t-[2px] border-border px-6 pt-6 text-center text-xs leading-relaxed text-muted-foreground">
-          <p>Made with love by Frederic Liam De Guzman, for the kind students of the School of Our Lady of La Salette.</p>
+          <p>
+            Made with love by Frederic Liam De Guzman, for the kind students of the School of Our
+            Lady of La Salette.
+          </p>
           <p className="mt-1">All rights reserved. To God be all the glory! 🙏</p>
         </div>
       </footer>

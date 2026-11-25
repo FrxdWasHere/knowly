@@ -56,6 +56,7 @@ import {
   Cloud,
 } from "lucide-react";
 import { useKnowly } from "@/store/knowly";
+import { isDeveloperModeUnlocked } from "@/lib/developer-mode";
 import { useAuth } from "@/store/auth-context";
 import { levelFromXp } from "@/lib/gamification";
 import { collectDue } from "@/lib/srs";
@@ -481,15 +482,38 @@ function NavRow({ item, active, dueCount }: { item: NavItem; active: boolean; du
   );
 }
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({
+  children,
+  sharedView = false,
+}: {
+  children: ReactNode;
+  sharedView?: boolean;
+}) {
   const { state, updateSettings } = useKnowly();
   const { user, signOut } = useAuth();
   const avatarUrl = useAvatarUrl(state.settings.avatarImage);
   const palette = useCommandPalette();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const search = useRouterState({ select: (r) => r.location.searchStr });
-  const collapsed = state.settings.sidebarCollapsed;
-  const navGroups = resolveNavGroups(state.settings.sidebarGroups);
+  const collapsed = sharedView ? false : state.settings.sidebarCollapsed;
+  const navGroups = sharedView
+    ? [
+        {
+          label: "Shared resource",
+          icon: BookOpen,
+          visible: true,
+          items: [
+            {
+              to: pathname,
+              label: "Resource",
+              icon: BookOpen,
+              exact: true,
+              onClick: () => window.scrollTo({ top: 0, behavior: "smooth" }),
+            },
+          ],
+        },
+      ]
+    : resolveNavGroups(state.settings.sidebarGroups);
   const visibleNavGroups = navGroups.filter((group) => group.visible);
   const navItems = visibleNavGroups.flatMap((group) => group.items);
   const courseMatch = pathname.match(/^\/courses\/([^/]+)/);
@@ -516,7 +540,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="workspace relative flex min-h-screen w-full">
-      {wallpaper && (
+      {!sharedView && wallpaper && (
         <>
           <div
             aria-hidden
@@ -558,18 +582,24 @@ export function AppShell({ children }: { children: ReactNode }) {
                     </p>
                     <span className="size-1.5 rounded-full bg-success shadow-[0_0_8px_var(--success)]" />
                   </div>
-                  <p className="mt-1.5 inline-flex max-w-full items-center gap-1 truncate text-[10px] uppercase tracking-[0.16em] text-muted-foreground/60">
-                    {avatarUrl ? (
-                      <img
-                        src={avatarUrl}
-                        alt="Your avatar"
-                        className="size-3.5 rounded-sm object-cover shrink-0"
-                      />
-                    ) : (
-                      <span>{state.settings.avatarEmoji}</span>
-                    )}
-                    {state.settings.displayName}
-                  </p>
+                  {sharedView ? (
+                    <p className="mt-1.5 truncate text-[10px] uppercase tracking-[0.16em] text-muted-foreground/60">
+                      Shared resource
+                    </p>
+                  ) : (
+                    <p className="mt-1.5 inline-flex max-w-full items-center gap-1 truncate text-[10px] uppercase tracking-[0.16em] text-muted-foreground/60">
+                      {avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt="Your avatar"
+                          className="size-3.5 shrink-0 rounded-sm object-cover"
+                        />
+                      ) : (
+                        <span>{state.settings.avatarEmoji}</span>
+                      )}
+                      {state.settings.displayName}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -691,38 +721,54 @@ export function AppShell({ children }: { children: ReactNode }) {
               )}
             </nav>
 
-            <div className="relative space-y-3 border-t border-sidebar-border p-3">
-              <div className="rounded-xl border-[2px] border-border bg-surface p-3 shadow-[2px_2px_0_0_var(--shadow-ink)]">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold">Lv {level}</span>
-                  {!collapsed && (
-                    <span className="text-muted-foreground">
-                      {intoLevel}/{needed} XP
-                    </span>
-                  )}
-                </div>
-                <div className="mt-2 h-2 overflow-hidden rounded-full border-[2px] border-border bg-surface-2">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
-                    style={{ width: `${pct}%` }}
-                  />
+            {sharedView ? (
+              <div className="relative space-y-3 border-t border-sidebar-border p-3">
+                <div className="rounded-xl border-[2px] border-border bg-surface p-3 shadow-[2px_2px_0_0_var(--shadow-ink)]">
+                  <p className="text-xs font-bold">Limited access</p>
+                  <p className="mt-1 text-[11px] leading-5 text-muted-foreground">
+                    View and print this resource. Shared decks can also be added to your library.
+                  </p>
+                  <Button asChild size="sm" className="mt-3 w-full">
+                    <Link to={user ? "/dashboard" : "/login"}>
+                      {user ? "Open workspace" : "Create free account"}
+                    </Link>
+                  </Button>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                onClick={() => updateSettings({ sidebarCollapsed: !collapsed })}
-                className="press flex w-full items-center gap-3 rounded-xl border-[2px] border-transparent px-3 py-2 text-xs font-bold text-muted-foreground transition-colors hover:border-border hover:bg-surface-2 hover:text-foreground"
-              >
-                {collapsed ? (
-                  <PanelLeft className="size-4" />
-                ) : (
-                  <PanelLeftClose className="size-4" />
-                )}
-                {!collapsed && "Collapse"}
-              </Button>
-            </div>
+            ) : (
+              <div className="relative space-y-3 border-t border-sidebar-border p-3">
+                <div className="rounded-xl border-[2px] border-border bg-surface p-3 shadow-[2px_2px_0_0_var(--shadow-ink)]">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold">Lv {level}</span>
+                    {!collapsed && (
+                      <span className="text-muted-foreground">
+                        {intoLevel}/{needed} XP
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-2 h-2 overflow-hidden rounded-full border-[2px] border-border bg-surface-2">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                  title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                  onClick={() => updateSettings({ sidebarCollapsed: !collapsed })}
+                  className="press flex w-full items-center gap-3 rounded-xl border-[2px] border-transparent px-3 py-2 text-xs font-bold text-muted-foreground transition-colors hover:border-border hover:bg-surface-2 hover:text-foreground"
+                >
+                  {collapsed ? (
+                    <PanelLeft className="size-4" />
+                  ) : (
+                    <PanelLeftClose className="size-4" />
+                  )}
+                  {!collapsed && "Collapse"}
+                </Button>
+              </div>
+            )}
           </>
         )}
       </aside>
@@ -735,71 +781,89 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
             <span className="font-display font-bold tracking-tight">Knowly</span>
           </div>
-          <div className="hidden min-w-0 items-center gap-2 rounded-full border-[2px] border-border bg-surface px-3 py-1.5 text-xs font-bold lg:flex">
-            <span className="inline-flex size-2 shrink-0 rounded-full bg-success" />
-            <HardDrive className="size-3.5 shrink-0" />
-            <span className="truncate">
-              Everything saved on this device · export a copy to move it
-            </span>
-          </div>
-          <div className="ml-auto flex min-w-0 items-center gap-1.5 sm:gap-2">
-            <button
-              type="button"
-              onClick={() => palette.setOpen(true)}
-              aria-label="Open command palette"
-              className="press inline-flex shrink-0 items-center gap-2 rounded-full border-[2px] border-border bg-surface px-2.5 py-1.5 text-xs font-bold shadow-[2px_2px_0_0_var(--shadow-ink)] transition-colors hover:bg-block-lemon hover:text-ink sm:px-3"
-            >
-              <Search className="size-3.5" />
-              <span className="hidden sm:inline">Jump to…</span>
-              <kbd className="hidden rounded-md border-[2px] border-border bg-surface-2 px-1.5 py-0.5 text-[10px] font-bold sm:inline">
-                Ctrl K
-              </kbd>
-            </button>
-            <span className="press inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border-[2px] border-border bg-block-lemon px-2.5 py-1.5 text-xs font-bold text-ink shadow-[2px_2px_0_0_var(--shadow-ink)] sm:px-3">
-              <Flame className="size-3.5" />
-              {state.progress.streak} day
-            </span>
-            <span className="press hidden shrink-0 items-center gap-1.5 rounded-full border-[2px] border-border bg-surface px-3 py-1.5 text-xs font-bold shadow-[2px_2px_0_0_var(--shadow-ink)] min-[480px]:inline-flex">
-              <Zap className="size-3.5 text-primary" />
-              <span className="max-w-[20vw] truncate">
-                {state.progress.lifetimeXp.toLocaleString()} XP
+          {sharedView ? (
+            <div className="hidden min-w-0 items-center gap-2 rounded-full border-[2px] border-border bg-surface px-3 py-1.5 text-xs font-bold lg:flex">
+              <BookOpen className="size-3.5 shrink-0 text-primary" />
+              <span className="truncate">Shared resource · limited view</span>
+            </div>
+          ) : (
+            <div className="hidden min-w-0 items-center gap-2 rounded-full border-[2px] border-border bg-surface px-3 py-1.5 text-xs font-bold lg:flex">
+              <span className="inline-flex size-2 shrink-0 rounded-full bg-success" />
+              <HardDrive className="size-3.5 shrink-0" />
+              <span className="truncate">
+                Everything saved on this device · export a copy to move it
               </span>
-            </span>
-            {user ? (
-              <>
-                <span className="hidden max-w-36 truncate text-xs font-semibold text-muted-foreground lg:inline">
-                  {user.email}
-                </span>
-                <Button asChild variant="outline" size="sm">
-                  <Link to="/account" title="Account and cloud sync">
-                    <Cloud />
-                    <span className="hidden sm:inline">Sync</span>
-                  </Link>
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  aria-label="Sign out"
-                  title="Sign out"
-                  onClick={() => {
-                    void signOut().catch((error: unknown) => {
-                      console.error("[Auth] Sign-out failed:", error);
-                      toast.error("Could not sign out. Please try again.");
-                    });
-                  }}
-                >
-                  <LogOut />
-                  <span className="hidden sm:inline">Sign out</span>
-                </Button>
-              </>
-            ) : (
+            </div>
+          )}
+          <div className="ml-auto flex min-w-0 items-center gap-1.5 sm:gap-2">
+            {sharedView ? (
               <Button asChild variant="outline" size="sm">
-                <Link to="/login">
-                  <LogIn />
-                  Sign in
+                <Link to={user ? "/dashboard" : "/login"}>
+                  {user ? <LayoutDashboard /> : <LogIn />}
+                  <span>{user ? "Open workspace" : "Sign in"}</span>
                 </Link>
               </Button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => palette.setOpen(true)}
+                  aria-label="Open command palette"
+                  className="press inline-flex shrink-0 items-center gap-2 rounded-full border-[2px] border-border bg-surface px-2.5 py-1.5 text-xs font-bold shadow-[2px_2px_0_0_var(--shadow-ink)] transition-colors hover:bg-block-lemon hover:text-ink sm:px-3"
+                >
+                  <Search className="size-3.5" />
+                  <span className="hidden sm:inline">Jump to…</span>
+                  <kbd className="hidden rounded-md border-[2px] border-border bg-surface-2 px-1.5 py-0.5 text-[10px] font-bold sm:inline">
+                    Ctrl K
+                  </kbd>
+                </button>
+                <span className="press inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border-[2px] border-border bg-block-lemon px-2.5 py-1.5 text-xs font-bold text-ink shadow-[2px_2px_0_0_var(--shadow-ink)] sm:px-3">
+                  <Flame className="size-3.5" />
+                  {state.progress.streak} day
+                </span>
+                <span className="press hidden shrink-0 items-center gap-1.5 rounded-full border-[2px] border-border bg-surface px-3 py-1.5 text-xs font-bold shadow-[2px_2px_0_0_var(--shadow-ink)] min-[480px]:inline-flex">
+                  <Zap className="size-3.5 text-primary" />
+                  <span className="max-w-[20vw] truncate">
+                    {state.progress.lifetimeXp.toLocaleString()} XP
+                  </span>
+                </span>
+                {user ? (
+                  <>
+                    <span className="hidden max-w-36 truncate text-xs font-semibold text-muted-foreground lg:inline">
+                      {user.email}
+                    </span>
+                    <Button asChild variant="outline" size="sm">
+                      <Link to="/account" title="Account and cloud sync">
+                        <Cloud />
+                        <span className="hidden sm:inline">Sync</span>
+                      </Link>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      aria-label="Sign out"
+                      title="Sign out"
+                      onClick={() => {
+                        void signOut().catch((error: unknown) => {
+                          console.error("[Auth] Sign-out failed:", error);
+                          toast.error("Could not sign out. Please try again.");
+                        });
+                      }}
+                    >
+                      <LogOut />
+                      <span className="hidden sm:inline">Sign out</span>
+                    </Button>
+                  </>
+                ) : (
+                  <Button asChild variant="outline" size="sm">
+                    <Link to="/login">
+                      <LogIn />
+                      Sign in
+                    </Link>
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </header>
@@ -863,13 +927,17 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
       </div>
 
-      <ImportPanel />
-      <CommandPalette
-        open={palette.open}
-        onOpenChange={palette.setOpen}
-        targets={navItems.map((item) => ({ to: item.to, label: item.label }))}
-      />
-      {state.settings.developerMode && <DeveloperDashboard />}
+      {!sharedView && (
+        <>
+          <ImportPanel />
+          <CommandPalette
+            open={palette.open}
+            onOpenChange={palette.setOpen}
+            targets={navItems.map((item) => ({ to: item.to, label: item.label }))}
+          />
+          {isDeveloperModeUnlocked() && state.settings.developerMode && <DeveloperDashboard />}
+        </>
+      )}
     </div>
   );
 }

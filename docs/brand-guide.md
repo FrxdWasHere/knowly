@@ -4,7 +4,7 @@
 
 | | |
 | --- | --- |
-| **Status** | Current marketing language, reverse-engineered from the shipped homepage |
+| **Status** | Current marketing language and visual system for the shipped homepage |
 | **Applies to** | The public surface: landing page, campaign pages, social cards, decks, stickers, print promos |
 | **Source of truth** | `src/routes/index.tsx` — if this guide and the page disagree, the page wins and this guide gets corrected |
 | **Does not apply to** | The authenticated workspace, which has its own language in [`docs/design-guide.md`](./design-guide.md) (Ocean surfaces, hairline borders, soft glow) |
@@ -39,11 +39,11 @@ This is a working guide, not a mood board. Every rule below is traceable to a cl
 
 ### 1.1 In one line
 
-**Knowly is the study app that refuses to be another subscription.** Everything a student needs to learn — cards, notes, review scheduling, progress — in one place, free, and on their own device.
+**Knowly is the study app that refuses to become another subscription.** Everything a student needs to learn — cards, notes, review scheduling, progress — in one place, free forever, with optional online account sync or local-only use.
 
 ### 1.2 Positioning
 
-> For students who are tired of juggling five apps and paying for all of them, Knowly is a single, free, offline-first study workspace that shows you what you actually don't know — without an account, a subscription, or a data trail.
+> For students who are tired of juggling five apps and paying for all of them, Knowly is a free-forever study workspace that shows you what you actually don't know — with optional online account sync, offline support, and no subscription or ad tracking.
 
 The competitive frame is not "another flashcard app". It is **the pile of apps**, the **$9.99/month**, and the **all-nighter**. The homepage names those enemies directly, and the brand's confidence comes from picking fights a student recognises rather than from feature lists.
 
@@ -55,7 +55,7 @@ Every section on the homepage is a proof of one of these. New pages should attac
 | --- | --- | --- |
 | **Free, actually** | No trial, no premium tier, no card | "Free forever" stated plainly, with what the catch *isn't* |
 | **One place** | Cards, notes, review and progress together | A concrete list of the tools it replaces |
-| **Yours alone** | On-device, offline, no account, no tracking | The backup file, the offline claim, the privacy story |
+| **Yours alone** | Local-first, offline, with optional account sync and no tracking | Explain both local-only use and syncing privately across devices |
 | **Honest about the work** | Studying is hard; Knowly makes it shorter, not magic | Real numbers, weak-spot detection, no "effortless" language |
 
 ### 1.4 Audience
@@ -79,7 +79,7 @@ The brand is **the friend two years ahead of you who is annoyingly good at exams
 
 ### 1.6 Brand story (reusable, ~80 words)
 
-> Every study app starts free and ends up charging you rent on your own notes. So we built the opposite: one workspace for cards, notes and review, running on your device, with no account to create and nothing to cancel. It is loud, it is friendly, and it costs nothing — because the person who needs it most is the person with the least money and the least time. That is the whole business model.
+> Every study app starts free and ends up charging you rent on your own notes. So we built the opposite: one workspace for cards, notes and review, running on your device, with a free online account when you want your library across devices. No subscription, no upgrade screen, nothing to cancel. It is loud, it is friendly, and it costs nothing — because the person who needs it most is the person with the least money and the least time. That is the whole business model.
 
 ### 1.7 Name and wordmark
 
@@ -106,10 +106,10 @@ Rules: the primary tagline is sentence case with a full stop and is never broken
 Black is structural, not decorative. Text, borders, and shadows are all pure `#000000`. If a layout is not readable in black and paper alone, colour cannot save it.
 
 **2. Paper, not glass.**
-The base is warm off-white `#FFFBF5`. No blur, no translucency, no glassmorphism, no soft ambient shadows. Depth is drawn, not simulated.
+The base is warm off-white `#FFFBF5`. No translucency or glassmorphism. The landing page may layer low-contrast, flat colour shapes and a moving dot grid behind content; keep text and product UI on clear surfaces.
 
 **3. One loud block per idea.**
-Colour lives in discrete rectangles with hard edges. A card is one colour. A badge is one colour. Nothing gradients softly behind text.
+Colour lives in discrete blocks with hard edges. A card is one colour. A badge is one colour. Background colour and motion stay decorative and never compete with text.
 
 **4. Rotate, then stop.**
 Containers tilt ±1–2°. Body copy never tilts. Rotation is a wink, not a theme.
@@ -276,7 +276,7 @@ Rules:
 | Badges | Title case or ALL CAPS | "Super Simple", "100% FREE", "Privacy That Doesn't Suck" |
 | Buttons | ALL CAPS | "GET STARTED FREE", "TRY IT NOW — IT'S FREE" |
 | Card titles | Title case | "AI Flashcard Magic", "Know What You Don't Know" |
-| Body | Sentence case | "No account, no subscription, no BS." |
+| Body | Sentence case | "Optional account sync. No subscription. Free forever." |
 | Micro-labels | ALL CAPS, tracked | "FASTER STUDYING" |
 
 The mixed casing inside headlines is a rhythm device: caps mark the stressed word, lowercase carries the connectives. When writing a new headline, read it aloud — the caps should land where your voice would rise.
@@ -325,23 +325,22 @@ Gutter is **20px below `sm`, 32px above**. Nothing full-bleeds except colour ban
 
 ### 5.2 Section anatomy
 
-Every section follows the same skeleton, which is why a page assembled from these parts reads as one voice:
+The homepage uses a linear, editorial rhythm: one clear claim, one short explanation, then evidence. Prefer aligned rows and simple dividers over a grid of competing cards:
 
 ```
-<section class="px-5 py-20 sm:px-8 sm:py-32">          ← rhythm
-  <div class="mx-auto max-w-7xl">                       ← container
-    badge        rotated, 4px border, hard shadow        ← eyebrow
-    h2           display, 36→60px                        ← claim
-    lead         max-w-2xl, 18→20px bold                 ← explanation
-    grid         mt-12 / mt-16, gap-6 / gap-8            ← evidence
-    cta          one primary button + microcopy          ← next step
+<section class="px-5 py-16 sm:px-8 sm:py-24">       ← rhythm
+  <div class="mx-auto max-w-6xl">                    ← container
+    eyebrow       short, sentence-case               ← context
+    h2            display, 30→40px                    ← claim
+    lead          max-w-xl, 16→20px                   ← explanation
+    rows          icon + heading + useful detail      ← evidence
+    cta           one primary button                  ← next step
 ```
 
-- **Vertical rhythm:** `py-20` (80px) mobile, `py-32` (128px) desktop for content sections. Bands that only separate (`py-12`) are for the stats strip.
-- **Gaps between heading and content:** `mt-12` for grids, `mt-16` for a heavier join.
-- **Grid gaps:** `gap-6` (24px) for compact tiles, `gap-8` (32px) for cards.
-- **Section separators** are `border-y-4 border-black` — a real 4px rule, never a subtle tint change.
-- **Surface alternation:** paper → colour band → paper → white band → paper → dot paper → colour band → gradient → white footer. Never place two identical surfaces next to each other without a rule.
+- **Vertical rhythm:** `py-16` (64px) mobile, `py-20`–`py-24` desktop. Use the larger spacing for the hero and final CTA.
+- **Rows, not card grids:** align icons, headings, and explanations on a shared grid. Use `divide-y` rules to group related content.
+- **Section separators** are clear ink rules; detail dividers may use a lighter ink tint.
+- **Surface alternation:** paper is the default. Use white and the brand colours as occasional section or feature accents, not as a sequence of loud bands.
 
 ### 5.3 Grids and breakpoints
 
@@ -358,10 +357,9 @@ Breakpoints are Tailwind defaults: `sm` 640, `md` 768, `lg` 1024, `xl` 1280. The
 
 ### 5.4 Header
 
-- Sticky, `top-0 z-40`, 80px tall (`h-20`), paper background, `border-b-4 border-black`. Opaque, not translucent: the border is the whole effect.
-- Left: logo tile (56px) + wordmark. Centre/right: nav pills (desktop only). Far right: one primary CTA.
-- Nav pills are **buttons, not links**: `rounded-xl border-3 border-black bg-white px-4 py-2 text-sm font-bold`, flat by default, lifting on hover.
-- Below `md`, the nav becomes a horizontal scroll strip on a **lemon band** (`border-t-4`, `bg-[#FFE66D]`) with `text-xs` pills, and the CTA stays in the header.
+- Sticky, `top-0 z-40`, paper background, and a clear ink divider. Opaque, not translucent.
+- Keep the wordmark and primary action visible. Navigation uses quiet text links rather than competing bordered pills.
+- On narrow screens, wrap navigation onto its own row; never compress the title or brand to fit an action group.
 - Sticky rules: the header is the only sticky element on the page. Nothing else competes for `z-30`–`z-40`.
 
 ### 5.5 Footer
@@ -599,22 +597,18 @@ What is allowed: objects (🎒 🔥 📚 🧠 ✨ 🌙 🧭 ☀️ ⛅ 🌧️),
 
 ## 9. Motion
 
-Motion exists to confirm that the page is alive, not to show off. Everything is short, everything is one-shot, nothing loops except decoration.
+Motion keeps the page lively without distracting from reading. Content and controls use short interactions; only quiet background decoration may loop.
 
 | Behaviour | Spec |
 | --- | --- |
-| **Section reveal** | `anim-fade-up`: 0.45s, `cubic-bezier(0.22,1,0.36,1)`, translateY 12px → 0, fires once at 10% visibility with `rootMargin: 0 0 -8% 0` |
-| **Stagger** | 60–80ms between siblings; delays used on the page run 60 → 320ms |
+| **Ambient background** | Decorative shapes float slowly; dot texture drifts over 26–38s. Use `motion-safe:` utilities and keep opacity low. |
 | **Hover lift** | 0.2–0.25s, translate up-left by 2/4/6px, shadow +2/+4/+6 |
-| **Colour hover** | Header CTA darkens to `#ff5555`; footer links turn Coral Ink |
-| **Link slide** | Footer arrows translate 4px right |
-| **Connector arrow** | Static; no draw-on animation |
+| **Colour hover** | Keep the ink readable; use a subtle block tint or Coral Ink link state. |
+| **Content motion** | Short one-shot entrance only when it does not hide content or delay access. |
 
-Implementation note: `Reveal` starts at `opacity-0` and only receives `anim-fade-up` when it intersects. That means **content is invisible without JavaScript and without IntersectionObserver** (there is a fallback for a missing observer, not for a never-firing one). Keep the reveal for above-and-near-fold content short, and never put the only copy of a claim inside a late reveal.
+Reduced motion: the global `@media (prefers-reduced-motion: reduce)` rule in `src/styles.css` collapses animation and transition durations. Use `motion-safe:` for ambient loops, keep all copy visible without animation, and do not add JavaScript that re-enables motion.
 
-Reduced motion: the global `@media (prefers-reduced-motion: reduce)` rule in `src/styles.css` collapses all durations to 0.001ms, and `animation: ... both` still ends in the visible state. Honour it; do not add JS that re-enables motion.
-
-Prohibited: parallax, scroll-jacking, cursor followers, marquees, autoplaying video, looping attention-seekers, anything that moves while the user reads.
+Prohibited: parallax, scroll-jacking, cursor followers, marquees, autoplaying video, looping attention-seekers, or movement that makes reading difficult.
 
 ---
 
@@ -633,19 +627,19 @@ Prohibited: parallax, scroll-jacking, cursor followers, marquees, autoplaying vi
 
 ### 10.2 Patterns
 
-**Headline formula (claim + twist):**
+**Headline formula (clear claim + student-side twist):**
 
 ```
-[VERB/ADJECTIVE IN CAPS] + [lowercase connective] + [specific noun] + [emoji]
-STOP juggling 10 apps. Study SMARTER in ONE place ✨
-What you study is NOBODY'S BUSINESS 🔒
+[specific promise] + [plain-language proof]
+A study app that gets you.
+Made by a student. For students.
 ```
 
-**CTA verb set:** GET STARTED FREE · TRY IT FREE · TRY IT NOW — IT'S FREE · Start studying smarter · See how it works. Every CTA contains either *free* or *start*; most contain both ideas.
+**CTA verb set:** Start studying · Try Knowly · See how it works. Keep labels short and clear; a CTA does not need to shout or promise a result.
 
-**Proof microcopy:** always concrete, always short, always separated by `•`: "No download • No sign-up • No credit card • Start in 30 seconds".
+**Proof microcopy:** short, punctuated claims: "Free forever. Free account sync. Works offline."
 
-**Card quote (student speak):** a second line under every feature title, in the student's voice, uppercase, in a white box. Examples: "Stop wasting 2 hours making cards", "Remember for the final, not just the quiz", "For when typing doesn't cut it". This is the single most repeatable device on the page — it converts a feature into a benefit without marketing language.
+**Student voice:** talk like a helpful classmate: direct, warm, and specific. Avoid all-caps filler, fake statistics, and claims that studying becomes effortless.
 
 **Email/empty/error voice:** plain, kind, actionable. "That page took a wrong turn. The library is still on your device — head back to the dashboard."
 
@@ -657,9 +651,9 @@ What you study is NOBODY'S BUSINESS 🔒
 | The user | you / students | users, learners (in marketing) |
 | The competitor set | the 10 apps | "competitors", naming a rival in ad copy |
 | Pricing | free, free forever | freemium, free tier (implies a paid tier) |
-| Data location | on your device, offline | the cloud, server-side |
+| Data location | on your device; optional account sync | "cloud-only" (local use remains available) |
 | AI features | works with ChatGPT, Claude, any AI | powered by our AI (unless it truly is) |
-| Backup | one file, JSON backup | sync |
+| Backup | one file, JSON backup; optional account sync | sync as a paid feature |
 
 ### 10.4 Claims governance
 
@@ -668,8 +662,9 @@ The page shouts, so every number has to survive being asked "says who?". Current
 | Claim on the page | Status | Action |
 | --- | --- | --- |
 | "100% FREE", "Free forever" | **True and verifiable** — no paywall exists | Keep |
-| "Works offline", "No account" | **True** — local-first, no account service | Keep; keep the service worker honest |
-| "No tracking ever", "Your data stays yours" | **True** — no analytics shipped | Keep; this is the brand's spine |
+| "Works offline", "Optional account sync" | **True** — local-first use and account sync are both supported | Explain that sync uses an online account |
+| "Free forever", "No subscription" | **True** — no paywall or paid tier | Keep; state plainly |
+| "No tracking", "Your study data isn't used for ads" | **True** — no analytics or ad tracking shipped | Keep; avoid implying synced data is stored only on-device |
 | "10K+ STUDENTS" | **Unverifiable** — the product does not collect telemetry, so it cannot count them | Replace with a qualitative line ("Built with study groups") or publish a source |
 | "87% BETTER GRADES", "5+ HOURS SAVED", "10× faster studying" | **Unsubstantiated** | Drop, footnote, or replace with a measurable product number (cards created, minutes to first review) |
 | "AI flashcards in seconds", "PDF → flashcards instantly" | **Overpromises the architecture.** The privacy page is explicit: Knowly writes instructions you paste into your own AI and brings the file back | Reword to the real flow: "Paste your AI's output, get clean cards" |
@@ -998,35 +993,28 @@ Written down so nobody mistakes them for decisions:
 
 ## Appendix A — homepage copy deck
 
-Kept verbatim so writers can copy the rhythm.
+The current homepage speaks to students as a fellow student: concise, punctuated, and specific.
 
 **Meta**
-- Title: `Knowly — STOP Juggling Apps. Study Smarter! 🎯`
-- Description: `The study app that actually gets you. AI flashcards, handwritten notes, smart reviews — all in one place. 100% free, works offline, no BS.`
-- OG description: `Study app for students who are tired of boring tools. Free forever, actually fun to use, and it works.`
+- Title: `Knowly — A study app that gets you. Free forever.`
+- Description: `A free study workspace for your notes, flashcards, and reviews. Create an online account to sync across devices, or keep your study space local. Free forever.`
 
 **Hero**
-- Badges: `100% FREE` · `WORKS OFFLINE` · `10K+ STUDENTS`
-- H1: `STOP 🎒 / juggling 10 apps / Study SMARTER 🧠 / in ONE place ✨`
-- Lead: `Create flashcards with AI in seconds. Take handwritten notes. Track what you actually know. Everything stays on your device — no account, no subscription, no BS.`
-- CTAs: `GET STARTED FREE` · `See how it works`
-- Trust row: `No credit card` · `No account` · `Works offline` · `Private forever`
+- Eyebrow: `Made by a student. For students.`
+- H1: `A study app that gets you.`
+- Lead: `No lectures about “unlocking your potential.” Just the notes, flashcards, and reviews you need, in one place, built by someone who’s in this with you. Create a free account to sync across devices, or keep your study space local. Knowly is free forever either way.`
+- CTAs: `Start studying` · `Take a look around.`
+- Proof: `Free forever.` · `Free account sync.` · `Works offline.`
 
-**Stats** — `10x FASTER STUDYING` · `87% BETTER GRADES` · `5+ HOURS SAVED` · `10K+ STUDENTS DAILY`
+**What you get** — `Make the materials, not busywork.` · `Know what to study next.` · `Keep your study life in one place.`
 
-**Pain points** — `☕ Cramming sucks` · `📱 App chaos` · `💸 Another $10/mo?!` · `❓ Am I ready?`
+**How it works** — `Bring your study stuff.` · `Pick what helps today.` · `Keep moving at your pace.`
 
-**How it works** — `Get your stuff in` · `Study smart` · `Ace the test`
+**Privacy** — `Your study life is yours.` · `Sign in or create a free account to keep your library in sync across devices. Prefer a local-only study space? That works too. Your study habits are never used for ads, and there is no subscription.`
 
-**Features** — `AI Flashcard Magic` · `Smart Study System` · `Digital Notebooks` · `Know What You Don't Know` · `Course Organization` · `Your Data Stays YOURS`
+**Closing** — `Let’s make studying a little less painful.` · `Already have an account? Sign in and pick up where you left off. New here? Create one for free. Knowly is free forever, with no subscription.`
 
-**Why Knowly** — `Finally, an app that GETS YOU not your wallet` · cards: `Actually free` · `Works anywhere` · `Save time` · `Your privacy matters` · side cards: `Late night study mode` · `Before bed review` · `Exam prep mode` · sticker: `STUDY ANYWHERE ✈️`
-
-**Privacy** — `Privacy That Doesn't Suck` · `What you study is NOBODY'S BUSINESS 🔒` · `No account needed` · `Works offline` · `Your data, your device` · `Easy backups` · `my-study-backup.json` · `724 KB • Everything you need` · `Fun fact: The entire app is smaller than one TikTok video 📱`
-
-**Closing** — `Ready to Level Up?` · `Time to ACTUALLY study smarter 🚀` · `Join 10,000+ students who stopped wasting time. Free forever • Works offline • No BS` · `GET STARTED FREE`
-
-**Footer** — `Study smarter, not harder. Free forever, works offline, respects your privacy.` · `100% FREE & LOCAL` · `© 2026 Knowly. Made with 💜 for students.` · `NO ACCOUNT • NO TRACKING • YOUR DATA STAYS YOURS`
+**Visual proof** — a product-home-screen preview in the hero, labelled as a preview rather than presented as a live screenshot.
 
 ---
 
