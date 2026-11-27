@@ -9,6 +9,7 @@ import {
   normalizeInviteEmails,
   parseShareSnapshot,
 } from "./share-content";
+import { buildLearningPath } from "./learning-paths";
 import type { Course, Deck, Module, Question } from "./types";
 
 const matchingQuestion: Question = {
@@ -24,6 +25,73 @@ const matchingQuestion: Question = {
 };
 
 describe("share content", () => {
+  it("preserves deck tags and learning aids in its share preview and local copy", () => {
+    const question: Question = {
+      ...matchingQuestion,
+      tags: ["cell biology"],
+      incorrectExplanation: "Water moves toward the higher solute concentration.",
+      tutor: {
+        simple: "Water follows the dissolved particles.",
+        mnemonic: "Water follows solute.",
+      },
+    };
+    const baseDeck: Deck = {
+      id: "deck-with-learning-aids",
+      title: "Osmosis",
+      subject: "Biology",
+      color: "#3158a7",
+      tags: ["cells"],
+      isSTEM: true,
+      needsEquations: true,
+      createdAt: 1,
+      favorite: false,
+      questions: [question],
+      masteredIds: [],
+      bookmarks: [],
+      notes: {},
+    };
+    const deck: Deck = {
+      ...baseDeck,
+      learningPath: buildLearningPath(baseDeck, {
+        source: "manual",
+        title: "Osmosis pathway",
+      }),
+    };
+
+    const snapshot = buildDeckShareSnapshot(deck);
+    const copy = createViewerDeckCopy(
+      { title: deck.title, resourceType: "deck", payload: snapshot },
+      "shared-copy",
+      123,
+    );
+
+    expect(snapshot.tags).toEqual(["cells"]);
+    expect(snapshot.isSTEM).toBe(true);
+    expect(snapshot.needsEquations).toBe(true);
+    expect(snapshot.questions?.[0]?.tutor?.mnemonic).toBe("Water follows solute.");
+    expect(snapshot.learningPath?.title).toBe("Osmosis pathway");
+    expect(copy.ok).toBe(true);
+    if (!copy.ok) return;
+    expect(copy.deck.tags).toEqual(["cells", "shared"]);
+    expect(copy.deck.isSTEM).toBe(true);
+    expect(copy.deck.needsEquations).toBe(true);
+    expect(copy.deck.learningPath?.title).toBe("Osmosis pathway");
+    expect(copy.deck.learningPath?.stages[0]?.progress.status).toBe("not-started");
+    const originalQuestionIds = new Set(deck.questions.map((q) => q.id));
+    const copiedReferences =
+      copy.deck.learningPath?.stages.flatMap((stage) =>
+        stage.activities.flatMap((activity) => activity.questions),
+      ) ?? [];
+    expect(copiedReferences.length).toBeGreaterThan(0);
+    expect(
+      copiedReferences.every((reference) => !originalQuestionIds.has(reference.questionId)),
+    ).toBe(true);
+    expect(copy.deck.questions[0]?.incorrectExplanation).toBe(
+      "Water moves toward the higher solute concentration.",
+    );
+    expect(copy.deck.questions[0]?.tutor?.simple).toBe("Water follows the dissolved particles.");
+  });
+
   it("preserves a deck's color in its validated share snapshot", () => {
     const deck: Deck = {
       id: "deck-1",
@@ -75,9 +143,13 @@ describe("share content", () => {
       id: "course-1",
       title: "Cell biology",
       subject: "Biology",
+      description: "Explore how cells work.",
+      level: "Introductory",
       color: "#3158a7",
-      tags: [],
-      objectives: [],
+      emoji: "🧬",
+      tags: ["cells"],
+      objectives: ["Explain how cell membranes work."],
+      estimatedMinutes: 45,
       sources: [],
       modules: [
         {
@@ -102,6 +174,15 @@ describe("share content", () => {
       updatedAt: 1,
     };
 
+    const sharedCourse = parseShareSnapshot(buildCourseShareSnapshot(course));
+    expect(sharedCourse).toMatchObject({
+      color: course.color,
+      emoji: course.emoji,
+      level: course.level,
+      objectives: course.objectives,
+      estimatedMinutes: course.estimatedMinutes,
+      tags: course.tags,
+    });
     expect(
       parseShareSnapshot(buildModuleShareSnapshot(module))?.blocks?.[0]?.highlightedText,
     ).toEqual(block.highlightedText);
@@ -143,6 +224,45 @@ describe("share content", () => {
     expect(result.deck.notes).toEqual({});
   });
 
+  it("keeps valid questions when a shared deck contains a malformed word-bank question", () => {
+    const malformedQuestion: Question = {
+      id: "word-bank-1",
+      type: "word-bank",
+      question: "___ ___ ___ ___ ___ ___ ___ ___",
+      answer: "cell | wall | membrane | nucleus",
+      blanks: ["cell", "wall", "membrane", "nucleus"],
+      difficulty: "medium",
+    };
+    const deck: Deck = {
+      id: "deck-with-malformed-question",
+      title: "Biology",
+      subject: "Biology",
+      color: "#3158a7",
+      tags: [],
+      createdAt: 1,
+      favorite: false,
+      questions: [matchingQuestion, malformedQuestion],
+      masteredIds: [],
+      bookmarks: [],
+      notes: {},
+    };
+    const result = createViewerDeckCopy(
+      {
+        title: deck.title,
+        resourceType: "deck",
+        payload: buildDeckShareSnapshot(deck),
+      },
+      "shared-copy",
+      123,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.skippedQuestionCount).toBe(1);
+    expect(result.deck.questions).toHaveLength(1);
+    expect(result.deck.questions[0]?.type).toBe("matching");
+  });
+
   it("omits exam answers and student details when the answer key is disabled", () => {
     const options = {
       ...defaultExamOptions("Biology Exam", "Biology"),
@@ -180,6 +300,32 @@ describe("share content", () => {
 
     expect(snapshot.questions?.[0]?.pairs).toEqual(matchingQuestion.pairs);
     expect(snapshot.questions?.[0]?.answer).toBe(matchingQuestion.answer);
+  });
+
+  it("shares multiple-select keys only when the answer key is included", () => {
+    const question: Question = {
+      id: "multi-select-1",
+      type: "multiple-select",
+      question: "Select the membrane-bound organelles.",
+      answer: '["Nucleus","Mitochondrion"]',
+      options: ["Nucleus", "Mitochondrion", "Ribosome"],
+      correctOptions: ["Nucleus", "Mitochondrion"],
+      difficulty: "medium",
+    };
+    const hidden = buildPrintExamShareSnapshot("Biology Exam", "Biology", [question], {
+      ...defaultExamOptions("Biology Exam", "Biology"),
+      includeAnswerKey: false,
+    });
+    const included = buildPrintExamShareSnapshot(
+      "Biology Exam",
+      "Biology",
+      [question],
+      defaultExamOptions("Biology Exam", "Biology"),
+    );
+
+    expect(hidden.questions?.[0]).not.toHaveProperty("answer");
+    expect(hidden.questions?.[0]).not.toHaveProperty("correctOptions");
+    expect(included.questions?.[0]?.correctOptions).toEqual(question.correctOptions);
   });
 
   it("validates shared snapshots and normalizes invited addresses", () => {

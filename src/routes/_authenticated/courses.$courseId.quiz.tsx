@@ -12,6 +12,7 @@ import {
 } from "@/components/questions/interactive-question";
 import { MathText } from "@/components/math/math-text";
 import { checkAnswer, TYPE_LABELS } from "@/lib/answers";
+import { displayAnswer } from "@/lib/interactive";
 import { allCourseQuestions, allLessons } from "@/lib/courses";
 import { createId } from "@/lib/id";
 import { useKnowly } from "@/store/knowly";
@@ -249,7 +250,7 @@ function CourseQuizPage() {
                 </p>
                 {!answer.correct && (
                   <p className="mt-1 pl-6 text-xs text-muted-foreground">
-                    Correct answer: <MathText text={answer.question.answer} />
+                    Correct answer: <MathText text={displayAnswer(answer.question)} />
                   </p>
                 )}
               </div>

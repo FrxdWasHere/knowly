@@ -49,6 +49,7 @@ export const Route = createFileRoute("/_authenticated/courses/forge")({
 
 const DEFAULT_TYPES: QuestionType[] = [
   "multiple-choice",
+  "multiple-select",
   "true-false",
   "short-answer",
   "flashcard",
@@ -321,8 +322,9 @@ function CourseForgePage() {
               />
               {(smartMode.suggestions.title || smartMode.suggestions.topics?.length) && (
                 <p className="rounded-lg bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
-                  Source-analysis suggestions are placed in the editable brief fields below. Review
-                  or change them before copying the prompt.
+                  Local suggestions are shown for reference only. Smart Mode asks your chosen AI to
+                  decide the course from the source material; turn Smart Mode off to use the brief
+                  fields as fixed instructions.
                 </p>
               )}
             </>

@@ -585,12 +585,16 @@ function questionChildren(q: Question, number: number, design: DocxPaperDesign):
   );
   switch (q.type) {
     case "multiple-choice":
+    case "multiple-select":
       (q.options ?? []).forEach((option, index) =>
         out.push(
           new Paragraph({
             indent: { left: 360 },
             children: [
-              new TextRun({ text: `${LETTERS[index] ?? index + 1}. `, bold: true }),
+              new TextRun({
+                text: q.type === "multiple-select" ? "☐ " : `${LETTERS[index] ?? index + 1}. `,
+                bold: q.type !== "multiple-select",
+              }),
               ...inlineRuns(option),
             ],
           }),
@@ -1486,7 +1490,7 @@ function examQuestionChildren(
   const optionAfter = compact ? 20 : 60;
   const answerLineCount = Math.max(0, Math.trunc(options.answerLines));
   const hasFollowup =
-    question.type === "multiple-choice"
+    question.type === "multiple-choice" || question.type === "multiple-select"
       ? (question.options?.length ?? 0) > 0
       : question.type === "true-false" ||
         question.type === "ordering" ||
@@ -1529,12 +1533,16 @@ function examQuestionChildren(
 
   switch (question.type) {
     case "multiple-choice":
+    case "multiple-select":
       (question.options ?? []).forEach((option, optionIndex, allOptions) =>
         appendLine(
           [
             new TextRun({
-              text: `${examOptionLabel(optionIndex, options.optionCase)}. `,
-              bold: true,
+              text:
+                question.type === "multiple-select"
+                  ? "☐ "
+                  : `${examOptionLabel(optionIndex, options.optionCase)}. `,
+              bold: question.type !== "multiple-select",
               color: design.accent,
             }),
             ...inlineRuns(option),

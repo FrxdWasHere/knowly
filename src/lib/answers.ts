@@ -27,6 +27,7 @@ export function checkAnswer(question: Question, given: string): boolean {
   if (!g) return false;
   switch (question.type) {
     case "multiple-choice":
+    case "multiple-select":
     case "true-false":
       return g === a;
     case "fill-blank":
@@ -45,7 +46,11 @@ export function questionFeedbackExplanation(
   given: string | undefined,
   correct: boolean,
 ): string | undefined {
-  if (question.type === "multiple-choice" || question.type === "true-false") {
+  if (
+    question.type === "multiple-choice" ||
+    question.type === "multiple-select" ||
+    question.type === "true-false"
+  ) {
     if (correct) {
       return question.tutor?.whyCorrect || question.explanation;
     }
@@ -63,7 +68,12 @@ export function questionFeedbackExplanation(
 }
 
 export function questionOptionExplanation(question: Question, option: string): string | undefined {
-  const isCorrect = option.trim().toLowerCase() === question.answer.trim().toLowerCase();
+  const isCorrect =
+    question.type === "multiple-select"
+      ? (question.correctOptions?.some(
+          (correct) => correct.trim().toLowerCase() === option.trim().toLowerCase(),
+        ) ?? false)
+      : option.trim().toLowerCase() === question.answer.trim().toLowerCase();
   if (isCorrect) {
     return question.tutor?.whyCorrect || question.explanation;
   }
@@ -89,6 +99,7 @@ export function shuffleArray<T>(arr: T[]): T[] {
 export const TYPE_LABELS: Record<string, string> = {
   flashcard: "Flashcard",
   "multiple-choice": "Multiple Choice",
+  "multiple-select": "Select All That Apply",
   "true-false": "True / False",
   "fill-blank": "Fill in the Blank",
   "short-answer": "Short Answer",

@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { SrsRing } from "@/components/srs/srs-ring";
 import { MathText } from "@/components/math/math-text";
 import { QuestionRationales } from "@/components/questions/question-rationales";
+import { displayAnswer } from "@/lib/interactive";
 import { LabelChips, LabelPickerDialog } from "@/components/binder/label-picker";
 import { ShareButton } from "@/components/share/share-button";
 import { TYPE_LABELS } from "@/lib/answers";
@@ -528,7 +529,7 @@ function DeckDetail() {
               <p className="mt-3 text-sm">
                 <span className="text-muted-foreground">Answer: </span>
                 <span className="text-success">
-                  <MathText text={q.answer} />
+                  <MathText text={displayAnswer(q)} />
                 </span>
               </p>
               <QuestionRationales question={q} />

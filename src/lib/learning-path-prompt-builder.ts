@@ -1,4 +1,5 @@
 import type { Difficulty, LengthPreset, Question } from "./types";
+import { displayAnswer } from "./interactive";
 import {
   getLengthInstructions,
   lengthBudgetFor,
@@ -24,6 +25,8 @@ export interface LearningPathPromptOptions {
   /** 0–100 shared length/detail value */
   sliderValue?: number;
   lengthPreset?: LengthPreset;
+  /** let the model choose every path count and activity decision */
+  autonomous?: boolean;
   /** the learner can pin the number of stages before generating */
   stageCount?: number;
   includeApplication?: boolean;
@@ -103,7 +106,9 @@ export function buildLearningPathInstructions(options: LearningPathPromptOptions
 
   const stageLine = stageTarget
     ? `- Plan exactly ${stageTarget} stage${stageTarget === 1 ? "" : "s"}.`
-    : `- Plan ${budget.minStages}–${budget.maxStages} stages, choosing the number the material actually needs.`;
+    : options.autonomous
+      ? "- Choose the number of stages the source and learning progression actually need; the schema allows 1–8. Do not follow a preset count or split mechanically."
+      : `- Plan ${budget.minStages}–${budget.maxStages} stages, choosing the number the material actually needs.`;
 
   const custom = options.customStages?.length
     ? `\nLEARNER-PINNED STAGES (respect this structure, adapt the content)\n${options.customStages
@@ -119,16 +124,46 @@ export function buildLearningPathInstructions(options: LearningPathPromptOptions
   return `LEARNING PATH — the deck is a journey, not a bag of cards
 - Organise the deck into ordered learning stages. Each stage is a milestone with a clear purpose, a small set of concepts and one to three activities.
 - ${stageLine}
-- Use ${budget.conceptsPerStage} concept${budget.conceptsPerStage === 1 ? "" : "s"} per stage as a guide, but follow the material's real prerequisite order rather than an arbitrary split.
-- Activities per stage: up to ${budget.activitiesPerStage}. Questions per activity: about ${budget.questionsPerActivity}. These are guides, not quotas.
+- ${
+    options.autonomous
+      ? "Choose how many concepts and activities belong in each stage from the actual source and prerequisites; do not use prompt-engine counts or quotas."
+      : `Use ${budget.conceptsPerStage} concept${budget.conceptsPerStage === 1 ? "" : "s"} per stage as a guide, but follow the material's real prerequisite order rather than an arbitrary split.`
+  }
+- ${
+    options.autonomous
+      ? "Choose activity and question counts independently based on what each concept needs."
+      : `Activities per stage: up to ${budget.activitiesPerStage}. Questions per activity: about ${budget.questionsPerActivity}. These are guides, not quotas.`
+  }
 - Do not force every activity type into every path. Choose formats that fit the subject: recall for definitions, application for procedures, scenarios for judgement, ordering/matching for processes and relationships, integration for cross-topic ideas.
-- ${includeApplication ? "Include application or problem-solving practice once the learner has the basics." : "Keep practice focused on recognition and recall; skip heavy application work at this length."}
-- ${includeIntegration ? "Include at least one integration activity that connects concepts from different stages." : "Keep stages focused; deep cross-concept integration is optional at this length."}
-- ${includeReinforcement ? `Bring ${budget.reinforcementPerStage || 1} earlier card(s) back inside later reinforcement/review activities. Mark those cards as revisits in the activity title or description.` : "Reinforcement is light at this length; still let missed concepts return where natural."}
+- ${
+    options.autonomous
+      ? "Decide whether application, integration, or reinforcement activities improve this particular learning journey."
+      : includeApplication
+        ? "Include application or problem-solving practice once the learner has the basics."
+        : "Keep practice focused on recognition and recall; skip heavy application work at this length."
+  }
+- ${
+    options.autonomous
+      ? "Include cross-stage integration or spaced reinforcement when it serves the source material and learner."
+      : includeIntegration
+        ? "Include at least one integration activity that connects concepts from different stages."
+        : "Keep stages focused; deep cross-concept integration is optional at this length."
+  }
+- ${
+    options.autonomous
+      ? "Bring earlier questions back only when reinforcement is useful; mark intentional revisits clearly."
+      : includeReinforcement
+        ? `Bring ${budget.reinforcementPerStage || 1} earlier card(s) back inside later reinforcement/review activities. Mark those cards as revisits in the activity title or description.`
+        : "Reinforcement is light at this length; still let missed concepts return where natural."
+  }
 - Progression must be real: easier recognition and explanation first, then recall, application, integration and mastery. Later stages should depend on earlier ones.
 - Every question in the deck must appear in at least one activity. Reinforcement activities may reuse earlier questions on purpose; that is spaced repetition, not duplication.
 - Write specific stage titles and objectives from the material — never "Stage 1", "Part 2" or "Introduction" on its own.
-- Difficulty target: ${budget.depth} conceptual depth, explanations ${budget.explanationDepth}.
+- ${
+    options.autonomous
+      ? "Choose a suitable difficulty progression and explanation depth based on the source, learner, and selected length/detail preference."
+      : `Difficulty target: ${budget.depth} conceptual depth, explanations ${budget.explanationDepth}.`
+  }
 
 ${purposeMenuText()}
 
@@ -265,7 +300,7 @@ export function buildReinforcementPrompt(
 ): string {
   const budget = promptBudget(options);
   const missed = incorrectQuestions
-    .map((question) => `- ${question.question} → ${question.answer}`)
+    .map((question) => `- ${question.question} → ${displayAnswer(question)}`)
     .join("\n");
 
   return `You are an expert educational content designer. Create reinforcement practice for the concept "${concept}" in the deck "${deckTitle}".
@@ -280,7 +315,7 @@ ${getLengthInstructions(budget.sliderValue)}
 
 REQUIREMENTS
 - Write 2-4 new questions at ${budget.explanationDepth} explanation depth.
-- Vary the format where it helps (multiple-choice, true-false, short-answer, fill-blank).
+- Vary the format where it helps (multiple-choice, multiple-select, true-false, short-answer, fill-blank).
 - Each question needs a clear explanation, a hint and tutor notes.
 - Explain the misconception behind likely wrong answers.
 - Keep the same concept label so the deck's analytics stay coherent.
@@ -289,10 +324,12 @@ Return only:
 {
   "questions": [
     {
-      "type": "multiple-choice" | "true-false" | "short-answer" | "fill-blank" | "flashcard",
+      "type": "multiple-choice" | "multiple-select" | "true-false" | "short-answer" | "fill-blank" | "flashcard",
       "question": string,
       "answer": string,
       "options": string[],
+      "correctOptions": string[], // required for multiple-select; at least two exact options
+      "correctOptions": string[],
       "explanation": string,
       "difficulty": ${JSON.stringify("easy" as Difficulty)} | "medium" | "hard",
       "concept": string,

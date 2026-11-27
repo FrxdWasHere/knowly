@@ -20,6 +20,10 @@ import {
 import { TYPE_LABELS } from "@/lib/answers";
 import { documentThemeStyle } from "@/lib/document-themes";
 import {
+  MODULE_PRINT_PAGES_PREFIX,
+  notifyCloudLocalContentChanged,
+} from "@/lib/cloud-local-content";
+import {
   FOOTER_OPTIONS,
   FONT_SCALE_OPTIONS,
   PAPER_SIZE_OPTIONS,
@@ -86,7 +90,7 @@ export interface ModulePrintOptions {
 export const defaultModulePrintOptions: ModulePrintOptions = {
   paper: "a4",
   orientation: "portrait",
-  typeface: "theme",
+  typeface: "sans",
   fontScale: "normal",
   spacing: "normal",
   footerStyle: "count",
@@ -104,7 +108,7 @@ export const defaultModulePrintOptions: ModulePrintOptions = {
 };
 
 export const STORAGE_KEY_MODULE_PRINT = "knowly.module-print.v1";
-const STORAGE_KEY_MODULE_PAGES = "knowly.module-print-pages.v1";
+const STORAGE_KEY_MODULE_PAGES = MODULE_PRINT_PAGES_PREFIX.slice(0, -1);
 
 const DEFAULT_ACCENT = "#3b5bdb";
 
@@ -747,6 +751,7 @@ export function ModulePaper({
         const storage = await import("@/lib/storage");
         if (editPages.every((p) => !p.trim())) await storage.removeItem(pagesKey);
         else await storage.setItem(pagesKey, JSON.stringify(editPages));
+        notifyCloudLocalContentChanged();
       } catch {
         /* ignore quota / privacy-mode errors */
       }
@@ -1526,11 +1531,19 @@ function UnitView({
 function QuestionBody({ question }: { question: Question }) {
   switch (question.type) {
     case "multiple-choice":
+    case "multiple-select":
       return (
         <ol className="mt-2 space-y-1 pl-[1.1em]">
           {(question.options ?? []).map((option, index) => (
             <li key={`${option}-${index}`} className="flex gap-2">
-              <span className="font-semibold">{LETTERS[index] ?? index + 1}.</span>
+              {question.type === "multiple-select" ? (
+                <span
+                  aria-hidden
+                  className="mt-0.5 inline-block size-3 shrink-0 border border-foreground/60"
+                />
+              ) : (
+                <span className="font-semibold">{LETTERS[index] ?? index + 1}.</span>
+              )}
               <MathText text={option} className="min-w-0" />
             </li>
           ))}

@@ -56,6 +56,17 @@ npm run dev
 
 The dev server starts at `http://localhost:8080`.
 
+### Offline and installed website
+
+The website can be installed from a supported browser and keeps its study workspace available
+offline after the first online visit. Decks, courses, progress and settings are stored locally;
+sign-in, cloud sync, sharing and other network services still need an internet connection. Shared
+content, sign-in/account pages and authentication callbacks are not cached for offline use.
+
+The installed website and the regular website use the same browser storage on that device. The
+Tauri desktop app runs the same codebase but keeps a separate local library. Sign in for free
+account sync or use a backup to move data between them.
+
 ### Developer hatch
 
 In the development app, click the displayed version in **Settings** seven times to reveal the
@@ -73,9 +84,9 @@ and is left untouched.
 
 Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in a root `.env.local` file to enable account sign-in and sync controls. Configure Google/email providers and auth redirect URLs in the Supabase dashboard.
 
-Before using cloud sync, apply `supabase/migrations/20261124090000_create_user_app_state.sql` in the Supabase SQL Editor. The table is protected by row-level security and stores one private app-state snapshot per account.
+Before using cloud sync and sharing, apply the SQL migrations in `supabase/migrations/` in order. The account-state and share-link tables are protected by row-level security.
 
-Sync is automatic once you sign in. A device that is new to the account starts blank and adopts the copy stored in the account; the first sync for a brand-new account creates that copy from the device. Every change — decks, courses, modules, progress, study history, settings, notebooks, wallpapers and the profile photo — is written back a moment later. If another device saves first, this device reloads the account copy and keeps a local recovery backup. **Settings → Account & cloud sync** lets you deliberately push this device’s library over the account copy or reload the cloud copy, and can export either side as a JSON file.
+Sync is automatic once you sign in. A device that is new to the account starts blank and adopts the copy stored in the account; the first sync for a brand-new account creates that copy from the device. Every change — decks, courses, modules, progress, study history, settings, notebooks, saved restore points, module print text pages, wallpapers and the profile photo — is written back a moment later. If another device saves first, this device reloads the account copy and keeps a local recovery backup. **Settings → Account & cloud sync** lets you deliberately push this device’s library over the account copy or reload the cloud copy, and can export either side as a JSON file.
 
 ### Build
 
@@ -96,10 +107,12 @@ Vercel's environment settings, and allow the deployed callback URLs in Supabase 
 The Tauri shell needs the Rust toolchain and the Visual Studio C++ build tools. Once those are installed:
 
 ```bash
-npx tauri build
+npm run desktop:dev
+npm run desktop:build
 ```
 
-`beforeBuildCommand` runs the frontend build automatically.
+`desktop:dev` runs the same Vite app in the desktop shell, and `desktop:build` builds the desktop
+package. Tauri's configured build command generates the frontend assets first.
 
 ---
 
@@ -126,16 +139,18 @@ public/                # Static assets
 
 ## Available Scripts
 
-| Script              | Description                  |
-| ------------------- | ---------------------------- |
-| `npm run dev`       | Start the Vite dev server    |
-| `npm run build`     | Build for production         |
-| `npm run build:dev` | Build in development mode    |
-| `npm run preview`   | Preview the production build |
-| `npm run typecheck` | Typecheck with TypeScript    |
-| `npm run lint`      | Run ESLint                   |
-| `npm test`          | Run the Vitest suite         |
-| `npm run format`    | Format with Prettier         |
+| Script                  | Description                              |
+| ----------------------- | ---------------------------------------- |
+| `npm run dev`           | Start the Vite dev server                |
+| `npm run build`         | Build the web app and offline assets     |
+| `npm run build:dev`     | Build in development mode                |
+| `npm run preview`       | Preview the production build             |
+| `npm run desktop:dev`   | Run the Tauri desktop app in development |
+| `npm run desktop:build` | Build the Tauri desktop app              |
+| `npm run typecheck`     | Typecheck with TypeScript                |
+| `npm run lint`          | Run ESLint                               |
+| `npm test`              | Run the Vitest suite                     |
+| `npm run format`        | Format with Prettier                     |
 
 ---
 
@@ -165,8 +180,10 @@ This work is licensed under the Creative Commons Attribution-NonCommercial-Share
 
 For more information, visit [creativecommons.org/licenses/by-nc-sa/4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
+Copyright © 2026 Frederic Liam De Guzman. Knowly’s original materials are licensed under CC BY-NC-SA 4.0. Third-party materials are subject to their own licenses.
+
 **Made with love by Frederic Liam De Guzman, for the kind students of the School of Our Lady of La Salette.**
-**All rights reserved. To God be all the glory! 🙏**
+**To God be all the glory! 🙏**
 
 ---
 

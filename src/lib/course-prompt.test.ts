@@ -36,9 +36,20 @@ describe("Course generation prompt", () => {
     expect(prompt).toContain("substantial, coherent reference chapter");
     expect(prompt).toContain("## Section N — Section title");
     expect(prompt).toContain("[Source: lecture.pdf]");
-    expect(prompt).toContain("Foundations of cell biology");
-    expect(prompt).toContain("Compare passive and active transport.");
-    expect(prompt).toContain("Description: Understand cell structures");
+    expect(prompt).toContain("SMART MODE — AI-LED ANALYSIS");
+    expect(prompt).toContain(
+      "Choose and justify the topic, title, subject, description, objectives",
+    );
+    expect(prompt).not.toContain("Foundations of cell biology");
+    expect(prompt).not.toContain("Compare passive and active transport.");
+    expect(prompt).not.toContain("Description: Understand cell structures");
+    expect(prompt).toContain(
+      "choose the number of units, lessons, and checkpoint questions from the actual source",
+    );
+    expect(prompt).toContain('"highlightedText": string[]');
+    expect(prompt).toContain(
+      "select one or two of the most important visible definitions, causal ideas, or takeaways",
+    );
   });
 
   it("scales unit, lesson, and section guidance with shared length/detail settings", () => {

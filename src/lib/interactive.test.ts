@@ -5,6 +5,7 @@ import {
   countBlanks,
   displayAnswer,
   isInteractive,
+  serializeMultipleSelect,
   serializeMatching,
   serializeOrdering,
   serializeWordBank,
@@ -27,7 +28,28 @@ describe("isInteractive", () => {
     expect(isInteractive("ordering")).toBe(true);
     expect(isInteractive("matching")).toBe(true);
     expect(isInteractive("word-bank")).toBe(true);
+    expect(isInteractive("multiple-select")).toBe(true);
     expect(isInteractive("multiple-choice")).toBe(false);
+  });
+});
+
+describe("multiple select", () => {
+  const q = make({
+    type: "multiple-select",
+    options: ["A", "B", "C", "D"],
+    correctOptions: ["A", "C"],
+  });
+
+  it("serializes and displays the full correct option set", () => {
+    expect(canonicalAnswer(q)).toBe('["A","C"]');
+    expect(displayAnswer(q)).toBe("A, C");
+    expect(serializeMultipleSelect(["A", "C"])).toBe('["A","C"]');
+  });
+
+  it("requires the exact option set, independent of selection order", () => {
+    expect(checkInteractive(q, '["C","A"]')).toBe(true);
+    expect(checkInteractive(q, '["A"]')).toBe(false);
+    expect(checkInteractive(q, '["A","B","C"]')).toBe(false);
   });
 });
 

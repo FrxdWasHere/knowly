@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useKnowly } from "@/store/knowly";
 import { TYPE_LABELS } from "@/lib/answers";
+import { displayAnswer } from "@/lib/interactive";
 import { cn } from "@/lib/utils";
 import type { Deck, Question } from "@/lib/types";
 
@@ -292,7 +293,7 @@ function TagExplorerPage() {
                         <div className="mt-3 space-y-2 border-t border-border pt-3 text-sm">
                           <p>
                             <span className="text-xs text-muted-foreground">Answer: </span>
-                            <MathText text={question.answer} />
+                            <MathText text={displayAnswer(question)} />
                           </p>
                           {question.explanation && (
                             <p className="text-xs text-muted-foreground">

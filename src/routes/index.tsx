@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -5,12 +6,16 @@ import {
   BookOpen,
   Check,
   LockKeyhole,
+  Menu,
   NotebookPen,
   Sparkles,
   Target,
   Zap,
 } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
+import { InstallAppButton } from "@/components/app-install";
+import { CopyrightNotice } from "@/components/copyright-notice";
+import { LandingDeveloperHatch } from "@/components/landing-developer-hatch";
 import { useAuth } from "@/store/auth-context";
 import { useKnowly } from "@/store/knowly";
 
@@ -77,6 +82,17 @@ function Landing() {
   const navigate = useNavigate();
   const { state, hydrated } = useKnowly();
   const { loading: authLoading, user } = useAuth();
+  const [hatchTaps, setHatchTaps] = useState(0);
+  const [hatchOpen, setHatchOpen] = useState(false);
+
+  const tapPreviewControl = () => {
+    if (hatchTaps >= 6) {
+      setHatchTaps(0);
+      setHatchOpen(true);
+    } else {
+      setHatchTaps((count) => count + 1);
+    }
+  };
 
   const openApp = () => {
     if (authLoading) return;
@@ -90,34 +106,21 @@ function Landing() {
   return (
     <div className="min-h-screen overflow-hidden bg-[#FFFBF5] text-black dark:bg-background dark:text-foreground">
       <header className="sticky top-0 z-40 border-b-2 border-black bg-[#FFFBF5] dark:border-border dark:bg-surface">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-3 sm:px-8">
-          <Link to="/" className="flex min-w-0 items-center gap-3" aria-label="Knowly home">
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl border-2 border-black bg-gradient-to-br from-[#FF6B6B] to-[#A855F7] shadow-[3px_3px_0_0_#000]">
+        <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2.5 sm:gap-4 sm:px-8 sm:py-3">
+          <Link
+            to="/"
+            className="flex min-w-0 shrink-0 items-center gap-2"
+            aria-label="Knowly home"
+          >
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl border-2 border-black bg-gradient-to-br from-[#FF6B6B] to-[#A855F7] shadow-[3px_3px_0_0_#000] sm:size-10">
               <Logo className="size-6" />
             </span>
-            <span className="font-display text-xl font-bold tracking-tight">Knowly</span>
+            <span className="font-display text-lg font-bold tracking-tight sm:text-xl">Knowly</span>
           </Link>
-
-          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <Link
-              to="/login"
-              className="hidden rounded-lg px-3 py-2 text-sm font-semibold transition-colors hover:bg-[#FFE66D] sm:inline-flex"
-            >
-              Sign in
-            </Link>
-            <button
-              type="button"
-              onClick={openApp}
-              className="inline-flex items-center gap-2 rounded-lg border-2 border-black bg-[#FF6B6B] px-4 py-2 text-sm font-bold text-black shadow-[3px_3px_0_0_#000] transition-transform hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_#000]"
-            >
-              Try Knowly
-              <ArrowUpRight className="size-4" />
-            </button>
-          </div>
 
           <nav
             aria-label="Sections"
-            className="order-3 flex w-full items-center gap-1 overflow-x-auto border-t border-black/15 pt-2 sm:order-none sm:w-auto sm:border-0 sm:pt-0"
+            className="hidden min-w-0 flex-1 items-center justify-center gap-1 md:flex"
           >
             {NAV_LINKS.map(([href, label]) => (
               <a
@@ -129,6 +132,59 @@ function Landing() {
               </a>
             ))}
           </nav>
+
+          <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-3">
+            <InstallAppButton className="hidden lg:inline-flex" />
+            <Link
+              to="/login"
+              className="hidden rounded-lg px-3 py-2 text-sm font-semibold transition-colors hover:bg-[#FFE66D] md:inline-flex"
+            >
+              Sign in
+            </Link>
+            <button
+              type="button"
+              onClick={openApp}
+              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border-2 border-black bg-[#FF6B6B] px-3 py-2 text-sm font-bold text-black shadow-[3px_3px_0_0_#000] transition-transform hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_#000] sm:gap-2 sm:px-4"
+            >
+              Try Knowly
+              <ArrowUpRight className="size-4" />
+            </button>
+            <details
+              className="relative md:hidden"
+              onClick={(event) => {
+                if (event.target instanceof Element && event.target.closest("a")) {
+                  event.currentTarget.open = false;
+                }
+              }}
+            >
+              <summary
+                aria-label="Open site navigation"
+                className="grid size-9 cursor-pointer list-none place-items-center rounded-lg border-2 border-black bg-white shadow-[2px_2px_0_0_#000] [&::-webkit-details-marker]:hidden dark:bg-surface"
+              >
+                <Menu className="size-4" />
+              </summary>
+              <nav
+                aria-label="Mobile sections"
+                className="absolute right-0 top-full z-50 mt-2 w-52 rounded-xl border-2 border-black bg-[#FFFBF5] p-2 text-black shadow-[4px_4px_0_0_#000] dark:border-border dark:bg-surface dark:text-foreground"
+              >
+                {NAV_LINKS.map(([href, label]) => (
+                  <a
+                    key={href}
+                    href={href}
+                    className="block rounded-lg px-3 py-2.5 text-sm font-semibold hover:bg-[#FFE66D] hover:text-black"
+                  >
+                    {label}
+                  </a>
+                ))}
+                <Link
+                  to="/login"
+                  className="mt-1 block rounded-lg border-t border-black/15 px-3 py-2.5 text-sm font-semibold hover:bg-[#FFE66D] dark:border-border"
+                >
+                  Sign in
+                </Link>
+              </nav>
+            </details>
+          </div>
         </div>
       </header>
 
@@ -159,7 +215,7 @@ function Landing() {
               <h1 className="mt-6 font-display text-[clamp(2.75rem,6vw,5rem)] font-bold leading-[0.98] tracking-[-0.06em]">
                 A study app
                 <br />
-                that <span className="bg-[#FF6B6B] px-2">gets you.</span>
+                that <span className="bg-[#FF6B6B] px-2 text-black">gets you.</span>
               </h1>
               <p className="mt-6 max-w-lg text-lg leading-8 text-black/75 sm:text-xl dark:text-foreground/75">
                 No lectures about “unlocking your potential.” Just the notes, flashcards, and
@@ -209,7 +265,7 @@ function Landing() {
                 className="absolute -inset-2 rotate-1 rounded-2xl border-2 border-black bg-[#A855F7]"
               />
               <div className="relative z-10 motion-safe:anim-float">
-                <DashboardPreview />
+                <DashboardPreview onSecretTap={tapPreviewControl} />
               </div>
             </div>
           </div>
@@ -352,7 +408,7 @@ function Landing() {
           </div>
         </section>
 
-        <section className="relative isolate overflow-hidden border-t-2 border-black bg-[#FFE66D] px-5 py-16 sm:px-8 sm:py-20">
+        <section className="relative isolate overflow-hidden border-t-2 border-black bg-[#FFE66D] px-5 py-16 text-black sm:px-8 sm:py-20">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
             <div className="absolute -right-12 -top-16 size-56 rotate-12 rounded-[2rem] border-2 border-black/15 bg-[#FF6B6B]/40 motion-safe:anim-float" />
             <div className="absolute -bottom-16 left-[40%] size-48 rounded-full border-2 border-black/10 bg-[#60A5FA]/35 motion-safe:anim-float-fast" />
@@ -360,17 +416,17 @@ function Landing() {
           </div>
           <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#C0272D] dark:text-[#FF8A8A]">
+              <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#C0272D]">
                 You’ve got this.
               </p>
               <h2 className="mt-3 max-w-2xl font-display text-3xl font-bold tracking-tight sm:text-4xl">
                 Let’s make studying a little less painful.
               </h2>
-              <p className="mt-3 max-w-xl leading-7 text-black/70 dark:text-foreground/70">
+              <p className="mt-3 max-w-xl leading-7 text-black/75">
                 Already have an account?{" "}
                 <Link
                   to="/login"
-                  className="font-bold underline decoration-2 underline-offset-4 hover:text-[#C0272D] dark:hover:text-[#FF8A8A]"
+                  className="font-bold underline decoration-2 underline-offset-4 hover:text-[#C0272D]"
                 >
                   Sign in
                 </Link>{" "}
@@ -423,16 +479,15 @@ function Landing() {
               Sign in
             </Link>
           </nav>
-          <p className="text-sm text-black/65 dark:text-foreground/65">
-            © {new Date().getFullYear()} Knowly.
-          </p>
+          <CopyrightNotice className="text-sm text-black/65 dark:text-foreground/65" />
         </div>
       </footer>
+      <LandingDeveloperHatch open={hatchOpen} onOpenChange={setHatchOpen} />
     </div>
   );
 }
 
-function DashboardPreview() {
+function DashboardPreview({ onSecretTap }: { onSecretTap: () => void }) {
   return (
     <div
       role="img"
@@ -440,10 +495,20 @@ function DashboardPreview() {
       className="min-w-0 overflow-hidden rounded-xl border-2 border-black bg-white text-black shadow-[8px_8px_0_0_#000] sm:rounded-2xl"
     >
       <div className="flex h-10 items-center gap-2 border-b-2 border-black px-4">
-        <span className="size-2.5 rounded-full border border-black bg-[#FF6B6B]" />
+        {import.meta.env.DEV ? (
+          <button
+            type="button"
+            aria-label="Preview window control"
+            title=""
+            onClick={onSecretTap}
+            className="size-2.5 rounded-full border border-black bg-[#FF6B6B] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          />
+        ) : (
+          <span className="size-2.5 rounded-full border border-black bg-[#FF6B6B]" />
+        )}
         <span className="size-2.5 rounded-full border border-black bg-[#FFE66D]" />
         <span className="size-2.5 rounded-full border border-black bg-[#34D399]" />
-        <span className="ml-2 truncate text-xs font-medium text-black/55">
+        <span className="ml-2 truncate text-xs font-medium text-black/70">
           knowly.app / dashboard
         </span>
       </div>
@@ -455,18 +520,18 @@ function DashboardPreview() {
             </span>
             <span className="font-display text-sm font-bold">Knowly</span>
           </div>
-          <p className="px-2 text-[9px] font-bold uppercase tracking-wider text-black/45">
+          <p className="px-2 text-[9px] font-bold uppercase tracking-wider text-black/70">
             Workspace
           </p>
           <div className="mt-2 space-y-1 text-[11px] font-medium">
             <p className="rounded-md border border-black/10 bg-[#FFE66D] px-2 py-1.5">Home</p>
-            <p className="px-2 py-1.5 text-black/65">My decks</p>
-            <p className="px-2 py-1.5 text-black/65">Courses</p>
-            <p className="px-2 py-1.5 text-black/65">Notebooks</p>
-            <p className="px-2 py-1.5 text-black/65">Review</p>
+            <p className="px-2 py-1.5 text-black/80">My decks</p>
+            <p className="px-2 py-1.5 text-black/80">Courses</p>
+            <p className="px-2 py-1.5 text-black/80">Notebooks</p>
+            <p className="px-2 py-1.5 text-black/80">Review</p>
           </div>
           <div className="mt-7 rounded-md border border-black/15 bg-white p-2">
-            <p className="text-[9px] font-bold uppercase text-black/50">Today’s goal</p>
+            <p className="text-[9px] font-bold uppercase text-black/70">Today’s goal</p>
             <p className="mt-1 text-xs font-bold">25 of 40 min</p>
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-black/10">
               <div className="h-full w-3/5 bg-[#34D399]" />
@@ -483,7 +548,7 @@ function DashboardPreview() {
               <h2 className="mt-1 font-display text-lg font-bold tracking-tight sm:text-xl">
                 Good afternoon, Alex.
               </h2>
-              <p className="mt-1 text-[10px] text-black/55 sm:text-xs">
+              <p className="mt-1 text-[10px] text-black/70 sm:text-xs">
                 A little progress still counts.
               </p>
             </div>
@@ -502,7 +567,7 @@ function DashboardPreview() {
                 key={stat.label}
                 className={`min-w-0 rounded-md border border-black p-2 ${stat.tone}`}
               >
-                <p className="truncate text-[8px] font-semibold text-black/65 sm:text-[9px]">
+                <p className="truncate text-[8px] font-semibold text-black/80 sm:text-[9px]">
                   {stat.label}
                 </p>
                 <p className="mt-1 truncate text-[10px] font-bold sm:text-xs">{stat.value}</p>
@@ -513,7 +578,7 @@ function DashboardPreview() {
           <div className="mt-4">
             <div className="flex items-center justify-between gap-2">
               <h3 className="text-xs font-bold">Pick up where you left off.</h3>
-              <span className="text-[9px] text-black/50">View all</span>
+              <span className="text-[9px] text-black/70">View all</span>
             </div>
             <div className="mt-2 grid gap-2 sm:grid-cols-2">
               {[
@@ -538,13 +603,13 @@ function DashboardPreview() {
                       <deck.icon className="size-3.5" />
                     </span>
                     <div className="min-w-0">
-                      <p className="text-[8px] font-semibold uppercase tracking-wide text-black/50">
+                      <p className="text-[8px] font-semibold uppercase tracking-wide text-black/70">
                         {deck.subject}
                       </p>
                       <p className="truncate text-[10px] font-bold">{deck.deck}</p>
                     </div>
                   </div>
-                  <div className="mt-3 flex items-center justify-between gap-2 text-[8px] text-black/55">
+                  <div className="mt-3 flex items-center justify-between gap-2 text-[8px] text-black/70">
                     <span>{deck.progress}</span>
                     <span>Keep going</span>
                   </div>
@@ -562,13 +627,13 @@ function DashboardPreview() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-[10px] font-bold">A quick review is ready.</p>
-              <p className="text-[9px] text-black/55">12 cards are waiting when you are.</p>
+              <p className="text-[9px] text-black/70">12 cards are waiting when you are.</p>
             </div>
             <ArrowRight className="size-3.5 shrink-0" />
           </div>
         </div>
       </div>
-      <p className="border-t border-black/15 px-4 py-2 text-center text-[10px] text-black/55">
+      <p className="border-t border-black/15 px-4 py-2 text-center text-[10px] text-black/70">
         A peek at your Knowly home screen.
       </p>
     </div>

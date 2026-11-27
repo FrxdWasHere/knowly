@@ -8,7 +8,10 @@ export const courseBlockSchema = z.object({
   id: z.string().optional(),
   type: z.enum(["markdown", "callout", "example", "image", "checkpoint", "divider"]),
   markdown: z.string().optional(),
-  highlightedText: z.array(z.string()).optional(),
+  highlightedText: z
+    .array(z.string().min(1))
+    .optional()
+    .describe("Exact visible phrases to highlight in the block's rendered text."),
   tone: z.enum(["info", "tip", "warning", "definition"]).optional(),
   title: z.string().optional(),
   url: z.string().optional(),
@@ -289,12 +292,14 @@ export const SAMPLE_COURSE_JSON = `{
               "type": "callout",
               "tone": "definition",
               "title": "Fluid mosaic model",
-              "markdown": "The membrane is a fluid sea of lipids with a mosaic of proteins, glycoproteins and glycolipids."
+              "markdown": "The membrane is a fluid sea of lipids with a mosaic of proteins, glycoproteins and glycolipids.",
+              "highlightedText": ["a fluid sea of lipids"]
             },
             {
               "type": "example",
               "title": "Why cholesterol matters",
-              "markdown": "At body temperature cholesterol packs the tails and stiffens the bilayer; in the cold it keeps them apart so the membrane stays flexible."
+              "markdown": "At body temperature cholesterol packs the tails and stiffens the bilayer; in the cold it keeps them apart so the membrane stays flexible.",
+              "highlightedText": ["cholesterol packs the tails and stiffens the bilayer"]
             },
             {
               "type": "checkpoint",

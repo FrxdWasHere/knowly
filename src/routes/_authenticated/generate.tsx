@@ -85,6 +85,7 @@ function GeneratePage() {
   const [dist, setDist] = useState<Record<Difficulty, number>>({ easy: 30, medium: 50, hard: 20 });
   const [types, setTypes] = useState<QuestionType[]>([
     "multiple-choice",
+    "multiple-select",
     "true-false",
     "short-answer",
   ]);

@@ -207,6 +207,51 @@ export type Database = {
         }
         Relationships: []
       }
+      share_links: {
+        Row: {
+          allowed_emails: string[]
+          created_at: string
+          custom_slug: string | null
+          id: string
+          owner_id: string
+          payload: Json
+          resource_id: string
+          resource_type: string
+          share_token: string
+          title: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          allowed_emails?: string[]
+          created_at?: string
+          custom_slug?: string | null
+          id?: string
+          owner_id: string
+          payload: Json
+          resource_id: string
+          resource_type: string
+          share_token: string
+          title: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          allowed_emails?: string[]
+          created_at?: string
+          custom_slug?: string | null
+          id?: string
+          owner_id?: string
+          payload?: Json
+          resource_id?: string
+          resource_type?: string
+          share_token?: string
+          title?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: []
+      }
       sessions: {
         Row: {
           answered: number
@@ -264,6 +309,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_app_state: {
+        Row: {
+          payload: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          payload: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          payload?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           payload: Json
@@ -287,7 +350,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      read_shared_resource: {
+        Args: {
+          p_token: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

@@ -15,6 +15,9 @@ import { cn } from "@/lib/utils";
 import type { AnswerRecord, Deck, Question } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/cram")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    ...(typeof search.deckId === "string" ? { deckId: search.deckId } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Cram Mode — Rapid-Fire Pre-Exam Blitz | Knowly" },
@@ -30,12 +33,17 @@ export const Route = createFileRoute("/_authenticated/cram")({
       },
     ],
   }),
-  component: () => (
-    <AppPage>
-      <CramPage />
-    </AppPage>
-  ),
+  component: CramRoute,
 });
+
+function CramRoute() {
+  const { deckId } = Route.useSearch();
+  return (
+    <AppPage>
+      <CramPage key={deckId ?? "all-decks"} />
+    </AppPage>
+  );
+}
 
 type Order = "random" | "weakest" | "unseen";
 type CramItem = { deckId: string; deckTitle: string; deckColor: string; question: Question };
@@ -83,10 +91,13 @@ function buildQueue(decks: Deck[], ids: string[], order: Order, count: number): 
 
 function CramPage() {
   const { state, recordSession } = useKnowly();
+  const { deckId } = Route.useSearch();
   const navigate = useNavigate();
   const decks = state.decks;
 
-  const [selected, setSelected] = useState<string[]>(() => decks.map((d) => d.id));
+  const [selected, setSelected] = useState<string[]>(() =>
+    deckId ? [deckId] : decks.map((d) => d.id),
+  );
   const [order, setOrder] = useState<Order>("random");
   const [count, setCount] = useState<number>(20);
   const [seconds, setSeconds] = useState<number>(0);
@@ -97,8 +108,11 @@ function CramPage() {
     [decks, selected],
   );
 
-  const toggle = (id: string) =>
+  const toggle = (id: string) => {
+    if (deckId) return;
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+  };
+  const visibleDecks = deckId ? decks.filter((deck) => deck.id === deckId) : decks;
 
   if (queue) {
     return (
@@ -108,7 +122,11 @@ function CramPage() {
         xpEnabled={state.settings.xpEnabled}
         onRecord={recordSession}
         onExit={() => setQueue(null)}
-        onHome={() => navigate({ to: "/dashboard" })}
+        onHome={() =>
+          deckId?.startsWith("shared-")
+            ? navigate({ to: "/decks/$deckId", params: { deckId } })
+            : navigate({ to: "/dashboard" })
+        }
       />
     );
   }
@@ -139,12 +157,13 @@ function CramPage() {
         <section className="panel p-6">
           <h2 className="text-sm font-semibold">Decks</h2>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            {decks.map((d) => {
+            {visibleDecks.map((d) => {
               const on = selected.includes(d.id);
               return (
                 <button
                   key={d.id}
                   type="button"
+                  disabled={Boolean(deckId)}
                   onClick={() => toggle(d.id)}
                   className={cn(
                     "press flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors",
@@ -167,10 +186,20 @@ function CramPage() {
             })}
           </div>
           <div className="mt-4 flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setSelected(decks.map((d) => d.id))}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={Boolean(deckId)}
+              onClick={() => setSelected(decks.map((d) => d.id))}
+            >
               Select all
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => setSelected([])}>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={Boolean(deckId)}
+              onClick={() => setSelected([])}
+            >
               Clear
             </Button>
           </div>

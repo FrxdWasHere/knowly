@@ -56,8 +56,9 @@ import { cn } from "@/lib/utils";
 import { useKnowly } from "@/store/knowly";
 
 export const Route = createFileRoute("/_authenticated/print")({
-  validateSearch: (search: Record<string, unknown>): { paper?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { paper?: string; deckId?: string } => ({
     ...(typeof search["paper"] === "string" ? { paper: search["paper"] as string } : {}),
+    ...(typeof search["deckId"] === "string" ? { deckId: search["deckId"] } : {}),
   }),
   head: () => ({
     meta: [
@@ -113,7 +114,9 @@ function PrintExamPage() {
   const fromPaper = search.paper ? state.papers.find((p) => p.id === search.paper) : undefined;
 
   const [source, setSource] = useState<"decks" | "json">(fromPaper ? "json" : "decks");
-  const [deckIds, setDeckIds] = useState<string[]>(decks[0] ? [decks[0].id] : []);
+  const [deckIds, setDeckIds] = useState<string[]>(() =>
+    search.deckId ? [search.deckId] : decks[0] ? [decks[0].id] : [],
+  );
   const [raw, setRaw] = useState("");
   const [jsonQuestions, setJsonQuestions] = useState<Question[] | null>(
     fromPaper ? fromPaper.questions : null,
@@ -375,9 +378,9 @@ function PrintExamPage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    void navigator.clipboard.writeText(exportState.log).then(() =>
-                      toast.success("Details copied"),
-                    );
+                    void navigator.clipboard
+                      .writeText(exportState.log)
+                      .then(() => toast.success("Details copied"));
                   }}
                 >
                   Copy details
@@ -453,13 +456,15 @@ function PrintExamPage() {
               >
                 <Library /> My decks
               </Button>
-              <Button
-                size="sm"
-                variant={source === "json" ? "default" : "outline"}
-                onClick={() => setSource("json")}
-              >
-                <FileJson /> Paste questions
-              </Button>
+              {!search.deckId && (
+                <Button
+                  size="sm"
+                  variant={source === "json" ? "default" : "outline"}
+                  onClick={() => setSource("json")}
+                >
+                  <FileJson /> Paste questions
+                </Button>
+              )}
             </div>
 
             {source === "decks" ? (
@@ -469,36 +474,40 @@ function PrintExamPage() {
                     No decks yet — make one or bring one in first, or paste questions here.
                   </p>
                 )}
-                {decks.map((d) => {
-                  const active = deckIds.includes(d.id);
-                  return (
-                    <button
-                      key={d.id}
-                      type="button"
-                      onClick={() => {
-                        const next = active
-                          ? deckIds.filter((x) => x !== d.id)
-                          : [...deckIds, d.id];
-                        setDeckIds(next);
-                        if (!active) applyDeckTitle(next);
-                      }}
-                      className={cn(
-                        "press flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
-                        active
-                          ? "border-primary bg-primary/10"
-                          : "border-border hover:border-primary/40",
-                      )}
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate font-medium">{d.title}</span>
-                        <span className="text-[11px] text-muted-foreground">{d.subject}</span>
-                      </span>
-                      <span className="shrink-0 text-[11px] text-muted-foreground">
-                        {d.questions.length}q
-                      </span>
-                    </button>
-                  );
-                })}
+                {(search.deckId ? decks.filter((deck) => deck.id === search.deckId) : decks).map(
+                  (d) => {
+                    const active = deckIds.includes(d.id);
+                    return (
+                      <button
+                        key={d.id}
+                        type="button"
+                        disabled={Boolean(search.deckId)}
+                        onClick={() => {
+                          if (search.deckId) return;
+                          const next = active
+                            ? deckIds.filter((x) => x !== d.id)
+                            : [...deckIds, d.id];
+                          setDeckIds(next);
+                          if (!active) applyDeckTitle(next);
+                        }}
+                        className={cn(
+                          "press flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
+                          active
+                            ? "border-primary bg-primary/10"
+                            : "border-border hover:border-primary/40",
+                        )}
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium">{d.title}</span>
+                          <span className="text-[11px] text-muted-foreground">{d.subject}</span>
+                        </span>
+                        <span className="shrink-0 text-[11px] text-muted-foreground">
+                          {d.questions.length}q
+                        </span>
+                      </button>
+                    );
+                  },
+                )}
               </div>
             ) : (
               <div className="mt-4">

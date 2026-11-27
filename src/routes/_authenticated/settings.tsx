@@ -71,6 +71,8 @@ import { DEFAULT_SIDEBAR_GROUPS } from "@/lib/sidebar-preferences";
 import { buildSampleProfile } from "@/lib/sample-profile";
 import { loadSampleNotebook } from "@/lib/sample-notes";
 import { unlockDeveloperMode } from "@/lib/developer-mode";
+import { InstallAppButton } from "@/components/app-install";
+import { useAppInstall } from "@/lib/app-install-context";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -331,6 +333,7 @@ function SettingsPage() {
     exportState,
     importState,
   } = useKnowly();
+  const { canInstall, installed, isIos } = useAppInstall();
   const s = state.settings;
   const { user, loading: authLoading } = useAuth();
   const wallpaperUrl = useWallpaperUrl(s.wallpaper);
@@ -1071,6 +1074,30 @@ function SettingsPage() {
         </Group>
 
         <Group
+          title="Offline & install"
+          footer="The website and its installed version share the same local library. The desktop app keeps a separate local copy; use free account sync or a backup to move your data."
+        >
+          <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+            <Tile icon={HardDrive} tint="--success" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[15px] font-medium">
+                {installed ? "Knowly is installed on this device" : "Use Knowly like an app"}
+              </p>
+              <p className="mt-0.5 text-[13px] leading-5 text-muted-foreground">
+                {installed
+                  ? "Your library stays on this device and is available offline."
+                  : isIos
+                    ? "Use your browser’s Share menu, then choose Add to Home Screen."
+                    : canInstall
+                      ? "Install Knowly for a focused window and offline access to your study workspace."
+                      : "Install Knowly from your browser menu to use the offline app shell after your first visit."}
+              </p>
+            </div>
+            {canInstall && !installed && <InstallAppButton />}
+          </div>
+        </Group>
+
+        <Group
           title="Data & Storage"
           footer={`${state.decks.length} decks · ${state.courses.length} courses · ${state.history.length} sessions saved on this device. Save a backup file to keep a copy or move your library. Notebooks are exported one at a time from the Notebooks page.`}
         >
@@ -1245,7 +1272,7 @@ function SettingsPage() {
               <p className="text-[13px] text-muted-foreground mb-1">Made with love</p>
               <p className="text-[13px] leading-5">
                 Made with love by Frederic Liam De Guzman, for the kind students of the School of
-                Our Lady of La Salette. All rights reserved. To God be all the glory!
+                Our Lady of La Salette. To God be all the glory!
               </p>
             </div>
           </div>

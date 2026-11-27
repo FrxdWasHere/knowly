@@ -14,8 +14,24 @@ export type ShareVisibility = "anyone" | "restricted";
 
 export interface ShareLinkSettings {
   token: string;
+  customSlug: string | null;
   visibility: ShareVisibility;
   allowedEmails: string[];
+}
+
+const SHARE_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
+const CUSTOM_SHARE_SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])$/;
+
+export function normalizeCustomShareSlug(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+export function isValidCustomShareSlug(value: string): boolean {
+  return CUSTOM_SHARE_SLUG_PATTERN.test(value);
+}
+
+export function isValidShareIdentifier(value: string): boolean {
+  return SHARE_TOKEN_PATTERN.test(value) || isValidCustomShareSlug(value);
 }
 
 function isShareVisibility(value: string): value is ShareVisibility {
@@ -54,7 +70,7 @@ export async function loadShareLink(
 ): Promise<ShareLinkSettings | null> {
   const { data, error } = await supabase
     .from("share_links")
-    .select("share_token, visibility, allowed_emails")
+    .select("share_token, custom_slug, visibility, allowed_emails")
     .eq("owner_id", ownerId)
     .eq("resource_type", resourceType)
     .eq("resource_id", resourceId)
@@ -64,6 +80,7 @@ export async function loadShareLink(
   if (!data || !isShareVisibility(data.visibility)) return null;
   return {
     token: data.share_token,
+    customSlug: data.custom_slug,
     visibility: data.visibility,
     allowedEmails: normalizeInviteEmails(data.allowed_emails),
   };
@@ -77,10 +94,17 @@ export async function saveShareLink(input: {
   payload: ShareSnapshot;
   visibility: ShareVisibility;
   allowedEmails: string[];
+  customSlug?: string;
   existingToken?: string;
 }): Promise<ShareLinkSettings> {
   const allowedEmails =
     input.visibility === "restricted" ? normalizeInviteEmails(input.allowedEmails) : [];
+  const customSlug = normalizeCustomShareSlug(input.customSlug ?? "") || null;
+  if (customSlug && !isValidCustomShareSlug(customSlug)) {
+    throw new Error(
+      "Custom URLs must be 3–40 characters using lowercase letters, numbers, or hyphens.",
+    );
+  }
   if (allowedEmails.some((email) => !isValidInviteEmail(email))) {
     throw new Error("One or more invited email addresses are invalid.");
   }
@@ -107,20 +131,27 @@ export async function saveShareLink(input: {
         payload: toJson(input.payload),
         visibility: input.visibility,
         allowed_emails: allowedEmails,
+        custom_slug: customSlug,
         share_token: input.existingToken ?? createShareToken(),
         updated_at: new Date().toISOString(),
       },
       { onConflict: "owner_id,resource_type,resource_id" },
     )
-    .select("share_token, visibility, allowed_emails")
+    .select("share_token, custom_slug, visibility, allowed_emails")
     .single();
 
-  if (error) throw error;
+  if (error) {
+    if (error.code === "23505" && error.message.includes("share_links_custom_slug_key")) {
+      throw new Error("That custom URL is already in use. Choose another one.");
+    }
+    throw error;
+  }
   if (!isShareVisibility(data.visibility)) {
     throw new Error("The share link was saved with an unsupported access setting.");
   }
   return {
     token: data.share_token,
+    customSlug: data.custom_slug,
     visibility: data.visibility,
     allowedEmails: normalizeInviteEmails(data.allowed_emails),
   };
@@ -164,5 +195,5 @@ export async function readSharedResource(token: string): Promise<SharedResource 
 }
 
 export function isValidShareToken(token: string): boolean {
-  return /^[A-Za-z0-9_-]{43}$/.test(token);
+  return SHARE_TOKEN_PATTERN.test(token);
 }

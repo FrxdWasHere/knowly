@@ -27,7 +27,7 @@ function PracticeQuizRoute() {
   const { deckId } = Route.useSearch();
   return (
     <AppPage>
-      <QuizEngine key={deckId ?? "all-decks"} initialDeckId={deckId} />
+      <QuizEngine key={deckId ?? "all-decks"} initialDeckId={deckId} lockedDeckId={deckId} />
     </AppPage>
   );
 }

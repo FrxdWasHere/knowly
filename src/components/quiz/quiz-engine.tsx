@@ -15,6 +15,7 @@ import {
   Bookmark,
   Eye,
   GraduationCap,
+  Heart,
   Lightbulb,
   Sparkles,
   StickyNote,
@@ -39,13 +40,19 @@ import { MathKeypad, MathText } from "@/components/math/math-text";
 import { useKnowly } from "@/store/knowly";
 import { useCoarsePointer } from "@/hooks/use-mobile";
 import { checkAnswer, questionFeedbackExplanation, shuffleArray, TYPE_LABELS } from "@/lib/answers";
-import { displayAnswer, isInteractive } from "@/lib/interactive";
+import { displayAnswer, isInteractive, parseMultipleSelect } from "@/lib/interactive";
 import { xpForAnswer, comboMultiplier } from "@/lib/gamification";
 import { questionTypes } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 import { createId } from "@/lib/id";
 import { openImportPanel } from "@/lib/import-panel";
-import { groupQuestionsBySubtopic, questionSubtopicKey, questionSubtopicTitle } from "@/lib/rounds";
+import {
+  groupQuestionsBySubtopic,
+  HEART_COST_XP,
+  MAX_HEARTS,
+  questionSubtopicKey,
+  questionSubtopicTitle,
+} from "@/lib/rounds";
 
 import type {
   AnswerRecord,
@@ -72,7 +79,8 @@ type QuizFeedback = {
 export function QuizEngine({
   exam = false,
   initialDeckId,
-}: { exam?: boolean; initialDeckId?: string } = {}) {
+  lockedDeckId,
+}: { exam?: boolean; initialDeckId?: string; lockedDeckId?: string } = {}) {
   const {
     state,
     updateDeck,
@@ -80,14 +88,25 @@ export function QuizEngine({
     recordSession,
     saveQuizSession,
     deleteSavedQuizSession,
+    spendXp,
   } = useKnowly();
   const navigate = useNavigate();
+  const returnHome = () => {
+    if (lockedDeckId?.startsWith("shared-")) {
+      void navigate({ to: "/decks/$deckId", params: { deckId: lockedDeckId } });
+      return;
+    }
+    void navigate({ to: "/dashboard" });
+  };
+  const visibleSavedSessions = lockedDeckId
+    ? state.savedQuizSessions.filter((session) => session.deckIds.includes(lockedDeckId))
+    : state.savedQuizSessions;
   const [phase, setPhase] = useState<Phase>("setup");
   const [config, setConfig] = useState<QuizConfig>(() =>
     exam
       ? {
           ...state.settings.defaultQuizConfig,
-          deckIds: [],
+          deckIds: initialDeckId ? [initialDeckId] : [],
           types: [...questionTypes] as QuestionType[],
           difficulties: ["easy", "medium", "hard"],
           shuffle: true,
@@ -197,13 +216,14 @@ export function QuizEngine({
         onRetryIncorrect={() => {
           const wrongIds = result.answers.filter((a) => !a.correct).map((a) => a.questionId);
           const questions = decks
+            .filter((deck) => !lockedDeckId || deck.id === lockedDeckId)
             .flatMap((d) => d.questions.map((q) => ({ ...q, deckId: d.id })))
             .filter((q) => wrongIds.includes(q.id));
           if (!questions.length) return;
           setResult(null);
           start(questions);
         }}
-        onHome={() => navigate({ to: "/dashboard" })}
+        onHome={returnHome}
         onBackToSetup={() => {
           setResult(null);
           setPhase("setup");
@@ -222,6 +242,8 @@ export function QuizEngine({
         initialSession={resumeSession}
         widgets={widgets}
         settings={state.settings}
+        xpBalance={state.progress.xp}
+        spendXp={spendXp}
         exam={exam}
         mathMode={(() => {
           const selected = config.deckIds.length
@@ -250,7 +272,11 @@ export function QuizEngine({
             deckTitles,
           });
           setResumeSession(null);
-          navigate({ to: "/decks" });
+          if (lockedDeckId?.startsWith("shared-")) {
+            navigate({ to: "/decks/$deckId", params: { deckId: lockedDeckId } });
+          } else {
+            navigate({ to: "/decks" });
+          }
         }}
         onFinish={(answers, durationMs, bestCombo, xpEarned) => {
           const answered = answers.filter((a) => !a.skipped).length;
@@ -333,10 +359,10 @@ export function QuizEngine({
         }
       />
 
-      {!exam && state.savedQuizSessions.length > 0 && (
+      {!exam && visibleSavedSessions.length > 0 && (
         <section className="panel mb-6 space-y-3 p-5">
           <h2 className="text-sm font-semibold">Saved quizzes</h2>
-          {state.savedQuizSessions.map((session) => (
+          {visibleSavedSessions.map((session) => (
             <div
               key={session.id}
               className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3"
@@ -371,36 +397,45 @@ export function QuizEngine({
       <div className="grid items-start gap-6 lg:grid-cols-2">
         <section className="panel space-y-5 p-6">
           <h2 className="text-sm font-semibold">Decks</h2>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => toggle("deckIds", [])}
-              className={cn(
-                "rounded-full border border-border px-3 py-1.5 text-xs",
-                !config.deckIds.length && "border-primary bg-primary/15 text-primary",
-              )}
-            >
-              All decks (mixed)
-            </button>
-            {decks.map((d) => (
+          {lockedDeckId ? (
+            <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
+              This session is limited to{" "}
+              <span className="font-semibold">
+                {decks.find((deck) => deck.id === lockedDeckId)?.title ?? "this deck"}
+              </span>
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
               <button
-                key={d.id}
-                onClick={() =>
-                  toggle(
-                    "deckIds",
-                    config.deckIds.includes(d.id)
-                      ? config.deckIds.filter((x) => x !== d.id)
-                      : [...config.deckIds, d.id],
-                  )
-                }
+                onClick={() => toggle("deckIds", [])}
                 className={cn(
                   "rounded-full border border-border px-3 py-1.5 text-xs",
-                  config.deckIds.includes(d.id) && "border-primary bg-primary/15 text-primary",
+                  !config.deckIds.length && "border-primary bg-primary/15 text-primary",
                 )}
               >
-                {d.title}
+                All decks (mixed)
               </button>
-            ))}
-          </div>
+              {decks.map((d) => (
+                <button
+                  key={d.id}
+                  onClick={() =>
+                    toggle(
+                      "deckIds",
+                      config.deckIds.includes(d.id)
+                        ? config.deckIds.filter((x) => x !== d.id)
+                        : [...config.deckIds, d.id],
+                    )
+                  }
+                  className={cn(
+                    "rounded-full border border-border px-3 py-1.5 text-xs",
+                    config.deckIds.includes(d.id) && "border-primary bg-primary/15 text-primary",
+                  )}
+                >
+                  {d.title}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div>
             <h2 className="mb-2 text-sm font-semibold">Question types</h2>
@@ -687,13 +722,17 @@ function QuizFeedbackPanel({
   );
   const explanationLabel = feedback.skipped
     ? "Answer explanation"
-    : feedback.question.type === "multiple-choice" || feedback.question.type === "true-false"
+    : feedback.question.type === "multiple-select"
       ? feedback.correct
-        ? "Why this option is correct"
-        : "Why this option is incorrect"
-      : feedback.correct
-        ? "Why this answer is correct"
-        : "Common misconception";
+        ? "Why these options are correct"
+        : "Why this selection is incorrect"
+      : feedback.question.type === "multiple-choice" || feedback.question.type === "true-false"
+        ? feedback.correct
+          ? "Why this option is correct"
+          : "Why this option is incorrect"
+        : feedback.correct
+          ? "Why this answer is correct"
+          : "Common misconception";
 
   return (
     <div
@@ -768,7 +807,14 @@ function QuizFeedbackPanel({
               </p>
               {!feedback.skipped && feedback.given && (
                 <p className="text-muted-foreground">
-                  Your answer: <MathText text={feedback.given} />
+                  Your answer:{" "}
+                  <MathText
+                    text={
+                      feedback.question.type === "multiple-select"
+                        ? parseMultipleSelect(feedback.given).join(", ")
+                        : feedback.given
+                    }
+                  />
                 </p>
               )}
             </div>
@@ -798,6 +844,8 @@ function QuizRun({
   initialSession,
   widgets,
   settings,
+  xpBalance,
+  spendXp,
   exam = false,
   mathMode = false,
   onFinish,
@@ -811,6 +859,8 @@ function QuizRun({
   initialSession: SavedQuizSession | null;
   widgets: QuizWidgets;
   settings: Settings;
+  xpBalance: number;
+  spendXp: (amount: number) => boolean;
   /** exam mode: no hints, exam-styled quit prompt */
   exam?: boolean;
   /** the quiz covers a math/science deck: show the symbol keypad */
@@ -856,6 +906,12 @@ function QuizRun({
   const [combo, setCombo] = useState(initialSession?.combo ?? 0);
   const [bestCombo, setBestCombo] = useState(initialSession?.bestCombo ?? 0);
   const [xp, setXp] = useState(initialSession?.xp ?? 0);
+  const initialHearts = Math.max(
+    0,
+    Math.min(MAX_HEARTS, Math.floor(initialSession?.hearts ?? MAX_HEARTS)),
+  );
+  const [hearts, setHearts] = useState(initialHearts);
+  const [outOfHearts, setOutOfHearts] = useState(initialHearts === 0);
   const [elapsed, setElapsed] = useState(initialSession?.totalElapsedMs ?? 0);
   const [questionElapsed, setQuestionElapsed] = useState(0);
   const [confirmQuit, setConfirmQuit] = useState(false);
@@ -871,6 +927,7 @@ function QuizRun({
   const questionStart = useRef(Date.now());
   const advanceTimer = useRef<number | null>(null);
   const answerInput = useRef<HTMLInputElement>(null);
+  const committedIndex = useRef<number | null>(null);
 
   const question = pool[index];
   const questionDeckId = (question as (Question & { deckId?: string }) | undefined)?.deckId;
@@ -908,8 +965,10 @@ function QuizRun({
 
   const commit = useCallback(
     (given: string | null, skipped: boolean) => {
-      if (!question) return;
+      if (!question || committedIndex.current === index) return;
+      committedIndex.current = index;
       const correct = !skipped && given !== null && checkAnswer(question, given);
+      const nextHearts = !exam && !correct ? Math.max(0, hearts - 1) : hearts;
       const record: AnswerRecord = {
         questionId: question.id,
         deckId: (question as Question & { deckId?: string }).deckId ?? "",
@@ -934,10 +993,17 @@ function QuizRun({
       setCombo(nextCombo);
       setBestCombo((b) => Math.max(b, nextCombo));
       setXp((x) => x + gained);
+      if (!exam && !correct) setHearts(nextHearts);
 
       const advance = () => {
-        setFeedback(null);
         if (config.feedbackOnNextQuestion) setPreviousFeedback(questionFeedback);
+        if (!exam && nextHearts === 0 && index + 1 < total) {
+          setFeedback(questionFeedback);
+          setOutOfHearts(true);
+          setIndex((current) => current + 1);
+          return;
+        }
+        setFeedback(null);
         setInput("");
         setSelected(null);
         setOptionsShown(false);
@@ -1004,6 +1070,8 @@ function QuizRun({
       config.roundPauses,
       deckSubjects,
       config.xpEnabled,
+      exam,
+      hearts,
       index,
       onFinish,
       pool,
@@ -1052,9 +1120,13 @@ function QuizRun({
   }, [coarsePointer, feedback, index]);
 
   useEffect(() => {
-    if (!perQuestionSeconds || feedback) return;
+    committedIndex.current = null;
+  }, [index]);
+
+  useEffect(() => {
+    if (!perQuestionSeconds || feedback || outOfHearts) return;
     if (questionElapsed / 1000 >= perQuestionSeconds) commit(null, true);
-  }, [commit, perQuestionSeconds, feedback, questionElapsed]);
+  }, [commit, perQuestionSeconds, feedback, outOfHearts, questionElapsed]);
 
   useEffect(() => {
     if (!totalMinutes) return;
@@ -1113,11 +1185,32 @@ function QuizRun({
       config,
       answers,
       currentIndex,
+      hearts,
       totalElapsedMs: Date.now() - started.current,
       combo,
       bestCombo,
       xp,
     });
+  };
+
+  const purchaseHeart = () => {
+    if (exam || hearts >= MAX_HEARTS || !spendXp(HEART_COST_XP)) return;
+    setHearts((current) => Math.min(MAX_HEARTS, current + 1));
+    if (outOfHearts) {
+      setOutOfHearts(false);
+      setFeedback(null);
+      setInput("");
+      setSelected(null);
+      setOptionsShown(false);
+      setEliminated([]);
+      setShowHintText(false);
+      setHintsUsed(0);
+      setTutorOpen(false);
+      setNoteOpen(false);
+      setExplainOpen(false);
+      questionStart.current = Date.now();
+      setQuestionElapsed(0);
+    }
   };
 
   if (!question) {
@@ -1127,6 +1220,53 @@ function QuizRun({
         <Button className="mt-4" onClick={onQuit}>
           Back to setup
         </Button>
+      </div>
+    );
+  }
+
+  if (outOfHearts) {
+    const correctCount = answers.filter((answer) => answer.correct).length;
+    return (
+      <div className="mx-auto max-w-xl">
+        <div className="panel space-y-5 p-8 text-center">
+          <div className="mx-auto grid size-12 place-items-center rounded-full bg-destructive/10 text-destructive">
+            <Heart className="size-6 fill-current" aria-hidden="true" />
+          </div>
+          <div>
+            <h2 className="font-display text-2xl font-bold">Out of hearts</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              You got {correctCount} right. Buy a heart to continue, or save your progress and come
+              back later.
+            </p>
+          </div>
+          {feedback ? (
+            <QuizFeedbackPanel feedback={feedback} showExplanation={settings.showExplanations} />
+          ) : previousFeedback ? (
+            <QuizFeedbackPanel
+              feedback={previousFeedback}
+              showExplanation={settings.showExplanations}
+            />
+          ) : null}
+          <Button
+            className="w-full"
+            onClick={purchaseHeart}
+            disabled={xpBalance < HEART_COST_XP || hearts >= MAX_HEARTS}
+          >
+            <Heart className="size-4" /> Buy a heart · {HEART_COST_XP} XP
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Your balance: {xpBalance} XP. Hearts are restored to {MAX_HEARTS} at the start of a new
+            quiz.
+          </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button variant="outline" onClick={() => saveAndExit()}>
+              Save & Exit
+            </Button>
+            <Button variant="ghost" onClick={onQuit}>
+              End quiz
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -1250,7 +1390,41 @@ function QuizRun({
             Save & Exit
           </Button>
         </div>
-        <div className="flex gap-2 text-[11px]">
+        <div className="flex flex-wrap items-center justify-end gap-2 text-[11px]">
+          {!exam && (
+            <div
+              className="flex items-center gap-2"
+              role="group"
+              aria-label={`${hearts} of ${MAX_HEARTS} hearts remaining`}
+            >
+              <span className="flex items-center gap-0.5" aria-hidden="true">
+                {Array.from({ length: MAX_HEARTS }, (_, heartIndex) => (
+                  <Heart
+                    key={heartIndex}
+                    className={cn(
+                      "size-4",
+                      heartIndex < hearts
+                        ? "fill-destructive text-destructive"
+                        : "text-muted-foreground/30",
+                    )}
+                  />
+                ))}
+              </span>
+              {hearts < MAX_HEARTS && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="min-h-9"
+                  onClick={purchaseHeart}
+                  disabled={!!feedback || xpBalance < HEART_COST_XP}
+                  title={`Buy one heart for ${HEART_COST_XP} XP; you have ${xpBalance} XP`}
+                >
+                  <Heart className="size-3.5" /> {HEART_COST_XP} XP
+                </Button>
+              )}
+            </div>
+          )}
           {widgets.difficulty && (
             <Badge variant="outline" className="capitalize">
               {question.difficulty}
@@ -1469,7 +1643,11 @@ function QuizRun({
                   )}
                 </Button>
               )}
-              {isChoice || isTrueFalse || question.explanation || question.incorrectExplanation ? (
+              {isChoice ||
+              question.type === "multiple-select" ||
+              isTrueFalse ||
+              question.explanation ||
+              question.incorrectExplanation ? (
                 <Button
                   type="button"
                   variant="outline"

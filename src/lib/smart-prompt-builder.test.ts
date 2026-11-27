@@ -38,6 +38,12 @@ describe("Smart Mode deck prompts", () => {
     });
 
     expect(prompt).toContain("LENGTH & DETAIL — Longer (90/100)");
+    expect(prompt).toContain("SMART MODE — AI-led source analysis");
+    expect(prompt.match(/SMART MODE — AI-led source analysis/g)).toHaveLength(1);
+    expect(prompt).toContain(
+      "Do not copy the sample's question count, type mix, difficulty, or Learning Path size.",
+    );
+    expect(prompt).toContain("choose the most suitable Learning Path depth");
     expect(prompt).toContain("Plan exactly 2 stages");
     expect(prompt).toContain("Cell structures and their roles");
     expect(prompt).toContain("Apply structure-function relationships");
@@ -68,14 +74,19 @@ describe("Smart Mode module prompts", () => {
 
     expect(prompt).toContain("SMART MODE");
     expect(prompt).toContain("professionally written textbook chapter");
-    expect(prompt).toContain("Cell structure");
+    expect(prompt).toContain("Choose the title, subject, description, objectives, level");
+    expect(prompt).toContain("Choose the number and form of examples");
+    expect(prompt).toContain(
+      "Do not copy the sample's title, objectives, structure, question types, or counts",
+    );
+    expect(prompt).not.toContain("Describe the main structures in a cell.");
     expect(prompt).toContain("LENGTH & DETAIL — Longer (90/100)");
     expect(prompt).toContain("[Source: lecture.txt]");
   });
 });
 
 describe("Smart Mode course prompts", () => {
-  it("uses the course program builder with editable suggestions and shared length/detail", () => {
+  it("lets the AI decide the course from sources instead of following local suggestions", () => {
     const prompt = buildSmartPrompt({
       content_type: "course",
       title: "",
@@ -100,11 +111,17 @@ describe("Smart Mode course prompts", () => {
     });
 
     expect(prompt).toContain("SMART MODE");
-    expect(prompt).toContain("Cell biology foundations");
-    expect(prompt).toContain("Cell structure\nMembrane transport");
+    expect(prompt).toContain("Analyze the complete original source material yourself.");
+    expect(prompt).toContain("choose the number of units, lessons, and checkpoint questions");
+    expect(prompt).toContain(
+      "Do not copy the sample's titles, objectives, structure, question types, difficulty, or counts",
+    );
+    expect(prompt).not.toContain("Cell biology foundations");
+    expect(prompt).not.toContain("A course on cell structures and membrane transport.");
+    expect(prompt).not.toContain("Explain how cell structures support their functions.");
     expect(prompt).toContain("LENGTH & DETAIL — Long (70/100)");
-    expect(prompt).toContain("Course size: choose the number of units, lessons");
     expect(prompt).toContain("[Source: syllabus.pdf]");
     expect(prompt).toContain('Do not include "quiz" or "finalExam" anywhere');
+    expect(prompt).not.toContain("Question mix: short-answer");
   });
 });

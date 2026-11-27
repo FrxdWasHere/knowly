@@ -3,7 +3,6 @@ import { useEffect, useState, type FormEvent } from "react";
 import {
   ArrowRight,
   Check,
-  Chrome,
   Eye,
   EyeOff,
   Layers,
@@ -14,6 +13,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
+import { CopyrightNotice } from "@/components/copyright-notice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +21,9 @@ import { useAuth } from "@/store/auth-context";
 import { useKnowly } from "@/store/knowly";
 import { useAvatarUrl } from "@/lib/use-avatar-url";
 import { cn } from "@/lib/utils";
+import { buildSampleProfile } from "@/lib/sample-profile";
+import { unlockDeveloperMode } from "@/lib/developer-mode";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
   ssr: false,
@@ -47,6 +50,10 @@ const MODE_COPY: Record<Mode, { title: string; subtitle: string; submit: string 
     submit: "Send reset link",
   },
 };
+
+// The demo account is local-only; its credentials are never sent to an auth provider.
+const DEMO_EMAIL = "alex.rivera@knowly.dev";
+const DEMO_PASSWORD = "WhyDoYouKnowThisPassword";
 
 const HIGHLIGHTS = [
   {
@@ -75,13 +82,12 @@ function LoginPage() {
     loading,
     user,
     error: sessionError,
-    signInWithGoogle,
     signInWithEmail,
     signUpWithEmail,
     sendPasswordReset,
     signOut,
   } = useAuth();
-  const { state, hydrated } = useKnowly();
+  const { state, hydrated, importState, updateSettings, completeOnboarding } = useKnowly();
   const navigate = useNavigate();
   const isAuthenticated = Boolean(user);
   const [mode, setMode] = useState<Mode>("signup");
@@ -108,13 +114,69 @@ function LoginPage() {
     setMessage("");
   };
 
+  const enterDemoProfile = () => {
+    setError("");
+    setMessage("");
+    if (loading) {
+      setError("Account status is still loading. Try the demo again in a moment.");
+      return;
+    }
+    if (user) {
+      setError("Sign out of your online account before opening the local demo profile.");
+      return;
+    }
+    if (!hydrated) {
+      setError("Your local workspace is still loading. Try the demo again in a moment.");
+      return;
+    }
+    const hasExistingWorkspace =
+      state.onboardingComplete ||
+      state.decks.length > 0 ||
+      state.courses.length > 0 ||
+      state.modules.length > 0 ||
+      state.history.length > 0 ||
+      state.results.length > 0 ||
+      state.savedQuizSessions.length > 0 ||
+      state.journal.length > 0 ||
+      state.timetable.length > 0 ||
+      state.labels.length > 0 ||
+      state.papers.length > 0 ||
+      state.readingHighlights.length > 0 ||
+      state.progress.lifetimeXp > 0;
+    if (
+      hasExistingWorkspace &&
+      !window.confirm(
+        "Load Alex's demo profile? This replaces the current local workspace. Export a backup first if you need it.",
+      )
+    ) {
+      return;
+    }
+
+    const sample = buildSampleProfile();
+    if (!importState(JSON.stringify(sample))) {
+      setError("Couldn't load Alex's demo profile. Your local workspace was not changed.");
+      return;
+    }
+    updateSettings({ developerMode: true });
+    completeOnboarding();
+    unlockDeveloperMode();
+    toast.success("Hey, Alex! Your study cave is ready. Let's make those flashcards work. 🧠");
+    void navigate({ to: "/dashboard", replace: true });
+  };
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
     setMessage("");
     setBusy(true);
     try {
-      if (mode === "signin") {
+      if (
+        mode !== "reset" &&
+        email.trim().toLowerCase() === DEMO_EMAIL &&
+        password === DEMO_PASSWORD
+      ) {
+        enterDemoProfile();
+      } else if (mode === "signin") {
         await signInWithEmail(email, password);
       } else if (mode === "signup") {
         const signedIn = await signUpWithEmail(email, password);
@@ -132,20 +194,6 @@ function LoginPage() {
         authError instanceof Error ? authError.message : "Authentication failed. Try again.",
       );
     } finally {
-      setBusy(false);
-    }
-  };
-
-  const googleSignIn = async () => {
-    setError("");
-    setMessage("");
-    setBusy(true);
-    try {
-      await signInWithGoogle();
-    } catch (authError) {
-      setError(
-        authError instanceof Error ? authError.message : "Google sign-in failed. Try again.",
-      );
       setBusy(false);
     }
   };
@@ -202,7 +250,7 @@ function LoginPage() {
       <div className="relative mx-auto grid min-h-screen w-full max-w-6xl items-center gap-10 px-5 py-8 sm:px-8 lg:grid-cols-[1.02fr_0.98fr] lg:gap-16 lg:py-14">
         {/* Story side — desktop only, so the form is the first thing on a phone. */}
         <section className="hidden lg:block">
-          <div className="flex items-center gap-3">
+          <Link to="/" aria-label="Knowly home" className="flex items-center gap-3">
             <span className="grid size-12 place-items-center rounded-2xl border-[3px] border-border bg-surface shadow-[3px_3px_0_0_var(--shadow-ink)]">
               <Logo className="size-8 rounded-lg" />
             </span>
@@ -212,7 +260,7 @@ function LoginPage() {
                 Study forge
               </p>
             </div>
-          </div>
+          </Link>
 
           <span className="anim-pop mt-10 inline-flex items-center gap-2 rounded-full border-2 border-border bg-surface px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground shadow-[2px_2px_0_0_var(--shadow-ink)]">
             <Sparkles className="size-3.5 text-primary" />
@@ -277,7 +325,7 @@ function LoginPage() {
 
         {/* Account side */}
         <section className="mx-auto w-full max-w-md">
-          <div className="mb-6 flex items-center gap-3 lg:hidden">
+          <Link to="/" aria-label="Knowly home" className="mb-6 flex items-center gap-3 lg:hidden">
             <span className="grid size-11 place-items-center rounded-xl border-[3px] border-border bg-surface shadow-[3px_3px_0_0_var(--shadow-ink)]">
               <Logo className="size-7 rounded-lg" />
             </span>
@@ -287,7 +335,7 @@ function LoginPage() {
                 Study forge
               </p>
             </div>
-          </div>
+          </Link>
 
           <div className="anim-fade-up panel overflow-hidden">
             <div className="border-b-[3px] border-border bg-surface-2/60 px-5 py-4 sm:px-6">
@@ -334,7 +382,7 @@ function LoginPage() {
                         {state.settings.displayName || "Signed in"}
                       </p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {user.email ?? "Google account"}
+                        {user.email ?? "Email account"}
                       </p>
                     </div>
                   </div>
@@ -400,23 +448,6 @@ function LoginPage() {
                         {value === "signin" ? "Sign in" : "Create account"}
                       </button>
                     ))}
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="lg"
-                    className="w-full"
-                    onClick={() => void googleSignIn()}
-                    disabled={busy}
-                  >
-                    <Chrome /> Continue with Google
-                  </Button>
-
-                  <div className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    <span className="h-[2px] flex-1 bg-border" />
-                    or with email
-                    <span className="h-[2px] flex-1 bg-border" />
                   </div>
 
                   <form onSubmit={(event) => void submit(event)} className="space-y-4">
@@ -514,6 +545,7 @@ function LoginPage() {
               Terms
             </Link>
           </p>
+          <CopyrightNotice className="mt-4 text-center" />
         </section>
       </div>
     </main>

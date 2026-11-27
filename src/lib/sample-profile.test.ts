@@ -49,6 +49,7 @@ describe("buildSampleProfile", () => {
       new Set([
         "flashcard",
         "multiple-choice",
+        "multiple-select",
         "true-false",
         "fill-blank",
         "short-answer",

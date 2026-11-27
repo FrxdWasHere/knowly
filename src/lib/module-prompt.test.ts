@@ -26,10 +26,15 @@ describe("Module generation prompt", () => {
     expect(prompt).toContain("### Section 1.1");
     expect(prompt).toContain("Each section must make sense when opened on its own");
     expect(prompt).toContain("[Source: lecture.pdf]");
+    expect(prompt).toContain("SMART MODE — AI-LED ANALYSIS");
+    expect(prompt).toContain("Choose the title, subject, description, objectives, level");
     expect(prompt).toContain(
-      "Treat any source-analysis suggestions in the brief as learner-reviewed guidance",
+      "Choose the number of chapters, sections, examples, and checkpoint questions yourself",
     );
-    expect(prompt).toContain("How cells organize and sustain life.");
+    expect(prompt).not.toContain("Describe the main structures in a cell.");
+    expect(prompt).toContain("write a description that reflects the scope you choose");
+    expect(prompt).toContain('"highlightedText": string[]');
+    expect(prompt).toContain("select one or two especially important visible passages in");
   });
 
   it("scales chapters, examples, and checkpoint practice with shared length settings", () => {

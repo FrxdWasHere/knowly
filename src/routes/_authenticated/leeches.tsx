@@ -24,6 +24,7 @@ import { Slider } from "@/components/ui/slider";
 import { useKnowly } from "@/store/knowly";
 import { collectLeeches, formatDue, LEECH_THRESHOLD, type LeechItem } from "@/lib/srs";
 import { TYPE_LABELS } from "@/lib/answers";
+import { displayAnswer } from "@/lib/interactive";
 import { cn } from "@/lib/utils";
 import type { Deck } from "@/lib/types";
 
@@ -247,7 +248,7 @@ function LeechesPage() {
                             <MathText text={item.question.question} />
                           </p>
                           <p className="mt-1 truncate text-xs text-muted-foreground">
-                            <MathText text={item.question.answer} />
+                            <MathText text={displayAnswer(item.question)} />
                           </p>
                           <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
                             <span className="inline-flex items-center gap-1.5">

@@ -17,6 +17,9 @@ import { cn } from "@/lib/utils";
 import type { Deck, Difficulty, Question, QuestionType } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/cards")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    ...(typeof search.deckId === "string" ? { deckId: search.deckId } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Card Browser — Every Question Across Every Deck | Knowly" },
@@ -32,12 +35,17 @@ export const Route = createFileRoute("/_authenticated/cards")({
       },
     ],
   }),
-  component: () => (
-    <AppPage>
-      <CardBrowserPage />
-    </AppPage>
-  ),
+  component: CardBrowserRoute,
 });
+
+function CardBrowserRoute() {
+  const { deckId } = Route.useSearch();
+  return (
+    <AppPage>
+      <CardBrowserPage key={deckId ?? "all-decks"} />
+    </AppPage>
+  );
+}
 
 type Row = {
   deckId: string;
@@ -64,8 +72,9 @@ function weaknessOf(card: SrsCard | undefined): number {
 
 function CardBrowserPage() {
   const { state, updateDeck } = useKnowly();
+  const { deckId } = Route.useSearch();
   const [search, setSearch] = useState("");
-  const [deckFilter, setDeckFilter] = useState<string[]>([]);
+  const [deckFilter, setDeckFilter] = useState<string[]>(() => (deckId ? [deckId] : []));
   const [typeFilter, setTypeFilter] = useState<QuestionType[]>([]);
   const [diffFilter, setDiffFilter] = useState<Difficulty[]>([]);
   const [bookmarkedOnly, setBookmarkedOnly] = useState(false);
@@ -129,7 +138,7 @@ function CardBrowserPage() {
     state.decks,
   ]);
 
-  const total = rows.length;
+  const total = deckId ? rows.filter((row) => row.deckId === deckId).length : rows.length;
 
   const chip = (active: boolean) =>
     cn(
@@ -172,28 +181,35 @@ function CardBrowserPage() {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => setDeckFilter([])} className={chip(!deckFilter.length)}>
-            All decks
-          </button>
-          {state.decks.map((d: Deck) => (
-            <button
-              key={d.id}
-              onClick={() =>
-                setDeckFilter((f) =>
-                  f.includes(d.id) ? f.filter((x) => x !== d.id) : [...f, d.id],
-                )
-              }
-              className={chip(deckFilter.includes(d.id))}
-            >
-              <span
-                className="mr-1.5 inline-block size-2 rounded-full align-middle"
-                style={{ background: d.color }}
-              />
-              {d.title}
+        {deckId ? (
+          <p className="text-xs text-muted-foreground">
+            Showing cards from{" "}
+            {state.decks.find((deck) => deck.id === deckId)?.title ?? "this deck"}.
+          </p>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2">
+            <button onClick={() => setDeckFilter([])} className={chip(!deckFilter.length)}>
+              All decks
             </button>
-          ))}
-        </div>
+            {state.decks.map((d: Deck) => (
+              <button
+                key={d.id}
+                onClick={() =>
+                  setDeckFilter((f) =>
+                    f.includes(d.id) ? f.filter((x) => x !== d.id) : [...f, d.id],
+                  )
+                }
+                className={chip(deckFilter.includes(d.id))}
+              >
+                <span
+                  className="mr-1.5 inline-block size-2 rounded-full align-middle"
+                  style={{ background: d.color }}
+                />
+                {d.title}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center gap-2">
           {questionTypes.map((t) => (

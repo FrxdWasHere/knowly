@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDuration, TYPE_LABELS } from "@/lib/answers";
 import { MathText } from "@/components/math/math-text";
 import { gradeFor } from "@/lib/gamification";
+import { displayAnswer, parseMultipleSelect } from "@/lib/interactive";
 import { cn } from "@/lib/utils";
 import type { AnswerRecord, QuizResult } from "@/lib/types";
 import { useKnowly } from "@/store/knowly";
@@ -131,7 +132,11 @@ export function QuizReport({
           : a.correct
             ? `CORRECT${a.overridden ? " (marked as right)" : ""}`
             : "WRONG";
-        return `  ${i + 1}. [${status}] ${TYPE_LABELS[a.type]} · ${a.difficulty}${a.concept ? ` · ${a.concept}` : ""} · ${(a.timeMs / 1000).toFixed(1)}s${a.given ? ` · answered "${a.given}"` : ""}`;
+        const given =
+          a.given && a.type === "multiple-select"
+            ? parseMultipleSelect(a.given).join(", ")
+            : a.given;
+        return `  ${i + 1}. [${status}] ${TYPE_LABELS[a.type]} · ${a.difficulty}${a.concept ? ` · ${a.concept}` : ""} · ${(a.timeMs / 1000).toFixed(1)}s${given ? ` · answered "${given}"` : ""}`;
       }),
     ].filter((l) => l !== "");
     try {
@@ -443,6 +448,8 @@ function ReviewRow({
   const q = state.decks
     .find((d) => d.id === a.deckId)
     ?.questions.find((x) => x.id === a.questionId);
+  const given =
+    a.given && a.type === "multiple-select" ? parseMultipleSelect(a.given).join(", ") : a.given;
   return (
     <li
       className={cn(
@@ -467,12 +474,12 @@ function ReviewRow({
       <p className="mt-1 break-words text-muted-foreground">
         {a.skipped ? "Skipped" : a.correct ? "Correct" : "Incorrect"}
         {a.overridden ? " (marked as right)" : ""}
-        {a.given ? ` — you answered “${a.given}”` : ""}
+        {given ? ` — you answered “${given}”` : ""}
       </p>
       {q && !a.correct && q.answer && (
         <p className="mt-1 text-xs">
           <span className="text-muted-foreground">Answer: </span>
-          <MathText text={q.answer} />
+          <MathText text={displayAnswer(q)} />
         </p>
       )}
       {!a.correct && !a.skipped && (

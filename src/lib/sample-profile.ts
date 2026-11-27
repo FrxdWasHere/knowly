@@ -233,6 +233,28 @@ export function buildSampleProfile(now = Date.now()): AppState {
       concept: "Transport",
       hint: "It's what 'semi-permeable' really implies.",
     }),
+    bio("q-bio-13", {
+      type: "multiple-select",
+      question: "Which structures are membrane-bound organelles?",
+      answer: '["Nucleus","Mitochondrion"]',
+      options: ["Nucleus", "Mitochondrion", "Ribosome", "Cell wall"],
+      correctOptions: ["Nucleus", "Mitochondrion"],
+      concept: "Organelles",
+      explanation: "The nucleus and mitochondrion are enclosed by membranes.",
+      tutor: {
+        whyCorrect: "Both structures are enclosed by lipid membranes.",
+        whyWrong: [
+          {
+            option: "Ribosome",
+            why: "Ribosomes make proteins but are not enclosed by a membrane.",
+          },
+          {
+            option: "Cell wall",
+            why: "A cell wall supports the cell but is not a membrane-bound organelle.",
+          },
+        ],
+      },
+    }),
   ];
 
   const deckChem: Deck = {

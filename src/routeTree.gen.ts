@@ -46,6 +46,7 @@ import { Route as AuthenticatedTimetableRouteImport } from './routes/_authentica
 import { Route as AuthenticatedWeakSpotsRouteImport } from './routes/_authenticated/weak-spots'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
+import { Route as SharePreviewPreviewIdRouteImport } from './routes/share-preview.$previewId'
 import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as AuthenticatedArenaDeckIdRouteImport } from './routes/_authenticated/arena.$deckId'
 import { Route as AuthenticatedCoursesIndexRouteImport } from './routes/_authenticated/courses.index'
@@ -255,6 +256,11 @@ const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
   path: '/auth/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SharePreviewPreviewIdRoute = SharePreviewPreviewIdRouteImport.update({
+  id: '/share-preview/$previewId',
+  path: '/share-preview/$previewId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShareTokenRoute = ShareTokenRouteImport.update({
   id: '/share/$token',
   path: '/share/$token',
@@ -428,6 +434,7 @@ export interface FileRoutesByFullPath {
   '/weak-spots': typeof AuthenticatedWeakSpotsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/share-preview/$previewId': typeof SharePreviewPreviewIdRoute
   '/share/$token': typeof ShareTokenRoute
   '/arena/$deckId': typeof AuthenticatedArenaDeckIdRoute
   '/courses/$courseId': typeof AuthenticatedCoursesCourseIdRouteWithChildren
@@ -489,6 +496,7 @@ export interface FileRoutesByTo {
   '/weak-spots': typeof AuthenticatedWeakSpotsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/share-preview/$previewId': typeof SharePreviewPreviewIdRoute
   '/share/$token': typeof ShareTokenRoute
   '/arena/$deckId': typeof AuthenticatedArenaDeckIdRoute
   '/courses/forge': typeof AuthenticatedCoursesForgeRoute
@@ -550,6 +558,7 @@ export interface FileRoutesById {
   '/_authenticated/weak-spots': typeof AuthenticatedWeakSpotsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/share-preview/$previewId': typeof SharePreviewPreviewIdRoute
   '/share/$token': typeof ShareTokenRoute
   '/_authenticated/arena/$deckId': typeof AuthenticatedArenaDeckIdRoute
   '/_authenticated/courses/$courseId': typeof AuthenticatedCoursesCourseIdRouteWithChildren
@@ -613,6 +622,7 @@ export interface FileRouteTypes {
     | '/weak-spots'
     | '/auth/callback'
     | '/auth/reset-password'
+    | '/share-preview/$previewId'
     | '/share/$token'
     | '/arena/$deckId'
     | '/courses/$courseId'
@@ -674,6 +684,7 @@ export interface FileRouteTypes {
     | '/weak-spots'
     | '/auth/callback'
     | '/auth/reset-password'
+    | '/share-preview/$previewId'
     | '/share/$token'
     | '/arena/$deckId'
     | '/courses/forge'
@@ -734,6 +745,7 @@ export interface FileRouteTypes {
     | '/_authenticated/weak-spots'
     | '/auth/callback'
     | '/auth/reset-password'
+    | '/share-preview/$previewId'
     | '/share/$token'
     | '/_authenticated/arena/$deckId'
     | '/_authenticated/courses/$courseId'
@@ -768,6 +780,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
+  SharePreviewPreviewIdRoute: typeof SharePreviewPreviewIdRoute
   ShareTokenRoute: typeof ShareTokenRoute
 }
 
@@ -1030,6 +1043,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/reset-password'
       fullPath: '/auth/reset-password'
       preLoaderRoute: typeof AuthResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/share-preview/$previewId': {
+      id: '/share-preview/$previewId'
+      path: '/share-preview/$previewId'
+      fullPath: '/share-preview/$previewId'
+      preLoaderRoute: typeof SharePreviewPreviewIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/share/$token': {
@@ -1349,6 +1369,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
+  SharePreviewPreviewIdRoute: SharePreviewPreviewIdRoute,
   ShareTokenRoute: ShareTokenRoute,
 }
 export const routeTree = rootRouteImport

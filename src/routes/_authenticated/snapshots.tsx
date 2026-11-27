@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useKnowly } from "@/store/knowly";
 import { DEFAULT_STATE } from "@/lib/defaults";
 import { createId } from "@/lib/id";
+import { loadRestorePoints, saveRestorePoints, type RestorePoint } from "@/lib/cloud-local-content";
 import type { AppState } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/snapshots")({
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/snapshots")({
       {
         name: "description",
         content:
-          "Save point-in-time snapshots of your decks, progress and journal, restore any of them in one click, and download backups to move between devices. Fully offline.",
+          "Save point-in-time snapshots of your library and restore any of them in one click. Snapshots sync to your account when signed in.",
       },
       { property: "og:title", content: "Snapshots & Backup — Knowly" },
       {
@@ -35,30 +36,6 @@ export const Route = createFileRoute("/_authenticated/snapshots")({
   ),
 });
 
-const SNAPSHOT_KEY = "studyforge.snapshots.v1";
-
-interface Snapshot {
-  id: string;
-  label: string;
-  createdAt: number;
-  deckCount: number;
-  cardCount: number;
-  data: AppState;
-}
-
-function loadSnapshots(): Snapshot[] {
-  try {
-    const raw = localStorage.getItem(SNAPSHOT_KEY);
-    return raw ? (JSON.parse(raw) as Snapshot[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function persist(list: Snapshot[]) {
-  localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(list));
-}
-
 function fmt(ts: number) {
   return new Date(ts).toLocaleString(undefined, {
     day: "numeric",
@@ -71,12 +48,12 @@ function fmt(ts: number) {
 
 function SnapshotsPage() {
   const { state, setState } = useKnowly();
-  const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
+  const [snapshots, setSnapshots] = useState<RestorePoint[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    setSnapshots(loadSnapshots());
+    setSnapshots(loadRestorePoints());
     setLoaded(true);
   }, []);
 
@@ -91,7 +68,7 @@ function SnapshotsPage() {
   };
 
   const take = () => {
-    const snap: Snapshot = {
+    const snap: RestorePoint = {
       id: createId("snap"),
       label: `${state.decks.length} decks · ${cardCount} cards`,
       createdAt: Date.now(),
@@ -99,24 +76,24 @@ function SnapshotsPage() {
       cardCount,
       data: state,
     };
-    const list = [snap, ...loadSnapshots()].slice(0, 20);
-    persist(list);
+    const list = [snap, ...loadRestorePoints()].slice(0, 20);
+    saveRestorePoints(list);
     setSnapshots(list);
     flash("Restore point saved.");
   };
 
-  const restore = (snap: Snapshot) => {
+  const restore = (snap: RestorePoint) => {
     setState(() => snap.data);
     flash("Library restored.");
   };
 
   const remove = (id: string) => {
-    const list = loadSnapshots().filter((s) => s.id !== id);
-    persist(list);
+    const list = loadRestorePoints().filter((s) => s.id !== id);
+    saveRestorePoints(list);
     setSnapshots(list);
   };
 
-  const download = (snap: Snapshot) => {
+  const download = (snap: RestorePoint) => {
     const blob = new Blob([JSON.stringify(snap.data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -133,7 +110,7 @@ function SnapshotsPage() {
         flash("That file does not look like a Knowly backup.");
         return;
       }
-      const snap: Snapshot = {
+      const snap: RestorePoint = {
         id: createId("snap"),
         label: `Imported · ${parsed.decks.length} decks`,
         createdAt: Date.now(),
@@ -141,8 +118,8 @@ function SnapshotsPage() {
         cardCount: parsed.decks.reduce((n, d) => n + d.questions.length, 0),
         data: { ...DEFAULT_STATE, ...parsed },
       };
-      const list = [snap, ...loadSnapshots()].slice(0, 20);
-      persist(list);
+      const list = [snap, ...loadRestorePoints()].slice(0, 20);
+      saveRestorePoints(list);
       setSnapshots(list);
       flash("Backup loaded.");
     } catch {
@@ -154,7 +131,7 @@ function SnapshotsPage() {
     <div>
       <PageHeader
         title="Snapshots & Backup"
-        description="Save a restore point before big changes, and download a backup file to move your library between devices. Everything stays on this device."
+        description="Save a restore point before big changes, or download a backup file. Restore points sync to your account when signed in."
         action={
           <div className="flex gap-2">
             <label>

@@ -1,5 +1,6 @@
 import type { Difficulty, Question, QuestionType } from "./types";
 import { shuffleArray } from "./answers";
+import { displayAnswer } from "./interactive";
 
 export interface ExamOptions {
   title: string;
@@ -591,6 +592,7 @@ export const DEFAULT_INSTRUCTIONS =
 export const ALL_TYPES: QuestionType[] = [
   "flashcard",
   "multiple-choice",
+  "multiple-select",
   "true-false",
   "fill-blank",
   "short-answer",
@@ -660,6 +662,7 @@ export function selectQuestions(pool: Question[], filters: SelectionFilters): Qu
 
 /** Human-readable answer for the answer key. */
 export function printableAnswer(q: Question): string {
+  if (q.type === "multiple-select") return displayAnswer(q);
   if (q.type === "ordering" && q.items?.length) {
     return q.items.map((item, i) => `${i + 1}. ${item}`).join("  ");
   }

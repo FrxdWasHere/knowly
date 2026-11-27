@@ -80,15 +80,21 @@ function moduleStructureBudget(value: number): ModuleStructureBudget {
   };
 }
 
-export function moduleLengthInstructions(sliderValue: number): string {
+export function moduleLengthInstructions(sliderValue: number, smartModeEnabled = false): string {
   const budget = lengthBudgetFor(sliderValue);
   const structure = moduleStructureBudget(budget.sliderValue);
   return [
     `LENGTH & DETAIL — ${budget.label} (${budget.sliderValue}/100)`,
     `- Conceptual depth: ${budget.depth}; explanation depth: ${budget.explanationDepth}.`,
-    `- Suggested organization: ${structure.chapters} chapters, generally ${structure.sections} sections per chapter, and ${structure.checkpoints} checkpoint questions. Scale this to the actual subject; never invent sections or repeat material to hit a range.`,
-    `- Examples: ${structure.examples}`,
-    "- Scale the actual coverage, context, examples, and section development with this setting. Do not satisfy a longer setting by adding filler or merely lengthening sentences.",
+    smartModeEnabled
+      ? "- Choose the number of chapters, sections, examples, and checkpoint questions yourself from the source material; do not follow prompt-engine counts, ranges, or quotas."
+      : `- Suggested organization: ${structure.chapters} chapters, generally ${structure.sections} sections per chapter, and ${structure.checkpoints} checkpoint questions. Scale this to the actual subject; never invent sections or repeat material to hit a range.`,
+    smartModeEnabled
+      ? "- Choose the number and form of examples that best clarify the actual material; avoid filler."
+      : `- Examples: ${structure.examples}`,
+    smartModeEnabled
+      ? "- Use the selected setting as a relative depth preference only. Decide what coverage and structure the actual material warrants."
+      : "- Scale the actual coverage, context, examples, and section development with this setting. Do not satisfy a longer setting by adding filler or merely lengthening sentences.",
     "- Even at shorter settings, name and define every essential concept, explain unfamiliar terms, and provide enough context for a beginner to understand each section.",
   ].join("\n");
 }
@@ -138,25 +144,29 @@ export function buildModulePrompt(input: ModulePromptInput): string {
   return `You are an expert textbook author and learning designer. Turn the brief and source material into a cohesive, standalone educational module that reads like a professionally written textbook chapter.
 
 MODULE BRIEF
-- Title: ${title.trim() || "(derive a precise, learner-friendly title)"}
-- Subject: ${subject.trim() || "(identify the subject from the material)"}
-- Description: ${description.trim() || "(write a clear one-sentence description)"}
-- Difficulty: ${difficultyAuto ? "determine the appropriate level from the material and audience" : `${difficultyLabel} (${difficulty})`}
+- Title: ${smartModeEnabled ? "(choose a precise, learner-friendly title from the complete source material)" : title.trim() || "(derive a precise, learner-friendly title)"}
+- Subject: ${smartModeEnabled ? "(independently identify the subject and scope from the material)" : subject.trim() || "(identify the subject from the material)"}
+- Description: ${smartModeEnabled ? "(write a description that reflects the scope you choose)" : description.trim() || "(write a clear one-sentence description)"}
+- Difficulty: ${
+    smartModeEnabled || difficultyAuto
+      ? "determine the appropriate level from the material and audience"
+      : `${difficultyLabel} (${difficulty})`
+  }
 - Estimated time: ${
-    minutesAuto
+    smartModeEnabled || minutesAuto
       ? "choose a realistic estimate from the amount and depth of content"
       : `${minutes || 15} minutes`
   }
-- Learning objectives:
-${objectiveList.length ? objectiveList.map((item) => `  - ${item}`).join("\n") : "  - Create clear, measurable objectives from the brief and source material."}
-- Chapter and section guidance:
-${topicList.length ? topicList.map((item) => `  - ${item}`).join("\n") : "  - Infer a meaningful chapter and section outline from the subject and source material."}
+- Learning objectives${smartModeEnabled ? " — determine these from the sources yourself" : ""}:
+${smartModeEnabled ? "  - Create clear, measurable objectives from the complete source material." : objectiveList.length ? objectiveList.map((item) => `  - ${item}`).join("\n") : "  - Create clear, measurable objectives from the brief and source material."}
+- Chapter and section guidance${smartModeEnabled ? " — determine this from the sources yourself" : ""}:
+${smartModeEnabled ? "  - Infer a meaningful outline from the subject, scope, and source material." : topicList.length ? topicList.map((item) => `  - ${item}`).join("\n") : "  - Infer a meaningful chapter and section outline from the subject and source material."}
 ${extra.trim() ? `- Additional instructions: ${extra.trim()}\n` : ""}${
     tone.trim()
       ? `\nTONE & VOICE\nWrite the prose, callouts, examples, and checkpoint feedback in this voice:\n"""\n${tone.trim()}\n"""\nThe voice affects presentation, never factual accuracy or the output schema.\n`
       : ""
   }
-${smartModeEnabled ? `SMART MODE\nTreat any source-analysis suggestions in the brief as learner-reviewed guidance. Uploaded files, when present, appear below under their original filenames; the source material remains the factual anchor.\n` : ""}
+${smartModeEnabled ? `SMART MODE — AI-LED ANALYSIS\nThe prompt engine may perform lightweight local text analysis, but it does not understand or decide the curriculum. Analyze the complete original source material yourself. Choose the title, subject, description, objectives, level, chapters, sections, checkpoint count, and appropriate question types based on the content and learner. Do not copy prompt-engine suggestions or defaults as decisions. The selected length/detail is a relative depth preference, not a count range. Uploaded files appear below under their original filenames; the source material remains the factual anchor.\n` : ""}
 TEXTBOOK-CHAPTER WRITING STANDARD
 - Write a complete teaching resource, not a summary, transcript, set of notes, or list of facts. Assume the learner may be new to the subject.
 - Start with the foundational ideas needed to understand the topic, then develop concepts in a logical progression toward more advanced or integrated material.
@@ -195,25 +205,28 @@ Use the existing module block types in reading order:
 Do not let callouts, questions, or short blocks replace the explanatory textbook prose.
 
 AI-SELECTED KEY PASSAGES
-- On prose markdown, callout and example blocks, include an optional "highlightedText" array containing only a small number of especially important visible passages (key definitions, causal ideas, or useful takeaways). Do not highlight whole paragraphs or add highlights mechanically.
+- On prose markdown, callout and example blocks, select one or two especially important visible passages in "highlightedText" whenever the block contains a clear key definition, causal idea, or useful takeaway. Omit the field only when no short passage merits emphasis; do not add highlights mechanically.
 - Each entry must be an exact, contiguous phrase from the rendered text in that same block, written as plain text without Markdown markers or LaTeX. Avoid selecting text across paragraph boundaries, equations, or code.
-- Usually choose no more than one or two passages per section. Omit the field when nothing merits emphasis.
+- Choose no more than two passages per section.
 
 EQUATIONS & NOTATION
 - Use LaTeX whenever the subject calls for equations or scientific notation: inline as $…$ or displayed as $$…$$.
 - Keep ordinary words outside math delimiters. Escape backslashes so the JSON remains valid (for example, \\\\frac in the raw JSON file). Do not fake equations with plain text or put equations in code blocks.
 
 CALL-OUTS REQUESTED BY THE LEARNER
-Include every requested callout below as a titled callout block, preserving its intended takeaway while adapting any wording needed for accuracy. Use the suggested tone when appropriate. Add other callouts only when they provide clear educational value.
-${blurbSpec || "  (None specified. Add a callout only when it has clear educational value.)"}
+${smartModeEnabled ? "No callouts are preselected by the prompt engine. Decide whether callouts add value to this material; choose their number, content, and tone yourself." : "Include every requested callout below as a titled callout block, preserving its intended takeaway while adapting any wording needed for accuracy. Use the suggested tone when appropriate. Add other callouts only when they provide clear educational value.\n" + (blurbSpec || "  (None specified. Add a callout only when it has clear educational value.)")}
 
 CHECKPOINT QUESTIONS
-- Create ${structure.checkpoints} concise checkpoint questions that test understanding, not just recognition. Place each checkpoint beside the concept it tests.
+- ${
+    smartModeEnabled
+      ? "Choose the number of concise checkpoint questions yourself based on the concepts and scope; test understanding, not just recognition."
+      : `Create ${structure.checkpoints} concise checkpoint questions that test understanding, not just recognition.`
+  } Place each checkpoint beside the concept it tests.
 - Questions should vary appropriately between conceptual explanation, recall, and application. Avoid questions that require facts not taught in the module.
 - Every checkpoint block must reference an existing question id, and every question should be referenced by an inline checkpoint block.
 - Each question should include a clear explanation and a useful incorrect-answer explanation where the schema supports it.
 
-${moduleLengthInstructions(lengthValue)}
+${moduleLengthInstructions(lengthValue, smartModeEnabled)}
 
 OUTPUT RULES
 ${jsonFileRule("knowly-module.json")}
@@ -243,7 +256,7 @@ BLOCK OBJECT
 {
   "type": "markdown" | "callout" | "example" | "image" | "checkpoint" | "divider" | "activity",
   "markdown": string,
-  "highlightedText": string[],
+  "highlightedText": string[], // exact visible passages to emphasize when a block has key ideas
   "tone": "info" | "tip" | "warning" | "definition",
   "title": string,
   "url": string,
@@ -261,9 +274,10 @@ ${TUTOR_RULES}
 
 FULL SAMPLE
 ${SAMPLE_NOTE}
+${smartModeEnabled ? "Do not copy the sample's title, objectives, structure, question types, or counts; decide them from the source material and learner needs." : ""}
 ${SAMPLE_MODULE_JSON}
 
 FORMAT ADHERENCE — CRITICAL
 ${STRICT_FORMAT_RULES}
-The sample demonstrates the JSON shape only; the finished module's depth, chapter structure, and completeness must follow the brief and selected length/detail setting above.`;
+${smartModeEnabled ? "The sample demonstrates the JSON shape only. The finished module's depth, structure, and completeness must follow your analysis of the source; treat length/detail only as a relative preference." : "The sample demonstrates the JSON shape only; the finished module's depth, chapter structure, and completeness must follow the brief and selected length/detail setting above."}`;
 }

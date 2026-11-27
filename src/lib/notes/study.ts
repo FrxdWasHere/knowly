@@ -16,7 +16,7 @@ export function buildNotesFlashcardPrompt(title: string, text: string, count = 1
     subject: "Notes",
     count,
     distribution: { easy: 20, medium: 60, hard: 20 } as never,
-    types: ["flashcard", "multiple-choice", "short-answer", "true-false"],
+    types: ["flashcard", "multiple-choice", "multiple-select", "short-answer", "true-false"],
     extra:
       "Base every question only on the supplied notebook text. Keep concepts faithful to the notes.",
   });
@@ -47,7 +47,7 @@ export function buildNotesQuizPrompt(title: string, text: string, count = 10): s
     subject: "Notes",
     count,
     distribution: { easy: 25, medium: 50, hard: 25 } as never,
-    types: ["multiple-choice", "true-false", "short-answer"],
+    types: ["multiple-choice", "multiple-select", "true-false", "short-answer"],
     extra: "Use only the notebook text. Prefer application and reasoning over recall of wording.",
   });
 }

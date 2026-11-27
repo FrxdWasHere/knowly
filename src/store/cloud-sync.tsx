@@ -10,6 +10,11 @@ import {
   type CloudSnapshot,
 } from "@/lib/cloud-app-state";
 import { exportAllNotes, replaceAllNotes, subscribeNotesChanges } from "@/lib/notes/db";
+import {
+  exportCloudLocalContent,
+  replaceCloudLocalContent,
+  subscribeCloudLocalContent,
+} from "@/lib/cloud-local-content";
 import { saveAvatar } from "@/lib/avatar-store";
 import * as storage from "@/lib/storage";
 import type { AppState } from "@/lib/types";
@@ -65,8 +70,8 @@ function readLastSeen(userId: string) {
 
 /** The device's whole library: app state plus every notebook page. */
 async function captureSnapshot(state: AppState): Promise<CloudSnapshot> {
-  const notes = await exportAllNotes();
-  return { ...state, notes };
+  const [notes, localContent] = await Promise.all([exportAllNotes(), exportCloudLocalContent()]);
+  return { ...state, ...localContent, notes };
 }
 
 /** Puts a cloud snapshot onto this device: state, stored media and notebooks. */
@@ -74,11 +79,15 @@ async function applySnapshot(
   snapshot: CloudSnapshot,
   importState: (json: string) => boolean,
 ): Promise<void> {
-  const { notes, ...appState } = snapshot;
+  const { notes, restorePoints, modulePrintPages, ...appState } = snapshot;
   if (!importState(JSON.stringify(appState))) {
     throw new Error("The cloud copy could not be imported because its data is invalid.");
   }
   await saveAvatar(appState.settings?.avatarImage ?? null);
+  await replaceCloudLocalContent({
+    restorePoints: restorePoints ?? [],
+    modulePrintPages: modulePrintPages ?? {},
+  });
   if (notes && Array.isArray(notes.notebooks) && Array.isArray(notes.pages)) {
     await replaceAllNotes({ notebooks: notes.notebooks, pages: notes.pages });
   }
@@ -87,7 +96,7 @@ async function applySnapshot(
 export function CloudSyncProvider({ children }: { children: ReactNode }) {
   const { configured, loading: authLoading, user } = useAuth();
   const userId = user?.id;
-  const { state, hydrated, exportState, importState } = useKnowly();
+  const { state, hydrated, importState } = useKnowly();
   const [status, setStatus] = useState<CloudSyncStatus>(configured ? "signed-out" : "unavailable");
   const [remote, setRemote] = useState<CloudAppState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -105,10 +114,8 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
   // initial-load effect must not be cancelled half-way through that.
   const importStateRef = useRef(importState);
   importStateRef.current = importState;
-  const exportStateRef = useRef(exportState);
-  exportStateRef.current = exportState;
-
   useEffect(() => subscribeNotesChanges(() => setNotesRevision((count) => count + 1)), []);
+  useEffect(() => subscribeCloudLocalContent(() => setNotesRevision((count) => count + 1)), []);
 
   /** Records the fact that this device and the account now hold the same snapshot. */
   const markSynced = useCallback((id: string, updatedAt: string, snapshot: CloudSnapshot) => {
@@ -191,7 +198,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        await saveRecoveryBackup(userId, () => exportStateRef.current());
+        await saveRecoveryBackup(userId, await captureSnapshot(stateRef.current));
         await applySnapshot(loaded.state, importStateRef.current);
         if (!active) return;
         markSynced(userId, loaded.updatedAt, loaded.state);
@@ -234,7 +241,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
               setStatus("synced");
               return;
             }
-            await saveRecoveryBackup(user.id, exportState);
+            await saveRecoveryBackup(user.id, await captureSnapshot(stateRef.current));
             await applySnapshot(latest.state, importState);
             markSynced(user.id, latest.updatedAt, latest.state);
             setNotice("Cloud copy changed on another device — this device now matches it.");
@@ -254,7 +261,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     }, 1200);
 
     return () => window.clearTimeout(timer);
-  }, [state, notesRevision, status, user, importState, exportState, markSynced]);
+  }, [state, notesRevision, status, user, importState, markSynced]);
 
   const uploadThisDevice = useCallback(async () => {
     if (!user) throw new Error("Sign in before syncing your library.");
@@ -283,7 +290,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
     try {
       const latest = await loadCloudAppState(user.id);
       if (!latest) throw new Error("There is no cloud copy to load yet.");
-      await saveRecoveryBackup(user.id, exportState);
+      await saveRecoveryBackup(user.id, await captureSnapshot(stateRef.current));
       await applySnapshot(latest.state, importState);
       markSynced(user.id, latest.updatedAt, latest.state);
       setNotice("Cloud copy loaded onto this device.");
@@ -294,7 +301,7 @@ export function CloudSyncProvider({ children }: { children: ReactNode }) {
       setStatus("error");
       throw syncError;
     }
-  }, [user, exportState, importState, markSynced]);
+  }, [user, importState, markSynced]);
 
   const downloadCloudBackup = useCallback(() => {
     if (!remote) throw new Error("There is no cloud backup to download.");
@@ -339,9 +346,9 @@ function downloadJson(value: unknown, filename: string) {
 }
 
 /** Keeps a local recovery copy before this device's data is replaced. */
-async function saveRecoveryBackup(userId: string, exportState: () => string) {
+async function saveRecoveryBackup(userId: string, snapshot: CloudSnapshot) {
   try {
-    await storage.setItem(`${BACKUP_PREFIX}.${userId}.${Date.now()}`, exportState());
+    await storage.setItem(`${BACKUP_PREFIX}.${userId}.${Date.now()}`, JSON.stringify(snapshot));
   } catch (backupError) {
     console.warn("[Cloud sync] Could not save a local recovery copy:", backupError);
   }

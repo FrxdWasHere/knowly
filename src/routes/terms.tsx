@@ -47,7 +47,7 @@ function TermsPage() {
         <p>
           You must be old enough to use online services under the law where you live. If you are
           under the age of majority, use Knowly with permission from a parent or legal guardian.
-          Third-party sign-in providers may impose additional age requirements.
+          Your email provider may impose additional requirements.
         </p>
       </section>
       <section>
@@ -62,10 +62,10 @@ function TermsPage() {
       <section>
         <h2>3. Local use and online accounts</h2>
         <p>
-          You can use Knowly locally without an online account. Email or Google accounts are
-          provided through Supabase Auth. Keep your sign-in details secure, provide accurate account
-          information, and tell us promptly if you believe someone has used your account without
-          permission.
+          You can use Knowly locally without an online account. Email accounts are provided through
+          Supabase Auth, and may require email confirmation. Keep your sign-in details secure,
+          provide accurate account information, and tell us promptly if you believe someone has used
+          your account without permission.
         </p>
         <p>
           When you sign in, your account can sync your library and notebook data across devices. You
@@ -133,10 +133,18 @@ function TermsPage() {
       <section>
         <h2>9. Knowly’s intellectual property</h2>
         <p>
-          Knowly’s name, branding, and original materials belong to the operator or its licensors,
-          except for elements made available under separate third-party or open-source licenses.
-          Those licenses continue to apply to the materials they cover. Using the service does not
-          transfer ownership of Knowly’s protected materials to you.
+          Copyright in Knowly’s original materials belongs to Frederic Liam De Guzman, except for
+          third-party materials governed by their own licenses. Knowly’s original materials are
+          licensed under the{" "}
+          <a
+            href="https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License
+          </a>
+          . Those permissions apply only to the materials covered by that license. Using the service
+          does not transfer ownership of Knowly’s protected materials to you.
         </p>
       </section>
       <section>

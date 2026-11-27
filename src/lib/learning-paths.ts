@@ -96,6 +96,7 @@ const ACTIVITY_TYPES: ActivityType[] = [
 const SECONDS_BY_TYPE: Record<QuestionType, number> = {
   flashcard: 25,
   "multiple-choice": 40,
+  "multiple-select": 50,
   "true-false": 25,
   "fill-blank": 45,
   "short-answer": 70,
@@ -379,8 +380,7 @@ export function analyzeDeckConcepts(deck: Deck): ConceptInfo[] {
   // Foundational concepts first: lower difficulty and earlier appearance in
   // the source material both count. Stable on ties.
   return concepts.sort(
-    (a, b) =>
-      a.difficulty - b.difficulty || a.order - b.order || a.name.localeCompare(b.name),
+    (a, b) => a.difficulty - b.difficulty || a.order - b.order || a.name.localeCompare(b.name),
   );
 }
 
@@ -395,13 +395,10 @@ interface StageSeed {
  * there are fewer, the biggest concept splits by difficulty so later stages
  * still move forward instead of repeating the same cards.
  */
-function makeStageSeeds(
-  concepts: ConceptInfo[],
-  desiredStages: number,
-): StageSeed[] {
+function makeStageSeeds(concepts: ConceptInfo[], desiredStages: number): StageSeed[] {
   if (!concepts.length) return [];
 
-  let seeds: StageSeed[] = concepts.map((concept) => ({
+  const seeds: StageSeed[] = concepts.map((concept) => ({
     concepts: [concept.name],
     questions: [...concept.questions].sort(byDifficulty),
   }));
@@ -526,7 +523,13 @@ function selectForActivity(
     case "understanding-check":
       pool = fromStage(
         stageQuestions.filter((q) =>
-          ["multiple-choice", "true-false", "short-answer", "fill-blank"].includes(q.type),
+          [
+            "multiple-choice",
+            "multiple-select",
+            "true-false",
+            "short-answer",
+            "fill-blank",
+          ].includes(q.type),
         ),
       );
       break;
@@ -582,9 +585,13 @@ function selectForActivity(
   const wantsReinforcement =
     budget.includeReinforcement &&
     budget.reinforcementPerStage > 0 &&
-    ["reinforcement-practice", "review-session", "mastery-check", "final-assessment", "integration-challenge"].includes(
-      type,
-    );
+    [
+      "reinforcement-practice",
+      "review-session",
+      "mastery-check",
+      "final-assessment",
+      "integration-challenge",
+    ].includes(type);
 
   if (wantsReinforcement && priorQuestions.length) {
     const reinforcement = priorQuestions
@@ -648,9 +655,11 @@ function stageObjectives(
   };
   const objectives = labels.slice(0, 3).map(objectiveFor);
 
-  if (purpose === "application") objectives.push("Choose the right idea for an unfamiliar problem.");
+  if (purpose === "application")
+    objectives.push("Choose the right idea for an unfamiliar problem.");
   if (purpose === "integration") objectives.push("Connect ideas from more than one concept.");
-  if (purpose === "retention") objectives.push("Bring earlier material back without re-learning it.");
+  if (purpose === "retention")
+    objectives.push("Bring earlier material back without re-learning it.");
   if (purpose === "mastery") objectives.push("Answer harder mixed questions without support.");
   if (purpose === "active-recall") objectives.push("Recall key facts without hints.");
   if (purpose === "concept-exposure") objectives.push("Describe the core ideas in your own words.");
@@ -681,9 +690,7 @@ function buildStage(
     : unique(seed.questions.map((q) => conceptOf(q, fallbackSubject)));
   const activities: LearningActivity[] = [];
   const uncovered = [...seed.questions].sort(byDifficulty);
-  const blueprintTypes = blueprint?.activityTypes?.filter((type) =>
-    ACTIVITY_TYPES.includes(type),
-  );
+  const blueprintTypes = blueprint?.activityTypes?.filter((type) => ACTIVITY_TYPES.includes(type));
   const types = blueprintTypes?.length
     ? blueprintTypes
     : activityTypesFor(purpose, budget, seed.questions);
@@ -764,7 +771,10 @@ function buildStage(
     },
     activities,
     masteryPct: 0,
-    estimatedMinutes: activities.reduce((totalMinutes, activity) => totalMinutes + activity.estimatedMinutes, 0),
+    estimatedMinutes: activities.reduce(
+      (totalMinutes, activity) => totalMinutes + activity.estimatedMinutes,
+      0,
+    ),
   };
 }
 
@@ -784,10 +794,7 @@ export function buildLearningPath(
   const materialLimit = Math.max(1, Math.ceil(questionCount / 3));
   const desiredStages = Math.max(
     1,
-    Math.min(
-      MAX_LEARNING_STAGES,
-      options.stageCount ?? Math.min(desiredFromBudget, materialLimit),
-    ),
+    Math.min(MAX_LEARNING_STAGES, options.stageCount ?? Math.min(desiredFromBudget, materialLimit)),
   );
 
   let seeds = makeStageSeeds(concepts, desiredStages);
@@ -903,14 +910,20 @@ export interface LearningPathStats {
 
 function uniqueQuestionIds(path: LearningPath): string[] {
   return unique(
-    path.stages.flatMap((stage) => stage.activities.flatMap((activity) => activity.questions.map((ref) => ref.questionId))),
+    path.stages.flatMap((stage) =>
+      stage.activities.flatMap((activity) => activity.questions.map((ref) => ref.questionId)),
+    ),
   );
 }
 
 export function pathStats(path: LearningPath): LearningPathStats {
   const totalStages = path.stages.length;
-  const completedStages = path.stages.filter((stage) => stage.progress.status === "completed").length;
-  const startedStages = path.stages.filter((stage) => stage.progress.status !== "not-started").length;
+  const completedStages = path.stages.filter(
+    (stage) => stage.progress.status === "completed",
+  ).length;
+  const startedStages = path.stages.filter(
+    (stage) => stage.progress.status !== "not-started",
+  ).length;
   const ids = uniqueQuestionIds(path);
   const mastered = new Set<string>();
   path.stages.forEach((stage) =>
@@ -957,7 +970,7 @@ function recomputeActivity(activity: LearningActivity): LearningActivity {
     ...activity,
     masteryPct,
     completed,
-    completedAt: completed ? activity.completedAt ?? Date.now() : undefined,
+    completedAt: completed ? (activity.completedAt ?? Date.now()) : undefined,
   };
 }
 
@@ -965,9 +978,7 @@ function recomputeStage(stage: LearningStage, now: number): LearningStage {
   const activities = stage.activities.map(recomputeActivity);
   const refs = activities.flatMap((activity) => activity.questions);
   const uniqueIds = unique(refs.map((ref) => ref.questionId));
-  const masteredIds = unique(
-    refs.filter((ref) => ref.mastered).map((ref) => ref.questionId),
-  );
+  const masteredIds = unique(refs.filter((ref) => ref.mastered).map((ref) => ref.questionId));
   const masteryPct = uniqueIds.length
     ? Math.round((masteredIds.length / uniqueIds.length) * 100)
     : 0;
@@ -986,8 +997,9 @@ function recomputeStage(stage: LearningStage, now: number): LearningStage {
       ...stage.progress,
       status,
       completedAt:
-        status === "completed" ? stage.progress.completedAt ?? now : stage.progress.completedAt,
-      startedAt: stage.progress.startedAt ?? (refs.some((ref) => ref.attempts > 0) ? now : undefined),
+        status === "completed" ? (stage.progress.completedAt ?? now) : stage.progress.completedAt,
+      startedAt:
+        stage.progress.startedAt ?? (refs.some((ref) => ref.attempts > 0) ? now : undefined),
     },
     estimatedMinutes:
       stage.estimatedMinutes ||
@@ -1008,7 +1020,7 @@ function recomputePath(path: LearningPath, now = Date.now()): LearningPath {
     totalMasteryPct: stats.masteryPct,
     completedAt:
       stages.length > 0 && stages.every((stage) => stage.progress.status === "completed")
-        ? path.completedAt ?? now
+        ? (path.completedAt ?? now)
         : path.completedAt,
     updatedAt: now,
     reinforcementQuestionIds: reinforcement,
@@ -1098,10 +1110,7 @@ export function applyLearningPathAnswer(
 
     const activities = stage.activities.map((activity) => {
       if (context.activityId && activity.id !== context.activityId) return activity;
-      if (
-        !context.activityId &&
-        !activity.questions.some((ref) => ref.questionId === questionId)
-      ) {
+      if (!context.activityId && !activity.questions.some((ref) => ref.questionId === questionId)) {
         return activity;
       }
 
@@ -1375,10 +1384,8 @@ export function parseLearningPath(
             isReinforcement: Boolean(ref.isReinforcement),
             mastered: Boolean(ref.mastered),
             attempts: typeof ref.attempts === "number" ? ref.attempts : 0,
-            correctAttempts:
-              typeof ref.correctAttempts === "number" ? ref.correctAttempts : 0,
-            lastAnsweredAt:
-              typeof ref.lastAnsweredAt === "number" ? ref.lastAnsweredAt : undefined,
+            correctAttempts: typeof ref.correctAttempts === "number" ? ref.correctAttempts : 0,
+            lastAnsweredAt: typeof ref.lastAnsweredAt === "number" ? ref.lastAnsweredAt : undefined,
           });
         });
       });
@@ -1432,12 +1439,14 @@ export function parseLearningPath(
 
     const concepts = Array.isArray(stage.concepts)
       ? stage.concepts.map((value) => coerceString(value)).filter((v): v is string => Boolean(v))
-      : unique(activities.flatMap((activity) =>
-          activity.questions
-            .map((ref) => deck.questions.find((q) => q.id === ref.questionId))
-            .filter((q): q is Question => Boolean(q))
-            .map((q) => conceptOf(q, deck.subject)),
-        ));
+      : unique(
+          activities.flatMap((activity) =>
+            activity.questions
+              .map((ref) => deck.questions.find((q) => q.id === ref.questionId))
+              .filter((q): q is Question => Boolean(q))
+              .map((q) => conceptOf(q, deck.subject)),
+          ),
+        );
 
     const progressRecord =
       prior && prior.progress && typeof prior.progress === "object"
@@ -1513,10 +1522,7 @@ export function parseLearningPath(
     const activity = last.activities[last.activities.length - 1];
     if (activity) {
       activity.questions.push(...refsFromQuestions(uncovered, existingRefs));
-      activity.estimatedMinutes = Math.max(
-        activity.estimatedMinutes,
-        questionMinutes(uncovered),
-      );
+      activity.estimatedMinutes = Math.max(activity.estimatedMinutes, questionMinutes(uncovered));
     } else {
       last.activities.push({
         id: uid("act"),
@@ -1609,10 +1615,7 @@ export function mergeQuestionsIntoPath(
     if (!activity.questions.some((ref) => ref.questionId === question.id)) {
       activity.questions.push(refFor(question));
     }
-    activity.estimatedMinutes = Math.max(
-      activity.estimatedMinutes,
-      questionMinutes([question]),
-    );
+    activity.estimatedMinutes = Math.max(activity.estimatedMinutes, questionMinutes([question]));
   });
 
   if (leftovers.length) {

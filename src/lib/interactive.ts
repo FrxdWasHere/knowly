@@ -6,7 +6,12 @@ export const PAIR_SEP = " => ";
 /** Placeholder marking a blank inside a word-bank question. */
 export const BLANK_TOKEN = "___";
 
-export const INTERACTIVE_TYPES: QuestionType[] = ["ordering", "matching", "word-bank"];
+export const INTERACTIVE_TYPES: QuestionType[] = [
+  "multiple-select",
+  "ordering",
+  "matching",
+  "word-bank",
+];
 
 export const isInteractive = (t: QuestionType) => INTERACTIVE_TYPES.includes(t);
 
@@ -16,6 +21,16 @@ export const serializeMatching = (pairs: { left: string; right: string }[]) =>
   pairs.map((p) => `${p.left}${PAIR_SEP}${p.right}`).join(ITEM_SEP);
 
 export const serializeWordBank = (blanks: string[]) => blanks.join(ITEM_SEP);
+export const serializeMultipleSelect = (options: string[]) => JSON.stringify(options);
+
+export function parseMultipleSelect(value: string): string[] {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed) && parsed.every((item) => typeof item === "string") ? parsed : [];
+  } catch {
+    return [];
+  }
+}
 
 /** Number of `___` placeholders in a word-bank prompt. */
 export const countBlanks = (text: string) => text.split(BLANK_TOKEN).length - 1;
@@ -26,6 +41,8 @@ export const splitBlanks = (text: string) => text.split(BLANK_TOKEN);
 /** The authoritative answer string for a question, derived from structured fields. */
 export function canonicalAnswer(q: Question): string {
   switch (q.type) {
+    case "multiple-select":
+      return serializeMultipleSelect(q.correctOptions ?? parseMultipleSelect(q.answer));
     case "ordering":
       return q.items?.length ? serializeOrdering(q.items) : q.answer;
     case "matching":
@@ -40,6 +57,8 @@ export function canonicalAnswer(q: Question): string {
 /** Human friendly answer text used in feedback panels and reports. */
 export function displayAnswer(q: Question): string {
   switch (q.type) {
+    case "multiple-select":
+      return (q.correctOptions ?? parseMultipleSelect(q.answer)).join(", ");
     case "ordering":
       return (q.items ?? canonicalAnswer(q).split(ITEM_SEP))
         .map((it, i) => `${i + 1}. ${it}`)
@@ -68,6 +87,18 @@ const norm = (s: string) => s.toLowerCase().trim().replace(/\s+/g, " ");
 export function checkInteractive(q: Question, given: string): boolean {
   if (!given.trim()) return false;
   const expected = canonicalAnswer(q);
+  if (q.type === "multiple-select") {
+    const correct = (q.correctOptions ?? parseMultipleSelect(expected)).map(norm);
+    const selected = parseMultipleSelect(given).map(norm);
+    if (!correct.length || correct.length !== selected.length) return false;
+    const correctSet = new Set(correct);
+    const selectedSet = new Set(selected);
+    return (
+      correctSet.size === correct.length &&
+      selectedSet.size === selected.length &&
+      correct.every((option) => selectedSet.has(option))
+    );
+  }
   if (q.type === "matching") {
     const toMap = (s: string) =>
       new Map(

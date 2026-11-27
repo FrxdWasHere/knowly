@@ -6,14 +6,17 @@ describe("module AI-selected highlights", () => {
     const result = validateModuleJson(SAMPLE_MODULE_JSON);
     expect(result.ok).toBe(true);
 
-    const block = result.module?.blocks.find((item) => item.highlightedText?.length);
-    expect(block?.highlightedText).toEqual(["Chloroplasts capture light"]);
+    const highlightedBlocks = result.module?.blocks.filter((item) => item.highlightedText?.length);
+    expect(highlightedBlocks?.map((block) => block.highlightedText)).toEqual([
+      ["Chloroplasts capture light"],
+      ["light energy absorbed by chlorophyll"],
+    ]);
 
     const exported = JSON.parse(serializeModuleJson(result.module!)) as {
       blocks: { highlightedText?: string[] }[];
     };
-    expect(exported.blocks.find((item) => item.highlightedText)?.highlightedText).toEqual([
-      "Chloroplasts capture light",
-    ]);
+    expect(
+      exported.blocks.filter((item) => item.highlightedText).map((block) => block.highlightedText),
+    ).toEqual([["Chloroplasts capture light"], ["light energy absorbed by chlorophyll"]]);
   });
 });

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { BookOpen, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SharedResourceView } from "@/components/share/shared-resource-view";
-import { isValidShareToken, readSharedResource } from "@/lib/share-links";
+import { isValidShareIdentifier, readSharedResource } from "@/lib/share-links";
 import type { SharedResource } from "@/lib/share-content";
 import { useAuth } from "@/store/auth-context";
 
@@ -33,7 +33,7 @@ function SharedResourcePage() {
 
   useEffect(() => {
     let active = true;
-    if (!isValidShareToken(token)) {
+    if (!isValidShareIdentifier(token)) {
       setState({ status: "unavailable" });
       return () => {
         active = false;

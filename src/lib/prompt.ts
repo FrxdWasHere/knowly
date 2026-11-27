@@ -9,6 +9,7 @@ import {
 import type { Difficulty, QuestionType } from "./types";
 import {
   getLengthInstructions,
+  lengthBudgetFor,
   lengthBudgetForPreset,
   presetForSliderValue,
 } from "./length-detail";
@@ -49,10 +50,11 @@ export const SAMPLE_NOTE =
 
 /** The full question object: every field, including the optional ones. */
 export const QUESTION_SCHEMA_TEXT = `{
-  "type": "flashcard" | "multiple-choice" | "true-false" | "fill-blank" | "short-answer" | "ordering" | "matching" | "word-bank",  // required
+  "type": "flashcard" | "multiple-choice" | "multiple-select" | "true-false" | "fill-blank" | "short-answer" | "ordering" | "matching" | "word-bank",  // required
   "question": string,                             // required — the prompt the learner sees
   "answer": string,                               // required for flashcard, multiple-choice, true-false, fill-blank and short-answer
-  "options": string[],                            // required for multiple-choice only — 2-6 options; "answer" must match one exactly
+  "options": string[],                            // required for multiple-choice and multiple-select — 2-6 options
+  "correctOptions": string[],                     // required for multiple-select — at least 2 exact options; leave at least one distractor
   "incorrectExplanation": string,                 // required for single-answer questions — common wrong answers and misconceptions
   "items": string[],                              // required for ordering only — 3-6 steps in the CORRECT order (the app shuffles them)
   "pairs": [{ "left": string, "right": string }], // required for matching only — 3-5 couples, every "right" unique
@@ -64,10 +66,10 @@ export const QUESTION_SCHEMA_TEXT = `{
   "hint": string,                                  // required — one-line nudge that never gives the answer away
   "tutor": {
     "simple": string,                              // required — the idea in plain words, no jargon
-    "whyCorrect": string,                          // required for multiple-choice and true-false — why the correct option is right
+    "whyCorrect": string,                          // required for multiple-choice, multiple-select and true-false — why the correct option(s) are right
     "mnemonic": string,                            // required — a memory hook the learner can recall under pressure
     "example": string,                             // required — one concrete example or analogy
-    "whyWrong": [{ "option": string, "why": string }] // required for multiple-choice and true-false only — one entry per incorrect option
+    "whyWrong": [{ "option": string, "why": string }] // required for multiple-choice, multiple-select and true-false — one entry per incorrect option
   },
   "tags": string[]                                // required — free-form labels
 }`;
@@ -79,11 +81,11 @@ export const QUESTION_SCHEMA_TEXT = `{
 export const TUTOR_RULES = `- Every question carries pre-written tutor notes in "tutor". They stand in for a tutor chat, so they must be useful on their own — the learner reads them mid-session without leaving the quiz.
 - "simple": 1-2 short sentences restating the idea in plain language a beginner understands; no jargon carried over from the question.
 - "incorrectExplanation": for single-answer types, describe common wrong answers and the misconception behind each; explain why the learner's likely reasoning is tempting but wrong. Do not claim to know the learner's personal history.
-- "whyCorrect": for multiple-choice and true-false, explain specifically why the correct option is correct, not just restate it.
+- "whyCorrect": for multiple-choice, multiple-select and true-false, explain specifically why the correct option(s) are correct, not just restate them.
 - "mnemonic": one memory hook — acronym, rhyme, image, rhyme or a tiny story. It must be specific to this fact, not generic advice like "review regularly".
 - "example": optional; one concrete case, number or analogy that makes the idea stick.
-- "whyWrong": multiple-choice and true-false questions need one { "option", "why" } entry for EVERY incorrect option. Copy the option text exactly and explain the specific misconception that makes it wrong — never just say "incorrect".
-- For multiple-choice questions, include both "whyCorrect" and complete "whyWrong" entries so every option has a rationale.`;
+- "whyWrong": multiple-choice, multiple-select and true-false questions need one { "option", "why" } entry for EVERY incorrect option. Copy the option text exactly and explain the specific misconception that makes it wrong — never just say "incorrect".
+- For multiple-choice and multiple-select questions, include both "whyCorrect" and complete "whyWrong" entries so every option has a rationale.`;
 
 /** The full deck object. */
 export const DECK_SCHEMA_TEXT = `{
@@ -135,6 +137,8 @@ export interface PromptOptions {
   distributionAuto?: boolean;
   /** shared length/detail slider (0–100); presets are derived from it */
   lengthSliderValue?: number;
+  /** let the model analyze the source and choose content and structure itself */
+  smartModeEnabled?: boolean;
   /** the learning-path structure requested by the learner */
   learningPath?: LearningPathPromptOptions;
 }
@@ -241,14 +245,24 @@ export function buildPrompt(o: PromptOptions) {
   const pathOptions: LearningPathPromptOptions = {
     sliderValue,
     ...o.learningPath,
+    autonomous: o.smartModeEnabled || o.learningPath?.autonomous,
   };
   const lengthPreset = pathOptions.lengthPreset ?? presetForSliderValue(sliderValue);
+  const lengthBudget = lengthBudgetFor(sliderValue);
+  const lengthInstructions = o.smartModeEnabled
+    ? [
+        `LENGTH & DETAIL — ${lengthBudget.label} (${lengthBudget.sliderValue}/100)`,
+        `- Use this as a relative preference for conceptual depth (${lengthBudget.depth}) and explanation depth (${lengthBudget.explanationDepth}), not as a structure or quantity preset.`,
+        "- Choose the number and size of questions, concepts, stages, activities, and examples yourself from the source material and learner needs.",
+      ].join("\n")
+    : getLengthInstructions(sliderValue);
 
   return `You are an expert curriculum designer. Convert the study material below into a Knowly deck built around a Learning Path.
 
+${o.smartModeEnabled ? `${smartHeader()}\n` : ""}
 OUTPUT RULES
 ${jsonFileRule("knowly-deck.json")}
-${deckSizeLine(o.countAuto, o.count, o.material)}
+${deckSizeLine(o.smartModeEnabled || o.countAuto, o.count, o.material)}
 - The deck is one coherent learning journey: design the questions and the Learning Path together, not as two unrelated lists.
 
 SCHEMA — the complete deck object
@@ -258,7 +272,7 @@ ${LEARNING_PATH_BLOCK_TEXT}
 
 ${buildLearningPathInstructions(pathOptions)}
 
-${getLengthInstructions(sliderValue)}
+${lengthInstructions}
 
 QUESTION OBJECT — every field, verbatim
 ${QUESTION_SCHEMA_TEXT}
@@ -266,8 +280,13 @@ ${QUESTION_SCHEMA_TEXT}
 TUTOR NOTES — pre-written inside every question
 ${TUTOR_RULES}
 
-FULL SAMPLE REFERENCE — a complete, working deck using all eight question types
+FULL SAMPLE REFERENCE — ${
+    o.smartModeEnabled
+      ? "JSON shape only; its question types, counts, difficulty, and Learning Path are not a template"
+      : "a complete, working deck using all eight question types"
+  }
 ${SAMPLE_NOTE}
+${o.smartModeEnabled ? "Do not copy the sample's question count, type mix, difficulty, or Learning Path size. Choose each from the material; preserve only explicitly pinned learner settings." : ""}
 ${SAMPLE_DECK_JSON}
 
 FORMAT ADHERENCE — CRITICAL
@@ -279,14 +298,26 @@ INTERACTIVE TYPE RULES
 - word-bank: the "question" text must contain one ___ placeholder per blank, and "blanks" must have exactly that many entries in the same order.
 
 DECK SETTINGS
-- title: "${o.title || "Untitled Deck"}"
-- subject: "${o.subject || "General"}"
-${typesLine(o.typesAuto, typeList, "allowed question types")}
-${distributionLine(o.distributionAuto, o.distribution)}
-- lengthPreset: "${lengthPreset}" — preserve this selected Learning Path depth in the deck JSON
+- title: ${
+    o.smartModeEnabled
+      ? "choose a precise title from the source material"
+      : `"${o.title || "Untitled Deck"}"`
+  }
+- subject: ${
+    o.smartModeEnabled
+      ? "infer the subject from the source material"
+      : `"${o.subject || "General"}"`
+  }
+${typesLine(o.smartModeEnabled || o.typesAuto, typeList, "allowed question types")}
+${distributionLine(o.smartModeEnabled || o.distributionAuto, o.distribution)}
+- lengthPreset: ${
+    o.smartModeEnabled
+      ? "choose the most suitable Learning Path depth from the material and learner needs"
+      : `"${lengthPreset}" — preserve this selected Learning Path depth in the deck JSON`
+  }
 ${o.audience ? `- learner level: ${o.audience} — pitch wording and depth accordingly` : ""}
 ${o.purpose ? `- study goal: ${o.purpose} — bias the questions toward this goal` : ""}
-${mathPromptSection(o)}
+${mathPromptSection(o.smartModeEnabled ? {} : o)}
 
 QUALITY BAR
 - Test understanding, not trivia phrasing. Avoid duplicate questions.
@@ -299,6 +330,15 @@ STUDY MATERIAL
 """
 ${o.material || "(paste your study material here)"}
 """`;
+}
+
+function smartHeader(): string {
+  return `SMART MODE — AI-led source analysis
+- The prompt engine only extracts and labels source text; it does not decide the subject, scope, title, objectives, question count or type, difficulty, or learning structure.
+- Analyze the complete supplied source yourself. Independently decide what is worth teaching and choose the title, subject, coverage, question count and mix, difficulty, and Learning Path that best fit it.
+- Do not treat local topic guesses, suggested metadata, default counts, or preset structure ranges as authoritative.
+- The selected length/detail value is a depth preference, not a quota. Choose all counts and structures from the material and learner needs.
+- Determine the STEM, equation, and graph flags from the content yourself. Keep explicit learner instructions and any hand-pinned Learning Path stages.`;
 }
 
 export function estimateQuestions(materialLength: number) {

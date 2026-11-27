@@ -55,6 +55,7 @@ export const DEFAULT_QUIZ_CONFIG: QuizConfig = {
   questionCount: 10,
   types: [
     "multiple-choice",
+    "multiple-select",
     "true-false",
     "fill-blank",
     "short-answer",

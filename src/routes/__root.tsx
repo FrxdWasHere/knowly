@@ -16,6 +16,7 @@ import { KnowlyProvider } from "@/store/knowly";
 import { AuthProvider } from "@/store/auth";
 import { CloudSyncProvider } from "@/store/cloud-sync";
 import { Toaster } from "../components/ui/sonner";
+import { AppInstallProvider } from "@/components/app-install";
 import { Button } from "@/components/ui/button";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme-dom";
 
@@ -81,6 +82,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Knowly — Local study dashboard" },
+      { name: "theme-color", content: "#FF6B6B" },
       {
         name: "description",
         content:
@@ -125,7 +127,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap",
       },
       { rel: "icon", href: "/favicon.png", type: "image/png" },
-      { rel: "apple-touch-icon", href: "/favicon.png" },
+      { rel: "apple-touch-icon", href: "/knowly-icon.png" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
     ],
   }),
   shellComponent: RootShell,
@@ -152,17 +155,28 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    if (import.meta.env.DEV || !("serviceWorker" in navigator)) return;
+    void navigator.serviceWorker
+      .register(`/sw.js?v=${encodeURIComponent(__KNOWLY_VERSION__)}`, { scope: "/" })
+      .catch((error: unknown) => {
+        console.error("[PWA] Could not register offline support:", error);
+      });
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <KnowlyProvider>
-          <CloudSyncProvider>
-            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-            <Outlet />
-            <Toaster position="top-right" />
-          </CloudSyncProvider>
-        </KnowlyProvider>
-      </AuthProvider>
+      <AppInstallProvider>
+        <AuthProvider>
+          <KnowlyProvider>
+            <CloudSyncProvider>
+              {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+              <Outlet />
+              <Toaster position="top-right" />
+            </CloudSyncProvider>
+          </KnowlyProvider>
+        </AuthProvider>
+      </AppInstallProvider>
     </QueryClientProvider>
   );
 }

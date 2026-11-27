@@ -110,11 +110,19 @@ function QuestionBody({
 }) {
   switch (q.type) {
     case "multiple-choice":
+    case "multiple-select":
       return (
         <ol className="mt-2 space-y-1.5">
           {(q.options ?? []).map((opt, i) => (
             <li key={`${opt}-${i}`} className="flex gap-2">
-              <span className="font-semibold">{examOptionLabel(i, options.optionCase)}.</span>
+              {q.type === "multiple-select" ? (
+                <span
+                  aria-hidden
+                  className="mt-0.5 inline-block size-3 shrink-0 border border-foreground/60"
+                />
+              ) : (
+                <span className="font-semibold">{examOptionLabel(i, options.optionCase)}.</span>
+              )}
               <Editable
                 value={opt}
                 enabled={editing}

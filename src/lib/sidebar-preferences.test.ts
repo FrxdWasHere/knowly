@@ -5,6 +5,15 @@ const ids = (groups: { id: string }[]) => groups.map((group) => group.id);
 
 describe("normalizeSidebarGroups", () => {
   it("returns the default order when nothing is stored", () => {
+    expect(ids(DEFAULT_SIDEBAR_GROUPS)).toEqual([
+      "Home",
+      "Study",
+      "Learning",
+      "Library",
+      "Create",
+      "Progress",
+      "Settings",
+    ]);
     expect(ids(normalizeSidebarGroups(undefined))).toEqual(ids(DEFAULT_SIDEBAR_GROUPS));
   });
 
@@ -14,20 +23,48 @@ describe("normalizeSidebarGroups", () => {
   });
 
   it("slots a newly shipped section into its default position", () => {
-    const legacy = DEFAULT_SIDEBAR_GROUPS.filter((group) => group.id !== "Content");
+    const legacy = DEFAULT_SIDEBAR_GROUPS.filter((group) => group.id !== "Create");
     const result = normalizeSidebarGroups(legacy.map((group) => ({ ...group })));
-    expect(ids(result).slice(0, 3)).toEqual(["Home", "Content", "Decks & cards"]);
+    expect(ids(result).slice(0, 5)).toEqual(["Home", "Study", "Learning", "Library", "Create"]);
   });
 
   it("keeps renamed labels and visibility", () => {
     const saved = DEFAULT_SIDEBAR_GROUPS.map((group) => ({
       ...group,
-      label: group.id === "Study cycle" ? "Practice" : group.label,
-      visible: group.id !== "Notes",
+      label: group.id === "Study" ? "Practice" : group.label,
+      visible: group.id !== "Library",
     }));
     const result = normalizeSidebarGroups(saved);
-    expect(result.find((group) => group.id === "Study cycle")?.label).toBe("Practice");
-    expect(result.find((group) => group.id === "Notes")?.visible).toBe(false);
+    expect(result.find((group) => group.id === "Study")?.label).toBe("Practice");
+    expect(result.find((group) => group.id === "Library")?.visible).toBe(false);
+  });
+
+  it("merges saved legacy groups without hiding their remaining destinations", () => {
+    const result = normalizeSidebarGroups([
+      { id: "Home", label: "Home", visible: true },
+      { id: "Decks & cards", label: "Decks", visible: false },
+      { id: "Notes", label: "Notes", visible: true },
+      { id: "Courses", label: "Courses", visible: false },
+      { id: "Modules", label: "Modules", visible: false },
+      { id: "Content", label: "Content", visible: true },
+      { id: "Study cycle", label: "Study", visible: true },
+      { id: "System", label: "Settings & backup", visible: true },
+    ]);
+
+    expect(ids(result)).toEqual([
+      "Home",
+      "Library",
+      "Learning",
+      "Create",
+      "Study",
+      "Progress",
+      "Settings",
+    ]);
+    expect(result.find((group) => group.id === "Library")).toMatchObject({
+      label: "Library",
+      visible: true,
+    });
+    expect(result.find((group) => group.id === "Learning")?.visible).toBe(false);
   });
 
   it("drops unknown and duplicate sections", () => {

@@ -49,6 +49,13 @@ function ReviewSession() {
   const weakMode = mode === "weak";
   const { state, reviewQuestion, recordSession } = useKnowly();
   const navigate = useNavigate();
+  const returnToDeck = useCallback(() => {
+    if (deckFilter?.startsWith("shared-")) {
+      void navigate({ to: "/decks/$deckId", params: { deckId: deckFilter } });
+      return;
+    }
+    void navigate({ to: "/dashboard" });
+  }, [deckFilter, navigate]);
   const settings = state.settings;
 
   // frozen at mount so grading doesn't reshuffle the queue underfoot
@@ -199,16 +206,39 @@ function ReviewSession() {
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {weakMode
-            ? "Nothing in your library is lapsing or shaky right now. Study more cards and any trouble spots will show up here."
+            ? deckFilter?.startsWith("shared-")
+              ? "This shared deck has no review history yet. Study it first, and cards you find difficult will show up here."
+              : "Nothing in your library is lapsing or shaky right now. Study more cards and any trouble spots will show up here."
             : "Nothing is due right now. Come back when the next card is ready, or study a deck ahead of time."}
         </p>
         <div className="mt-7 flex justify-center gap-2">
-          <Button asChild>
-            <Link to="/decks">Browse decks</Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link to="/dashboard">Dashboard</Link>
-          </Button>
+          {deckFilter?.startsWith("shared-") ? (
+            <>
+              <Button
+                onClick={() =>
+                  void navigate({
+                    to: "/study/$deckId",
+                    params: { deckId: deckFilter },
+                    search: { part: undefined, stageId: undefined, activityId: undefined },
+                  })
+                }
+              >
+                Study this deck
+              </Button>
+              <Button variant="outline" onClick={returnToDeck}>
+                Back to deck
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button asChild>
+                <Link to="/decks">Browse decks</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link to="/dashboard">Dashboard</Link>
+              </Button>
+            </>
+          )}
         </div>
       </div>
     );
@@ -248,7 +278,7 @@ function ReviewSession() {
           <Button onClick={() => window.location.reload()}>
             <RotateCcw /> Review again
           </Button>
-          <Button variant="outline" onClick={() => navigate({ to: "/dashboard" })}>
+          <Button variant="outline" onClick={returnToDeck}>
             Return home
           </Button>
         </div>
@@ -263,8 +293,13 @@ function ReviewSession() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-5 flex items-center justify-between gap-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })}>
-          <ArrowLeft /> {weakMode ? "Weak spots drill" : "Daily review"}
+        <Button variant="ghost" size="sm" onClick={returnToDeck}>
+          <ArrowLeft />
+          {deckFilter?.startsWith("shared-")
+            ? "Deck overview"
+            : weakMode
+              ? "Weak spots drill"
+              : "Daily review"}
         </Button>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1.5 text-primary">

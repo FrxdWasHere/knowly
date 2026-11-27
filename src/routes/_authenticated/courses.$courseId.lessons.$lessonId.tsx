@@ -28,6 +28,7 @@ import {
   isInteractiveComplete,
 } from "@/components/questions/interactive-question";
 import { checkAnswer, questionFeedbackExplanation, TYPE_LABELS } from "@/lib/answers";
+import { displayAnswer } from "@/lib/interactive";
 import { findLesson, allLessons, lessonProgress } from "@/lib/courses";
 import { createId } from "@/lib/id";
 import { emptyPage, NOTE_COLORS } from "@/lib/notes/types";
@@ -757,7 +758,7 @@ function Checkpoint({
           ) : (
             <div className="rounded-xl border border-primary/25 bg-primary/8 p-3 text-sm leading-6">
               <p>
-                <MathText text={question.answer} />
+                <MathText text={displayAnswer(question)} />
               </p>
               <div className="mt-3 flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => submit("", false)}>
@@ -802,7 +803,7 @@ function Checkpoint({
             value={value}
             onChange={setValue}
             disabled={result !== null}
-            revealed={result === true}
+            revealed={result !== null}
           />
           <Button
             className="mt-3"
@@ -825,7 +826,7 @@ function Checkpoint({
           <p className="mt-1 text-muted-foreground">
             Answer:{" "}
             <span className="font-medium text-foreground">
-              <MathText text={question.answer} />
+              <MathText text={displayAnswer(question)} />
             </span>
           </p>
           {feedbackExplanation && (

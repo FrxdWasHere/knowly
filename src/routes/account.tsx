@@ -93,7 +93,7 @@ function AccountPage() {
             <h1 className="font-display text-2xl font-bold tracking-tight">Account & cloud sync</h1>
             <p className="mt-1 break-all text-sm text-muted-foreground">
               {user
-                ? `Signed in as ${user.email ?? "Google account"}`
+                ? `Signed in as ${user.email ?? "Email account"}`
                 : "Manage your Knowly account and cloud copy."}
             </p>
           </div>

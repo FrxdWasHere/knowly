@@ -58,8 +58,14 @@ describe("validateCourseJson", () => {
     expect(result.course?.modules[0].lessons).toHaveLength(1);
     expect(result.course?.modules[0].lessons[0].questions).toHaveLength(3);
     expect(result.course?.modules[0].lessons[0].questions[0].id).toBeTruthy();
-    expect(result.course?.modules[0].lessons[0].blocks[1].highlightedText).toEqual([
-      "phospholipid bilayer",
+    expect(
+      result.course?.modules[0].lessons[0].blocks
+        .filter((block) => block.highlightedText?.length)
+        .map((block) => block.highlightedText),
+    ).toEqual([
+      ["phospholipid bilayer"],
+      ["a fluid sea of lipids"],
+      ["cholesterol packs the tails and stiffens the bilayer"],
     ]);
   });
 

@@ -8,6 +8,11 @@ import {
 } from "@/lib/document-themes";
 
 describe("document theme designs", () => {
+  it("uses Knowly's default font for the classic paper theme", () => {
+    expect(DOCUMENT_THEME_DESIGNS.classic.bodyFont).toBe("var(--font-sans-family)");
+    expect(DOCUMENT_THEME_DESIGNS.classic.headingFont).toBe("var(--font-sans-family)");
+  });
+
   it("defines a distinct interior design for every existing theme", () => {
     const themeIds = EXAM_THEMES.map((theme) => theme.id);
     const designIds = Object.keys(DOCUMENT_THEME_DESIGNS);

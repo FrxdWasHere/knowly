@@ -2,13 +2,15 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import type { AppState } from "@/lib/types";
 import type { NotesBackup } from "@/lib/notes/db";
+import type { CloudLocalContent } from "@/lib/cloud-local-content";
 
 /**
  * One account snapshot. Everything Knowly owns travels together: decks,
- * courses, modules, progress, settings, media (wallpaper and avatar are data
- * URLs in settings) and the notebook pages that live in their own database.
+ * courses, modules, progress, settings, media, notebook pages, restore points
+ * and the text pages attached to module print layouts.
  */
-export type CloudSnapshot = Partial<AppState> & { notes?: NotesBackup };
+export type CloudSnapshot = Partial<AppState> &
+  Partial<CloudLocalContent> & { notes?: NotesBackup };
 
 export interface CloudAppState {
   state: CloudSnapshot;

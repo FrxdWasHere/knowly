@@ -1,0 +1,22 @@
+{
+  "id": "/",
+  "name": "Knowly — your study space",
+  "short_name": "Knowly",
+  "description": "A study workspace that keeps your library on your device and works offline.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#FFFBF5",
+  "theme_color": "#FF6B6B",
+  "orientation": "any",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/knowly-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

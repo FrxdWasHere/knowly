@@ -28,6 +28,7 @@ interface DocumentThemeDesign {
 
 const SERIF = 'Georgia, Cambria, "Palatino Linotype", serif';
 const SANS = 'Arial, Helvetica, "Segoe UI", system-ui, sans-serif';
+const KNOWLY_SANS = "var(--font-sans-family)";
 const ROUND = '"Trebuchet MS", Verdana, "Segoe UI", sans-serif';
 const MONO = '"Courier New", Courier, ui-monospace, monospace';
 const HAND = '"Comic Sans MS", "Chalkboard SE", "Bradley Hand", cursive';
@@ -87,8 +88,8 @@ export const DOCUMENT_THEME_DESIGNS = {
     "#fff",
     "#f7f7f5",
     "#20252b",
-    SERIF,
-    SERIF,
+    KNOWLY_SANS,
+    KNOWLY_SANS,
     "1.78",
     "0.75em",
     "double",

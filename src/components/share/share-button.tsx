@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ComponentProps } from "react";
-import { Link } from "@tanstack/react-router";
-import { Check, Copy, Link2, Loader2, Share2, Trash2, UserRoundPlus, X } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Check, Copy, Eye, Link2, Loader2, Share2, Trash2, UserRoundPlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
@@ -22,16 +22,22 @@ import {
 import {
   isValidInviteEmail,
   normalizeInviteEmails,
+  type SharedResource,
   type ShareResourceType,
   type ShareSnapshot,
 } from "@/lib/share-content";
 import {
   deleteShareLink,
+  isValidCustomShareSlug,
   loadShareLink,
+  normalizeCustomShareSlug,
   saveShareLink,
   type ShareVisibility,
 } from "@/lib/share-links";
 import { useAuth } from "@/store/auth-context";
+import { isDeveloperModeUnlocked } from "@/lib/developer-mode";
+import { registerDevSharePreview } from "@/lib/dev-share-preview";
+import { useKnowly } from "@/store/knowly";
 
 type ShareButtonProps = {
   resourceType: ShareResourceType;
@@ -61,19 +67,46 @@ export function ShareButton({
   className,
 }: ShareButtonProps) {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const { state } = useKnowly();
+  const canPreview = isDeveloperModeUnlocked() && state.settings.developerMode;
+
+  const previewShareView = () => {
+    const previewId = registerDevSharePreview({
+      title,
+      resourceType,
+      payload,
+    } satisfies SharedResource);
+    if (!previewId) return;
+    void navigate({ to: "/share-preview/$previewId", params: { previewId } });
+  };
 
   return (
     <>
-      <Button
-        type="button"
-        variant={variant}
-        size={size}
-        className={className}
-        onClick={() => setOpen(true)}
-      >
-        <Share2 className="size-4" />
-        Share
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          variant={variant}
+          size={size}
+          className={className}
+          onClick={() => setOpen(true)}
+        >
+          <Share2 className="size-4" />
+          Share
+        </Button>
+        {canPreview && (
+          <Button
+            type="button"
+            variant="outline"
+            size={size}
+            onClick={previewShareView}
+            aria-label={`Preview ${RESOURCE_LABELS[resourceType]} as a viewer`}
+          >
+            <Eye className="size-4" />
+            Preview viewer
+          </Button>
+        )}
+      </div>
       <ShareDialog
         open={open}
         onOpenChange={setOpen}
@@ -99,23 +132,35 @@ function ShareDialog({
   const [emails, setEmails] = useState<string[]>([]);
   const [email, setEmail] = useState("");
   const [token, setToken] = useState<string | null>(null);
+  const [customSlug, setCustomSlug] = useState("");
+  const [savedCustomSlug, setSavedCustomSlug] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
 
-  const shareUrl = useMemo(
-    () =>
-      token && typeof window !== "undefined" ? `${window.location.origin}/share/${token}` : "",
-    [token],
-  );
+  const normalizedCustomSlug = normalizeCustomShareSlug(customSlug);
+  const customSlugValid = !normalizedCustomSlug || isValidCustomShareSlug(normalizedCustomSlug);
+  const customSlugChanged = token !== null && normalizedCustomSlug !== (savedCustomSlug ?? "");
+  const shareUrl = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    const identifier = normalizedCustomSlug
+      ? customSlugValid
+        ? normalizedCustomSlug
+        : null
+      : token;
+    return identifier ? `${window.location.origin}/share/${identifier}` : "";
+  }, [customSlugValid, normalizedCustomSlug, token]);
+  const canCopyShareUrl = Boolean(token && shareUrl && !customSlugChanged);
 
   useEffect(() => {
     if (!open || !user || !configured) return;
     let active = true;
     setLoading(true);
     setToken(null);
+    setCustomSlug("");
+    setSavedCustomSlug(null);
     setVisibility("anyone");
     setEmails([]);
     setError(null);
@@ -123,6 +168,8 @@ function ShareDialog({
       .then((existing) => {
         if (!active) return;
         setToken(existing?.token ?? null);
+        setCustomSlug(existing?.customSlug ?? "");
+        setSavedCustomSlug(existing?.customSlug ?? null);
         setVisibility(existing?.visibility ?? "anyone");
         setEmails(existing?.allowedEmails ?? []);
       })
@@ -166,6 +213,13 @@ function ShareDialog({
       toast.error(message);
       return;
     }
+    if (!customSlugValid) {
+      const message =
+        "Custom URLs must be 3–40 characters using lowercase letters, numbers, or hyphens.";
+      setError(message);
+      toast.error(message);
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -177,9 +231,12 @@ function ShareDialog({
         payload,
         visibility,
         allowedEmails: emails,
+        customSlug: normalizedCustomSlug,
         existingToken: token ?? undefined,
       });
       setToken(saved.token);
+      setCustomSlug(saved.customSlug ?? "");
+      setSavedCustomSlug(saved.customSlug);
       setVisibility(saved.visibility);
       setEmails(saved.allowedEmails);
       toast.success(token ? "Sharing settings updated" : "Share link created");
@@ -195,7 +252,7 @@ function ShareDialog({
   };
 
   const copyLink = async () => {
-    if (!shareUrl) return;
+    if (!canCopyShareUrl) return;
     try {
       await navigator.clipboard.writeText(shareUrl);
       toast.success("Share link copied");
@@ -218,6 +275,8 @@ function ShareDialog({
     try {
       await deleteShareLink(user.id, resourceType, resourceId);
       setToken(null);
+      setCustomSlug("");
+      setSavedCustomSlug(null);
       setVisibility("anyone");
       setEmails([]);
       setConfirmRemove(false);
@@ -359,10 +418,37 @@ function ShareDialog({
                 </div>
               )}
 
+              <div className="space-y-2">
+                <label className="text-xs font-semibold" htmlFor="share-custom-slug">
+                  Custom URL (optional)
+                </label>
+                <Input
+                  id="share-custom-slug"
+                  value={customSlug}
+                  maxLength={40}
+                  placeholder="biology-review"
+                  onChange={(event) => {
+                    setCustomSlug(event.target.value.toLowerCase());
+                    setError(null);
+                  }}
+                  aria-invalid={!customSlugValid}
+                />
+                <p className="text-[11px] leading-4 text-muted-foreground">
+                  Choose a unique 3–40 character suffix using letters, numbers, and hyphens. Leave
+                  blank to use a private random URL.
+                </p>
+                {!customSlugValid && (
+                  <p className="text-[11px] text-destructive">
+                    Use 3–40 lowercase letters, numbers, or hyphens; start and end with a letter or
+                    number.
+                  </p>
+                )}
+              </div>
+
               {shareUrl && (
                 <div className="space-y-2">
                   <label className="text-xs font-semibold" htmlFor="share-link">
-                    Share link · Viewer
+                    {token ? "Share link · Viewer" : "Custom URL preview"}
                   </label>
                   <div className="flex gap-2">
                     <Input id="share-link" readOnly value={shareUrl} className="min-w-0" />
@@ -370,11 +456,21 @@ function ShareDialog({
                       type="button"
                       variant="outline"
                       onClick={copyLink}
+                      disabled={!canCopyShareUrl}
                       aria-label="Copy share link"
                     >
                       <Copy className="size-4" />
                     </Button>
                   </div>
+                  {customSlugChanged ? (
+                    <p className="text-[11px] text-muted-foreground">
+                      Save access to activate this updated URL before copying it.
+                    </p>
+                  ) : !token ? (
+                    <p className="text-[11px] text-muted-foreground">
+                      Create the share link to activate this URL.
+                    </p>
+                  ) : null}
                 </div>
               )}
 
@@ -405,7 +501,11 @@ function ShareDialog({
                 <Button
                   type="button"
                   disabled={
-                    loading || saving || removing || (visibility === "restricted" && !emails.length)
+                    loading ||
+                    saving ||
+                    removing ||
+                    !customSlugValid ||
+                    (visibility === "restricted" && !emails.length)
                   }
                   onClick={() => void save()}
                 >

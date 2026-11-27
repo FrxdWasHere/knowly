@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, GripVertical, RotateCcw } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, GripVertical, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MathText } from "@/components/math/math-text";
 import { shuffleArray } from "@/lib/answers";
 import {
   ITEM_SEP,
   PAIR_SEP,
+  parseMultipleSelect,
   serializeMatching,
+  serializeMultipleSelect,
   serializeOrdering,
   serializeWordBank,
   splitBlanks,
@@ -27,6 +29,78 @@ export interface InteractiveProps {
 
 const eq = (a: string, b: string) =>
   a.trim().toLowerCase().replace(/\s+/g, " ") === b.trim().toLowerCase().replace(/\s+/g, " ");
+
+/* ------------------------------------------------------------------ */
+/* Multiple select                                                     */
+/* ------------------------------------------------------------------ */
+
+function MultipleSelectQuestion({
+  question,
+  value,
+  onChange,
+  disabled,
+  revealed,
+}: InteractiveProps) {
+  const options = question.options ?? [];
+  const correct = question.correctOptions ?? [];
+  const selected = useMemo(() => parseMultipleSelect(value), [value]);
+
+  const toggle = (option: string) => {
+    if (disabled) return;
+    const next = selected.includes(option)
+      ? selected.filter((item) => item !== option)
+      : [...selected, option];
+    onChange(serializeMultipleSelect(next));
+  };
+
+  return (
+    <div className="mt-6 space-y-3">
+      <p className="text-xs text-muted-foreground">Select every correct answer.</p>
+      <div className="grid gap-2">
+        {options.map((option) => {
+          const isSelected = selected.includes(option);
+          const isCorrect = correct.includes(option);
+          return (
+            <button
+              key={option}
+              type="button"
+              role="checkbox"
+              aria-checked={isSelected}
+              disabled={disabled}
+              onClick={() => toggle(option)}
+              className={cn(
+                "flex min-h-12 items-center gap-3 rounded-xl border border-border px-4 py-3 text-left text-sm transition-colors",
+                !disabled && "hover:border-primary/60",
+                isSelected && !revealed && "border-primary bg-primary/10",
+                revealed && isCorrect && "border-success bg-success/10 text-success",
+                revealed &&
+                  isSelected &&
+                  !isCorrect &&
+                  "border-destructive bg-destructive/10 text-destructive",
+              )}
+            >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "grid size-4 shrink-0 place-items-center rounded border border-current",
+                  isSelected && "bg-current/10",
+                )}
+              >
+                {isSelected && <Check className="size-3" />}
+              </span>
+              <MathText text={option} />
+            </button>
+          );
+        })}
+      </div>
+      {revealed && (
+        <p className="text-[11px] text-success">
+          Correct selections: <MathText text={correct.join(", ")} />
+        </p>
+      )}
+    </div>
+  );
+}
 
 /* ------------------------------------------------------------------ */
 /* Ordering                                                            */
@@ -451,6 +525,8 @@ function WordBankQuestion({ question, value, onChange, disabled, revealed }: Int
 /** Renders the matching / ordering / word-bank interaction for a question. */
 export function InteractiveQuestion(props: InteractiveProps) {
   switch (props.question.type) {
+    case "multiple-select":
+      return <MultipleSelectQuestion {...props} />;
     case "ordering":
       return <OrderingQuestion {...props} />;
     case "matching":
@@ -465,6 +541,7 @@ export function InteractiveQuestion(props: InteractiveProps) {
 /** True when the learner has supplied enough input to submit. */
 export function isInteractiveComplete(question: Question, value: string): boolean {
   if (!value.trim()) return false;
+  if (question.type === "multiple-select") return parseMultipleSelect(value).length > 0;
   if (question.type === "matching")
     return value.split(ITEM_SEP).length === (question.pairs?.length ?? 0);
   if (question.type === "word-bank") {

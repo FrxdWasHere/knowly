@@ -53,14 +53,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const signInWithGoogle = useCallback(async () => {
-    const { error: authError } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
-    if (authError) throw authError;
-  }, []);
-
   const signInWithEmail = useCallback(async (email: string, password: string) => {
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
     if (authError) throw authError;
@@ -100,7 +92,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       user: session?.user ?? null,
       error,
-      signInWithGoogle,
       signInWithEmail,
       signUpWithEmail,
       sendPasswordReset,
@@ -111,7 +102,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       session,
       error,
-      signInWithGoogle,
       signInWithEmail,
       signUpWithEmail,
       sendPasswordReset,

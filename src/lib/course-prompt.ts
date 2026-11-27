@@ -110,7 +110,7 @@ const LESSON_SHAPE = `{
 const BLOCK_SHAPE = `{
   "type": "markdown" | "callout" | "example" | "image" | "checkpoint" | "divider",  // required
   "markdown": string,                                  // required for markdown, callout and example
-  "highlightedText": string[],                         // optional — exact visible passages to emphasize
+  "highlightedText": string[],                         // exact visible passages to emphasize when a block has key ideas
   "tone": "info" | "tip" | "warning" | "definition",  // required for callout
   "title": string,                                     // required for callout and example
   "url": string,                                       // required for image — a full image address
@@ -213,7 +213,7 @@ function courseStructureBudget(value: number): CourseStructureBudget {
   };
 }
 
-export function courseLengthInstructions(sliderValue: number): string {
+export function courseLengthInstructions(sliderValue: number, smartModeEnabled = false): string {
   const budget = lengthBudgetFor(sliderValue);
   const structure = courseStructureBudget(budget.sliderValue);
   const coverage =
@@ -229,10 +229,16 @@ export function courseLengthInstructions(sliderValue: number): string {
   return [
     `LENGTH & DETAIL — ${budget.label} (${budget.sliderValue}/100)`,
     `- Overall instructional depth: ${budget.depth}; lesson explanation depth: ${budget.explanationDepth}.`,
-    `- Planning ranges at this setting: ${structure.units} units, ${structure.lessonsPerUnit} lessons per unit, ${structure.sectionsPerLesson} meaningful sections per lesson, and ${structure.questionsPerLesson} checkpoint questions per lesson. Adapt them to the actual subject; they are not quotas.`,
+    smartModeEnabled
+      ? "- Choose the number of units, lessons, sections, and checkpoint questions yourself from the source material and learner needs; do not use prompt-engine counts, ranges, or quotas."
+      : `- Planning ranges at this setting: ${structure.units} units, ${structure.lessonsPerUnit} lessons per unit, ${structure.sectionsPerLesson} meaningful sections per lesson, and ${structure.questionsPerLesson} checkpoint questions per lesson. Adapt them to the actual subject; they are not quotas.`,
     `- ${coverage}`,
-    "- Increase coverage through course architecture and instructional depth, not by padding or merely lengthening each lesson.",
-    "- Use the unit and lesson ranges to scale course architecture when size is automatic. In either mode, let the selected setting influence section count and depth. When the learner sets exact unit, lesson, or checkpoint counts, preserve them and scale explanation, examples, and context within those constraints.",
+    smartModeEnabled
+      ? "- Use the selected setting only to guide depth and explanation detail; choose the course architecture and counts independently."
+      : "- Increase coverage through course architecture and instructional depth, not by padding or merely lengthening each lesson.",
+    smartModeEnabled
+      ? "- Increase coverage through useful course architecture and instructional depth, not by padding or mechanically following a preset."
+      : "- Use the unit and lesson ranges to scale course architecture when size is automatic. In either mode, let the selected setting influence section count and depth. When the learner sets exact unit, lesson, or checkpoint counts, preserve them and scale explanation, examples, and context within those constraints.",
     "- Even at the shortest setting, every lesson must define essential terms and provide enough context and instruction to stand alone.",
   ].join("\n");
 }
@@ -267,50 +273,52 @@ export function buildCoursePrompt(o: CoursePromptOptions): string {
   return `You are an expert curriculum designer and teacher. Build a complete Knowly course.
 
 TOPIC
-${o.topic.trim() || "(use the reference material to infer the topic)"}
+${o.smartModeEnabled ? "(independently infer the topic from the complete source material)" : o.topic.trim() || "(use the reference material to infer the topic)"}
 
 REFERENCE MATERIAL
 ${material}
 
 COURSE BRIEF
-- Title: ${o.title.trim() || "(suggest a precise title)"}
-- Subject: ${o.subject.trim() || "(infer the subject from the material and scope)"}
-- Description: ${o.description?.trim() || "(write a clear description of course outcomes and scope)"}
+- Title: ${o.smartModeEnabled ? "(choose a precise title from the source material)" : o.title.trim() || "(suggest a precise title)"}
+- Subject: ${o.smartModeEnabled ? "(infer the subject from the material and scope)" : o.subject.trim() || "(infer the subject from the material and scope)"}
+- Description: ${o.smartModeEnabled ? "(write a description that reflects the scope you choose)" : o.description?.trim() || "(write a clear description of course outcomes and scope)"}
 - Learner level / course difficulty: ${
-    o.levelAuto || !o.level.trim()
+    o.smartModeEnabled || o.levelAuto || !o.level.trim()
       ? "infer the suitable level from the scope and stated learner; record it in the course level field"
       : o.level.trim()
   }
 - Learner: ${o.audience?.trim() || "a motivated student"}
 - Why they are studying: ${o.purpose?.trim() || "to understand and remember the material"}
-- Course learning objectives:
-${objectives.length ? objectives.map((objective) => `  - ${objective}`).join("\n") : "  - Derive measurable course-level objectives from the learner's goal and reference material."}
-- Course structure guidance:
-${sectionGuidance.length ? sectionGuidance.map((item) => `  - ${item}`).join("\n") : "  - Identify prerequisites, scope, units, lessons, and section topics from the material."}
+- Course learning objectives${o.smartModeEnabled ? " — determine these from the sources yourself" : ""}:
+${o.smartModeEnabled ? "  - Derive measurable objectives from the source material and learner's goal." : objectives.length ? objectives.map((objective) => `  - ${objective}`).join("\n") : "  - Derive measurable course-level objectives from the learner's goal and reference material."}
+- Course structure guidance${o.smartModeEnabled ? " — determine this from the sources yourself" : ""}:
+${o.smartModeEnabled ? "  - Identify prerequisites, scope, units, lessons, and section topics from the material." : sectionGuidance.length ? sectionGuidance.map((item) => `  - ${item}`).join("\n") : "  - Identify prerequisites, scope, units, lessons, and section topics from the material."}
 ${
   o.smartModeEnabled
-    ? `\nSMART MODE\nTreat source-analysis suggestions in the brief as learner-reviewed guidance. If files are uploaded, consolidate them with pasted references into one course; do not make a separate unit for each file.\n`
+    ? `\nSMART MODE — AI-LED ANALYSIS\nThe prompt engine may perform lightweight local text analysis, but it does not understand or decide the curriculum. Analyze the complete original source material yourself. Choose and justify the topic, title, subject, description, objectives, level, course size, units, lessons, sections, question formats, and difficulty based on the content. Do not copy prompt-engine suggestions or defaults as decisions. The selected length/detail is a relative depth preference, not a count range. If files are uploaded, consolidate them with pasted references into one course; do not make a separate unit for each file.\n`
     : ""
 }
 ${
-  o.sizeAuto
-    ? `- Course size: choose the number of units, lessons, and checkpoint questions that the actual material and selected length/detail setting warrant. Planning range at this setting: ${structure.units} units, ${structure.lessonsPerUnit} lessons per unit, and ${structure.questionsPerLesson} checkpoint questions per lesson; adapt to the scope rather than forcing counts.`
+  o.sizeAuto || o.smartModeEnabled
+    ? o.smartModeEnabled
+      ? "- Course size: choose the number of units, lessons, and checkpoint questions from the actual source and learner needs. Do not follow preset counts, ranges, or quotas."
+      : `- Course size: choose the number of units, lessons, and checkpoint questions that the actual material and selected length/detail setting warrant. Planning range at this setting: ${structure.units} units, ${structure.lessonsPerUnit} lessons per unit, and ${structure.questionsPerLesson} checkpoint questions per lesson; adapt to the scope rather than forcing counts.`
     : `- Modules: exactly ${o.moduleCount}
 - Lessons per module: exactly ${o.lessonsPerModule}
 - Checkpoint questions per lesson: exactly ${o.questionsPerLesson}`
 }
 ${
-  o.sectionsAuto === false
+  o.sectionsAuto === false && !o.smartModeEnabled
     ? `- Sections per lesson: exactly ${Math.max(1, o.sectionsPerLesson ?? 1)} meaningful sections; preserve these counts while organizing the learner's section guidance.`
     : `- Sections per lesson: choose the appropriate number from the selected length/detail setting and the actual lesson scope.`
 }
 ${
-  o.typesAuto
+  o.typesAuto || o.smartModeEnabled
     ? `- Question mix: choose whatever you see fit — pick the types that test this material best`
     : `- Question mix: ${o.types.join(", ") || "multiple-choice, true-false, short-answer"}`
 }
 ${
-  o.distributionAuto
+  o.distributionAuto || o.smartModeEnabled
     ? `- Difficulty: choose whatever you see fit — a sensible spread across easy, medium and hard`
     : `- Difficulty: easy ${pct(o.distribution.easy)}%, medium ${pct(o.distribution.medium)}%, hard ${pct(o.distribution.hard)}%`
 }
@@ -322,13 +330,13 @@ ${briefExtras ? `\n${briefExtras}\n` : ""}COURSE DESIGN & PEDAGOGY
 - Explicitly name and define important concepts. Explain unfamiliar terminology when first introduced, show how and why ideas work, and use friendly, approachable prose without sacrificing academic substance.
 - Use clear sections, examples, analogies, comparisons, step-by-step reasoning, and practical applications where they improve understanding. Avoid filler, shallow summaries, repetitive conclusions, and excessive bullet lists.
 - Each lesson's sections should develop a coherent progression. Use Markdown headings in its ordered content blocks: start with a short lesson framing, then use a \`## Section N — Section title\` heading for each section, with the heading and section text in the same or adjacent markdown block. Keep headings meaningful rather than arbitrary.
-- In prose markdown, callout and example blocks, optionally add a small "highlightedText" array for the most important definitions, causal ideas, or takeaways. Each entry must be an exact, contiguous phrase from that block's visible text, without Markdown markers or LaTeX. Do not select whole paragraphs, code, equations, or text spanning paragraph boundaries; usually choose no more than one or two passages per section, and omit the field when none merits emphasis.
+- In prose markdown, callout and example blocks, select one or two of the most important visible definitions, causal ideas, or takeaways in "highlightedText" whenever a short passage merits emphasis. Each entry must be an exact, contiguous phrase from that block's visible text, without Markdown markers or LaTeX. Do not select whole paragraphs, code, equations, or text spanning paragraph boundaries; omit the field only when no short passage merits emphasis.
 - Objectives must use measurable verbs (identify, explain, compare, solve, evaluate). Avoid duplicating questions across lessons; use checkpoints to test concepts taught in that lesson and quizzes to reinforce a unit's learning.
 - When reference material is supplied, it is the factual anchor. Add only reliable foundational context needed to teach it, do not contradict the sources, and identify genuine conflicts or uncertainty rather than inventing facts.
 - Set realistic estimated lesson times based on actual content and selected depth; do not pad lessons or force an arbitrary duration.
-${mathPromptSection(o).trim()}
+${mathPromptSection(o.smartModeEnabled ? {} : o).trim()}
 
-${courseLengthInstructions(lengthSliderValue)}
+${courseLengthInstructions(lengthSliderValue, o.smartModeEnabled)}
 
 LAYOUT & EQUATIONS
 - Write the course description, unit summaries, lesson summaries, lesson content, callouts, examples and objectives in the same Markdown the editor expects.
@@ -340,12 +348,12 @@ ${jsonFileRule("knowly-course.json")}
 - Use markdown inside content fields for emphasis, lists, tables and short code blocks.
 - Preserve the source filenames/titles in the course "sources" list; use concise source descriptions rather than copying entire documents a second time.
 ${
-  o.sizeAuto
+  o.sizeAuto || o.smartModeEnabled
     ? "- Choose an appropriate number of units, lessons, and sections based on the scope and length/detail budget; do not treat sample sizes or source-file count as structure."
     : "- Preserve the learner's exact unit and lesson counts; select meaningful section counts based on the subject and length/detail budget."
 }
 ${
-  o.sectionsAuto === false
+  o.sectionsAuto === false && !o.smartModeEnabled
     ? `- Preserve exactly ${Math.max(1, o.sectionsPerLesson ?? 1)} sections in every lesson.`
     : "- Let section count reflect the selected length/detail setting and the actual concepts in each lesson."
 }
@@ -378,6 +386,7 @@ ${TUTOR_RULES}
 
 FULL SAMPLE REFERENCE — JSON shape only; its short sample is not a target for course size, lesson depth, or organization
 ${SAMPLE_NOTE}
+${o.smartModeEnabled ? "Do not copy the sample's titles, objectives, structure, question types, difficulty, or counts; choose them from the source material and learner needs." : ""}
 ${courseSample(o.includeAssessments)}
 
 FORMAT ADHERENCE — CRITICAL
@@ -385,6 +394,7 @@ ${STRICT_FORMAT_RULES}
 
 QUESTION RULES
 - multiple-choice: 2–6 options; the answer must exactly match one option.
+- multiple-select: 3–6 options, at least two entries in "correctOptions", and at least one distractor; every correct entry must exactly match an option.
 - true-false: answer must be "true" or "false".
 - fill-blank / short-answer: answer is the expected short text.
 - ordering: provide "items" in the correct order; no answer needed.
@@ -434,7 +444,7 @@ SCHEMA — the complete lesson object
 BLOCK OBJECT — one entry per piece of the lesson, in reading order
 ${BLOCK_SHAPE}
 
-In prose markdown, callout and example blocks, optionally add a small "highlightedText" array for the most important visible definitions, causal ideas, or takeaways. Each passage must match exact text in that block, without Markdown markers or LaTeX. Avoid whole paragraphs, code, equations, and cross-paragraph passages; omit the field when nothing merits emphasis.
+In prose markdown, callout and example blocks, select one or two of the most important visible definitions, causal ideas, or takeaways in "highlightedText" whenever a short passage merits emphasis. Each passage must match exact text in that block, without Markdown markers or LaTeX. Avoid whole paragraphs, code, equations, and cross-paragraph passages; omit the field only when no short passage merits emphasis.
 
 QUESTION OBJECT — every question uses this shape
 ${QUESTION_SCHEMA_TEXT}

@@ -3,6 +3,9 @@ import { AppPage } from "@/components/app-page";
 import { QuizEngine } from "@/components/quiz/quiz-engine";
 
 export const Route = createFileRoute("/_authenticated/exam")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    ...(typeof search.deckId === "string" ? { deckId: search.deckId } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Exam Simulator — Timed Mixed-Deck Mock Exams | Knowly" },
@@ -18,9 +21,14 @@ export const Route = createFileRoute("/_authenticated/exam")({
       },
     ],
   }),
-  component: () => (
-    <AppPage>
-      <QuizEngine exam />
-    </AppPage>
-  ),
+  component: ExamSimulatorRoute,
 });
+
+function ExamSimulatorRoute() {
+  const { deckId } = Route.useSearch();
+  return (
+    <AppPage>
+      <QuizEngine key={deckId ?? "all-decks"} exam initialDeckId={deckId} lockedDeckId={deckId} />
+    </AppPage>
+  );
+}

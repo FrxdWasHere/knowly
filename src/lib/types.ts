@@ -3,6 +3,7 @@ import type { ExamTheme } from "./exam-print";
 export type QuestionType =
   | "flashcard"
   | "multiple-choice"
+  | "multiple-select"
   | "true-false"
   | "fill-blank"
   | "short-answer"
@@ -24,7 +25,7 @@ export interface MatchPair {
 export interface TutorNotes {
   /** the idea in plain words, as if explaining to a beginner */
   simple?: string;
-  /** why the correct multiple-choice or true/false option is right */
+  /** why the correct multiple-choice, multiple-select, or true/false option(s) are right */
   whyCorrect?: string;
   /** a memory hook: acronym, rhyme, image or story */
   mnemonic?: string;
@@ -40,6 +41,8 @@ export interface Question {
   question: string;
   answer: string;
   options?: string[];
+  /** multiple-select: every correct option; all must be chosen for credit */
+  correctOptions?: string[];
   explanation?: string;
   /** common incorrect answers and the misconceptions behind them */
   incorrectExplanation?: string;
@@ -411,6 +414,8 @@ export interface SavedQuizSession {
   config: QuizConfig;
   answers: AnswerRecord[];
   currentIndex: number;
+  /** Remaining quiz hearts; omitted in older saved sessions. */
+  hearts?: number;
   totalElapsedMs: number;
   deckIds: string[];
   deckTitles: string[];

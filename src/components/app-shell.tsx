@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   Library,
   Wand2,
-  FileJson,
   Download,
   BrainCircuit,
   Brain,
@@ -54,6 +53,8 @@ import {
   LogIn,
   LogOut,
   Cloud,
+  Swords,
+  WifiOff,
 } from "lucide-react";
 import { useKnowly } from "@/store/knowly";
 import { isDeveloperModeUnlocked } from "@/lib/developer-mode";
@@ -69,6 +70,8 @@ import { useWallpaperUrl } from "@/hooks/use-wallpaper-url";
 import { useAvatarUrl } from "@/lib/use-avatar-url";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
+import { CopyrightNotice } from "@/components/copyright-notice";
+import { BugReportForm } from "@/components/bug-report-form";
 import { CommandPalette, useCommandPalette } from "@/components/command-palette";
 import { ImportPanel } from "@/components/import-panel";
 import { openImportPanel } from "@/lib/import-panel";
@@ -80,6 +83,7 @@ interface NavItem {
   label: string;
   icon: typeof LayoutDashboard;
   exact: boolean;
+  active?: boolean;
   /** Short line explaining what the feature does — shown under the label. */
   hint?: string;
   /** When set the row runs an action instead of navigating (e.g. open the import panel). */
@@ -114,7 +118,7 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "Study cycle",
+    label: "Study",
     icon: Brain,
     hint: "Every way to practice",
     items: [
@@ -124,13 +128,6 @@ const NAV_GROUPS: NavGroup[] = [
         icon: Brain,
         exact: false,
         hint: "Cards due today, on a smart schedule",
-      },
-      {
-        to: "/weak-spots",
-        label: "Weak Spots",
-        icon: Target,
-        exact: false,
-        hint: "Drill your 60 shakiest cards first",
       },
       {
         to: "/cram",
@@ -177,51 +174,37 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "Courses",
+    label: "Learning",
     icon: BookMarked,
-    hint: "Structured multi-week learning",
+    hint: "Courses, modules, and your class schedule",
     items: [
       {
         to: "/courses",
-        label: "Course Library",
+        label: "Courses",
         icon: BookMarked,
         exact: false,
-        hint: "Lessons, checkpoints and final exams",
+        hint: "Structured lessons, checkpoints, and exams",
+      },
+      {
+        to: "/modules",
+        label: "Modules",
+        icon: BookOpen,
+        exact: true,
+        hint: "Standalone lessons",
       },
       {
         to: "/timetable",
         label: "Timetable",
         icon: CalendarClock,
         exact: true,
-        hint: "Your weekly classes and what to revise for them",
+        hint: "Your weekly classes and revision plan",
       },
     ],
   },
   {
-    label: "Modules",
-    icon: BookOpen,
-    hint: "Standalone one-off lessons",
-    items: [
-      {
-        to: "/modules",
-        label: "Modules",
-        icon: BookOpen,
-        exact: true,
-        hint: "Your library of standalone lessons",
-      },
-      {
-        to: "/modules/forge",
-        label: "Module Forge",
-        icon: Hammer,
-        exact: false,
-        hint: "Hand-build a module block by block",
-      },
-    ],
-  },
-  {
-    label: "Decks & cards",
+    label: "Library",
     icon: Library,
-    hint: "Browse everything you've collected",
+    hint: "Browse and organize your study materials",
     items: [
       {
         to: "/decks",
@@ -259,13 +242,6 @@ const NAV_GROUPS: NavGroup[] = [
         hint: "Colour-code decks, courses and papers",
       },
       {
-        to: "/forge",
-        label: "Deck Forge",
-        icon: Hammer,
-        exact: false,
-        hint: "Hand-build cards in all 8 question types",
-      },
-      {
         to: "/deck-tools",
         label: "Merge & Split",
         icon: Shuffle,
@@ -273,18 +249,25 @@ const NAV_GROUPS: NavGroup[] = [
         hint: "Combine decks or split one by tag",
       },
       {
-        to: "/format",
-        label: "Content formats",
-        icon: FileJson,
+        to: "/notes",
+        label: "Notebooks",
+        icon: NotebookText,
         exact: false,
-        hint: "What a deck file looks like, with samples",
+        hint: "Handwriting, drawing, PDF pages and audio",
+      },
+      {
+        to: "/journal",
+        label: "Study Journal",
+        icon: NotebookPen,
+        exact: false,
+        hint: "Daily reflections with mood and tags",
       },
     ],
   },
   {
-    label: "Content",
+    label: "Create",
     icon: Wand2,
-    hint: "Make it, then bring it in",
+    hint: "Build, generate, or import study materials",
     items: [
       {
         to: "/generate",
@@ -301,26 +284,19 @@ const NAV_GROUPS: NavGroup[] = [
         hint: "Any Knowly file: deck, questions, course, module, notebook, backup",
         onClick: () => openImportPanel(),
       },
-    ],
-  },
-  {
-    label: "Notes",
-    icon: NotebookText,
-    hint: "Where thinking happens",
-    items: [
       {
-        to: "/notes",
-        label: "Notebooks",
-        icon: NotebookText,
+        to: "/forge",
+        label: "Deck Forge",
+        icon: Hammer,
         exact: false,
-        hint: "Handwriting, drawing, PDF pages and audio",
+        hint: "Build cards by hand",
       },
       {
-        to: "/journal",
-        label: "Study Journal",
-        icon: NotebookPen,
+        to: "/modules/forge",
+        label: "Module Forge",
+        icon: Hammer,
         exact: false,
-        hint: "Daily reflections with mood and tags",
+        hint: "Build a module block by block",
       },
     ],
   },
@@ -351,6 +327,13 @@ const NAV_GROUPS: NavGroup[] = [
         hint: "Badges unlocked as you study",
       },
       {
+        to: "/weak-spots",
+        label: "Weak Spots",
+        icon: Target,
+        exact: false,
+        hint: "Find your shakiest cards and concepts",
+      },
+      {
         to: "/leeches",
         label: "Trouble Cards",
         icon: Bug,
@@ -367,10 +350,17 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: "System",
+    label: "Settings",
     icon: SlidersHorizontal,
     hint: "Backups and preferences",
     items: [
+      {
+        to: "/settings",
+        label: "Settings",
+        icon: SettingsIcon,
+        exact: false,
+        hint: "Appearance, study behavior, and sidebar preferences",
+      },
       {
         to: "/snapshots",
         label: "Snapshots",
@@ -384,13 +374,6 @@ const NAV_GROUPS: NavGroup[] = [
         icon: Keyboard,
         exact: false,
         hint: "Every keyboard shortcut and FAQ",
-      },
-      {
-        to: "/settings",
-        label: "Settings",
-        icon: SettingsIcon,
-        exact: false,
-        hint: "Theme, scheduling, gamification, data",
       },
     ],
   },
@@ -413,7 +396,22 @@ function resolveNavGroups(
 }
 
 const isNavItemActive = (item: NavItem, pathname: string) =>
-  item.exact ? pathname === item.to : pathname.startsWith(item.to);
+  item.active ?? (item.exact ? pathname === item.to : pathname.startsWith(item.to));
+
+function getSharedDeckActiveTool(pathname: string, search: string): SharedDeckTool | undefined {
+  if (pathname.startsWith("/decks/")) return "details";
+  if (pathname.startsWith("/study/")) return "study";
+  if (pathname.startsWith("/arena/")) return "arena";
+  if (pathname === "/review") {
+    return new URLSearchParams(search).get("mode") === "weak" ? "weak-spots" : "review";
+  }
+  if (pathname === "/cram") return "cram";
+  if (pathname === "/quiz") return "quiz";
+  if (pathname === "/exam") return "exam";
+  if (pathname === "/print") return "print";
+  if (pathname === "/cards") return "cards";
+  return undefined;
+}
 
 const navLinkClass = (active: boolean) =>
   cn(
@@ -482,38 +480,176 @@ function NavRow({ item, active, dueCount }: { item: NavItem; active: boolean; du
   );
 }
 
+export type SharedDeckTool =
+  | "details"
+  | "study"
+  | "arena"
+  | "review"
+  | "weak-spots"
+  | "cram"
+  | "quiz"
+  | "exam"
+  | "print"
+  | "cards";
+
+export interface SharedDeckViewOptions {
+  kind: "deck";
+  deckId: string;
+  onNavigate: (tool: SharedDeckTool) => void;
+}
+
 export function AppShell({
   children,
   sharedView = false,
 }: {
   children: ReactNode;
-  sharedView?: boolean;
+  sharedView?: boolean | SharedDeckViewOptions;
 }) {
   const { state, updateSettings } = useKnowly();
   const { user, signOut } = useAuth();
+  const [isOnline, setIsOnline] = useState(true);
   const avatarUrl = useAvatarUrl(state.settings.avatarImage);
   const palette = useCommandPalette();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const search = useRouterState({ select: (r) => r.location.searchStr });
+  useEffect(() => {
+    const updateOnlineStatus = () => setIsOnline(navigator.onLine);
+    updateOnlineStatus();
+    window.addEventListener("online", updateOnlineStatus);
+    window.addEventListener("offline", updateOnlineStatus);
+    return () => {
+      window.removeEventListener("online", updateOnlineStatus);
+      window.removeEventListener("offline", updateOnlineStatus);
+    };
+  }, []);
   const collapsed = sharedView ? false : state.settings.sidebarCollapsed;
-  const navGroups = sharedView
-    ? [
-        {
-          label: "Shared resource",
-          icon: BookOpen,
-          visible: true,
-          items: [
+  const activeSharedTool =
+    typeof sharedView === "object" ? getSharedDeckActiveTool(pathname, search) : undefined;
+  const navGroups: (NavGroup & { visible: boolean })[] =
+    typeof sharedView === "object"
+      ? [
+          {
+            label: "This deck",
+            icon: BookOpen,
+            visible: true,
+            items: [
+              {
+                to: "/decks/",
+                label: "Full deck view",
+                icon: Library,
+                exact: false,
+                active: activeSharedTool === "details",
+                onClick: () => sharedView.onNavigate("details"),
+                hint: "Open all deck controls in your local workspace",
+              },
+            ],
+          },
+          {
+            label: "Study this deck",
+            icon: Brain,
+            hint: "Try Knowly's study tools with this deck",
+            visible: true,
+            items: [
+              {
+                to: "/study/",
+                label: "Study Rounds",
+                icon: Play,
+                exact: false,
+                active: activeSharedTool === "study",
+                onClick: () => sharedView.onNavigate("study"),
+              },
+              {
+                to: "/arena/",
+                label: "Arena Mode",
+                icon: Swords,
+                exact: false,
+                active: activeSharedTool === "arena",
+                onClick: () => sharedView.onNavigate("arena"),
+              },
+              {
+                to: "/review",
+                label: "Daily Review",
+                icon: Brain,
+                exact: false,
+                active: activeSharedTool === "review",
+                onClick: () => sharedView.onNavigate("review"),
+              },
+              {
+                to: "/review",
+                label: "Weak Spots",
+                icon: Target,
+                exact: false,
+                active: activeSharedTool === "weak-spots",
+                onClick: () => sharedView.onNavigate("weak-spots"),
+              },
+              {
+                to: "/cram",
+                label: "Cram Mode",
+                icon: Rocket,
+                exact: false,
+                active: activeSharedTool === "cram",
+                onClick: () => sharedView.onNavigate("cram"),
+              },
+              {
+                to: "/quiz",
+                label: "Practice Quiz",
+                icon: BrainCircuit,
+                exact: false,
+                active: activeSharedTool === "quiz",
+                onClick: () => sharedView.onNavigate("quiz"),
+              },
+              {
+                to: "/exam",
+                label: "Exam Simulator",
+                icon: GraduationCap,
+                exact: false,
+                active: activeSharedTool === "exam",
+                onClick: () => sharedView.onNavigate("exam"),
+              },
+              {
+                to: "/print",
+                label: "Print Exam",
+                icon: Printer,
+                exact: false,
+                active: activeSharedTool === "print",
+                onClick: () => sharedView.onNavigate("print"),
+              },
+            ],
+          },
+          {
+            label: "Deck tools",
+            icon: Library,
+            visible: true,
+            items: [
+              {
+                to: "/cards",
+                label: "Card Browser",
+                icon: Table2,
+                exact: false,
+                active: activeSharedTool === "cards",
+                onClick: () => sharedView.onNavigate("cards"),
+              },
+            ],
+          },
+        ]
+      : sharedView === true
+        ? [
             {
-              to: pathname,
-              label: "Resource",
+              label: "Shared resource",
               icon: BookOpen,
-              exact: true,
-              onClick: () => window.scrollTo({ top: 0, behavior: "smooth" }),
+              visible: true,
+              items: [
+                {
+                  to: pathname,
+                  label: "Resource",
+                  icon: BookOpen,
+                  exact: true,
+                  onClick: () => window.scrollTo({ top: 0, behavior: "smooth" }),
+                },
+              ],
             },
-          ],
-        },
-      ]
-    : resolveNavGroups(state.settings.sidebarGroups);
+          ]
+        : resolveNavGroups(state.settings.sidebarGroups);
   const visibleNavGroups = navGroups.filter((group) => group.visible);
   const navItems = visibleNavGroups.flatMap((group) => group.items);
   const courseMatch = pathname.match(/^\/courses\/([^/]+)/);
@@ -522,13 +658,32 @@ export function AppShell({
     : undefined;
   const courseMode = Boolean(activeCourse);
   /** Sections stay open by default; a click on the heading tucks it away. */
-  const [closedGroups, setClosedGroups] = useState<string[]>([]);
+  const [closedGroups, setClosedGroups] = useState<string[]>(() =>
+    navGroups.slice(2).map((group) => group.label),
+  );
+  const activeGroupLabel = visibleNavGroups.find((group) =>
+    group.items.some((item) => isNavItemActive(item, pathname)),
+  )?.label;
+  useEffect(() => {
+    if (!activeGroupLabel) return;
+    setClosedGroups((current) =>
+      current.includes(activeGroupLabel)
+        ? current.filter((label) => label !== activeGroupLabel)
+        : current,
+    );
+  }, [activeGroupLabel, pathname]);
   const toggleGroup = (label: string) =>
     setClosedGroups((current) =>
       current.includes(label) ? current.filter((name) => name !== label) : [...current, label],
     );
   const { level, pct, intoLevel, needed } = levelFromXp(state.progress.lifetimeXp);
-  const dueCount = useMemo(() => collectDue(state.decks).length, [state.decks]);
+  const dueCount = useMemo(() => {
+    const decks =
+      typeof sharedView === "object"
+        ? state.decks.filter((deck) => deck.id === sharedView.deckId)
+        : state.decks;
+    return collectDue(decks).length;
+  }, [sharedView, state.decks]);
   const density = state.settings.density;
   const pad =
     density === "compact"
@@ -537,6 +692,39 @@ export function AppShell({
         ? "p-5 sm:p-7 lg:p-10"
         : "p-4 sm:p-5 lg:p-8";
   const wallpaper = useWallpaperUrl(state.settings.wallpaper);
+  const mobilePillClass =
+    "press inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border-[2px] border-border bg-surface px-3 py-2 text-xs font-bold shadow-[2px_2px_0_0_var(--shadow-ink)] transition-colors data-[status=active]:bg-block-lemon data-[status=active]:text-ink";
+  const mobileMoreItemClass =
+    "press flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-surface-2";
+  const renderMobileItem = (item: NavItem, key: string, className: string) => {
+    const label = (
+      <>
+        <item.icon className="size-3.5 shrink-0" />
+        <span className="truncate">{item.label}</span>
+        {item.to === "/review" && dueCount > 0 && (
+          <span className="inline-grid h-4 min-w-4 place-items-center rounded-full bg-primary/15 px-1 text-[9px] font-bold tabular-nums text-primary">
+            {dueCount > 99 ? "99+" : dueCount}
+          </span>
+        )}
+      </>
+    );
+    const title = item.hint ? `${item.label} — ${item.hint}` : item.label;
+    return item.onClick ? (
+      <button key={key} type="button" onClick={item.onClick} title={title} className={className}>
+        {label}
+      </button>
+    ) : (
+      <Link
+        key={key}
+        to={item.to}
+        title={title}
+        className={className}
+        activeOptions={{ exact: item.to === "/dashboard" }}
+      >
+        {label}
+      </Link>
+    );
+  };
 
   return (
     <div className="workspace relative flex min-h-screen w-full">
@@ -584,7 +772,7 @@ export function AppShell({
                   </div>
                   {sharedView ? (
                     <p className="mt-1.5 truncate text-[10px] uppercase tracking-[0.16em] text-muted-foreground/60">
-                      Shared resource
+                      {typeof sharedView === "object" ? "Deck preview" : "Shared resource"}
                     </p>
                   ) : (
                     <p className="mt-1.5 inline-flex max-w-full items-center gap-1 truncate text-[10px] uppercase tracking-[0.16em] text-muted-foreground/60">
@@ -619,7 +807,7 @@ export function AppShell({
                       const title = item.hint ? `${item.label} — ${item.hint}` : item.label;
                       const button = item.onClick ? (
                         <button
-                          key={item.to}
+                          key={`${group.label}-${item.to}-${item.label}-${index}`}
                           type="button"
                           onClick={item.onClick}
                           title={title}
@@ -629,7 +817,7 @@ export function AppShell({
                         </button>
                       ) : (
                         <Link
-                          key={item.to}
+                          key={`${group.label}-${item.to}-${item.label}-${index}`}
                           to={item.to}
                           title={title}
                           className={cn(navLinkClass(active), "justify-center px-2")}
@@ -638,7 +826,7 @@ export function AppShell({
                         </Link>
                       );
                       return (
-                        <div key={item.to}>
+                        <div key={`${group.label}-${item.to}-${item.label}-${index}`}>
                           {button}
                           {index < group.items.length - 1 && (
                             <div
@@ -698,7 +886,7 @@ export function AppShell({
                         {!closed && (
                           <ul id={panelId} className="space-y-0.5">
                             {group.items.map((item, index) => (
-                              <li key={item.to}>
+                              <li key={`${group.label}-${item.to}-${item.label}-${index}`}>
                                 <NavRow
                                   item={item}
                                   active={isNavItemActive(item, pathname)}
@@ -726,7 +914,9 @@ export function AppShell({
                 <div className="rounded-xl border-[2px] border-border bg-surface p-3 shadow-[2px_2px_0_0_var(--shadow-ink)]">
                   <p className="text-xs font-bold">Limited access</p>
                   <p className="mt-1 text-[11px] leading-5 text-muted-foreground">
-                    View and print this resource. Shared decks can also be added to your library.
+                    {typeof sharedView === "object"
+                      ? "Try deck-specific study tools or save a copy to your library."
+                      : "View and print this resource. Shared decks can also be added to your library."}
                   </p>
                   <Button asChild size="sm" className="mt-3 w-full">
                     <Link to={user ? "/dashboard" : "/login"}>
@@ -784,7 +974,9 @@ export function AppShell({
           {sharedView ? (
             <div className="hidden min-w-0 items-center gap-2 rounded-full border-[2px] border-border bg-surface px-3 py-1.5 text-xs font-bold lg:flex">
               <BookOpen className="size-3.5 shrink-0 text-primary" />
-              <span className="truncate">Shared resource · limited view</span>
+              <span className="truncate">
+                {typeof sharedView === "object" ? "Deck preview" : "Shared resource"} · limited view
+              </span>
             </div>
           ) : (
             <div className="hidden min-w-0 items-center gap-2 rounded-full border-[2px] border-border bg-surface px-3 py-1.5 text-xs font-bold lg:flex">
@@ -794,6 +986,17 @@ export function AppShell({
                 Everything saved on this device · export a copy to move it
               </span>
             </div>
+          )}
+          {!isOnline && (
+            <span
+              role="status"
+              aria-live="polite"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border-[2px] border-warning/40 bg-warning/10 px-2.5 py-1.5 text-xs font-bold text-foreground sm:px-3"
+            >
+              <WifiOff className="size-3.5 text-warning" />
+              <span className="hidden sm:inline">Offline · changes stay on this device</span>
+              <span className="sm:hidden">Offline</span>
+            </span>
           )}
           <div className="ml-auto flex min-w-0 items-center gap-1.5 sm:gap-2">
             {sharedView ? (
@@ -817,7 +1020,7 @@ export function AppShell({
                     Ctrl K
                   </kbd>
                 </button>
-                <span className="press inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border-[2px] border-border bg-block-lemon px-2.5 py-1.5 text-xs font-bold text-ink shadow-[2px_2px_0_0_var(--shadow-ink)] sm:px-3">
+                <span className="press hidden shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border-[2px] border-border bg-block-lemon px-2.5 py-1.5 text-xs font-bold text-ink shadow-[2px_2px_0_0_var(--shadow-ink)] min-[480px]:inline-flex sm:px-3">
                   <Flame className="size-3.5" />
                   {state.progress.streak} day
                 </span>
@@ -842,6 +1045,7 @@ export function AppShell({
                       type="button"
                       variant="outline"
                       size="sm"
+                      className="hidden md:inline-flex"
                       aria-label="Sign out"
                       title="Sign out"
                       onClick={() => {
@@ -873,58 +1077,75 @@ export function AppShell({
         ) : (
           <nav
             aria-label="Main navigation"
-            className="print-hide flex gap-1.5 overflow-x-auto border-b-[3px] border-border bg-surface px-3 py-2.5 md:hidden"
+            className="print-hide relative flex gap-1 overflow-x-auto border-b-[3px] border-border bg-surface px-2.5 py-2 md:hidden"
           >
-            {visibleNavGroups.map((group, groupIndex) => (
+            {visibleNavGroups.slice(0, 2).map((group, groupIndex) => (
               <div key={group.label} className="flex items-center gap-1.5">
                 {groupIndex > 0 && (
                   <span aria-hidden className="h-5 w-px shrink-0 bg-sidebar-border" />
                 )}
-                {group.items.map((item) => {
-                  const pillClass =
-                    "press inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border-[2px] border-border bg-surface px-3 py-2 text-xs font-bold shadow-[2px_2px_0_0_var(--shadow-ink)] transition-colors data-[status=active]:bg-block-lemon data-[status=active]:text-ink";
-                  const label = (
-                    <>
-                      <item.icon className="size-3.5" />
-                      {item.label}
-                      {item.to === "/review" && dueCount > 0 && (
-                        <span className="inline-grid h-4 min-w-4 place-items-center rounded-full bg-primary/15 px-1 text-[9px] font-bold tabular-nums text-primary">
-                          {dueCount > 99 ? "99+" : dueCount}
-                        </span>
-                      )}
-                    </>
-                  );
-                  const title = item.hint ? `${item.label} — ${item.hint}` : item.label;
-                  return item.onClick ? (
-                    <button
-                      key={item.to}
-                      type="button"
-                      onClick={item.onClick}
-                      title={title}
-                      className={pillClass}
-                    >
-                      {label}
-                    </button>
-                  ) : (
-                    <Link
-                      key={item.to}
-                      to={item.to}
-                      title={title}
-                      className={pillClass}
-                      activeOptions={{ exact: item.to === "/dashboard" }}
-                    >
-                      {label}
-                    </Link>
-                  );
-                })}
+                {group.items[0] &&
+                  renderMobileItem(
+                    group.items[0],
+                    `${group.label}-${group.items[0].to}-${group.items[0].label}`,
+                    mobilePillClass,
+                  )}
               </div>
             ))}
+            {visibleNavGroups.some(
+              (group, groupIndex) => groupIndex > 1 || group.items.length > 1,
+            ) && (
+              <details
+                className="shrink-0"
+                onClick={(event) => {
+                  if (event.target instanceof Element && event.target.closest("a, button")) {
+                    event.currentTarget.open = false;
+                  }
+                }}
+              >
+                <summary
+                  aria-label="More navigation options"
+                  className={`${mobilePillClass} px-2.5 list-none [&::-webkit-details-marker]:hidden`}
+                >
+                  More
+                  <ChevronDown className="size-3.5" />
+                </summary>
+                <div className="fixed right-3 top-[4.25rem] z-50 max-h-[calc(100dvh-5rem)] w-[min(22rem,calc(100vw-1.5rem))] overflow-y-auto rounded-xl border-2 border-border bg-surface p-2 text-foreground shadow-[4px_4px_0_0_var(--shadow-ink)]">
+                  {visibleNavGroups.map((group, groupIndex) => {
+                    const menuItems = groupIndex < 2 ? group.items.slice(1) : group.items;
+                    if (!menuItems.length) return null;
+                    return (
+                      <section key={group.label} className="py-1">
+                        <h2 className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                          {group.label}
+                        </h2>
+                        <div className="space-y-0.5">
+                          {menuItems.map((item) =>
+                            renderMobileItem(
+                              item,
+                              `${group.label}-${item.to}-${item.label}`,
+                              mobileMoreItemClass,
+                            ),
+                          )}
+                        </div>
+                      </section>
+                    );
+                  })}
+                </div>
+              </details>
+            )}
           </nav>
         )}
 
         <main key={pathname} className={cn("anim-fade-up flex-1", pad)}>
           {children}
         </main>
+        <footer className="print-hide border-t border-border px-4 py-4 text-center md:px-8">
+          <div className="mx-auto flex max-w-6xl flex-col items-center gap-2">
+            <BugReportForm />
+            <CopyrightNotice />
+          </div>
+        </footer>
       </div>
 
       {!sharedView && (

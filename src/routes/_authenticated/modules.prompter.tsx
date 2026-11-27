@@ -210,8 +210,9 @@ function ModulePrompter() {
                 />
                 {smartMode.suggestions.title && (
                   <p className="rounded-lg bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
-                    Source-analysis suggestions are shown in the editable fields below. Review or
-                    change them before copying the prompt.
+                    Local suggestions are shown for reference only. Smart Mode asks your chosen AI
+                    to decide the module from the source material; turn Smart Mode off to use these
+                    fields as fixed instructions.
                   </p>
                 )}
               </>

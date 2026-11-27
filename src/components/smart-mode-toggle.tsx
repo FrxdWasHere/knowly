@@ -38,7 +38,7 @@ export function SmartModeToggle({
           </div>
           <p className="text-sm text-muted-foreground">
             {enabled
-              ? `Knowly reads ${fileCount} source file(s) and suggests a starting setup.`
+              ? `Knowly extracts text from ${fileCount} source file(s); your chosen AI makes the study decisions.`
               : "Configure content manually."}
           </p>
         </div>
@@ -65,12 +65,13 @@ export function SmartModeToggle({
             <Info className="size-4 mt-0.5 flex-shrink-0" />
             <div className="space-y-1">
               <p>
-                <strong>Smart Mode</strong> extracts and analyzes your uploaded files on this device
-                to suggest topics, titles, and learning objectives.
+                <strong>Smart Mode</strong> extracts text from your uploaded files on this device.
+                Your chosen AI analyzes the complete source and decides the title, scope, structure,
+                questions, and difficulty.
               </p>
               <p>
-                Your chosen AI receives the copied prompt and source text. Review and edit the
-                suggestions before using them.
+                Local form suggestions are only hints, not instructions to the AI. The length and
+                detail setting is a preference; the AI decides the final depth and structure.
               </p>
             </div>
           </div>
@@ -93,9 +94,9 @@ export function SmartModeIntro({ className }: { className?: string }) {
         <div className="space-y-1">
           <h3 className="font-semibold text-foreground">Introducing Smart Mode</h3>
           <p className="text-sm text-muted-foreground">
-            Smart Mode uses AI to analyze your source materials and automatically configure your
-            content. Upload files, review AI-generated suggestions, adjust length and detail, then
-            generate your educational resource.
+            Smart Mode extracts your source materials locally, then lets your chosen AI analyze the
+            content and decide what to create and how to structure it. Adjust length and detail as a
+            preference, then generate your educational resource.
           </p>
         </div>
       </div>

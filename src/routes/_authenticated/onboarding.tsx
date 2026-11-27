@@ -26,7 +26,9 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
+import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
+import { CopyrightNotice } from "@/components/copyright-notice";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,7 +50,6 @@ import { useKnowly } from "@/store/knowly";
 import { useAuth } from "@/store/auth-context";
 import { getAuthProfilePrefill } from "@/lib/auth-profile";
 import { useAvatarUrl } from "@/lib/use-avatar-url";
-import { buildSampleProfile } from "@/lib/sample-profile";
 import { ThemePicker } from "@/components/theme-picker";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
@@ -194,7 +195,6 @@ function Onboarding() {
   const [backupRestored, setBackupRestored] = useState(false);
   const [customSubject, setCustomSubject] = useState("");
   const [studyTime, setStudyTime] = useState("");
-  const [sampleArmed, setSampleArmed] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const backupFileRef = useRef<HTMLInputElement>(null);
   const avatarRef = useRef<HTMLInputElement>(null);
@@ -321,27 +321,6 @@ function Onboarding() {
     navigate({ to });
   };
 
-  /** Two-step confirm, then replaces the library with a fully "lived-in" demo profile. */
-  const applySampleProfile = () => {
-    if (!sampleArmed) {
-      setSampleArmed(true);
-      window.setTimeout(() => setSampleArmed(false), 5000);
-      return;
-    }
-    setSampleArmed(false);
-    const sample = buildSampleProfile();
-    const ok = importState(JSON.stringify(sample));
-    if (!ok) {
-      toast.error("Couldn't build the sample profile");
-      return;
-    }
-    completeOnboarding();
-    toast.success(
-      `Sample profile loaded — ${sample.decks.length} decks, ${sample.courses.length} courses, ${sample.modules.length} standalone modules, a quiz ready to resume, a full timetable and ${sample.papers.length} practice papers. Explore freely!`,
-    );
-    navigate({ to: "/dashboard" });
-  };
-
   const doImport = () => {
     if (!result?.ok || !result.deck) return;
     addDeck(result.deck);
@@ -373,18 +352,73 @@ function Onboarding() {
   const shortStep = step === 0 || step === 1 || step === 2 || step === 7;
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden">
-      <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-4 sm:px-6 sm:py-6">
-        <div className="relative rounded-[1.75rem] border-[3px] border-border bg-surface shadow-[10px_10px_0_0_var(--shadow-ink)]">
-          <div className="grid w-full overflow-hidden rounded-[calc(1.75rem-3px)] bg-background lg:h-[min(780px,calc(100vh-6.5rem))] lg:grid-cols-[0.82fr_1.18fr]">
-            <aside className="relative flex flex-col overflow-hidden bg-surface-2 p-4 text-foreground sm:p-6 lg:min-h-0 lg:p-8">
+    <div className="relative flex h-dvh min-h-dvh flex-col overflow-hidden bg-background">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_18%_20%,color-mix(in_oklab,var(--primary)_12%,transparent),transparent_38%),radial-gradient(ellipse_at_85%_75%,color-mix(in_oklab,var(--accent)_10%,transparent),transparent_42%)] bg-[length:180%_180%] motion-safe:anim-aurora"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-20 top-24 size-64 rounded-full bg-block-lemon/30 blur-3xl motion-safe:anim-float"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-20 bottom-16 size-72 rounded-full bg-block-sky/20 blur-3xl motion-safe:anim-float-fast"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.045] [background-image:radial-gradient(circle_at_1px_1px,currentColor_1px,transparent_0)] [background-size:22px_22px] motion-safe:anim-grid-drift"
+      />
+
+      <header className="relative z-20 flex min-h-16 shrink-0 items-center justify-between gap-4 border-b border-border/70 bg-background/75 px-4 backdrop-blur-md sm:px-7">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl border-2 border-border bg-block-lemon shadow-[2px_2px_0_0_var(--shadow-ink)]">
+            <Logo className="size-7 rounded-lg" />
+          </span>
+          <div className="min-w-0">
+            <p className="font-display text-base font-bold leading-tight tracking-tight">Knowly</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Your study space
+            </p>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          <span className="hidden text-xs font-semibold text-muted-foreground sm:inline">
+            {STEP_META[step].label}
+          </span>
+          <div
+            role="progressbar"
+            aria-label="Onboarding progress"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(progress)}
+            className="h-2 w-20 overflow-hidden rounded-full bg-border/70 sm:w-32"
+          >
+            <div
+              className="h-full rounded-full bg-[linear-gradient(90deg,var(--primary),var(--accent))] transition-[width] duration-700 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <span className="text-xs font-bold tabular-nums text-foreground">
+            {String(step + 1).padStart(2, "0")}
+            <span className="text-muted-foreground">
+              /{String(STEP_META.length).padStart(2, "0")}
+            </span>
+          </span>
+        </div>
+      </header>
+
+      <main className="relative z-10 flex min-h-0 flex-1 flex-col">
+        <div className="relative flex min-h-0 flex-1">
+          <div className="grid min-h-0 w-full flex-1 overflow-hidden bg-background/55 lg:grid-cols-[0.82fr_1.18fr]">
+            <aside className="relative hidden flex-col overflow-hidden border-r border-border/60 bg-surface-2/65 p-8 text-foreground lg:flex">
               <div
                 aria-hidden
-                className="absolute -right-10 -top-10 size-32 rotate-12 rounded-2xl border-[3px] border-border bg-block-lemon opacity-80"
+                className="absolute -right-10 -top-10 size-32 rotate-12 rounded-2xl border-[3px] border-border bg-block-lemon opacity-80 motion-safe:anim-float"
               />
               <div
                 aria-hidden
-                className="absolute -bottom-12 -left-10 size-28 -rotate-12 rounded-2xl border-[3px] border-border bg-block-sky opacity-80"
+                className="absolute -bottom-12 -left-10 size-28 -rotate-12 rounded-2xl border-[3px] border-border bg-block-sky opacity-80 motion-safe:anim-float-fast"
               />
               <div
                 aria-hidden
@@ -572,7 +606,7 @@ function Onboarding() {
               <div
                 key={step}
                 className={cn(
-                  "relative min-h-0 flex-1 p-5 sm:p-8 lg:overflow-y-auto",
+                  "relative min-h-0 flex-1 overflow-y-auto p-5 sm:p-8",
                   dir > 0 ? "anim-fade-up" : "anim-fade-in",
                 )}
               >
@@ -711,8 +745,8 @@ function Onboarding() {
                           Who's studying?
                         </h1>
                         <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-                          Your name and Google profile photo come from your account. Change anything
-                          you like — it is all editable later in Settings.
+                          Choose a name and avatar to make your study space feel like yours. You can
+                          edit both later in Settings.
                         </p>
                       </div>
 
@@ -1396,7 +1430,7 @@ function Onboarding() {
           </div>
         </div>
 
-        <div className="anim-fade-in mt-4 flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
+        <div className="anim-fade-in flex shrink-0 flex-wrap items-center justify-center gap-x-6 gap-y-2 border-t border-border/60 bg-background/75 px-4 py-2 text-xs text-muted-foreground backdrop-blur-md">
           <button
             type="button"
             className="underline-offset-4 transition-colors hover:text-foreground hover:underline"
@@ -1411,23 +1445,11 @@ function Onboarding() {
           >
             I have a deck or backup — bring it now
           </button>
-          <button
-            type="button"
-            title="Replaces everything on this device with a fully-used demo: decks mid-review, a course halfway through and 6 weeks of history. Great for exploring."
-            onClick={applySampleProfile}
-            className={cn(
-              "underline-offset-4 transition-colors hover:underline",
-              sampleArmed
-                ? "text-destructive hover:text-destructive"
-                : "text-muted-foreground/60 hover:text-foreground",
-            )}
-          >
-            {sampleArmed
-              ? "Sure? Click again — this replaces everything here"
-              : "Just exploring? Import a sample profile"}
-          </button>
         </div>
       </main>
+      <footer className="relative z-10 shrink-0 px-4 py-1.5 text-center">
+        <CopyrightNotice className="mx-auto max-w-3xl" />
+      </footer>
     </div>
   );
 }

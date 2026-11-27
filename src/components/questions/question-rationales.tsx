@@ -5,7 +5,7 @@ import type { Question } from "@/lib/types";
 
 export function QuestionRationales({ question }: { question: Question }) {
   const choices =
-    question.type === "multiple-choice"
+    question.type === "multiple-choice" || question.type === "multiple-select"
       ? question.options
       : question.type === "true-false"
         ? ["true", "false"]
@@ -26,7 +26,12 @@ export function QuestionRationales({ question }: { question: Question }) {
         </p>
         <ul className="mt-2 grid gap-2">
           {choices.map((option) => {
-            const correct = option.trim().toLowerCase() === question.answer.trim().toLowerCase();
+            const correct =
+              question.type === "multiple-select"
+                ? (question.correctOptions?.some(
+                    (answer) => answer.trim().toLowerCase() === option.trim().toLowerCase(),
+                  ) ?? false)
+                : option.trim().toLowerCase() === question.answer.trim().toLowerCase();
             const explanation = questionOptionExplanation(question, option);
             return (
               <li key={option} className="flex gap-2 text-sm">

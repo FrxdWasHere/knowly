@@ -58,26 +58,18 @@ function PrivacyPage() {
         <h2>3. Accounts and cloud sync</h2>
         <p>
           You can use Knowly locally without an online account. If you create or sign in to an
-          account using email or Google, Supabase Auth processes the account details needed to
-          authenticate you, such as your email address and account identifier. Google also processes
-          information under its{" "}
-          <a
-            href="https://policies.google.com/privacy"
-            target="_blank"
-            rel="noreferrer"
-            className="underline underline-offset-2"
-          >
-            Privacy Policy
-          </a>{" "}
-          when you choose Google sign-in.
+          account with your email address, Supabase Auth processes the account details needed to
+          authenticate you, such as your email address and account identifier. Depending on your
+          account settings, it may also process email-confirmation and password-reset requests.
         </p>
         <p>
           When signed in, Knowly syncs a copy of your study library and notebook data to the
           configured Supabase project. This can include decks, questions, courses, modules,
-          progress, study history, settings, profile images, wallpaper data, and notebook pages. The
-          database uses row-level security so an account can access its own app-state record. Sync
-          is not end-to-end encrypted by Knowly; do not sync information you are not comfortable
-          storing with the service provider.
+          progress, study history, settings, profile images, wallpaper data, notebook pages, saved
+          restore points, and the extra text pages used in module print layouts. Shared resources
+          are stored separately as share links. The database uses row-level security so an account
+          can access its own app-state record. Sync is not end-to-end encrypted by Knowly; do not
+          sync information you are not comfortable storing with the service provider.
         </p>
         <p>
           Signing out stops syncing on that device but does not delete your account or the cloud

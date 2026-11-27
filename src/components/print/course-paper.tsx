@@ -1673,11 +1673,19 @@ function QuestionView({
 function QuestionBody({ question }: { question: Question }) {
   switch (question.type) {
     case "multiple-choice":
+    case "multiple-select":
       return (
         <ol className="mt-2 space-y-1">
           {(question.options ?? []).map((option, index) => (
             <li key={`${option}-${index}`} className="flex gap-2">
-              <span className="font-semibold">{LETTERS[index] ?? index + 1}.</span>
+              {question.type === "multiple-select" ? (
+                <span
+                  aria-hidden
+                  className="mt-0.5 inline-block size-3 shrink-0 border border-foreground/60"
+                />
+              ) : (
+                <span className="font-semibold">{LETTERS[index] ?? index + 1}.</span>
+              )}
               <MathText text={option} className="min-w-0" />
             </li>
           ))}

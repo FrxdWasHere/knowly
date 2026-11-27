@@ -8,7 +8,10 @@ export const moduleBlockSchema = z.object({
   id: z.string().optional(),
   type: z.enum(["markdown", "callout", "example", "image", "checkpoint", "divider", "activity"]),
   markdown: z.string().optional(),
-  highlightedText: z.array(z.string()).optional(),
+  highlightedText: z
+    .array(z.string().min(1))
+    .optional()
+    .describe("Exact visible phrases to highlight in the block's rendered text."),
   tone: z.enum(["info", "tip", "warning", "definition"]).optional(),
   title: z.string().optional(),
   url: z.string().optional(),
@@ -208,6 +211,7 @@ export function serializeModuleJson(mod: Module): string {
         question: question.question,
         answer: question.answer,
         options: question.options,
+        correctOptions: question.correctOptions,
         explanation: question.explanation,
         difficulty: question.difficulty,
         concept: question.concept,
@@ -255,7 +259,8 @@ export const SAMPLE_MODULE_JSON = `{
     {
       "type": "example",
       "title": "Breaking down the equation",
-      "markdown": "Six molecules of carbon dioxide ($$CO_2$$) plus six of water ($$H_2O$$) become one glucose ($$C_6H_{12}O_6$$) and six oxygen molecules ($$O_2$$), powered by light energy absorbed by chlorophyll."
+      "markdown": "Six molecules of carbon dioxide ($$CO_2$$) plus six of water ($$H_2O$$) become one glucose ($$C_6H_{12}O_6$$) and six oxygen molecules ($$O_2$$), powered by light energy absorbed by chlorophyll.",
+      "highlightedText": ["light energy absorbed by chlorophyll"]
     },
     {
       "type": "callout",

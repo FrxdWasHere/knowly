@@ -76,6 +76,19 @@ describe("checkAnswer", () => {
     expect(checkAnswer(q, "a | b | c")).toBe(true);
     expect(checkAnswer(q, "c | b | a")).toBe(false);
   });
+
+  it("requires the exact correct-option set for multiple-select", () => {
+    const q = make({
+      type: "multiple-select",
+      answer: '["A","C"]',
+      options: ["A", "B", "C"],
+      correctOptions: ["A", "C"],
+    });
+
+    expect(checkAnswer(q, '["C","A"]')).toBe(true);
+    expect(checkAnswer(q, '["A"]')).toBe(false);
+    expect(checkAnswer(q, '["A","B","C"]')).toBe(false);
+  });
 });
 
 describe("question feedback explanations", () => {
@@ -111,6 +124,22 @@ describe("question feedback explanations", () => {
     expect(questionFeedbackExplanation(q, "wrong", false)).toBe(
       "A common mistake is to confuse the two related terms.",
     );
+  });
+
+  it("uses the correct-option set for multiple-select rationales", () => {
+    const q = make({
+      type: "multiple-select",
+      answer: '["A","C"]',
+      options: ["A", "B", "C"],
+      correctOptions: ["A", "C"],
+      tutor: {
+        whyCorrect: "Both choices fit.",
+        whyWrong: [{ option: "B", why: "That one does not fit." }],
+      },
+    });
+
+    expect(questionOptionExplanation(q, "A")).toBe("Both choices fit.");
+    expect(questionOptionExplanation(q, "B")).toBe("That one does not fit.");
   });
 });
 

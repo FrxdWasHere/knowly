@@ -44,12 +44,12 @@ export const Route = createFileRoute("/_authenticated/forge")({
       {
         name: "description",
         content:
-          "Build decks by hand in Knowly. Write flashcards, multiple choice, true/false, fill-in-the-blank, short answer, ordering, matching and word-bank questions with hints, concepts and explanations.",
+          "Build decks by hand in Knowly. Write flashcards, multiple choice, select-all-that-apply, true/false, fill-in-the-blank, short answer, ordering, matching and word-bank questions with hints, concepts and explanations.",
       },
       { property: "og:title", content: "Deck Forge — Knowly" },
       {
         property: "og:description",
-        content: "Craft your own question decks manually — every question type, every field.",
+        content: "Craft your own question decks manually — including select-all-that-apply questions.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -70,6 +70,7 @@ interface DraftQuestion {
   question: string;
   answer: string;
   options: string[];
+  correctOptions: string[];
   items: string[];
   pairs: { left: string; right: string }[];
   blanks: string[];
@@ -89,7 +90,8 @@ function blankQuestion(type: QuestionType = "flashcard"): DraftQuestion {
     type,
     question: "",
     answer: type === "true-false" ? "true" : "",
-    options: type === "multiple-choice" ? ["", "", "", ""] : [],
+    options: type === "multiple-choice" || type === "multiple-select" ? ["", "", "", ""] : [],
+    correctOptions: [],
     items: type === "ordering" ? ["", ""] : [],
     pairs:
       type === "matching"
@@ -128,6 +130,10 @@ function toPayload(d: DraftQuestion) {
     case "multiple-choice":
       base.options = d.options.map((o) => o.trim()).filter(Boolean);
       base.answer = d.answer;
+      break;
+    case "multiple-select":
+      base.options = d.options.map((o) => o.trim()).filter(Boolean);
+      base.correctOptions = d.correctOptions.map((option) => option.trim()).filter(Boolean);
       break;
     case "ordering":
       base.items = d.items.map((i) => i.trim()).filter(Boolean);
@@ -586,18 +592,45 @@ function QuestionEditor({
         )}
       </div>
 
-      {draft.type === "multiple-choice" && (
+      {(draft.type === "multiple-choice" || draft.type === "multiple-select") && (
         <div className="space-y-2">
-          <Label>Options — click the circle to mark the correct one *</Label>
+          <Label>
+            Options — click {draft.type === "multiple-select" ? "the box" : "the circle"} to mark
+            {draft.type === "multiple-select" ? " each correct option" : " the correct one"} *
+          </Label>
           {draft.options.map((o, i) => (
             <div key={i} className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => onChange({ answer: o })}
+                disabled={!o.trim()}
+                onClick={() => {
+                  if (draft.type === "multiple-select") {
+                    onChange({
+                      correctOptions: draft.correctOptions.includes(o)
+                        ? draft.correctOptions.filter((option) => option !== o)
+                        : [...draft.correctOptions, o],
+                    });
+                  } else {
+                    onChange({ answer: o });
+                  }
+                }}
                 aria-label={`Mark option ${i + 1} correct`}
+                aria-pressed={
+                  draft.type === "multiple-select"
+                    ? draft.correctOptions.includes(o)
+                    : draft.answer === o
+                }
                 className={cn(
-                  "size-5 shrink-0 rounded-full border-2 transition-colors",
-                  o && draft.answer === o ? "border-success bg-success" : "border-border",
+                  "size-5 shrink-0 border-2 transition-colors",
+                  draft.type === "multiple-choice" && "rounded-full",
+                  draft.type === "multiple-select" && "rounded-sm",
+                  draft.type === "multiple-select"
+                    ? draft.correctOptions.includes(o)
+                      ? "border-success bg-success"
+                      : "border-border"
+                    : o && draft.answer === o
+                      ? "border-success bg-success"
+                      : "border-border",
                 )}
               />
               <Input
@@ -607,6 +640,9 @@ function QuestionEditor({
                   onChange({
                     options: next,
                     answer: draft.answer === o ? e.target.value : draft.answer,
+                    correctOptions: draft.correctOptions.map((option) =>
+                      option === o ? e.target.value : option,
+                    ),
                   });
                 }}
                 placeholder={`Option ${i + 1}`}
@@ -614,8 +650,13 @@ function QuestionEditor({
               <Button
                 variant="ghost"
                 size="icon"
-                disabled={draft.options.length <= 2}
-                onClick={() => onChange({ options: draft.options.filter((_, j) => j !== i) })}
+                disabled={draft.options.length <= (draft.type === "multiple-select" ? 3 : 2)}
+                onClick={() =>
+                  onChange({
+                    options: draft.options.filter((_, j) => j !== i),
+                    correctOptions: draft.correctOptions.filter((option) => option !== o),
+                  })
+                }
                 aria-label={`Remove option ${i + 1}`}
               >
                 <Trash2 />

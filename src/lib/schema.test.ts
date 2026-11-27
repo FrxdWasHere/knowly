@@ -51,6 +51,48 @@ describe("validateDeckJson", () => {
     expect(result.errors.join(" ")).toMatch(/at least 2 answer options/);
   });
 
+  it("validates and canonicalizes multiple-select answers", () => {
+    const result = validateDeckJson(
+      JSON.stringify({
+        title: "Selections",
+        questions: [
+          {
+            type: "multiple-select",
+            question: "Which are vowels?",
+            options: ["A", "B", "E"],
+            correctOptions: ["A", "E"],
+          },
+        ],
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.deck?.questions[0]).toMatchObject({
+      type: "multiple-select",
+      correctOptions: ["A", "E"],
+      answer: '["A","E"]',
+    });
+  });
+
+  it("rejects multiple-select correct options not present in the option list", () => {
+    const result = validateDeckJson(
+      JSON.stringify({
+        title: "Selections",
+        questions: [
+          {
+            type: "multiple-select",
+            question: "Choose all that apply",
+            options: ["A", "B", "C"],
+            correctOptions: ["A", "D"],
+          },
+        ],
+      }),
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result.errors.join(" ")).toMatch(/must exactly match an option/i);
+  });
+
   it("requires 2+ items for ordering", () => {
     const result = validateDeckJson(
       JSON.stringify({

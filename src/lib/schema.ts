@@ -5,6 +5,7 @@ import {
   canonicalAnswer,
   countBlanks,
   serializeMatching,
+  serializeMultipleSelect,
   serializeOrdering,
   serializeWordBank,
 } from "./interactive";
@@ -15,6 +16,7 @@ import { createId } from "./id";
 export const questionTypes = [
   "flashcard",
   "multiple-choice",
+  "multiple-select",
   "true-false",
   "fill-blank",
   "short-answer",
@@ -32,6 +34,7 @@ export const questionSchema = z.object({
     .optional()
     .transform((v) => (v === undefined ? undefined : String(v))),
   options: z.array(z.string()).optional(),
+  correctOptions: z.array(z.string()).optional(),
   explanation: z.string().optional(),
   incorrectExplanation: z.string().optional(),
   difficulty: z.enum(["easy", "medium", "hard"]).default("medium"),
@@ -78,6 +81,59 @@ function buildQuestion(
         );
       }
       const wrongOptions = (q.options ?? []).filter((option) => option !== answer);
+      const missingReasons = wrongOptions.filter(
+        (option) =>
+          !q.tutor?.whyWrong?.some((entry) => entry.option === option && entry.why.trim()),
+      );
+      if (missingReasons.length) {
+        warnings.push(
+          `questions[${i}]: add a tutor.whyWrong explanation for every incorrect option.`,
+        );
+      }
+      break;
+    }
+    case "multiple-select": {
+      const options = q.options ?? [];
+      const correctOptions = q.correctOptions ?? [];
+      if (options.length < 3) {
+        errors.push(`questions[${i}]: multiple-select questions need at least 3 options.`);
+      }
+      if (options.length > 6) {
+        errors.push(`questions[${i}]: multiple-select questions can have at most 6 options.`);
+      }
+      if (options.some((option) => !option.trim())) {
+        errors.push(`questions[${i}]: multiple-select options cannot be blank.`);
+      }
+      if (correctOptions.length < 2) {
+        errors.push(`questions[${i}]: multiple-select questions need at least 2 correctOptions.`);
+      }
+      if (correctOptions.some((option) => !option.trim())) {
+        errors.push(`questions[${i}]: correctOptions entries cannot be blank.`);
+      }
+      if (new Set(options.map((option) => option.trim().toLowerCase())).size !== options.length) {
+        errors.push(`questions[${i}]: multiple-select options must be unique.`);
+      }
+      if (
+        new Set(correctOptions.map((option) => option.trim().toLowerCase())).size !==
+        correctOptions.length
+      ) {
+        errors.push(`questions[${i}]: correctOptions must not contain duplicates.`);
+      }
+      if (correctOptions.some((option) => !options.includes(option))) {
+        errors.push(`questions[${i}]: every correctOptions entry must exactly match an option.`);
+      }
+      if (correctOptions.length >= options.length) {
+        errors.push(
+          `questions[${i}]: multiple-select questions need at least one incorrect option.`,
+        );
+      }
+      answer = serializeMultipleSelect(correctOptions);
+      if (!q.tutor?.whyCorrect?.trim()) {
+        warnings.push(
+          `questions[${i}]: multiple-select questions should explain why the correct options are right.`,
+        );
+      }
+      const wrongOptions = options.filter((option) => !correctOptions.includes(option));
       const missingReasons = wrongOptions.filter(
         (option) =>
           !q.tutor?.whyWrong?.some((entry) => entry.option === option && entry.why.trim()),
@@ -158,10 +214,16 @@ function buildQuestion(
       break;
   }
 
-  if (!answer && q.type !== "ordering" && q.type !== "matching" && q.type !== "word-bank") {
+  if (
+    !answer &&
+    q.type !== "multiple-select" &&
+    q.type !== "ordering" &&
+    q.type !== "matching" &&
+    q.type !== "word-bank"
+  ) {
     errors.push(`questions[${i}]: this ${q.type} question is missing its correct answer.`);
   }
-  if (q.type !== "multiple-choice" && q.type !== "true-false") {
+  if (q.type !== "multiple-choice" && q.type !== "multiple-select" && q.type !== "true-false") {
     if (!q.incorrectExplanation?.trim()) {
       warnings.push(
         `questions[${i}]: add an incorrectExplanation describing common mistakes or misconceptions.`,
@@ -175,6 +237,7 @@ function buildQuestion(
     question: q.question,
     answer,
     options: q.options,
+    correctOptions: q.correctOptions,
     explanation: q.explanation,
     incorrectExplanation: q.incorrectExplanation,
     difficulty: q.difficulty,
@@ -558,7 +621,7 @@ export const FIELD_DOCS: { field: string; type: string; required: boolean; note:
   { field: "questions", type: "Question[]", required: true, note: "At least one question." },
   {
     field: "questions[].type",
-    type: '"flashcard" | "multiple-choice" | "true-false" | "fill-blank" | "short-answer" | "ordering" | "matching" | "word-bank"',
+    type: '"flashcard" | "multiple-choice" | "multiple-select" | "true-false" | "fill-blank" | "short-answer" | "ordering" | "matching" | "word-bank"',
     required: true,
     note: "Determines how the question is presented.",
   },
@@ -567,13 +630,19 @@ export const FIELD_DOCS: { field: string; type: string; required: boolean; note:
     field: "questions[].answer",
     type: "string",
     required: true,
-    note: 'Correct answer. Must match an option for multiple-choice; "true"/"false" for true-false. Not needed for ordering, matching or word-bank.',
+    note: 'Correct answer. Must match an option for multiple-choice; "true"/"false" for true-false. Not needed for multiple-select, ordering, matching or word-bank.',
   },
   {
     field: "questions[].options",
     type: "string[]",
     required: false,
-    note: "Required for multiple-choice — 2 to 6 entries.",
+    note: "Required for multiple-choice (2–6 entries) and multiple-select (3–6 entries).",
+  },
+  {
+    field: "questions[].correctOptions",
+    type: "string[]",
+    required: false,
+    note: "Required for multiple-select — at least two exact option texts; include at least one distractor in options. Answers require the exact set.",
   },
   {
     field: "questions[].items",
@@ -615,13 +684,13 @@ export const FIELD_DOCS: { field: string; type: string; required: boolean; note:
     field: "questions[].tutor.whyCorrect",
     type: "string",
     required: false,
-    note: "For multiple-choice or true/false, explain why the correct option is right.",
+    note: "For multiple-choice, multiple-select or true/false, explain why the correct option(s) are right.",
   },
   {
     field: "questions[].tutor.whyWrong",
     type: "{ option: string; why: string }[]",
     required: false,
-    note: "One entry per incorrect multiple-choice or true/false option.",
+    note: "One entry per incorrect multiple-choice, multiple-select or true/false option.",
   },
   {
     field: "questions[].difficulty",
@@ -1074,46 +1143,183 @@ export function validateModuleJson(raw: string): ValidationResult {
 /**
  * Field documentation for courses.
  */
-export const COURSE_FIELD_DOCS: { field: string; type: string; required: boolean; note: string }[] = [
-  { field: "title", type: "string", required: true, note: "Course name shown in your library." },
-  { field: "subject", type: "string", required: true, note: "Subject area for organization (e.g., 'Biology', 'Mathematics')." },
-  { field: "description", type: "string", required: false, note: "Detailed description of the course." },
-  { field: "level", type: "string", required: false, note: "Grade or proficiency level (e.g., 'Grade 11', 'Advanced')." },
-  { field: "color", type: "string (hex or CSS var)", required: true, note: "Color for the course card. Use hex (#FF5733) or CSS variable (var(--deck-3))." },
-  { field: "emoji", type: "string", required: false, note: "Single emoji to display on the course card." },
-  { field: "tags", type: "array<string>", required: false, note: "Array of tags for filtering (e.g., ['biology', 'ecology'])." },
-  { field: "isSTEM", type: "boolean", required: false, note: "Set to true for STEM subjects; shows math helpers." },
-  { field: "needsEquations", type: "boolean", required: false, note: "Set to true if content includes LaTeX equations ($...$)." },
-  { field: "needsGraphs", type: "boolean", required: false, note: "Set to true if content includes diagrams or graphs." },
-  { field: "objectives", type: "array<string>", required: true, note: "Learning objectives for the course." },
-  { field: "modules", type: "array<CourseModule>", required: true, note: "Array of course modules." },
-  { field: "finalExam", type: "CourseAssessment", required: false, note: "Final exam assessment." },
-  { field: "linkedDeckIds", type: "array<string>", required: false, note: "IDs of decks linked to this course." },
-  { field: "createdAt", type: "number (timestamp)", required: true, note: "Unix timestamp when course was created." },
-  { field: "updatedAt", type: "number (timestamp)", required: true, note: "Unix timestamp when course was last updated." },
-];
+export const COURSE_FIELD_DOCS: { field: string; type: string; required: boolean; note: string }[] =
+  [
+    { field: "title", type: "string", required: true, note: "Course name shown in your library." },
+    {
+      field: "subject",
+      type: "string",
+      required: true,
+      note: "Subject area for organization (e.g., 'Biology', 'Mathematics').",
+    },
+    {
+      field: "description",
+      type: "string",
+      required: false,
+      note: "Detailed description of the course.",
+    },
+    {
+      field: "level",
+      type: "string",
+      required: false,
+      note: "Grade or proficiency level (e.g., 'Grade 11', 'Advanced').",
+    },
+    {
+      field: "color",
+      type: "string (hex or CSS var)",
+      required: true,
+      note: "Color for the course card. Use hex (#FF5733) or CSS variable (var(--deck-3)).",
+    },
+    {
+      field: "emoji",
+      type: "string",
+      required: false,
+      note: "Single emoji to display on the course card.",
+    },
+    {
+      field: "tags",
+      type: "array<string>",
+      required: false,
+      note: "Array of tags for filtering (e.g., ['biology', 'ecology']).",
+    },
+    {
+      field: "isSTEM",
+      type: "boolean",
+      required: false,
+      note: "Set to true for STEM subjects; shows math helpers.",
+    },
+    {
+      field: "needsEquations",
+      type: "boolean",
+      required: false,
+      note: "Set to true if content includes LaTeX equations ($...$).",
+    },
+    {
+      field: "needsGraphs",
+      type: "boolean",
+      required: false,
+      note: "Set to true if content includes diagrams or graphs.",
+    },
+    {
+      field: "objectives",
+      type: "array<string>",
+      required: true,
+      note: "Learning objectives for the course.",
+    },
+    {
+      field: "modules",
+      type: "array<CourseModule>",
+      required: true,
+      note: "Array of course modules.",
+    },
+    {
+      field: "finalExam",
+      type: "CourseAssessment",
+      required: false,
+      note: "Final exam assessment.",
+    },
+    {
+      field: "linkedDeckIds",
+      type: "array<string>",
+      required: false,
+      note: "IDs of decks linked to this course.",
+    },
+    {
+      field: "createdAt",
+      type: "number (timestamp)",
+      required: true,
+      note: "Unix timestamp when course was created.",
+    },
+    {
+      field: "updatedAt",
+      type: "number (timestamp)",
+      required: true,
+      note: "Unix timestamp when course was last updated.",
+    },
+  ];
 
 /**
  * Field documentation for modules.
  */
-export const MODULE_FIELD_DOCS: { field: string; type: string; required: boolean; note: string }[] = [
-  { field: "id", type: "string", required: true, note: "Unique identifier for the module." },
-  { field: "title", type: "string", required: true, note: "Module title." },
-  { field: "subject", type: "string", required: true, note: "Subject area (e.g., 'Biology')." },
-  { field: "color", type: "string (hex or CSS var)", required: true, note: "Color for the module card." },
-  { field: "emoji", type: "string", required: true, note: "Single emoji for the module." },
-  { field: "tags", type: "array<string>", required: false, note: "Array of tags for categorization." },
-  { field: "isSTEM", type: "boolean", required: true, note: "Whether this is a STEM module." },
-  { field: "needsEquations", type: "boolean", required: true, note: "Whether content includes LaTeX." },
-  { field: "needsGraphs", type: "boolean", required: true, note: "Whether content includes graphs/diagrams." },
-  { field: "difficulty", type: "number (1-3)", required: true, note: "Difficulty level: 1=easy, 2=medium, 3=hard." },
-  { field: "objectives", type: "array<string>", required: true, note: "Learning objectives." },
-  { field: "estimatedMinutes", type: "number", required: true, note: "Estimated time to complete in minutes." },
-  { field: "blocks", type: "array<CourseBlock>", required: true, note: "Array of content blocks (markdown, callouts, checkpoints, etc.)." },
-  { field: "questions", type: "array<Question>", required: true, note: "Array of questions in the module." },
-  { field: "linkedDeckIds", type: "array<string>", required: false, note: "IDs of related decks." },
-  { field: "notes", type: "string", required: false, note: "Additional notes about the module." },
-  { field: "notebookId", type: "string", required: false, note: "ID of associated notebook if applicable." },
-  { field: "createdAt", type: "number (timestamp)", required: true, note: "Unix timestamp when module was created." },
-  { field: "updatedAt", type: "number (timestamp)", required: true, note: "Unix timestamp when module was last updated." },
-];
+export const MODULE_FIELD_DOCS: { field: string; type: string; required: boolean; note: string }[] =
+  [
+    { field: "id", type: "string", required: true, note: "Unique identifier for the module." },
+    { field: "title", type: "string", required: true, note: "Module title." },
+    { field: "subject", type: "string", required: true, note: "Subject area (e.g., 'Biology')." },
+    {
+      field: "color",
+      type: "string (hex or CSS var)",
+      required: true,
+      note: "Color for the module card.",
+    },
+    { field: "emoji", type: "string", required: true, note: "Single emoji for the module." },
+    {
+      field: "tags",
+      type: "array<string>",
+      required: false,
+      note: "Array of tags for categorization.",
+    },
+    { field: "isSTEM", type: "boolean", required: true, note: "Whether this is a STEM module." },
+    {
+      field: "needsEquations",
+      type: "boolean",
+      required: true,
+      note: "Whether content includes LaTeX.",
+    },
+    {
+      field: "needsGraphs",
+      type: "boolean",
+      required: true,
+      note: "Whether content includes graphs/diagrams.",
+    },
+    {
+      field: "difficulty",
+      type: "number (1-3)",
+      required: true,
+      note: "Difficulty level: 1=easy, 2=medium, 3=hard.",
+    },
+    { field: "objectives", type: "array<string>", required: true, note: "Learning objectives." },
+    {
+      field: "estimatedMinutes",
+      type: "number",
+      required: true,
+      note: "Estimated time to complete in minutes.",
+    },
+    {
+      field: "blocks",
+      type: "array<CourseBlock>",
+      required: true,
+      note: "Array of content blocks (markdown, callouts, checkpoints, etc.).",
+    },
+    {
+      field: "questions",
+      type: "array<Question>",
+      required: true,
+      note: "Array of questions in the module.",
+    },
+    {
+      field: "linkedDeckIds",
+      type: "array<string>",
+      required: false,
+      note: "IDs of related decks.",
+    },
+    { field: "notes", type: "string", required: false, note: "Additional notes about the module." },
+    {
+      field: "notebookId",
+      type: "string",
+      required: false,
+      note: "ID of associated notebook if applicable.",
+    },
+    {
+      field: "createdAt",
+      type: "number (timestamp)",
+      required: true,
+      note: "Unix timestamp when module was created.",
+    },
+    {
+      field: "updatedAt",
+      type: "number (timestamp)",
+      required: true,
+      note: "Unix timestamp when module was last updated.",
+    },
+  ];

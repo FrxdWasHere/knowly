@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { MathText } from "@/components/math/math-text";
+import { QuestionPractice } from "@/components/questions/question-practice";
 import { ModuleMarkdownText } from "@/components/module-markdown";
 import { DocumentThemePicker } from "@/components/reading/document-theme-picker";
 import { ShareButton } from "@/components/share/share-button";
@@ -109,7 +110,6 @@ function ModuleEditor() {
   const module = state.modules.find((m) => m.id === moduleId);
   const progress = module ? state.moduleProgress[module.id] : undefined;
   const [editing, setEditing] = useState(false);
-  const [reveal, setReveal] = useState<Record<string, boolean>>({});
   const documentTheme = state.settings.documentTheme ?? "classic";
   const moduleHeadings = useMemo(
     () =>
@@ -463,8 +463,6 @@ function ModuleEditor() {
             headingPrefix={`module-${module.id}-block-${block.id}`}
             editing={editing}
             module={module}
-            reveal={!!reveal[block.id]}
-            onReveal={() => setReveal((r) => ({ ...r, [block.id]: true }))}
             onChange={(p) => blockPatch(block.id, p)}
             onMove={(dir) => moveBlock(block.id, dir)}
             onRemove={() => removeBlock(block.id)}
@@ -536,8 +534,6 @@ interface BlockViewProps {
   headingPrefix: string;
   editing: boolean;
   module: Module;
-  reveal: boolean;
-  onReveal: () => void;
   onChange: (p: Partial<CourseBlock>) => void;
   onMove: (dir: -1 | 1) => void;
   onRemove: () => void;
@@ -560,8 +556,6 @@ function BlockView({
   headingPrefix,
   editing,
   module,
-  reveal,
-  onReveal,
   onChange,
   onMove,
   onRemove,
@@ -789,38 +783,13 @@ function BlockView({
         <p className="mb-3 font-medium">
           <MathText text={question?.question ?? "Checkpoint"} />
         </p>
-        {!reveal ? (
-          <Button size="sm" variant="outline" onClick={onReveal}>
-            Reveal answer
-          </Button>
+        {question ? (
+          <QuestionPractice
+            question={question}
+            onAnswered={(correct) => onAnswer(question.id, correct)}
+          />
         ) : (
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              <MathText text={q?.answer || q?.explanation} />
-            </p>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  onAnswer(question!.id, true);
-                  toast.success("Marked correct");
-                }}
-              >
-                <Check className="size-4" /> Got it
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  onAnswer(question!.id, false);
-                  toast.info("We'll revisit this");
-                }}
-              >
-                <X className="size-4" /> Missed
-              </Button>
-            </div>
-          </div>
+          <p className="text-sm text-muted-foreground">This checkpoint has no question yet.</p>
         )}
       </div>
     );
